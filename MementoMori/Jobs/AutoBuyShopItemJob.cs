@@ -19,7 +19,6 @@ internal partial class AutoBuyShopItemJob : IJob
         var userId = context.MergedJobDataMap.GetLongValue("userId");
         if (userId <= 0) return;
         var account = _accountManager.Get(userId);
-        if (!account.Funcs.IsQuickActionExecuting) await account.Funcs.Login();
-        await account.Funcs.AutoBuyShopItem();
+        await account.Funcs.ExecuteScheduledJob(account.Funcs.AutoBuyShopItem, context.CancellationToken);
     }
 }

@@ -17,8 +17,6 @@ public partial class LegendLeagueJob : IJob
         var userId = context.MergedJobDataMap.GetLongValue("userId");
         if (userId <= 0) return;
         var account = _accountManager.Get(userId);
-        if (!account.Funcs.IsQuickActionExecuting) await account.Funcs.Login();
-
-        await account.Funcs.LegendLeagueAuto();
+        await account.Funcs.ExecuteScheduledJob(account.Funcs.LegendLeagueAuto, context.CancellationToken, () => _gameConfig.Value.AutoJob.AutoLegendLeague);
     }
 }

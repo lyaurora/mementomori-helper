@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using AutoCtor;
 using Injectio.Attributes;
 using MementoMori.Jobs;
@@ -13,6 +12,7 @@ using MementoMori.Ortega.Share.Data.Auth;
 using MementoMori.Ortega.Share.Data.Mission;
 using MementoMori.Ortega.Share.Data.Notice;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.Threading;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
 using BountyQuestGetListResponse = MementoMori.Ortega.Share.Data.ApiInterface.BountyQuest.GetListResponse;
@@ -32,13 +32,12 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
     private readonly IWritableOptions<PlayersOption> _playersOption;
     private readonly IServiceProvider _serviceProvider;
 
-    private readonly List<Task> _tasks = new();
+    private readonly AsyncSemaphore _executionSemaphore = new(1);
+    private readonly AsyncLocal<bool> _ownsExecutionSemaphore = new();
     private readonly TimeZoneAwareJobRegister _timeZoneAwareJobRegister;
     private readonly IWritableOptions<GameConfig> _writableGameConfig;
 
-    private CancellationTokenSource _cancellationTokenSource;
-
-    private ConcurrentQueue<Func<Action<string>, CancellationToken, Task>> _funcs = new();
+    private CancellationTokenSource? _cancellationTokenSource;
 
     private PlayerDataInfo _lastPlayerDataInfo;
     public TimeManager TimeManager => NetworkManager.TimeManager;
@@ -107,7 +106,9 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
 
     public void Dispose()
     {
+        _cancellationTokenSource?.Cancel();
         _cancellationTokenSource?.Dispose();
+        _executionSemaphore.Dispose();
     }
 
     [AutoPostConstruct]
@@ -168,43 +169,68 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
         }
     }
 
-    public async Task ExecuteQuickAction(Func<Action<string>, CancellationToken, Task> func)
+    public async Task ExecuteQuickAction(Func<Action<string>, CancellationToken, Task> func, CancellationToken cancellationToken = default)
     {
-        if (!IsQuickActionExecuting)
+        await ExecuteExclusive(async token =>
         {
-            IsQuickActionExecuting = true;
-            _cancellationTokenSource = new CancellationTokenSource();
-        }
+            try
+            {
+                await func(AddLog, token);
+            }
+            catch (Exception e)
+            {
+                AddLog(e.ToString());
+            }
+        }, cancellationToken);
+    }
 
-        var task = Task.CompletedTask;
-        try
-        {
-            task = func(AddLog, _cancellationTokenSource.Token);
-        }
-        catch (Exception e)
-        {
-            AddLog(e.ToString());
-        }
+    public async Task ExecuteScheduledJob(Func<Task> func, CancellationToken cancellationToken, Func<bool>? canExecute = null)
+    {
+        if (GameConfig.AutoJob.DisableAll || canExecute?.Invoke() == false) return;
 
-        _tasks.Add(task);
-        _ = task.ContinueWith(t =>
+        await ExecuteQuickAction(async (_, _) =>
         {
-            if (_tasks.TrueForAll(d => d.IsCompleted)) IsQuickActionExecuting = false;
-        });
-        try
-        {
-            await task;
-        }
-        catch (Exception e)
-        {
-            AddLog(e.ToString());
-        }
+            if (GameConfig.AutoJob.DisableAll || canExecute?.Invoke() == false) return;
+            await Login();
+            if (GameConfig.AutoJob.DisableAll || canExecute?.Invoke() == false) return;
+            await func();
+        }, cancellationToken);
     }
 
     public void CancelQuickAction()
     {
-        if (_cancellationTokenSource == null) return;
-        _cancellationTokenSource.Cancel();
+        try
+        {
+            _cancellationTokenSource?.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+    }
+
+    private async Task ExecuteExclusive(Func<CancellationToken, Task> func, CancellationToken cancellationToken = default)
+    {
+        if (_ownsExecutionSemaphore.Value)
+        {
+            await func(_cancellationTokenSource?.Token ?? cancellationToken);
+            return;
+        }
+
+        using var releaser = await _executionSemaphore.EnterAsync(cancellationToken);
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _ownsExecutionSemaphore.Value = true;
+        _cancellationTokenSource = cts;
+        IsQuickActionExecuting = true;
+        try
+        {
+            await func(cts.Token);
+        }
+        finally
+        {
+            IsQuickActionExecuting = false;
+            _cancellationTokenSource = null;
+            _ownsExecutionSemaphore.Value = false;
+        }
     }
 
 
