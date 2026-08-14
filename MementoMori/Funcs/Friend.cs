@@ -77,7 +77,7 @@ public partial class MementoMoriFuncs
 
                         var timeserverId = _lastPlayerDataInfo.WorldId / 1000;
                         var timeServerMb = TimeServerTable.GetById(timeserverId);
-                        var countryCode = timeServerMb.CountryCodeList.FirstOrDefault() ?? "CN";
+                        var countryCode = timeServerMb.CountryCodeList.FirstOrDefault() ?? "BR";
 
                         log("Creating new account...");
                         var createUserResponse = await networkManager.GetResponse<CreateUserRequest, CreateUserResponse>(new CreateUserRequest
@@ -89,7 +89,8 @@ public partial class MementoMoriFuncs
                             ModelName = AuthOption.ModelName,
                             DisplayLanguage = NetworkManager.LanguageType,
                             OSVersion = AuthOption.OSVersion,
-                            SteamTicket = ""
+                            SteamTicket = "",
+                            AuthToken = await GetAuthToken()
                         });
 
                         funcs.UserId = createUserResponse.UserId;
