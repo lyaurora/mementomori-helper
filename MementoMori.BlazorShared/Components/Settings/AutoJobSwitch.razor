@@ -29,7 +29,13 @@
 </MudCard>
 
 @code {
-    private Task RegisterAllJobs() => TimeZoneAwareJobRegister.RegisterAllJobs();
+    [Parameter] public EventCallback OnJobsChanged { get; set; }
+
+    private async Task RegisterAllJobs()
+    {
+        await TimeZoneAwareJobRegister.RegisterAllJobs();
+        await OnJobsChanged.InvokeAsync();
+    }
 
     public bool AutoJob__DisableAll
     {

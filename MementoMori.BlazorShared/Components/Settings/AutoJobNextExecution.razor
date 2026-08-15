@@ -33,6 +33,8 @@
 
 @code {
 
+    public Task Refresh() => AccountChanged();
+
     protected override async Task AccountChanged()
     {
         var scheduler = await SchedulerFactory.GetScheduler();

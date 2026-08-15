@@ -2,6 +2,7 @@
 using AutoCtor;
 using Injectio.Attributes;
 using MementoMori.Option;
+using Microsoft.Extensions.Logging;
 using Quartz;
 
 namespace MementoMori.Jobs;
@@ -12,6 +13,7 @@ public partial class TimeZoneAwareJobRegister
 {
     private readonly AccountManager _accountManager;
     private readonly IWritableOptions<GameConfig> _gameConfig;
+    private readonly ILogger<TimeZoneAwareJobRegister> _logger;
     private readonly ISchedulerFactory _schedulerFactory;
 
     public async Task RegisterAllJobs()
@@ -50,29 +52,22 @@ public partial class TimeZoneAwareJobRegister
             return;
         }
 
-        try
-        {
-            await AddJob<DailyJob>(scheduler, _gameConfig.Value.AutoJob.DailyJobCron, ResourceStrings.DailyJob, userId, networkManager.TimeManager.DiffFromUtc);
-            await AddJob<HourlyJob>(scheduler, _gameConfig.Value.AutoJob.HourlyJobCron, ResourceStrings.RewardClaimJob, userId, networkManager.TimeManager.DiffFromUtc);
-            await AddJob<PvpJob>(scheduler, NormalizeCron(_gameConfig.Value.AutoJob.PvpJobCron), TextResourceTable.Get("[CommonHeaderLocalPvpLabel]"), userId, networkManager.TimeManager.DiffFromUtc);
-            await AddJob<LegendLeagueJob>(scheduler, NormalizeCron(_gameConfig.Value.AutoJob.LegendLeagueJobCron), TextResourceTable.Get("[CommonHeaderGlobalPvpLabel]"), userId,
-                networkManager.TimeManager.DiffFromUtc);
-            await AddJob<GuildRaidBossReleaseJob>(scheduler, _gameConfig.Value.AutoJob.GuildRaidBossReleaseCron, TextResourceTable.Get("[GuildRaidReleaseConfirmTitle]"), userId,
-                networkManager.TimeManager.DiffFromUtc);
-            await AddJob<AutoBuyShopItemJob>(scheduler, _gameConfig.Value.AutoJob.AutoBuyShopItemJobCron, ResourceStrings.ShopAutoBuyItems, userId, networkManager.TimeManager.DiffFromUtc);
-            await AddJob<LocalRaidJob>(scheduler, _gameConfig.Value.AutoJob.AutoLocalRaidJobCron, TextResourceTable.Get("[CommonHeaderLocalRaidLabel]"), userId,
-                networkManager.TimeManager.DiffFromUtc);
-            // await AddJob<GuildBattleDeployDefenseJob>(scheduler, _gameConfig.Value.AutoJob.AutoDeployGuildDefenseJobCron, ResourceStrings.Deploy_defense, userId,
-            //     networkManager.TimeManager.DiffFromUtc);
-            await AddJob<AutoChangeGachaRelicJob>(scheduler, _gameConfig.Value.AutoJob.AutoChangeGachaRelicJobCron, TextResourceTable.Get("[GachaRelicChangeTitle]"), userId,
-                networkManager.TimeManager.DiffFromUtc);
-            await AddJob<AutoDrawGachaRelicJob>(scheduler, _gameConfig.Value.AutoJob.AutoDrawGachaRelicJobCron, ResourceStrings.Auto_draw_10_times__up_to_3_draws_, userId,
-                networkManager.TimeManager.DiffFromUtc);
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-        }
+        await AddJob<DailyJob>(scheduler, _gameConfig.Value.AutoJob.DailyJobCron, ResourceStrings.DailyJob, userId, networkManager.TimeManager.DiffFromUtc);
+        await AddJob<HourlyJob>(scheduler, _gameConfig.Value.AutoJob.HourlyJobCron, ResourceStrings.RewardClaimJob, userId, networkManager.TimeManager.DiffFromUtc);
+        await AddJob<PvpJob>(scheduler, NormalizeCron(_gameConfig.Value.AutoJob.PvpJobCron), TextResourceTable.Get("[CommonHeaderLocalPvpLabel]"), userId, networkManager.TimeManager.DiffFromUtc);
+        await AddJob<LegendLeagueJob>(scheduler, NormalizeCron(_gameConfig.Value.AutoJob.LegendLeagueJobCron), TextResourceTable.Get("[CommonHeaderGlobalPvpLabel]"), userId,
+            networkManager.TimeManager.DiffFromUtc);
+        await AddJob<GuildRaidBossReleaseJob>(scheduler, _gameConfig.Value.AutoJob.GuildRaidBossReleaseCron, TextResourceTable.Get("[GuildRaidReleaseConfirmTitle]"), userId,
+            networkManager.TimeManager.DiffFromUtc);
+        await AddJob<AutoBuyShopItemJob>(scheduler, _gameConfig.Value.AutoJob.AutoBuyShopItemJobCron, ResourceStrings.ShopAutoBuyItems, userId, networkManager.TimeManager.DiffFromUtc);
+        await AddJob<LocalRaidJob>(scheduler, _gameConfig.Value.AutoJob.AutoLocalRaidJobCron, TextResourceTable.Get("[CommonHeaderLocalRaidLabel]"), userId,
+            networkManager.TimeManager.DiffFromUtc);
+        // await AddJob<GuildBattleDeployDefenseJob>(scheduler, _gameConfig.Value.AutoJob.AutoDeployGuildDefenseJobCron, ResourceStrings.Deploy_defense, userId,
+        //     networkManager.TimeManager.DiffFromUtc);
+        await AddJob<AutoChangeGachaRelicJob>(scheduler, _gameConfig.Value.AutoJob.AutoChangeGachaRelicJobCron, TextResourceTable.Get("[GachaRelicChangeTitle]"), userId,
+            networkManager.TimeManager.DiffFromUtc);
+        await AddJob<AutoDrawGachaRelicJob>(scheduler, _gameConfig.Value.AutoJob.AutoDrawGachaRelicJobCron, ResourceStrings.Auto_draw_10_times__up_to_3_draws_, userId,
+            networkManager.TimeManager.DiffFromUtc);
     }
 
     private string NormalizeCron(string cron)
@@ -88,6 +83,18 @@ public partial class TimeZoneAwareJobRegister
     }
 
     private async Task AddJob<T>(IScheduler scheduler, string cron, string description, long userId, TimeSpan offset) where T : IJob
+    {
+        try
+        {
+            await AddJobCore<T>(scheduler, cron, description, userId, offset);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Failed to register {JobType} for user {UserId} with cron {Cron}", typeof(T).FullName, userId, cron);
+        }
+    }
+
+    private async Task AddJobCore<T>(IScheduler scheduler, string cron, string description, long userId, TimeSpan offset) where T : IJob
     {
         var type = typeof(T);
         var jobKey = new JobKey($"{userId}-{type.FullName!}");

@@ -15,13 +15,13 @@
         <AccountManagement/>
     </MudItem>
     <MudItem sm="12" md="6" lg="4" xl="3">
-        <AutoJobSwitch/>
+        <AutoJobSwitch OnJobsChanged="RefreshJobs"/>
     </MudItem>
     <MudItem sm="12" md="6" lg="4" xl="3">
-        <AutoJobCron/>
+        <AutoJobCron OnJobsChanged="RefreshJobs"/>
     </MudItem>
     <MudItem sm="12" md="6" lg="4" xl="3">
-        <AutoJobNextExecution/>
+        <AutoJobNextExecution @ref="_autoJobNextExecution"/>
     </MudItem>
     <MudItem sm="12" md="6" lg="4" xl="3">
         <GachaSettings/>
@@ -71,6 +71,9 @@
 
 
 @code {
+    private AutoJobNextExecution? _autoJobNextExecution;
+
+    private Task RefreshJobs() => _autoJobNextExecution?.Refresh() ?? Task.CompletedTask;
 
     protected override async Task AccountChanged()
     {

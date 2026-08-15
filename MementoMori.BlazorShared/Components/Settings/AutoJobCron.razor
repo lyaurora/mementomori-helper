@@ -45,10 +45,15 @@
 </MudCard>
 
 @code {
+    [Parameter] public EventCallback OnJobsChanged { get; set; }
 
     GameConfig.AutoJobModel defaultValue = new();
 
-    private Task RegisterAllJobs() => TimeZoneAwareJobRegister.RegisterAllJobs();
+    private async Task RegisterAllJobs()
+    {
+        await TimeZoneAwareJobRegister.RegisterAllJobs();
+        await OnJobsChanged.InvokeAsync();
+    }
 
     private async Task ResetCron(Action reset)
     {
