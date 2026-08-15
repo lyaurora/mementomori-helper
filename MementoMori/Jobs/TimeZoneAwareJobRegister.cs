@@ -25,16 +25,16 @@ public partial class TimeZoneAwareJobRegister
     public async Task DeregisterJobs(long userId)
     {
         var scheduler = await _schedulerFactory.GetScheduler();
-        RemoveJob<DailyJob>(scheduler, userId);
-        RemoveJob<HourlyJob>(scheduler, userId);
-        RemoveJob<PvpJob>(scheduler, userId);
-        RemoveJob<LegendLeagueJob>(scheduler, userId);
-        RemoveJob<GuildRaidBossReleaseJob>(scheduler, userId);
-        RemoveJob<AutoBuyShopItemJob>(scheduler, userId);
-        RemoveJob<LocalRaidJob>(scheduler, userId);
-        // RemoveJob<GuildBattleDeployDefenseJob>(scheduler, userId);
-        RemoveJob<AutoChangeGachaRelicJob>(scheduler, userId);
-        RemoveJob<AutoDrawGachaRelicJob>(scheduler, userId);
+        await RemoveJob<DailyJob>(scheduler, userId);
+        await RemoveJob<HourlyJob>(scheduler, userId);
+        await RemoveJob<PvpJob>(scheduler, userId);
+        await RemoveJob<LegendLeagueJob>(scheduler, userId);
+        await RemoveJob<GuildRaidBossReleaseJob>(scheduler, userId);
+        await RemoveJob<AutoBuyShopItemJob>(scheduler, userId);
+        await RemoveJob<LocalRaidJob>(scheduler, userId);
+        // await RemoveJob<GuildBattleDeployDefenseJob>(scheduler, userId);
+        await RemoveJob<AutoChangeGachaRelicJob>(scheduler, userId);
+        await RemoveJob<AutoDrawGachaRelicJob>(scheduler, userId);
     }
 
     public async Task RegisterJobs(long userId)
@@ -52,21 +52,21 @@ public partial class TimeZoneAwareJobRegister
 
         try
         {
-            AddJob<DailyJob>(scheduler, _gameConfig.Value.AutoJob.DailyJobCron, ResourceStrings.DailyJob, userId, networkManager.TimeManager.DiffFromUtc);
-            AddJob<HourlyJob>(scheduler, _gameConfig.Value.AutoJob.HourlyJobCron, ResourceStrings.RewardClaimJob, userId, networkManager.TimeManager.DiffFromUtc);
-            AddJob<PvpJob>(scheduler, NormalizeCron(_gameConfig.Value.AutoJob.PvpJobCron), TextResourceTable.Get("[CommonHeaderLocalPvpLabel]"), userId, networkManager.TimeManager.DiffFromUtc);
-            AddJob<LegendLeagueJob>(scheduler, NormalizeCron(_gameConfig.Value.AutoJob.LegendLeagueJobCron), TextResourceTable.Get("[CommonHeaderGlobalPvpLabel]"), userId,
+            await AddJob<DailyJob>(scheduler, _gameConfig.Value.AutoJob.DailyJobCron, ResourceStrings.DailyJob, userId, networkManager.TimeManager.DiffFromUtc);
+            await AddJob<HourlyJob>(scheduler, _gameConfig.Value.AutoJob.HourlyJobCron, ResourceStrings.RewardClaimJob, userId, networkManager.TimeManager.DiffFromUtc);
+            await AddJob<PvpJob>(scheduler, NormalizeCron(_gameConfig.Value.AutoJob.PvpJobCron), TextResourceTable.Get("[CommonHeaderLocalPvpLabel]"), userId, networkManager.TimeManager.DiffFromUtc);
+            await AddJob<LegendLeagueJob>(scheduler, NormalizeCron(_gameConfig.Value.AutoJob.LegendLeagueJobCron), TextResourceTable.Get("[CommonHeaderGlobalPvpLabel]"), userId,
                 networkManager.TimeManager.DiffFromUtc);
-            AddJob<GuildRaidBossReleaseJob>(scheduler, _gameConfig.Value.AutoJob.GuildRaidBossReleaseCron, TextResourceTable.Get("[GuildRaidReleaseConfirmTitle]"), userId,
+            await AddJob<GuildRaidBossReleaseJob>(scheduler, _gameConfig.Value.AutoJob.GuildRaidBossReleaseCron, TextResourceTable.Get("[GuildRaidReleaseConfirmTitle]"), userId,
                 networkManager.TimeManager.DiffFromUtc);
-            AddJob<AutoBuyShopItemJob>(scheduler, _gameConfig.Value.AutoJob.AutoBuyShopItemJobCron, ResourceStrings.ShopAutoBuyItems, userId, networkManager.TimeManager.DiffFromUtc);
-            AddJob<LocalRaidJob>(scheduler, _gameConfig.Value.AutoJob.AutoLocalRaidJobCron, TextResourceTable.Get("[CommonHeaderLocalRaidLabel]"), userId,
+            await AddJob<AutoBuyShopItemJob>(scheduler, _gameConfig.Value.AutoJob.AutoBuyShopItemJobCron, ResourceStrings.ShopAutoBuyItems, userId, networkManager.TimeManager.DiffFromUtc);
+            await AddJob<LocalRaidJob>(scheduler, _gameConfig.Value.AutoJob.AutoLocalRaidJobCron, TextResourceTable.Get("[CommonHeaderLocalRaidLabel]"), userId,
                 networkManager.TimeManager.DiffFromUtc);
-            // AddJob<GuildBattleDeployDefenseJob>(scheduler, _gameConfig.Value.AutoJob.AutoDeployGuildDefenseJobCron, ResourceStrings.Deploy_defense, userId,
+            // await AddJob<GuildBattleDeployDefenseJob>(scheduler, _gameConfig.Value.AutoJob.AutoDeployGuildDefenseJobCron, ResourceStrings.Deploy_defense, userId,
             //     networkManager.TimeManager.DiffFromUtc);
-            AddJob<AutoChangeGachaRelicJob>(scheduler, _gameConfig.Value.AutoJob.AutoChangeGachaRelicJobCron, TextResourceTable.Get("[GachaRelicChangeTitle]"), userId,
+            await AddJob<AutoChangeGachaRelicJob>(scheduler, _gameConfig.Value.AutoJob.AutoChangeGachaRelicJobCron, TextResourceTable.Get("[GachaRelicChangeTitle]"), userId,
                 networkManager.TimeManager.DiffFromUtc);
-            AddJob<AutoDrawGachaRelicJob>(scheduler, _gameConfig.Value.AutoJob.AutoDrawGachaRelicJobCron, ResourceStrings.Auto_draw_10_times__up_to_3_draws_, userId,
+            await AddJob<AutoDrawGachaRelicJob>(scheduler, _gameConfig.Value.AutoJob.AutoDrawGachaRelicJobCron, ResourceStrings.Auto_draw_10_times__up_to_3_draws_, userId,
                 networkManager.TimeManager.DiffFromUtc);
         }
         catch (Exception e)
@@ -80,14 +80,14 @@ public partial class TimeZoneAwareJobRegister
         return Regex.Replace(cron, @"^[\S]+", "0");
     }
 
-    private void RemoveJob<T>(IScheduler scheduler, long userId) where T : IJob
+    private async Task RemoveJob<T>(IScheduler scheduler, long userId) where T : IJob
     {
         var type = typeof(T);
         var jobKey = new JobKey($"{userId}-{type.FullName!}");
-        scheduler.DeleteJob(jobKey);
+        await scheduler.DeleteJob(jobKey);
     }
 
-    private void AddJob<T>(IScheduler scheduler, string cron, string description, long userId, TimeSpan offset) where T : IJob
+    private async Task AddJob<T>(IScheduler scheduler, string cron, string description, long userId, TimeSpan offset) where T : IJob
     {
         var type = typeof(T);
         var jobKey = new JobKey($"{userId}-{type.FullName!}");
@@ -99,8 +99,18 @@ public partial class TimeZoneAwareJobRegister
             .WithIdentity($"{userId}-{type.FullName}-trigger")
             .WithCronSchedule(cron, builer => builer.InTimeZone(customTimeZone))
             .Build();
-        scheduler.UnscheduleJob(trigger.Key);
-        scheduler.ScheduleJob(jobDetail, trigger);
+        var existingTrigger = await scheduler.GetTrigger(trigger.Key);
+        if (existingTrigger is ICronTrigger existingCronTrigger
+            && existingCronTrigger.CronExpressionString == cron
+            && existingCronTrigger.TimeZone.HasSameRules(customTimeZone))
+            return;
+
+        if (existingTrigger != null)
+            await scheduler.RescheduleJob(trigger.Key, trigger);
+        else if (await scheduler.CheckExists(jobKey))
+            await scheduler.ScheduleJob(trigger);
+        else
+            await scheduler.ScheduleJob(jobDetail, trigger);
     }
 }
 

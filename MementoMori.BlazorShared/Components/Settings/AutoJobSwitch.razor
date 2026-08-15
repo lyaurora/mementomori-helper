@@ -12,7 +12,7 @@
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent>
-        <MudSwitch Label="@ResourceStrings.DisableAllJobs" @bind-Value="AutoJob__DisableAll" Color="Color.Primary"></MudSwitch>
+        <MudSwitch Label="@ResourceStrings.DisableAllJobs" @bind-Value="AutoJob__DisableAll" @bind-Value:after="RegisterAllJobs" Color="Color.Primary"></MudSwitch>
         <MudSwitch Label="@ResourceStrings.ReinforceEquipmentOnce" @bind-Value="AutoJob__AutoReinforcementEquipmentOneTime" Color="Color.Primary"></MudSwitch>
         <MudSwitch Label="@Tr("[CommonHeaderLocalPvpLabel]")" @bind-Value="AutoJob__AutoPvp" Color="Color.Primary"></MudSwitch>
         <MudSwitch Label="@Tr("[CommonHeaderGlobalPvpLabel]")" @bind-Value="AutoJob__AutoLegendLeague" Color="Color.Primary"></MudSwitch>
@@ -29,14 +29,12 @@
 </MudCard>
 
 @code {
+    private Task RegisterAllJobs() => TimeZoneAwareJobRegister.RegisterAllJobs();
+
     public bool AutoJob__DisableAll
     {
         get => WritableGameConfig.Value.AutoJob.DisableAll;
-        set
-        {
-            WritableGameConfig.Update(x => x.AutoJob.DisableAll = value);
-            TimeZoneAwareJobRegister.RegisterAllJobs().ConfigureAwait(false).GetAwaiter().GetResult();
-        }
+        set => WritableGameConfig.Update(x => x.AutoJob.DisableAll = value);
     }
 
     public bool AutoJob__AutoReinforcementEquipmentOneTime
