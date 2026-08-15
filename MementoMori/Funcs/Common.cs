@@ -192,7 +192,7 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
         {
             if (GameConfig.AutoJob.DisableAll || canExecute?.Invoke() == false) return;
             await Login();
-            if (GameConfig.AutoJob.DisableAll || canExecute?.Invoke() == false) return;
+            if (!LoginOk || GameConfig.AutoJob.DisableAll || canExecute?.Invoke() == false) return;
             await func();
         }, cancellationToken);
     }

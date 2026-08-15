@@ -136,33 +136,10 @@ public partial class MementoMoriFuncs
                            byId.SlotType == equipmentMb.SlotType;
                 }).FirstOrDefault();
 
-                // 替换装备
-                await GetResponse<ChangeEquipmentRequest, ChangeEquipmentResponse>(
-                    new ChangeEquipmentRequest
-                    {
-                        UserCharacterGuid = userCharacterDtoInfo.Guid,
-                        EquipmentChangeInfos = new List<EquipmentChangeInfo>
-                        {
-                            new()
-                            {
-                                EquipmentId = equipItem.ItemId,
-                                EquipmentSlotType = equipmentMb.SlotType,
-                                IsInherit = false
-                            }
-                        }
-                    });
-
-                // 恢复装备
-                if (replacedEquip == null)
+                Exception? changeException = null;
+                try
                 {
-                    await GetResponse<RemoveEquipmentRequest, RemoveEquipmentResponse>(new RemoveEquipmentRequest
-                    {
-                        EquipmentSlotTypes = new List<EquipmentSlotType> {equipmentMb.SlotType},
-                        UserCharacterGuid = userCharacterDtoInfo.Guid
-                    });
-                }
-                else
-                {
+                    // 替换装备
                     await GetResponse<ChangeEquipmentRequest, ChangeEquipmentResponse>(
                         new ChangeEquipmentRequest
                         {
@@ -171,13 +148,54 @@ public partial class MementoMoriFuncs
                             {
                                 new()
                                 {
-                                    EquipmentGuid = replacedEquip.Guid,
-                                    EquipmentId = replacedEquip.EquipmentId,
+                                    EquipmentId = equipItem.ItemId,
                                     EquipmentSlotType = equipmentMb.SlotType,
                                     IsInherit = false
                                 }
                             }
                         });
+                }
+                catch (Exception e)
+                {
+                    changeException = e;
+                    throw;
+                }
+                finally
+                {
+                    try
+                    {
+                        // 恢复装备
+                        if (replacedEquip == null)
+                        {
+                            await GetResponse<RemoveEquipmentRequest, RemoveEquipmentResponse>(new RemoveEquipmentRequest
+                            {
+                                EquipmentSlotTypes = new List<EquipmentSlotType> {equipmentMb.SlotType},
+                                UserCharacterGuid = userCharacterDtoInfo.Guid
+                            });
+                        }
+                        else
+                        {
+                            await GetResponse<ChangeEquipmentRequest, ChangeEquipmentResponse>(
+                                new ChangeEquipmentRequest
+                                {
+                                    UserCharacterGuid = userCharacterDtoInfo.Guid,
+                                    EquipmentChangeInfos = new List<EquipmentChangeInfo>
+                                    {
+                                        new()
+                                        {
+                                            EquipmentGuid = replacedEquip.Guid,
+                                            EquipmentId = replacedEquip.EquipmentId,
+                                            EquipmentSlotType = equipmentMb.SlotType,
+                                            IsInherit = false
+                                        }
+                                    }
+                                });
+                        }
+                    }
+                    catch (Exception e) when (changeException != null)
+                    {
+                        log(e.ToString());
+                    }
                 }
 
                 needMoreCount--;

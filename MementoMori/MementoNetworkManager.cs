@@ -162,8 +162,6 @@ public partial class MementoNetworkManager : IDisposable
                     log($"{name} not changed, skip...");
                     continue;
                 }
-
-                File.Delete(localPath);
             }
 
             hasUpdate = true;
@@ -171,7 +169,16 @@ public partial class MementoNetworkManager : IDisposable
             log($"Updating {name}...");
             var mbUrl = string.Format(dataUriResponse.MasterUriFormat, MoriHttpClientHandler.OrtegaMasterVersion, name);
             var fileBytes = await _unityHttpClient.GetByteArrayAsync(mbUrl);
-            await File.WriteAllBytesAsync(localPath, fileBytes);
+            var tempPath = $"{localPath}.{Guid.NewGuid():N}.tmp";
+            try
+            {
+                await File.WriteAllBytesAsync(tempPath, fileBytes);
+                File.Move(tempPath, localPath, true);
+            }
+            finally
+            {
+                if (File.Exists(tempPath)) File.Delete(tempPath);
+            }
             log($"Finished updating {name}...");
         }
 
@@ -375,7 +382,6 @@ public partial class MementoNetworkManager : IDisposable
                     var errorCodeMessage = TextResourceTable.GetErrorCodeMessage(apiErrResponse.ErrorCode);
                     log(uri.ToString());
                     log($"{errorCodeMessage}");
-                    log(req.ToJson());
                     log(apiErrResponse.ToJson());
                     throw new ApiErrorException(apiErrResponse.ErrorCode);
                 }

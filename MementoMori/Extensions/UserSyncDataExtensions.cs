@@ -68,7 +68,7 @@ public static class UserSyncDataExtensions
     public static List<UserEquipmentDtoInfo> GetUserEquipmentDtoInfosByCharacterGuid(this UserSyncData userSyncData, string characterGuid,
         LockEquipmentDeckType lockEquipmentDeckType = LockEquipmentDeckType.None)
     {
-        if (userSyncData.LockedEquipmentCharacterGuidListMap.TryGetValue(lockEquipmentDeckType, out var guids) && !guids.IsNullOrEmpty())
+        if (userSyncData.LockedEquipmentCharacterGuidListMap.TryGetValue(lockEquipmentDeckType, out var guids) && guids?.Contains(characterGuid) == true)
             return userSyncData.GetLockedUserEquipmentDtoInfosByCharacterGuid(characterGuid, lockEquipmentDeckType);
 
         var userEquipmentDtoInfos = new List<UserEquipmentDtoInfo>();
@@ -83,7 +83,7 @@ public static class UserSyncDataExtensions
         var userEquipmentDtoInfos = new List<UserEquipmentDtoInfo>();
         if (characterGuid.IsNullOrEmpty() || !syncData.LockedUserEquipmentDtoInfoListMap.TryGetValue(lockEquipmentDeckType, out var userEquipmentDtoInfos1)) return userEquipmentDtoInfos;
 
-        return userEquipmentDtoInfos1.Where(d => d.Guid == characterGuid).ToList();
+        return userEquipmentDtoInfos1.Where(d => d.CharacterGuid == characterGuid).ToList();
     }
 
     public static List<UserCharacterCollectionDtoInfo> UserCharacterCollectionDtoInfos(this UserSyncData syncData)
@@ -121,7 +121,7 @@ public static class UserSyncDataExtensions
         {
             if (equipmentSlotType != slotType)
             {
-                if (EquipmentTable.GetById(userEquipmentDtoInfo.EquipmentId).EquipmentSetId != equipmentSetId)
+                if (userEquipmentDtoInfo == null || EquipmentTable.GetById(userEquipmentDtoInfo.EquipmentId).EquipmentSetId != equipmentSetId)
                     continue;
             }
 

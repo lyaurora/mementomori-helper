@@ -1,11 +1,16 @@
-﻿using System.Runtime.CompilerServices;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace MementoMori.Option;
+
+internal static class WritableOptionsFileLock
+{
+    // ponytail: one global config lock; use per-path locks only if config write throughput ever matters.
+    internal static readonly object SyncRoot = new();
+}
 
 public interface IWritableOptions<out T> : IOptions<T> where T : class, new()
 {
@@ -45,27 +50,38 @@ public class WritableOptions<T> : IWritableOptions<T> where T : class, new()
         return _options.Get(name);
     }
 
-    [MethodImpl(MethodImplOptions.Synchronized)]
     public void Update(Action<T> applyChanges)
     {
-        applyChanges(Value);
-        string physicalPath;
-        if (_fileProvider != null)
+        var physicalPath = _fileProvider?.GetFileInfo(_file).PhysicalPath ?? Path.Combine(Directory.GetCurrentDirectory(), _file);
+
+        lock (WritableOptionsFileLock.SyncRoot)
         {
-            var fileInfo = _fileProvider.GetFileInfo(_file);
-            physicalPath = fileInfo.PhysicalPath;
+            var jObject = File.Exists(physicalPath)
+                ? JsonConvert.DeserializeObject<JObject>(File.ReadAllText(physicalPath)) ?? new JObject()
+                : new JObject();
+            var sectionObject = jObject.TryGetValue(_section, out var section) ? JsonConvert.DeserializeObject<T>(section.ToString()) ?? new T() : Value;
+            applyChanges(sectionObject);
+            jObject[_section] = JObject.FromObject(sectionObject);
+
+            var tempPath = $"{physicalPath}.{Guid.NewGuid():N}.tmp";
+            try
+            {
+                File.WriteAllText(tempPath, JsonConvert.SerializeObject(jObject, Formatting.Indented));
+                try
+                {
+                    File.Move(tempPath, physicalPath, true);
+                }
+                catch (IOException) when (File.Exists(physicalPath))
+                {
+                    File.Copy(tempPath, physicalPath, true);
+                }
+            }
+            finally
+            {
+                if (File.Exists(tempPath)) File.Delete(tempPath);
+            }
+
+            _value = sectionObject;
         }
-        else
-        {
-            physicalPath = Path.Combine(Directory.GetCurrentDirectory(), _file);
-        }
-
-        var jObject = physicalPath != null && File.Exists(physicalPath) ? JsonConvert.DeserializeObject<JObject>(File.ReadAllText(physicalPath)) : new JObject();
-        var sectionObject = jObject.TryGetValue(_section, out var section) ? JsonConvert.DeserializeObject<T>(section.ToString()) : Value ?? new T();
-
-        applyChanges(sectionObject);
-
-        jObject[_section] = JObject.Parse(JsonConvert.SerializeObject(sectionObject));
-        File.WriteAllText(physicalPath, JsonConvert.SerializeObject(jObject, Formatting.Indented));
     }
 }

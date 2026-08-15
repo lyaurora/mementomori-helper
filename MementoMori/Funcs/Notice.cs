@@ -13,7 +13,7 @@ public partial class MementoMoriFuncs
             AccessType = NoticeAccessType.Title,
             CountryCode = countryCode,
             LanguageType = NetworkManager.LanguageType,
-            UserId = AuthOption.UserId
+            UserId = this.UserId
         });
         NoticeInfoList = response.NoticeInfoList.Where(d => d.Id % 10 != 6).ToList();
 

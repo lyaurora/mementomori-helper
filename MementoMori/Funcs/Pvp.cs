@@ -35,7 +35,7 @@ public partial class MementoMoriFuncs
                     {
                         var characterDetailInfos = BuildPvpPlayerInfo(
                             characterDetailInfoDict,
-                            DeckUseContentType.LegendLeagueOffense,
+                            DeckUseContentType.BattleLeagueDefense,
                             d.PlayerInfo.PlayerId,
                             d.UserCharacterInfoList.Select(x => (x.CharacterId, x.Guid)).ToList());
 
@@ -210,7 +210,7 @@ public partial class MementoMoriFuncs
                     {
                         var characterDetailInfos = BuildPvpPlayerInfo(
                             characterDetailInfoDict,
-                            DeckUseContentType.LegendLeagueOffense,
+                            DeckUseContentType.LegendLeagueDefense,
                             d.PlayerInfo.PlayerId,
                             d.UserCharacterDtoInfoList.Select(x => (x.CharacterId, x.Guid)).ToList());
 

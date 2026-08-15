@@ -20,46 +20,66 @@ public partial class MementoMoriFuncs
         if (competitionInfoResponse.IsDungeonBattleEventOpen && _writableGameConfig.Value.DungeonBattle.AutoRemoveEquipment)
         {
             var equips = UserSyncData.UserEquipmentDtoInfos.Where(d => !string.IsNullOrEmpty(d.CharacterGuid)).GroupBy(d => d.CharacterGuid).ToList();
-            foreach (var g in equips)
-            {
-                var characterDto = UserSyncData.UserCharacterDtoInfos.Find(d => d.Guid == g.Key);
-                var name = TextResourceTable.Get(CharacterTable.GetById(characterDto.CharacterId).NameKey);
-                log(string.Format(ResourceStrings.RemoveEquipmentOfCharacter, name, characterDto.Level));
-
-                // 脱装备
-                var removeEquipmentResponse = await GetResponse<RemoveEquipmentRequest, RemoveEquipmentResponse>(new RemoveEquipmentRequest
-                {
-                    UserCharacterGuid = g.Key,
-                    EquipmentSlotTypes = g.Select(d => EquipmentTable.GetById(d.EquipmentId).SlotType).ToList()
-                });
-            }
-
-            // 进副本
-            await GetResponse<GetDungeonBattleInfoRequest, GetDungeonBattleInfoResponse>(new GetDungeonBattleInfoRequest());
-            if (competitionInfoResponse.IsDungeonBattleEventOpen)
+            Exception? operationException = null;
+            try
             {
                 foreach (var g in equips)
                 {
                     var characterDto = UserSyncData.UserCharacterDtoInfos.Find(d => d.Guid == g.Key);
                     var name = TextResourceTable.Get(CharacterTable.GetById(characterDto.CharacterId).NameKey);
-                    log(string.Format(ResourceStrings.PutOnEquipmentOfCharacter, name, characterDto.Level));
-                    // 穿装备
-                    var changeInfos = g.Select(d =>
+                    log(string.Format(ResourceStrings.RemoveEquipmentOfCharacter, name, characterDto.Level));
+
+                    // 脱装备
+                    await GetResponse<RemoveEquipmentRequest, RemoveEquipmentResponse>(new RemoveEquipmentRequest
                     {
-                        var equipmentMb = EquipmentTable.GetById(d.EquipmentId);
-                        return new EquipmentChangeInfo
-                        {
-                            EquipmentGuid = d.Guid,
-                            EquipmentId = d.EquipmentId,
-                            EquipmentSlotType = equipmentMb.SlotType,
-                            IsInherit = false
-                        };
-                    });
-                    var changeEquipmentResponse = await GetResponse<ChangeEquipmentRequest, ChangeEquipmentResponse>(new ChangeEquipmentRequest
-                    {
-                        UserCharacterGuid = g.Key, EquipmentChangeInfos = changeInfos.ToList()
+                        UserCharacterGuid = g.Key,
+                        EquipmentSlotTypes = g.Select(d => EquipmentTable.GetById(d.EquipmentId).SlotType).ToList()
                     });
                 }
+
+                // 进副本
+                await GetResponse<GetDungeonBattleInfoRequest, GetDungeonBattleInfoResponse>(new GetDungeonBattleInfoRequest());
+            }
+            catch (Exception e)
+            {
+                operationException = e;
+                throw;
+            }
+            finally
+            {
+                Exception? restoreException = null;
+                foreach (var g in equips)
+                {
+                    try
+                    {
+                        var characterDto = UserSyncData.UserCharacterDtoInfos.Find(d => d.Guid == g.Key);
+                        var name = TextResourceTable.Get(CharacterTable.GetById(characterDto.CharacterId).NameKey);
+                        log(string.Format(ResourceStrings.PutOnEquipmentOfCharacter, name, characterDto.Level));
+                        // 穿装备
+                        var changeInfos = g.Select(d =>
+                        {
+                            var equipmentMb = EquipmentTable.GetById(d.EquipmentId);
+                            return new EquipmentChangeInfo
+                            {
+                                EquipmentGuid = d.Guid,
+                                EquipmentId = d.EquipmentId,
+                                EquipmentSlotType = equipmentMb.SlotType,
+                                IsInherit = false
+                            };
+                        });
+                        await GetResponse<ChangeEquipmentRequest, ChangeEquipmentResponse>(new ChangeEquipmentRequest
+                        {
+                            UserCharacterGuid = g.Key, EquipmentChangeInfos = changeInfos.ToList()
+                        });
+                    }
+                    catch (Exception e)
+                    {
+                        restoreException ??= e;
+                        log(e.ToString());
+                    }
+                }
+
+                if (restoreException != null && operationException == null) throw restoreException;
             }
         }
 

@@ -59,7 +59,7 @@
 
     protected override Task AccountChanged()
     {
-        Funcs.WhenAnyValue(d => d.UserSyncData).Subscribe(data =>
+        TrackAccountSubscription(Funcs.WhenAnyValue(d => d.UserSyncData).Subscribe(data =>
         {
             var chas = data?.UserEquipmentDtoInfos?.GroupBy(d => d.CharacterGuid).ToDictionary(d => d.Key);
             _characterGuids = data?.UserCharacterDtoInfos?.Where(d => chas?.ContainsKey(d.Guid) ?? false).Select(d =>
@@ -70,7 +70,7 @@
                 return new CharacterInfo(characterName, level, d.Guid, CharacterTable.GetById(d.CharacterId).JobFlags);
             }).OrderByDescending(d => d.Lv).ToList() ?? [];
             _selectedCharacterGuid = _characterGuids.FirstOrDefault();
-        });
+        }));
         return Task.CompletedTask;
     }
 

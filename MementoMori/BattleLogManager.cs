@@ -22,7 +22,7 @@ public partial class BattleLogManager
             var path = Path.Combine(_writableGameConfig.Value.BattleLogDir, filename);
             await File.WriteAllTextAsync(path, battleResult.ToJson(true));
             // keep only 100 lose logs
-            var files = Directory.GetFiles(_writableGameConfig.Value.BattleLogDir, $"{autoDeletePrefix ?? prefix}-*.json").OrderDescending();
+            var files = Directory.GetFiles(_writableGameConfig.Value.BattleLogDir, $"{autoDeletePrefix ?? prefix}-*.json").OrderByDescending(File.GetLastWriteTimeUtc);
             foreach (var file in files.Skip(autoDeletePreserveCount))
             {
                 File.Delete(file);

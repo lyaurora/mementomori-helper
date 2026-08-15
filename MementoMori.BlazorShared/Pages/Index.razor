@@ -453,7 +453,7 @@
         try
         {
             alertMessage = Funcs.LoginOk ? string.Empty : ResourceStrings.PleaseLogin;
-            Funcs.WhenAnyPropertyChanged().Subscribe(_ => InvokeAsync(StateHasChanged));
+            TrackAccountSubscription(Funcs.WhenAnyPropertyChanged().Subscribe(_ => InvokeAsync(StateHasChanged)));
         }
         catch (Exception e)
         {

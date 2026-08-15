@@ -12,9 +12,10 @@ public partial class MementoMoriFuncs
     public async Task AuthLogin(PlayerDataInfo playerDataInfo)
     {
         _lastPlayerDataInfo = playerDataInfo;
+        LoginOk = false;
         await NetworkManager.Login(playerDataInfo.WorldId, AddLog);
-        LoginOk = true;
         await UserGetUserData();
+        LoginOk = true;
         await _timeZoneAwareJobRegister.RegisterJobs(UserId);
     }
 
@@ -50,9 +51,14 @@ public partial class MementoMoriFuncs
                 if (account != null) account.AutoLoginWorldId = autoLoginThisWorld ? playerDataInfo.WorldId : 0;
             });
             await AuthLogin(playerDataInfo);
+            await GetMyPage();
+            await GetMissionInfo();
+            await GetBountyRequestInfo();
+            // await GetMonthlyLoginBonusInfo();
         }
         catch (Exception e)
         {
+            LoginOk = false;
             AddLog(e.ToString());
             return;
         }
@@ -60,12 +66,6 @@ public partial class MementoMoriFuncs
         {
             Logining = false;
         }
-
-        await UserGetUserData();
-        await GetMyPage();
-        await GetMissionInfo();
-        await GetBountyRequestInfo();
-        // await GetMonthlyLoginBonusInfo(); 
     }
 
     public async Task<string> GetClientKey(string password)

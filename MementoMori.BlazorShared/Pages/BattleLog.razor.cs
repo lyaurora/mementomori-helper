@@ -36,7 +36,7 @@ public partial class BattleLog
         var files = Directory.GetFiles(GameConfig.Value.BattleLogDir);
         var prefix = logTypePrefixes[selectedBattleLogType];
         BattleResults.Clear();
-        foreach (var file in files.OrderDescending())
+        foreach (var file in files.OrderByDescending(File.GetLastWriteTimeUtc))
         {
             var fileName = Path.GetFileName(file);
             if (!fileName.StartsWith(prefix)) continue;
@@ -123,15 +123,6 @@ public partial class BattleLog
     private BattleLogType _selectedBattleLogType = BattleLogType.Main;
     private int _selectedCleanRange = 1;
 
-    private DateTimeOffset ParseTimeFromFileName(string filename)
-    {
-        var parts = filename.Split('-');
-        if (parts.Length < 5) return DateTimeOffset.MinValue;
-        if (long.TryParse(parts[3], out var timestamp))
-            return DateTimeOffset.FromUnixTimeMilliseconds(timestamp).ToLocalTime();
-        return DateTimeOffset.MinValue;
-    }
-
     private async Task CleanBattleLogs()
     {
         if (!Directory.Exists(GameConfig.Value.BattleLogDir)) return;
@@ -147,7 +138,7 @@ public partial class BattleLog
         var filesToDelete = _selectedCleanRange == 0
             ? Directory.GetFiles(GameConfig.Value.BattleLogDir).ToList()
             : Directory.GetFiles(GameConfig.Value.BattleLogDir)
-                .Where(f => ParseTimeFromFileName(Path.GetFileName(f)) < threshold)
+                .Where(f => File.GetLastWriteTimeUtc(f) < threshold.UtcDateTime)
                 .ToList();
 
         if (!filesToDelete.Any())

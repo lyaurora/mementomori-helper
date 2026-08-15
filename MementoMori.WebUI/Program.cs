@@ -96,11 +96,19 @@ internal class Program
     private static async Task InitializeAsync(IServiceProvider sp)
     {
         var accountManager = sp.GetRequiredService<AccountManager>();
+        var logger = sp.GetRequiredService<ILogger<Program>>();
         var networkManager = sp.GetRequiredService<MementoNetworkManager>();
         accountManager.MigrateToAccountArray();
         accountManager.CurrentCulture = CultureInfo.CurrentCulture;
-        await networkManager.Initialize();
-        await networkManager.DownloadMasterCatalog();
+        try
+        {
+            await networkManager.Initialize();
+            await networkManager.DownloadMasterCatalog();
+        }
+        catch (Exception e) when (Directory.Exists("Master") && Directory.EnumerateFiles("Master").Any())
+        {
+            logger.LogWarning(e, "Failed to update master data; using existing files");
+        }
         networkManager.SetCultureInfo(CultureInfo.CurrentCulture);
         await accountManager.AutoLogin();
     }

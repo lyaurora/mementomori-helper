@@ -23,7 +23,7 @@
         try
         {
             _messageList = Funcs.MesssageList.ToList();
-            Funcs.MesssageList.ObserveCollectionChanges().Throttle(TimeSpan.FromMilliseconds(50)).Subscribe(set =>
+            TrackAccountSubscription(Funcs.MesssageList.ObserveCollectionChanges().Throttle(TimeSpan.FromMilliseconds(50)).Subscribe(set =>
             {
                 try
                 {
@@ -34,7 +34,7 @@
                     return;
                 }
                 InvokeAsync(StateHasChanged);
-            });
+            }));
             await InvokeAsync(StateHasChanged);
         }
         catch

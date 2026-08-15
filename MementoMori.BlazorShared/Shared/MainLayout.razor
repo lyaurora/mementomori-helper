@@ -5,6 +5,7 @@
 @using MementoMori.Option
 @using ReactiveUI
 @inherits LayoutComponentBase
+@implements IDisposable
 @inject AccountManager AccountManager
 @inject IWritableOptions<AuthOption> AuthOption
 @inject NavigationManager NavigationManager
@@ -55,6 +56,7 @@
     bool _drawerOpen = true;
     bool _isDarkMode = false;
     bool _languageSelectOpen = false;
+    IDisposable? _accountManagerSubscription;
 
     CultureInfo SelectedLanguage
     {
@@ -68,7 +70,12 @@
 
     protected override void OnInitialized()
     {
-        AccountManager.WhenAnyPropertyChanged().Subscribe(_ => InvokeAsync(StateHasChanged));
+        _accountManagerSubscription = AccountManager.WhenAnyPropertyChanged().Subscribe(_ => InvokeAsync(StateHasChanged));
+    }
+
+    public void Dispose()
+    {
+        _accountManagerSubscription?.Dispose();
     }
 
     void DrawerToggle()
