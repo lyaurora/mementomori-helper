@@ -29,8 +29,12 @@ public class AccountComponent : ComponentBase, IDisposable
 
     protected override async Task OnInitializedAsync()
     {
-        await ChangeAccount(AccountManager.CurrentUserId);
+        var initialUserId = AccountManager.CurrentUserId;
+        await ChangeAccount(initialUserId);
+        if (_accountSubscriptions.IsDisposed) return;
         _accountManagerSubscription = AccountManager.WhenAnyValue(d => d.CurrentUserId)
+            .StartWith(initialUserId)
+            .DistinctUntilChanged()
             .Skip(1)
             .Throttle(TimeSpan.FromMilliseconds(100))
             .Select(userId => Observable.FromAsync(() => InvokeAsync(() => ChangeAccount(userId)))

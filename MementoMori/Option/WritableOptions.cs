@@ -66,7 +66,13 @@ public class WritableOptions<T> : IWritableOptions<T> where T : class, new()
             var tempPath = $"{physicalPath}.{Guid.NewGuid():N}.tmp";
             try
             {
-                File.WriteAllText(tempPath, JsonConvert.SerializeObject(jObject, Formatting.Indented));
+                var fileOptions = new FileStreamOptions {Mode = FileMode.CreateNew, Access = FileAccess.Write};
+                if (!OperatingSystem.IsWindows())
+                    fileOptions.UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
+                using (var writer = new StreamWriter(new FileStream(tempPath, fileOptions)))
+                    writer.Write(JsonConvert.SerializeObject(jObject, Formatting.Indented));
+                if (!OperatingSystem.IsWindows() && File.Exists(physicalPath))
+                    File.SetUnixFileMode(tempPath, File.GetUnixFileMode(physicalPath));
                 try
                 {
                     File.Move(tempPath, physicalPath, true);

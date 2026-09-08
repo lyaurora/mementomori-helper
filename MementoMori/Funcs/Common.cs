@@ -38,6 +38,8 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
     private readonly IWritableOptions<GameConfig> _writableGameConfig;
 
     private CancellationTokenSource? _cancellationTokenSource;
+    private int _logoutVersion;
+    private volatile bool _loggedOut;
 
     private PlayerDataInfo _lastPlayerDataInfo;
     public TimeManager TimeManager => NetworkManager.TimeManager;
@@ -186,13 +188,16 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
 
     public async Task ExecuteScheduledJob(Func<Task> func, CancellationToken cancellationToken, Func<bool>? canExecute = null)
     {
-        if (GameConfig.AutoJob.DisableAll || canExecute?.Invoke() == false) return;
+        var logoutVersion = Volatile.Read(ref _logoutVersion);
+        if (_loggedOut || GameConfig.AutoJob.DisableAll || canExecute?.Invoke() == false) return;
 
-        await ExecuteQuickAction(async (_, _) =>
+        await ExecuteQuickAction(async (_, token) =>
         {
-            if (GameConfig.AutoJob.DisableAll || canExecute?.Invoke() == false) return;
+            if (_loggedOut || logoutVersion != Volatile.Read(ref _logoutVersion)
+                || GameConfig.AutoJob.DisableAll || canExecute?.Invoke() == false) return;
             await Login();
-            if (!LoginOk || GameConfig.AutoJob.DisableAll || canExecute?.Invoke() == false) return;
+            if (token.IsCancellationRequested || _loggedOut || !LoginOk
+                || GameConfig.AutoJob.DisableAll || canExecute?.Invoke() == false) return;
             await func();
         }, cancellationToken);
     }
@@ -212,7 +217,9 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
     {
         if (_ownsExecutionSemaphore.Value)
         {
-            await func(_cancellationTokenSource?.Token ?? cancellationToken);
+            var token = _cancellationTokenSource?.Token ?? cancellationToken;
+            token.ThrowIfCancellationRequested();
+            await func(token);
             return;
         }
 
@@ -223,6 +230,7 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
         IsQuickActionExecuting = true;
         try
         {
+            cts.Token.ThrowIfCancellationRequested();
             await func(cts.Token);
         }
         finally

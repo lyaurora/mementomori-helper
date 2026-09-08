@@ -11,10 +11,13 @@ public partial class MementoMoriFuncs
 
     public async Task AuthLogin(PlayerDataInfo playerDataInfo)
     {
+        _cancellationTokenSource?.Token.ThrowIfCancellationRequested();
         _lastPlayerDataInfo = playerDataInfo;
         LoginOk = false;
         await NetworkManager.Login(playerDataInfo.WorldId, AddLog);
+        _cancellationTokenSource?.Token.ThrowIfCancellationRequested();
         await UserGetUserData();
+        _cancellationTokenSource?.Token.ThrowIfCancellationRequested();
         LoginOk = true;
         await _timeZoneAwareJobRegister.RegisterJobs(UserId);
     }
@@ -34,11 +37,23 @@ public partial class MementoMoriFuncs
 
     public async Task Logout()
     {
-        await _timeZoneAwareJobRegister.DeregisterJobs(UserId);
-        LoginOk = false;
+        _loggedOut = true;
+        Interlocked.Increment(ref _logoutVersion);
+        CancelQuickAction();
+        await ExecuteExclusive(async _ =>
+        {
+            _loggedOut = true;
+            LoginOk = false;
+            await _timeZoneAwareJobRegister.DeregisterJobs(UserId);
+        });
     }
 
-    public async Task Login(PlayerDataInfo playerDataInfo = null, bool autoLoginThisWorld = false)
+    public Task Login(PlayerDataInfo playerDataInfo = null, bool autoLoginThisWorld = false)
+    {
+        return ExecuteExclusive(_ => LoginCore(playerDataInfo, autoLoginThisWorld));
+    }
+
+    private async Task LoginCore(PlayerDataInfo playerDataInfo, bool autoLoginThisWorld)
     {
         Logining = true;
         try
@@ -51,6 +66,7 @@ public partial class MementoMoriFuncs
                 if (account != null) account.AutoLoginWorldId = autoLoginThisWorld ? playerDataInfo.WorldId : 0;
             });
             await AuthLogin(playerDataInfo);
+            _loggedOut = false;
             await GetMyPage();
             await GetMissionInfo();
             await GetBountyRequestInfo();
