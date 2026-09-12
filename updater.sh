@@ -11,7 +11,7 @@
 # └── wwwroot
 
 # 设置GitHub仓库信息
-repository="moonheart/mementomori-helper"
+repository="lyaurora/mementomori-helper"
 releaseApiUrl="https://api.github.com/repos/$repository/releases/latest"
 downloadUrl="https://github.com/$repository/releases/download"
 

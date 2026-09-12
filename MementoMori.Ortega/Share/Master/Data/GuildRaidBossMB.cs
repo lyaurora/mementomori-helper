@@ -13,6 +13,9 @@ namespace MementoMori.Ortega.Share.Master.Data
     [MessagePackObject(true)]
     public class GuildRaidBossMB : MasterBookBase, IHasStartEndTime
     {
+        public long EventTutorialId { get; }
+
+
 		[PropertyOrder(17)]
 		[Description("アクティブスキルIDのリスト")]
 		public IReadOnlyList<long> ActiveSkillIds { get; }
@@ -127,9 +130,10 @@ namespace MementoMori.Ortega.Share.Master.Data
 
 
         [SerializationConstructor]
-        public GuildRaidBossMB(long id, bool? isIgnore, string memo, BaseParameter baseParameter, BattleParameter battleParameter, UnitIconType unitIconType, long unitIconId, long normalSkillId, GuildRaidBossType guildRaidBossType, long releasableGuildFame, IReadOnlyList<long> activeSkillIds, IReadOnlyList<long> passiveSkillIds, long enemyRank, JobFlags jobFlags, EquipmentRarityFlags exclusiveEquipmentRarityFlags, ElementType elementType, long battlePower, CharacterRarityFlags characterRarityFlags, string nameKey, IReadOnlyList<GuildRaidDamageBar> normalDamageBar, IReadOnlyList<GuildRaidDamageBar> guildDamageBar, string startTime, string endTime, string bannerText, float guildRaidButtonU, float guildRaidButtonV, float worldDamageBarRewardCharacterImageX, float worldDamageBarRewardCharacterImageY, float worldDamageBarRewardCharacterImageSize, bool isActiveMypageIcon)
+        public GuildRaidBossMB(long id, bool? isIgnore, string memo, BaseParameter baseParameter, BattleParameter battleParameter, UnitIconType unitIconType, long unitIconId, long normalSkillId, GuildRaidBossType guildRaidBossType, long releasableGuildFame, IReadOnlyList<long> activeSkillIds, IReadOnlyList<long> passiveSkillIds, long enemyRank, JobFlags jobFlags, EquipmentRarityFlags exclusiveEquipmentRarityFlags, ElementType elementType, long battlePower, CharacterRarityFlags characterRarityFlags, string nameKey, IReadOnlyList<GuildRaidDamageBar> normalDamageBar, IReadOnlyList<GuildRaidDamageBar> guildDamageBar, string startTime, string endTime, string bannerText, float guildRaidButtonU, float guildRaidButtonV, float worldDamageBarRewardCharacterImageX, float worldDamageBarRewardCharacterImageY, float worldDamageBarRewardCharacterImageSize, bool isActiveMypageIcon, long eventTutorialId)
             : base(id, isIgnore, memo)
         {
+            EventTutorialId = eventTutorialId;
             this.BaseParameter = baseParameter;
             this.BattleParameter = battleParameter;
             this.UnitIconType = unitIconType;

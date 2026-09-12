@@ -8,6 +8,9 @@ namespace MementoMori.Ortega.Share.Data.Character
 	[MessagePackObject(true)]
 	public class CharacterVoicePath
 	{
+        public int VoiceId { get; set; }
+
+
 		[Description("TimelineId")]
 		[PropertyOrder(2)]
 		public int TimelineId

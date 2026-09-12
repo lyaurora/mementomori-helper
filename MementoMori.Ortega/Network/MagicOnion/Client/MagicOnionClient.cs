@@ -19,11 +19,22 @@ namespace MementoMori.Ortega.Network.MagicOnion.Client
             return _sender != null;
         }
 
-		public override async Task DisposeAsync()
-		{
-            if (_sender == null) return;
-            await _sender.DisposeAsync();
-            await _sender.WaitForDisconnect();
+        private CancellationTokenSource _connectionCancellation;
+
+        public override async Task DisposeAsync()
+        {
+            _connectionCancellation?.Cancel();
+            try
+            {
+                if (_sender != null) await _sender.DisposeAsync().WaitAsync(TimeSpan.FromSeconds(10));
+            }
+            finally
+            {
+                _sender = default;
+                _connectionCancellation?.Dispose();
+                _connectionCancellation = null;
+                ChangeState(HubClientState.Disconnected);
+            }
         }
 
 		protected void AttachInternalReceiver(TReceiver internalReceiver, IDisconnectReceiver internalDisconnectReceiver)
@@ -32,10 +43,15 @@ namespace MementoMori.Ortega.Network.MagicOnion.Client
             _internalDisconnectReceiver = internalDisconnectReceiver;
 		}
 
-		protected override async Task ConnectHub()
+		protected override async Task ConnectHub(CancellationToken cancellationToken = default)
         {
             ChangeState(HubClientState.Connecting);
-            _sender = await StreamingHubClient.ConnectAsync<TSender, TReceiver>(_channel, _internalReceiver);
+            _connectionCancellation?.Cancel();
+            _connectionCancellation?.Dispose();
+            _connectionCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            _connectionCancellation.CancelAfter(TimeSpan.FromMinutes(1));
+            _sender = await StreamingHubClient.ConnectAsync<TSender, TReceiver>(_channel, _internalReceiver,
+                option: new Grpc.Core.CallOptions(cancellationToken: _connectionCancellation.Token), cancellationToken: _connectionCancellation.Token);
         }
 
 		protected override Task Authenticate()
@@ -46,6 +62,7 @@ namespace MementoMori.Ortega.Network.MagicOnion.Client
 
 		protected override void SucceededAuthentication()
 		{
+            _connectionCancellation?.CancelAfter(Timeout.InfiniteTimeSpan);
 			base.ResetRetryCount();
 			base.ChangeState(HubClientState.Ready);
 		}

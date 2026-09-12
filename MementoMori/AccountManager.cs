@@ -22,9 +22,7 @@ public partial class AccountManager : ReactiveObject
     private readonly ILogger<AccountManager> _logger;
     private readonly IServiceProvider _serviceProvider;
     private CultureInfo _currentCulture;
-    private long _currentUserId;
-
-    public Account Current => Get(CurrentUserId);
+    public IReadOnlyList<AccountInfo> AccountInfos => _authOption.Value.Accounts;
 
     public CultureInfo CurrentCulture
     {
@@ -40,16 +38,6 @@ public partial class AccountManager : ReactiveObject
             CultureInfo.DefaultThreadCurrentCulture = value;
             CultureInfo.DefaultThreadCurrentUICulture = value;
         }
-    }
-
-    public long CurrentUserId
-    {
-        get
-        {
-            if (_currentUserId <= 0) _currentUserId = _authOption.Value.Accounts.FirstOrDefault()?.UserId ?? 0;
-            return _currentUserId;
-        }
-        set => this.RaiseAndSetIfChanged(ref _currentUserId, value);
     }
 
     [MethodImpl(MethodImplOptions.Synchronized)]
@@ -77,10 +65,13 @@ public partial class AccountManager : ReactiveObject
         return _accounts.ContainsKey(userId);
     }
 
+    public bool TryGet(long userId, out Account account) => _accounts.TryGetValue(userId, out account);
+
     public void AddAccountInfo(long userId, string clientKey, string name, bool autoLogin)
     {
         _authOption.Update(opt =>
         {
+            if (opt.Accounts.Any(a => a.UserId == userId)) throw new InvalidOperationException("Account already exists.");
             opt.Accounts.Add(new AccountInfo
             {
                 UserId = userId,
@@ -89,6 +80,7 @@ public partial class AccountManager : ReactiveObject
                 AutoLogin = autoLogin
             });
         });
+        UpdateAccountInfo(userId);
     }
 
     public AccountInfo GetAccountInfo(long userId)
@@ -121,16 +113,18 @@ public partial class AccountManager : ReactiveObject
         }
     }
 
-    public async Task AutoLogin()
+    public async Task AutoLogin(CancellationToken cancellationToken = default)
     {
-        foreach (var account in _authOption.Value.Accounts)
+        foreach (var account in _authOption.Value.Accounts.ToArray())
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (account.AutoLogin)
             {
                 try
                 {
-                    await Get(account.UserId).Funcs.AutoLogin();
+                    await Get(account.UserId).Funcs.AutoLogin(false, cancellationToken);
                 }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
                 catch (Exception e)
                 {
                     _logger.LogError(e, "AutoLogin error");
@@ -142,12 +136,19 @@ public partial class AccountManager : ReactiveObject
     public void UpdateAccountInfo(long userId)
     {
         Get(userId).AccountInfo = GetAccountInfo(userId);
+        this.RaisePropertyChanged(nameof(AccountInfos));
     }
 
-    public void RemoveAccount(long userId)
+    public async Task RemoveAccount(long userId)
     {
-        _accounts.TryRemove(userId, out _);
+        if (_accounts.TryGetValue(userId, out var account)) await account.Funcs.Logout();
         _authOption.Update(opt => { opt.Accounts.RemoveAll(x => x.UserId == userId); });
+        this.RaisePropertyChanged(nameof(AccountInfos));
+        if (_accounts.TryRemove(userId, out account))
+        {
+            account.Funcs.Dispose();
+            account.NetworkManager?.Dispose();
+        }
     }
 }
 

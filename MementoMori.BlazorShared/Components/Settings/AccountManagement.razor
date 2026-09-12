@@ -1,7 +1,6 @@
 ﻿@inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject IWritableOptions<AuthOption> authOption
-@inject TimeZoneAwareJobRegister timeZoneAwareJobRegister;
 @using MementoMori.Common.Localization
 @using MementoMori.Jobs
 @using MementoMori.Option
@@ -111,11 +110,6 @@
             return;
         }
 
-        if (_addAccountUserId <= 0 || string.IsNullOrEmpty(_addAccountPassword))
-        {
-            return;
-        }
-
         var account = AccountManager.Get(_addAccountUserId);
         if (account.Funcs.LoginOk)
         {
@@ -132,7 +126,6 @@
             }
 
             AccountManager.AddAccountInfo(_addAccountUserId, clientKey, _addAccountName, _addAccountAutoLogin);
-            _accountDoingAction = false;
             _addAccountDialog = false;
             _accounts = authOption.Value.Accounts.ToList();
             StateHasChanged();
@@ -141,30 +134,39 @@
         {
             await DialogService.ShowMessageBox(ResourceStrings.Failed_to_retrieve_account_information, e.Message);
         }
+        finally
+        {
+            _accountDoingAction = false;
+            _addAccountPassword = string.Empty;
+        }
     }
 
     private async Task LoginAccount(long userId)
     {
         _accountDoingAction = true;
-        var account = AccountManager.Get(userId);
-        await account.Funcs.AutoLogin(true);
-
-        Snackbar.Clear();
-        Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
-        Snackbar.Add(ResourceStrings.Login_successful, Severity.Success);
-        _accountDoingAction = false;
+        try
+        {
+            var account = AccountManager.Get(userId);
+            await account.Funcs.AutoLogin(true);
+            Snackbar.Add(account.Funcs.LoginOk ? ResourceStrings.Login_successful
+                : account.Funcs.LastLoginError ?? ResourceStrings.Login_failed__please_check_your_account_configuration,
+                account.Funcs.LoginOk ? Severity.Success : Severity.Error);
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception e) { Snackbar.Add(e.Message, Severity.Error); }
+        finally { _accountDoingAction = false; }
     }
 
     private async Task LogoutAccount(long userId)
     {
         _accountDoingAction = true;
-        var account = AccountManager.Get(userId);
-        await account.Funcs.Logout();
-
-        Snackbar.Clear();
-        Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
-        Snackbar.Add(ResourceStrings.Logout_successful, Severity.Success);
-        _accountDoingAction = false;
+        try
+        {
+            await AccountManager.Get(userId).Funcs.Logout();
+            Snackbar.Add(ResourceStrings.Logout_successful, Severity.Success);
+        }
+        catch (Exception e) { Snackbar.Add(e.Message, Severity.Error); }
+        finally { _accountDoingAction = false; }
     }
 
     private void ShowAccountSetting(long userId)
@@ -184,11 +186,15 @@
             return;
         }
 
-        AccountManager.RemoveAccount(userId);
-        await timeZoneAwareJobRegister.DeregisterJobs(userId);
-        AccountManager.CurrentUserId = 0;
-        _accounts = authOption.Value.Accounts.ToList();
-        StateHasChanged();
+        _accountDoingAction = true;
+        try
+        {
+            await AccountManager.RemoveAccount(userId);
+            AccountSelection.CurrentUserId = 0;
+            _accounts = authOption.Value.Accounts.ToList();
+        }
+        catch (Exception e) { Snackbar.Add(e.Message, Severity.Error); }
+        finally { _accountDoingAction = false; }
     }
 
     private void SaveAccountSetting()

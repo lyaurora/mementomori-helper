@@ -6,6 +6,11 @@ namespace MementoMori.Ortega.Share.Data.ApiInterface.Notice
     [MessagePackObject(true)]
     public class GetMyPageNoticeInfoListResponse : ApiResponseBase
     {
+        public List<NoticeInfo> EventInfoList { get; set; }
+
+        public long DungeonBattleEventTutorialId { get; set; }
+
+
         public List<NoticeInfo> NoticeInfoList { get; set; }
     }
 }

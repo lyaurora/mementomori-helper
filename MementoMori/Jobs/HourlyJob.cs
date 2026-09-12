@@ -16,7 +16,7 @@ public partial class HourlyJob : IJob
     {
         var userId = context.MergedJobDataMap.GetLongValue("userId");
         if (userId <= 0) return;
-        var account = _accountManager.Get(userId);
+        if (!_accountManager.TryGet(userId, out var account)) return;
         await account.Funcs.ExecuteScheduledJob(async () =>
         {
             await account.Funcs.GetLoginBonus();
@@ -32,6 +32,6 @@ public partial class HourlyJob : IJob
             await account.Funcs.RewardMissonActivity();
             if (_gameConfig.Value.AutoJob.AutoFreeGacha) await account.Funcs.FreeGacha();
             if (_gameConfig.Value.AutoJob.AutoUseItems) await account.Funcs.AutoUseItems();
-        }, context.CancellationToken);
+        }, context.CancellationToken, jobName: context.JobDetail.Key.Name);
     }
 }

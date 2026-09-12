@@ -37,3 +37,9 @@ MementoMori.AssetDownloader/apk*
 MementoMori.AssetDownloader/data
 publish-linux-x64
 publish-win-x64
+**/appsettings.user.json
+**/BattleLogs
+/Master
+/MementoMori.WebUI/Master
+/MementoMori.AssetDownloader/Master
+**/*.tmp

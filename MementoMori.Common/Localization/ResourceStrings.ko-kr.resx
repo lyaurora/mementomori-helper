@@ -1,4 +1,4 @@
-﻿<root>
+<root>
     <resheader name="resmimetype">
         <value>text/microsoft-resx</value>
     </resheader>
@@ -481,4 +481,13 @@
     <data name="Confirm" xml:space="preserve">
         <value>확인</value>
     </data>
+  <data name="LastRun" xml:space="preserve"><value>최근 실행 결과</value></data>
+  <data name="TaskRunning" xml:space="preserve"><value>실행 중</value></data>
+  <data name="TaskFailed" xml:space="preserve"><value>실패 / 일부 완료</value></data>
+  <data name="TaskStarted" xml:space="preserve"><value>시작 시간</value></data>
+  <data name="TaskFinished" xml:space="preserve"><value>종료 시간</value></data>
+  <data name="RetryAt" xml:space="preserve"><value>다음 로그인 재시도</value></data>
+  <data name="ResourceServer" xml:space="preserve"><value>리소스 서버 주소</value></data>
+  <data name="BattleLogViewer" xml:space="preserve"><value>전투 기록 뷰어 주소</value></data>
+  <data name="HttpUrlRequired" xml:space="preserve"><value>HTTP 또는 HTTPS 주소를 입력하세요.</value></data>
 </root>

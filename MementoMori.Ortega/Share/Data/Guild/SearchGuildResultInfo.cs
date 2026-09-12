@@ -7,6 +7,9 @@ namespace MementoMori.Ortega.Share.Data.Guild
 	[MessagePackObject(true)]
 	public class SearchGuildResultInfo
 	{
+        public bool IsRecruit { get; set; }
+
+
 		public GuildInfo GuildInfo{ get; set; }
 
 		public bool IsApplying { get; set; }

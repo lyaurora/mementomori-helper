@@ -588,4 +588,13 @@
   <data name="Confirm" xml:space="preserve">
       <value>确认</value>
   </data>
+  <data name="LastRun" xml:space="preserve"><value>上次执行结果</value></data>
+  <data name="TaskRunning" xml:space="preserve"><value>执行中</value></data>
+  <data name="TaskFailed" xml:space="preserve"><value>失败／部分完成</value></data>
+  <data name="TaskStarted" xml:space="preserve"><value>开始时间</value></data>
+  <data name="TaskFinished" xml:space="preserve"><value>结束时间</value></data>
+  <data name="RetryAt" xml:space="preserve"><value>下次登录重试</value></data>
+  <data name="ResourceServer" xml:space="preserve"><value>资源服务器地址</value></data>
+  <data name="BattleLogViewer" xml:space="preserve"><value>战斗记录查看器地址</value></data>
+  <data name="HttpUrlRequired" xml:space="preserve"><value>请输入 HTTP 或 HTTPS 地址。</value></data>
 </root>

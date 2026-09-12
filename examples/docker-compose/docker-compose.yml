@@ -1,25 +1,24 @@
-﻿version: '3'
 services:
   mementomori:
-    image: moonheartmoon/mementomori-webui
+    build:
+      context: ../..
+      dockerfile: MementoMori.WebUI/Dockerfile
+    image: mementomori-webui:local
     container_name: mementomori
     restart: unless-stopped
-    privileged: false
-    pull_policy: always
+    pull_policy: never
     ports:
       - "127.0.0.1:5290:8080"
     environment:
-      - TZ=Asia/Shanghai # change based on your timezone
-      - LANG=zh_CN.UTF-8 # change based on your locale
+      TZ: Asia/Shanghai
+      LANG: zh_CN.UTF-8
+      ConfigDirectory: /app/config
     volumes:
-      - ./Master/:/app/Master/
-      - ./BattleLogs/:/app/BattleLogs/
-      - ./appsettings.user.json:/app/appsettings.user.json:rw
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 512M
-        reservations:
-          cpus: '0.5'
-          memory: 256M
+      - ./Master:/app/Master
+      - ./BattleLogs:/app/BattleLogs
+      - ./config:/app/config
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

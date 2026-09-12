@@ -8,6 +8,10 @@ namespace MementoMori.Ortega.Share.MagicOnionShare.Response
 	[MessagePackObject(false)]
 	public class OnEndCastleBattleResponse
 	{
+        [Key(9)]
+        public GvgKnockOutEffectType KnockOutEffectType { get; set; }
+
+
 		[Key(3)]
 		public List<PartyInfoSlim> AttackerParties { get; set; }
 

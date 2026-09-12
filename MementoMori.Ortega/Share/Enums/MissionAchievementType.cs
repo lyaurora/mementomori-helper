@@ -322,6 +322,18 @@ namespace MementoMori.Ortega.Share.Enums
 		[Description("レンタルレイド 前半レイドステージ制限編成の達成ダメージ")]
 		RentalRaidFirstHalfLimitFormation = 28010100,
 		[Description("レンタルレイド 後半レイドステージ制限編成の達成ダメージ")]
-		RentalRaidSecondHalfLimitFormation = 28010200
-	}
+		RentalRaidSecondHalfLimitFormation = 28010200,
+        ShopConsumeWebCrystalCount = 6020100,
+        ShopBuyFreeWebStoreProductCount = 6030100,
+        MiningQuestPlayCount = 29010100,
+        MiningQuestGetRewardCount = 29010200,
+        MiningQuestConsumeRewardCount = 29010300,
+        MiningQuestReinforcementCount = 29010400,
+        MiningQuestSpecialReinforcementCount = 29010500,
+        MiningQuestAttackPower = 29010600,
+        MiningQuestAttackFrequency = 29010700,
+        MiningQuestCollectionLevel = 29010800,
+        MiningQuestMaxScore = 29010900,
+        MiningQuestGrade = 29011000,
+    }
 }

@@ -15,7 +15,7 @@ public partial class LocalRaidJob : IJob
         if (!_gameConfig.Value.AutoJob.AutoLocalRaid) return;
         var userId = context.MergedJobDataMap.GetLongValue("userId");
         if (userId <= 0) return;
-        var account = _accountManager.Get(userId);
-        await account.Funcs.ExecuteScheduledJob(account.Funcs.AutoLocalRaid, context.CancellationToken, () => _gameConfig.Value.AutoJob.AutoLocalRaid);
+        if (!_accountManager.TryGet(userId, out var account)) return;
+        await account.Funcs.ExecuteScheduledJob(account.Funcs.AutoLocalRaid, context.CancellationToken, () => _gameConfig.Value.AutoJob.AutoLocalRaid, context.JobDetail.Key.Name);
     }
 }

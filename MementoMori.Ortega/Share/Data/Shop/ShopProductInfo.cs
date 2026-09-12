@@ -8,6 +8,9 @@ namespace MementoMori.Ortega.Share.Data.Shop
 	[MessagePackObject(true)]
 	public class ShopProductInfo
 	{
+        public ShopProductWebStoreGuidancePanel ShopProductWebStoreGuidancePanel { get; set; }
+
+
 		[Description("表示順(昇順)")]
 		public int DisplayOrder { get; set; }
 

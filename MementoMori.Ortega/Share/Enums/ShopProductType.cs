@@ -31,6 +31,7 @@ namespace MementoMori.Ortega.Share.Enums
 		[Description("Webストア")]
 		WebStore,
 		[Description("全検索")]
-		AllSearch = 99
-	}
+		AllSearch = 99,
+        WebStoreGuidancePanel = 14,
+    }
 }

@@ -15,7 +15,7 @@ public partial class GuildBattleDeployDefenseJob : IJob
         if (!_gameConfig.Value.AutoJob.AutoDeployGuildDefense) return;
         var userId = context.MergedJobDataMap.GetLongValue("userId");
         if (userId <= 0) return;
-        var account = _accountManager.Get(userId);
-        await account.Funcs.ExecuteScheduledJob(account.Funcs.SetupLocalGvgDefense, context.CancellationToken, () => _gameConfig.Value.AutoJob.AutoDeployGuildDefense);
+        if (!_accountManager.TryGet(userId, out var account)) return;
+        await account.Funcs.ExecuteScheduledJob(account.Funcs.SetupLocalGvgDefense, context.CancellationToken, () => _gameConfig.Value.AutoJob.AutoDeployGuildDefense, context.JobDetail.Key.Name);
     }
 }

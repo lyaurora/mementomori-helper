@@ -18,6 +18,10 @@ namespace MementoMori.Ortega.Share.Enums
 		[Description("GooglePlayのレシート消費をクライアントで行う")]
 		EnableGooglePlayReceiptConsumeByClient,
 		[Description("Deeplinkのエラー判定 PurchaseStateType.FetchProductWaitチェック有効")]
-		CheckDeeplinkPurchaseStateFetchProductWait
-	}
+		CheckDeeplinkPurchaseStateFetchProductWait,
+        PlayVideoTotalCount = 4,
+        BountyQuestRewardBonus = 5,
+        WebstoreRelease = 20000,
+        DisableAssetCacheClear = 30000,
+    }
 }

@@ -12,6 +12,9 @@ namespace MementoMori.Ortega.Share.Master.Data
     [MessagePackObject(true)]
     public class InquiryButtonMB : MasterBookBase
     {
+        public string PrecautionTextKey { get; }
+
+
         [PropertyOrder(1)]
         [Description("ボタンテキスト")]
         public string ButtonTextKey { get; set; }
@@ -43,9 +46,10 @@ namespace MementoMori.Ortega.Share.Master.Data
 
         [SerializationConstructor]
         public InquiryButtonMB(long id, bool? isIgnore, string memo, string buttonTextKey, InquiryButtonType buttonType, string mailSubjectKey, string mailBodyKey, TranslatedText transferUrl,
-            IReadOnlyList<long> timeServerIds, IReadOnlyList<int> deviceTypes)
+            IReadOnlyList<long> timeServerIds, IReadOnlyList<int> deviceTypes, string precautionTextKey)
             : base(id, isIgnore, memo)
         {
+            PrecautionTextKey = precautionTextKey;
             ButtonTextKey = buttonTextKey;
             ButtonType = buttonType;
             MailSubjectKey = mailSubjectKey;

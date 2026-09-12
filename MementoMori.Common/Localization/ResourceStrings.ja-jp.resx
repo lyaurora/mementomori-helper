@@ -1,4 +1,4 @@
-﻿<root>
+<root>
     <resheader name="resmimetype">
         <value>text/microsoft-resx</value>
     </resheader>
@@ -481,4 +481,13 @@
     <data name="Confirm" xml:space="preserve">
         <value>確認</value>
     </data>
+  <data name="LastRun" xml:space="preserve"><value>前回の実行結果</value></data>
+  <data name="TaskRunning" xml:space="preserve"><value>実行中</value></data>
+  <data name="TaskFailed" xml:space="preserve"><value>失敗・一部完了</value></data>
+  <data name="TaskStarted" xml:space="preserve"><value>開始日時</value></data>
+  <data name="TaskFinished" xml:space="preserve"><value>終了日時</value></data>
+  <data name="RetryAt" xml:space="preserve"><value>次回ログイン再試行</value></data>
+  <data name="ResourceServer" xml:space="preserve"><value>アセットサーバーURL</value></data>
+  <data name="BattleLogViewer" xml:space="preserve"><value>戦闘ログビューアーURL</value></data>
+  <data name="HttpUrlRequired" xml:space="preserve"><value>HTTPまたはHTTPSのURLを入力してください。</value></data>
 </root>

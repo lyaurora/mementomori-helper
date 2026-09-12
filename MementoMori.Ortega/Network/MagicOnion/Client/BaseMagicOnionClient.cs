@@ -15,7 +15,7 @@ namespace MementoMori.Ortega.Network.MagicOnion.Client
 
 		public abstract bool IsExistHubClient();
 
-		protected abstract Task ConnectHub();
+		protected abstract Task ConnectHub(CancellationToken cancellationToken = default);
 
 		protected abstract Task Authenticate();
 
@@ -40,11 +40,11 @@ namespace MementoMori.Ortega.Network.MagicOnion.Client
             return _state == HubClientState.Disconnected;
 		}
 
-		public async Task Connect()
+		public async Task Connect(CancellationToken cancellationToken = default)
 		{
 			if (this._state != HubClientState.Ready)
             {
-                await ConnectHub();
+                await ConnectHub(cancellationToken);
 				await Authenticate();
 			}
 		}

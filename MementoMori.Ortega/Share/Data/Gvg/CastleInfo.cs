@@ -6,6 +6,10 @@ namespace MementoMori.Ortega.Share.Data.Gvg
 	[MessagePackObject(false)]
 	public class CastleInfo
 	{
+        [Key(7)]
+        public long LastWinPartyKnockOutCount { get; set; }
+
+
 		[Key(2)]
 		public long AttackerGuildId { get; set; }
 

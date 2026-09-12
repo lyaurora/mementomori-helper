@@ -396,6 +396,7 @@ namespace MementoMori.Ortega.Share.Enums.Battle.Skill
 		[Description("攻撃力吸収")]
 		AttackPowerDrain = 9003,
 		[Description("防御力吸収")]
-		DefenseDrain
-	}
+		DefenseDrain,
+        Imprison = 6005,
+    }
 }

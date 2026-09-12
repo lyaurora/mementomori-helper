@@ -4,6 +4,15 @@ namespace MementoMori.Ortega.Share.MagicOnionShare.Interfaces.Receiver
 {
 	public interface IOrtegaReceiver
 	{
+        void OnInviteRefuse(OnInviteRefuseResponse response);
+        void OnReceiveBlockChatLog(OnReceiveBlockChatLogResponse response);
+        void OnReactChat(OnReactChatResponse response);
+        void OnChangeChatOption(OnChangeChatOptionResponse response);
+        void OnLocalGvgUpdateCastleMemo(OnUpdateCastleMemoResponse response);
+        void OnGlobalGvgUpdateCastleMemo(OnUpdateCastleMemoResponse response);
+        void OnNoticeGuildTowerInfo(GuildTowerInfoResponse response);
+        void OnReceiveAchieveReward(OnReceiveAchieveRewardResponse response);
+
 		void OnAuthenticateSuccess();
 
 		void OnError(ErrorCode errorCode);

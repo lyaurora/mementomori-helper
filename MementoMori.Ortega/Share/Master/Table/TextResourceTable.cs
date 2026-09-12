@@ -12,42 +12,16 @@ public class TextResourceTable : ITable
     private Dictionary<string, string> _cached = new();
     private LanguageType _languageType;
 
-    public bool Load()
-    {
-        _cached ??= new Dictionary<string, string>();
-        _cached.Clear();
-        var languageType = _languageType;
-        if (languageType == LanguageType.None) languageType = LanguageType.zhTW;
-
-        var filePath = $"./Master/{GetMasterBookName()}";
-        using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-        {
-            var textResources = Deserialize(languageType, fileStream);
-            foreach (var textResource in textResources)
-            {
-                _cached[textResource.StringKey] = textResource.Text;
-            }
-        }
-
-        return true;
-    }
+    public bool Load() => Load(File.ReadAllBytes($"./Master/{GetMasterBookName()}"));
 
     public bool Load(byte[] binaryData)
     {
-        _cached ??= new Dictionary<string, string>();
-        _cached.Clear();
-        var languageType = _languageType;
-        if (languageType == LanguageType.None) languageType = LanguageType.zhTW;
-
-        using (var memoryStream = new MemoryStream(binaryData))
-        {
-            var textResources = Deserialize(languageType, memoryStream);
-            foreach (var textResource in textResources)
-            {
-                _cached[textResource.StringKey] = textResource.Text;
-            }
-        }
-
+        var languageType = _languageType == LanguageType.None ? LanguageType.zhTW : _languageType;
+        using var stream = new MemoryStream(binaryData);
+        var resources = Deserialize(languageType, stream);
+        var next = new Dictionary<string, string>();
+        foreach (var resource in resources) next[resource.StringKey] = resource.Text;
+        Interlocked.Exchange(ref _cached, next);
         return true;
     }
 

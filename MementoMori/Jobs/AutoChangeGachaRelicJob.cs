@@ -20,7 +20,7 @@ internal partial class AutoChangeGachaRelicJob : IJob
         if (!_gameConfig.Value.AutoJob.AutoChangeGachaRelic) return;
         var userId = context.MergedJobDataMap.GetLongValue("userId");
         if (userId <= 0) return;
-        var account = _accountManager.Get(userId);
-        await account.Funcs.ExecuteScheduledJob(account.Funcs.AutoSetGachaRelic, context.CancellationToken, () => _gameConfig.Value.AutoJob.AutoChangeGachaRelic);
+        if (!_accountManager.TryGet(userId, out var account)) return;
+        await account.Funcs.ExecuteScheduledJob(account.Funcs.AutoSetGachaRelic, context.CancellationToken, () => _gameConfig.Value.AutoJob.AutoChangeGachaRelic, context.JobDetail.Key.Name);
     }
 }

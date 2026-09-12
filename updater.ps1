@@ -3,7 +3,7 @@
 $ErrorActionPreference = "Stop"
 
 # …Ë÷√GitHub≤÷ø‚–≈œ¢
-$repository = "moonheart/mementomori-helper"
+$repository = "lyaurora/mementomori-helper"
 $releaseApiUrl = "https://api.github.com/repos/$repository/releases/latest"
 $downloadUrl = "https://github.com/$repository/releases/download"
 

@@ -1,4 +1,6 @@
-﻿[ [Zh](readme.md) | [En](readme.en.md) ]
+This fork uses .NET 10 LTS and updates the relevant game protocols to 4.22.0. See the [maintenance guide](docs/maintenance.md) for builds, offline checks, updates and configuration migration.
+
+[ [Zh](readme.md) | [En](readme.en.md) ]
 
 # MementoMori Game Assistant
 
@@ -144,7 +146,7 @@ To run the program, you need to configure your account information. After that, 
 
 ### Method 2: Run with Docker
 
-See [docker-compose](expamples/docker-compose)
+See [docker-compose](examples/docker-compose)
 
 ## Automatic Tasks
 
