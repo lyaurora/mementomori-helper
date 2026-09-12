@@ -7,6 +7,9 @@ namespace MementoMori.Ortega.Share.Data.ApiInterface.Shop;
 [MessagePackObject(true)]
 public class BuyProductResponse : ApiResponseBase, IUserSyncApiResponse
 {
+        public long SavePoint { get; set; }
+
+
     public long GivenPlayerId { get; set; }
 
     public string GivenPlayerName { get; set; }

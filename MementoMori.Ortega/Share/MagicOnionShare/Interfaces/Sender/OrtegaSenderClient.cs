@@ -175,6 +175,7 @@ namespace MagicOnion.Resolvers
             _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Request.CastleDeclarationRequest>();
             _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Request.CloseDialogRequest>();
             _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Request.GetRoomListRequest>();
+            _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Request.InviteRefuseRequest>();
             _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Request.InviteRequest>();
             _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Request.JoinFriendRoomRequest>();
             _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Request.JoinRandomRoomRequest>();
@@ -186,20 +187,29 @@ namespace MagicOnion.Resolvers
             _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Request.OrderCastlePartyRequest>();
             _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Request.ReadyRequest>();
             _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Request.RefuseRequest>();
+            _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Request.ResetCastleMemoRequest>();
             _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Request.SendMessageRequest>();
+            _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Request.SetCastleMemoRequest>();
             _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Request.UpdateBattlePowerRequest>();
             _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Request.UpdateRoomConditionRequest>();
+            _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Response.GuildTowerInfoResponse>();
             _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnAddOnlyReceiverPartyResponse>();
+            _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnChangeChatOptionResponse>();
             _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnEndCastleBattleResponse>();
             _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnGetRoomListResponse>();
+            _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnInviteRefuseResponse>();
             _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnInviteResponse>();
             _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnJoinRoomResponse>();
             _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnNoticePrivateMessageResponse>();
             _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnOpenBattleDialogResponse>();
+            _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnReactChatResponse>();
+            _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnReceiveAchieveRewardResponse>();
+            _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnReceiveBlockChatLogResponse>();
             _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnReceiveGuildChatLogResponse>();
             _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnReceiveMessageResponse>();
             _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnReceiveSvSChatLogResponse>();
             _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnReceiveWorldChatLogResponse>();
+            _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnUpdateCastleMemoResponse>();
             _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnUpdateCastlePartyResponse>();
             _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnUpdateDeployCharacterResponse>();
             _ = MagicOnionResolver.Instance.GetFormatter<global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnUpdateMapResponse>();
@@ -291,6 +301,16 @@ namespace MementoMori.Ortega.Share.MagicOnionShare.Interfaces.Sender
             DuplexStreamingAsyncMethod = new global::Grpc.Core.Method<global::System.Byte[], global::System.Byte[]>(global::Grpc.Core.MethodType.DuplexStreaming, "IOrtegaSender", "Connect", marshaller, marshaller);
         }
         
+        public global::System.Threading.Tasks.Task InviteRefuseAsync(global::MementoMori.Ortega.Share.MagicOnionShare.Request.InviteRefuseRequest request)
+            => base.WriteMessageWithResponseAsync<global::MementoMori.Ortega.Share.MagicOnionShare.Request.InviteRefuseRequest, global::MessagePack.Nil>(62913616, request);
+        public global::System.Threading.Tasks.Task LocalGvgSetCastleMemo(global::MementoMori.Ortega.Share.MagicOnionShare.Request.SetCastleMemoRequest request)
+            => base.WriteMessageWithResponseAsync<global::MementoMori.Ortega.Share.MagicOnionShare.Request.SetCastleMemoRequest, global::MessagePack.Nil>(-558317100, request);
+        public global::System.Threading.Tasks.Task LocalGvgResetCastleMemo(global::MementoMori.Ortega.Share.MagicOnionShare.Request.ResetCastleMemoRequest request)
+            => base.WriteMessageWithResponseAsync<global::MementoMori.Ortega.Share.MagicOnionShare.Request.ResetCastleMemoRequest, global::MessagePack.Nil>(-1340475257, request);
+        public global::System.Threading.Tasks.Task GlobalGvgSetCastleMemo(global::MementoMori.Ortega.Share.MagicOnionShare.Request.SetCastleMemoRequest request)
+            => base.WriteMessageWithResponseAsync<global::MementoMori.Ortega.Share.MagicOnionShare.Request.SetCastleMemoRequest, global::MessagePack.Nil>(-20048802, request);
+        public global::System.Threading.Tasks.Task GlobalGvgResetCastleMemo(global::MementoMori.Ortega.Share.MagicOnionShare.Request.ResetCastleMemoRequest request)
+            => base.WriteMessageWithResponseAsync<global::MementoMori.Ortega.Share.MagicOnionShare.Request.ResetCastleMemoRequest, global::MessagePack.Nil>(-284874467, request);
         public global::System.Threading.Tasks.Task AuthenticateAsync(global::MementoMori.Ortega.Share.MagicOnionShare.Request.AuthenticateRequest request)
             => base.WriteMessageWithResponseAsync<global::MementoMori.Ortega.Share.MagicOnionShare.Request.AuthenticateRequest, global::MessagePack.Nil>(-923466704, request);
         public global::System.Threading.Tasks.Task KeepAliveAsync()
@@ -379,6 +399,16 @@ namespace MementoMori.Ortega.Share.MagicOnionShare.Interfaces.Sender
             public global::System.Threading.Tasks.Task DisposeAsync() => throw new global::System.NotSupportedException();
             public global::System.Threading.Tasks.Task WaitForDisconnect() => throw new global::System.NotSupportedException();
         
+            public global::System.Threading.Tasks.Task InviteRefuseAsync(global::MementoMori.Ortega.Share.MagicOnionShare.Request.InviteRefuseRequest request)
+                => parent.WriteMessageFireAndForgetAsync<global::MementoMori.Ortega.Share.MagicOnionShare.Request.InviteRefuseRequest, global::MessagePack.Nil>(62913616, request);
+            public global::System.Threading.Tasks.Task LocalGvgSetCastleMemo(global::MementoMori.Ortega.Share.MagicOnionShare.Request.SetCastleMemoRequest request)
+                => parent.WriteMessageFireAndForgetAsync<global::MementoMori.Ortega.Share.MagicOnionShare.Request.SetCastleMemoRequest, global::MessagePack.Nil>(-558317100, request);
+            public global::System.Threading.Tasks.Task LocalGvgResetCastleMemo(global::MementoMori.Ortega.Share.MagicOnionShare.Request.ResetCastleMemoRequest request)
+                => parent.WriteMessageFireAndForgetAsync<global::MementoMori.Ortega.Share.MagicOnionShare.Request.ResetCastleMemoRequest, global::MessagePack.Nil>(-1340475257, request);
+            public global::System.Threading.Tasks.Task GlobalGvgSetCastleMemo(global::MementoMori.Ortega.Share.MagicOnionShare.Request.SetCastleMemoRequest request)
+                => parent.WriteMessageFireAndForgetAsync<global::MementoMori.Ortega.Share.MagicOnionShare.Request.SetCastleMemoRequest, global::MessagePack.Nil>(-20048802, request);
+            public global::System.Threading.Tasks.Task GlobalGvgResetCastleMemo(global::MementoMori.Ortega.Share.MagicOnionShare.Request.ResetCastleMemoRequest request)
+                => parent.WriteMessageFireAndForgetAsync<global::MementoMori.Ortega.Share.MagicOnionShare.Request.ResetCastleMemoRequest, global::MessagePack.Nil>(-284874467, request);
             public global::System.Threading.Tasks.Task AuthenticateAsync(global::MementoMori.Ortega.Share.MagicOnionShare.Request.AuthenticateRequest request)
                 => parent.WriteMessageFireAndForgetAsync<global::MementoMori.Ortega.Share.MagicOnionShare.Request.AuthenticateRequest, global::MessagePack.Nil>(-923466704, request);
             public global::System.Threading.Tasks.Task KeepAliveAsync()
@@ -458,6 +488,54 @@ namespace MementoMori.Ortega.Share.MagicOnionShare.Interfaces.Sender
         {
             switch (methodId)
             {
+                case -1754548215: // Void OnInviteRefuse(global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnInviteRefuseResponse response)
+                    {
+                        var value = base.Deserialize<global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnInviteRefuseResponse>(data);
+                        receiver.OnInviteRefuse(value);
+                    }
+                    break;
+                case -487530362: // Void OnReceiveBlockChatLog(global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnReceiveBlockChatLogResponse response)
+                    {
+                        var value = base.Deserialize<global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnReceiveBlockChatLogResponse>(data);
+                        receiver.OnReceiveBlockChatLog(value);
+                    }
+                    break;
+                case 1656638017: // Void OnReactChat(global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnReactChatResponse response)
+                    {
+                        var value = base.Deserialize<global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnReactChatResponse>(data);
+                        receiver.OnReactChat(value);
+                    }
+                    break;
+                case 1299283: // Void OnChangeChatOption(global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnChangeChatOptionResponse response)
+                    {
+                        var value = base.Deserialize<global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnChangeChatOptionResponse>(data);
+                        receiver.OnChangeChatOption(value);
+                    }
+                    break;
+                case 187090436: // Void OnLocalGvgUpdateCastleMemo(global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnUpdateCastleMemoResponse response)
+                    {
+                        var value = base.Deserialize<global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnUpdateCastleMemoResponse>(data);
+                        receiver.OnLocalGvgUpdateCastleMemo(value);
+                    }
+                    break;
+                case 1430506408: // Void OnGlobalGvgUpdateCastleMemo(global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnUpdateCastleMemoResponse response)
+                    {
+                        var value = base.Deserialize<global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnUpdateCastleMemoResponse>(data);
+                        receiver.OnGlobalGvgUpdateCastleMemo(value);
+                    }
+                    break;
+                case -2003987624: // Void OnNoticeGuildTowerInfo(global::MementoMori.Ortega.Share.MagicOnionShare.Response.GuildTowerInfoResponse response)
+                    {
+                        var value = base.Deserialize<global::MementoMori.Ortega.Share.MagicOnionShare.Response.GuildTowerInfoResponse>(data);
+                        receiver.OnNoticeGuildTowerInfo(value);
+                    }
+                    break;
+                case -767701317: // Void OnReceiveAchieveReward(global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnReceiveAchieveRewardResponse response)
+                    {
+                        var value = base.Deserialize<global::MementoMori.Ortega.Share.MagicOnionShare.Response.OnReceiveAchieveRewardResponse>(data);
+                        receiver.OnReceiveAchieveReward(value);
+                    }
+                    break;
                 case -80358472: // Void OnAuthenticateSuccess()
                     {
                         var value = base.Deserialize<global::MessagePack.Nil>(data);
@@ -645,6 +723,21 @@ namespace MementoMori.Ortega.Share.MagicOnionShare.Interfaces.Sender
         {
             switch (methodId)
             {
+                case 62913616: // Task InviteRefuseAsync(global::MementoMori.Ortega.Share.MagicOnionShare.Request.InviteRefuseRequest request)
+                    base.SetResultForResponse<global::MessagePack.Nil>(taskCompletionSource, data);
+                    break;
+                case -558317100: // Task LocalGvgSetCastleMemo(global::MementoMori.Ortega.Share.MagicOnionShare.Request.SetCastleMemoRequest request)
+                    base.SetResultForResponse<global::MessagePack.Nil>(taskCompletionSource, data);
+                    break;
+                case -1340475257: // Task LocalGvgResetCastleMemo(global::MementoMori.Ortega.Share.MagicOnionShare.Request.ResetCastleMemoRequest request)
+                    base.SetResultForResponse<global::MessagePack.Nil>(taskCompletionSource, data);
+                    break;
+                case -20048802: // Task GlobalGvgSetCastleMemo(global::MementoMori.Ortega.Share.MagicOnionShare.Request.SetCastleMemoRequest request)
+                    base.SetResultForResponse<global::MessagePack.Nil>(taskCompletionSource, data);
+                    break;
+                case -284874467: // Task GlobalGvgResetCastleMemo(global::MementoMori.Ortega.Share.MagicOnionShare.Request.ResetCastleMemoRequest request)
+                    base.SetResultForResponse<global::MessagePack.Nil>(taskCompletionSource, data);
+                    break;
                 case -923466704: // Task AuthenticateAsync(global::MementoMori.Ortega.Share.MagicOnionShare.Request.AuthenticateRequest request)
                     base.SetResultForResponse<global::MessagePack.Nil>(taskCompletionSource, data);
                     break;

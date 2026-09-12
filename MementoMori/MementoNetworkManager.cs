@@ -11,7 +11,6 @@ using MementoMori.AddressableTools;
 using MementoMori.AddressableTools.Catalog;
 using MementoMori.Exceptions;
 using MementoMori.MagicOnion;
-using MementoMori.NetworkInterceptors;
 using MementoMori.Option;
 using MementoMori.Ortega.Network.MagicOnion.Client;
 using MementoMori.Ortega.Share.Data;
@@ -20,6 +19,7 @@ using MementoMori.Ortega.Share.Data.ApiInterface.Auth;
 using MementoMori.Ortega.Share.Data.ApiInterface.User;
 using MementoMori.Ortega.Share.Data.Auth;
 using MementoMori.Ortega.Share.Master;
+using MementoMori.Ortega.Share.Master.Data;
 using MessagePack;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Threading;
@@ -32,15 +32,16 @@ namespace MementoMori;
 public partial class MementoNetworkManager : IDisposable
 {
     private const string GameOs = "Android";
-    private static bool initialized;
 
     private static Task? _masterDataUpdateTask;
+    private static readonly object MasterUpdateLock = new();
+    private static readonly SemaphoreSlim MasterDownloadLock = new(1, 1);
+    private int _disposed;
 
 
     private static readonly AsyncSemaphore asyncSemaphore = new(1);
     private readonly IWritableOptions<AuthOption> _authOption;
     private readonly IWritableOptions<GameConfig> _gameConfig;
-    private readonly BattleLogInterceptor _battleLogInterceptor;
     private readonly ILogger<MementoNetworkManager> _logger;
 
 
@@ -69,12 +70,12 @@ public partial class MementoNetworkManager : IDisposable
 
     public MeMoriHttpClientHandler MoriHttpClientHandler { get; private set; }
 
-    private readonly NetworkInterceptorPipeline _pipeline = new();
 
     public bool DisableAutoUpdateMasterData { get; set; }
 
     public void Dispose()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
         cts.Cancel();
         cts.Dispose();
         MoriHttpClientHandler?.Dispose();
@@ -86,7 +87,6 @@ public partial class MementoNetworkManager : IDisposable
     [AutoPostConstruct]
     public void AutoPostConstruct()
     {
-        _pipeline.Use(_battleLogInterceptor);
 
         _apiAuth = new Uri(string.IsNullOrEmpty(_authOption.Value.AuthUrl) ? "https://prd1-auth.mememori-boi.com/api/" : _authOption.Value.AuthUrl);
 
@@ -98,20 +98,20 @@ public partial class MementoNetworkManager : IDisposable
         _unityHttpClient.DefaultRequestHeaders.Add("User-Agent", "UnityPlayer/2021.3.10f1 (UnityWebRequest/1.0, libcurl/7.80.0-DEV)");
         _unityHttpClient.DefaultRequestHeaders.Add("X-Unity-Version", "2021.3.10f1");
 
-        if (_masterDataUpdateTask == null)
-            _masterDataUpdateTask = Task.Run(AutoUpdateMasterData);
+        lock (MasterUpdateLock)
+            _masterDataUpdateTask ??= Task.Run(AutoUpdateMasterData);
     }
 
-    public async Task Initialize(Action<string> log = null)
+    public async Task Initialize(Action<string> log = null, CancellationToken cancellationToken = default)
     {
-        var response = await GetResponse<GetDataUriRequest, GetDataUriResponse>(new GetDataUriRequest {CountryCode = "CN"}, log);
+        var response = await GetResponse<GetDataUriRequest, GetDataUriResponse>(new GetDataUriRequest {CountryCode = "CN"}, log, cancellationToken: cancellationToken);
         AssetCatalogUriFormat = response.AssetCatalogUriFormat;
         AssetCatalogFixedUriFormat = response.AssetCatalogFixedUriFormat;
         MasterUriFormat = response.MasterUriFormat;
         NoticeBannerImageUriFormat = response.NoticeBannerImageUriFormat;
         AppAssetVersionInfo = response.AppAssetVersionInfo;
-        _authOption.Update(x => x.AppVersion = AppAssetVersionInfo.Version);
-        initialized = true;
+        if (_authOption.Value.AppVersion != AppAssetVersionInfo.Version)
+            _authOption.Update(x => x.AppVersion = AppAssetVersionInfo.Version);
         MoriHttpClientHandler.AppVersion = AppAssetVersionInfo.Version;
     }
 
@@ -125,65 +125,78 @@ public partial class MementoNetworkManager : IDisposable
                 if (!DisableAutoUpdateMasterData)
                 {
                     _logger.LogInformation("auto updating master data");
-                    if (await DownloadMasterCatalog()) LoadAllMasters();
+                    if (await DownloadMasterCatalog(cancellationToken: cts.Token)) LoadAllMasters();
                 }
             }
-            catch (Exception e) when (e is not TaskCanceledException)
+            catch (OperationCanceledException) when (cts.IsCancellationRequested) { break; }
+            catch (Exception e)
             {
                 _logger.LogError(e, "error auto update master data");
             }
         }
     }
 
-    public async Task<bool> DownloadMasterCatalog(Action<string> log = null)
+    public async Task<bool> DownloadMasterCatalog(Action<string> log = null, CancellationToken cancellationToken = default)
     {
-        log ??= Console.WriteLine;
-        log(ResourceStrings.Downloading_master_directory___);
-        await GetLatestAvailableVersion();
-        var dataUriResponse = await GetResponse<GetDataUriRequest, GetDataUriResponse>(new GetDataUriRequest {CountryCode = "CN", UserId = 0});
-
-        var url = string.Format(dataUriResponse.MasterUriFormat, MoriHttpClientHandler.OrtegaMasterVersion, "master-catalog");
-        var bytes = await _unityHttpClient.GetByteArrayAsync(url);
-        log("Retrieving master catalog...");
-        var masterBookCatalog = MessagePackSerializer.Deserialize<MasterBookCatalog>(bytes);
-        Directory.CreateDirectory("./Master");
-        var hasUpdate = false;
-        HashSet<string> allowedLangMb = ["TextResourceJaJpMB", "TextResourceZhTwMB", "TextResourceEnUsMB", "TextResourceKoKrMB"];
-        foreach (var (name, info) in masterBookCatalog.MasterBookInfoMap)
+        await MasterDownloadLock.WaitAsync(cancellationToken);
+        var staged = new List<(string Temporary, string Target)>();
+        try
         {
-            if (name.StartsWith("TextResource") && !allowedLangMb.Contains(name)) continue;
-
-            var localPath = $"./Master/{name}";
-            if (File.Exists(localPath))
+            log ??= Console.WriteLine;
+            log(ResourceStrings.Downloading_master_directory___);
+            await GetLatestAvailableVersion(cancellationToken);
+            var response = await GetResponse<GetDataUriRequest, GetDataUriResponse>(
+                new GetDataUriRequest { CountryCode = "CN", UserId = 0 }, cancellationToken: cancellationToken);
+            var version = MoriHttpClientHandler.OrtegaMasterVersion;
+            var catalogBytes = await _unityHttpClient.GetByteArrayAsync(string.Format(response.MasterUriFormat, version, "master-catalog"), cancellationToken);
+            var catalog = MessagePackSerializer.Deserialize<MasterBookCatalog>(catalogBytes);
+            Directory.CreateDirectory("Master");
+            HashSet<string> languages = ["TextResourceJaJpMB", "TextResourceZhTwMB", "TextResourceEnUsMB", "TextResourceKoKrMB"];
+            foreach (var (name, info) in catalog.MasterBookInfoMap)
             {
-                var md5 = await CalcFileMd5(localPath);
-                if (md5 == info.Hash)
-                {
-                    log($"{name} not changed, skip...");
-                    continue;
-                }
+                cancellationToken.ThrowIfCancellationRequested();
+                if (!Regex.IsMatch(name, @"\A[A-Za-z_][A-Za-z0-9_]*\z")) throw new InvalidDataException("Invalid master file name.");
+                if (name.StartsWith("TextResource") && !languages.Contains(name)) continue;
+                var path = Path.Combine("Master", name);
+                if (File.Exists(path) && string.Equals(await CalcFileMd5(path, cancellationToken), info.Hash, StringComparison.OrdinalIgnoreCase)) continue;
+                log($"Updating {name}...");
+                var bytes = await _unityHttpClient.GetByteArrayAsync(string.Format(response.MasterUriFormat, version, name), cancellationToken);
+                if (!Convert.ToHexString(MD5.HashData(bytes)).Equals(info.Hash, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidDataException($"Master hash mismatch: {name}");
+                ValidateMasterData(name, bytes);
+                var temporary = $"{path}.{Guid.NewGuid():N}.tmp";
+                staged.Add((temporary, path));
+                await File.WriteAllBytesAsync(temporary, bytes, cancellationToken);
             }
-
-            hasUpdate = true;
-
-            log($"Updating {name}...");
-            var mbUrl = string.Format(dataUriResponse.MasterUriFormat, MoriHttpClientHandler.OrtegaMasterVersion, name);
-            var fileBytes = await _unityHttpClient.GetByteArrayAsync(mbUrl);
-            var tempPath = $"{localPath}.{Guid.NewGuid():N}.tmp";
-            try
-            {
-                await File.WriteAllBytesAsync(tempPath, fileBytes);
-                File.Move(tempPath, localPath, true);
-            }
-            finally
-            {
-                if (File.Exists(tempPath)) File.Delete(tempPath);
-            }
-            log($"Finished updating {name}...");
+            // Publish only after every changed file has downloaded and validated.
+            cancellationToken.ThrowIfCancellationRequested();
+            foreach (var (temporary, target) in staged) File.Move(temporary, target, true);
+            log(ResourceStrings.Download_master_directory_completed);
+            return staged.Count > 0;
         }
+        finally
+        {
+            foreach (var (temporary, _) in staged)
+                if (File.Exists(temporary)) File.Delete(temporary);
+            MasterDownloadLock.Release();
+        }
+    }
 
-        log(ResourceStrings.Download_master_directory_completed);
-        return hasUpdate;
+    private static Array? ValidateMasterData(string name, byte[] bytes)
+    {
+        var type = typeof(CharacterMB).Assembly.GetType($"MementoMori.Ortega.Share.Master.Data.{name}");
+        return type == null ? null : (Array)MessagePackSerializer.Deserialize(type.MakeArrayType(), bytes);
+    }
+
+    public static bool HasUsableMasterData()
+    {
+        try
+        {
+            foreach (var name in new[] { "TimeServerMB", "CharacterMB", "EquipmentMB", "ItemMB", "TextResourceJaJpMB", "TextResourceZhTwMB", "TextResourceEnUsMB", "TextResourceKoKrMB" })
+                if (ValidateMasterData(name, File.ReadAllBytes(Path.Combine("Master", name))) is not { Length: > 0 }) return false;
+            return true;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or MessagePackSerializationException) { return false; }
     }
 
     public void SetCultureInfo(CultureInfo cultureInfo)
@@ -247,7 +260,7 @@ public partial class MementoNetworkManager : IDisposable
 
             var bundleUrl = string.Format(AssetCatalogFixedUriFormat, $"{GameOs}/{bundleId}");
             _logger.LogInformation($"download {bundleUrl}");
-            var bytes = await ExecWithRetry(async () => await _unityHttpClient.GetByteArrayAsync(bundleUrl, cancellationToken));
+            var bytes = await ExecWithRetry(async () => await _unityHttpClient.GetByteArrayAsync(bundleUrl, cancellationToken), cancellationToken: cancellationToken);
             var localTmpPath = Path.Combine(assetsTmpPath, bundleId);
             await File.WriteAllBytesAsync(localTmpPath, bytes, cancellationToken);
         });
@@ -255,7 +268,7 @@ public partial class MementoNetworkManager : IDisposable
         _logger.LogInformation("Download assets finished");
     }
 
-    private static async Task<T> ExecWithRetry<T>(Func<Task<T>> func, int retryCount = 10)
+    private static async Task<T> ExecWithRetry<T>(Func<Task<T>> func, int retryCount = 10, CancellationToken cancellationToken = default)
     {
         while (true)
         {
@@ -263,44 +276,31 @@ public partial class MementoNetworkManager : IDisposable
             {
                 return await func();
             }
-            catch
+            catch (Exception e) when (e is not OperationCanceledException)
             {
                 retryCount--;
                 if (retryCount <= 0) throw;
-                await Task.Delay(1000);
+                await Task.Delay(1000, cancellationToken);
             }
         }
     }
 
-    private async Task<string> CalcFileMd5(string path)
+    private static async Task<string> CalcFileMd5(string path, CancellationToken cancellationToken = default)
     {
-        byte[] retVal;
-        using (var file = new FileStream(path, FileMode.Open))
-        {
-            var md5 = MD5.Create();
-            retVal = await md5.ComputeHashAsync(file);
-            file.Close();
-        }
-
-        var sb = new StringBuilder();
-        foreach (var t in retVal)
-        {
-            sb.Append(t.ToString("x2"));
-        }
-
-        return sb.ToString();
+        await using var stream = File.OpenRead(path);
+        return Convert.ToHexStringLower(await MD5.HashDataAsync(stream, cancellationToken));
     }
 
-    public async Task<List<PlayerDataInfo>> GetPlayerDataInfoList(LoginRequest loginRequest, Action<string> log = null)
+    public async Task<List<PlayerDataInfo>> GetPlayerDataInfoList(LoginRequest loginRequest, Action<string> log = null, CancellationToken cancellationToken = default)
     {
         _lastLoginRequest = loginRequest;
-        var authLoginResp = await GetResponse<LoginRequest, LoginResponse>(loginRequest, log);
+        var authLoginResp = await GetResponse<LoginRequest, LoginResponse>(loginRequest, log, cancellationToken: cancellationToken);
         return authLoginResp.PlayerDataInfoList;
     }
 
-    public async Task Login(long worldId, Action<string> log = null)
+    public async Task Login(long worldId, Action<string> log = null, CancellationToken cancellationToken = default)
     {
-        var authLoginResp = await GetResponse<LoginRequest, LoginResponse>(_lastLoginRequest, log);
+        var authLoginResp = await GetResponse<LoginRequest, LoginResponse>(_lastLoginRequest, log, cancellationToken: cancellationToken);
         var playerDataInfo = authLoginResp.PlayerDataInfoList.First(x => x.WorldId == worldId);
 
         var timeServerId = playerDataInfo.WorldId / 1000;
@@ -308,22 +308,23 @@ public partial class MementoNetworkManager : IDisposable
         TimeManager.SetTimeServerMb(timeServerMb);
 
         // get server host
-        await SetServerHost(playerDataInfo.WorldId, log);
+        await SetServerHost(playerDataInfo.WorldId, log, cancellationToken);
 
         // do login
         var loginPlayerResp = await GetResponse<LoginPlayerRequest, LoginPlayerResponse>(new LoginPlayerRequest
         {
             PlayerId = playerDataInfo.PlayerId, Password = playerDataInfo.Password
-        }, log);
+        }, log, cancellationToken: cancellationToken);
         PlayerId = playerDataInfo.PlayerId;
         AuthTokenOfMagicOnion = loginPlayerResp.AuthTokenOfMagicOnion;
     }
 
-    public async Task SetServerHost(long worldId, Action<string> log = null)
+    public async Task SetServerHost(long worldId, Action<string> log = null, CancellationToken cancellationToken = default)
     {
-        var resp = await GetResponse<GetServerHostRequest, GetServerHostResponse>(new GetServerHostRequest {WorldId = worldId}, log);
+        var resp = await GetResponse<GetServerHostRequest, GetServerHostResponse>(new GetServerHostRequest {WorldId = worldId}, log, cancellationToken: cancellationToken);
         _apiHost = new Uri(resp.ApiHost);
-        _grpcChannel = GrpcChannel.ForAddress(new Uri($"https://{resp.MagicOnionHost}:{resp.MagicOnionPort}"));
+        var channel = GrpcChannel.ForAddress(new Uri($"https://{resp.MagicOnionHost}:{resp.MagicOnionPort}"));
+        Interlocked.Exchange(ref _grpcChannel, channel)?.Dispose();
     }
 
     public OrtegaMagicOnionClient GetOnionClient()
@@ -332,153 +333,68 @@ public partial class MementoNetworkManager : IDisposable
         return ortegaMagicOnionClient;
     }
 
-    public async Task<TResp> GetResponse<TReq, TResp>(TReq req, Action<string>? log = null, Action<UserSyncData>? userData = null, Uri? apiAuth = null, Uri? apiHost = null)
+    public async Task<TResp> GetResponse<TReq, TResp>(TReq req, Action<string>? log = null, Action<UserSyncData>? userData = null,
+        Uri? apiAuth = null, Uri? apiHost = null, CancellationToken cancellationToken = default)
         where TReq : ApiRequestBase
         where TResp : ApiResponseBase
     {
-        using var releaser = await asyncSemaphore.EnterAsync();
-        await Task.Delay(_gameConfig.Value.AutoRequestDelay);
-
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, cts.Token);
+        var token = linkedCts.Token;
+        // ponytail: serialize requests across accounts to preserve the current server request rate.
+        using var releaser = await asyncSemaphore.EnterAsync(token);
+        await Task.Delay(Math.Max(0, _gameConfig.Value.AutoRequestDelay), token);
         apiHost ??= _apiHost;
         apiAuth ??= _apiAuth;
         log ??= Console.WriteLine;
         var authAttr = typeof(TReq).GetCustomAttribute<OrtegaAuthAttribute>();
         var apiAttr = typeof(TReq).GetCustomAttribute<OrtegaApiAttribute>();
-        Uri uri;
-        if (authAttr != null)
-            uri = new Uri(apiAuth, authAttr.Uri);
-        else if (apiAttr != null)
-            uri = new Uri(apiHost ?? throw new InvalidOperationException(ResourceStrings.PleaseLogin), apiAttr.Uri);
-        else
-            throw new NotSupportedException();
+        var uri = authAttr != null ? new Uri(apiAuth, authAttr.Uri)
+            : apiAttr != null ? new Uri(apiHost ?? throw new InvalidOperationException(ResourceStrings.PleaseLogin), apiAttr.Uri)
+            : throw new NotSupportedException();
 
-        var bytes = MessagePackSerializer.Serialize(req);
-        UPDATEREDO:
         try
         {
-            using var respMsg = await _httpClient.PostAsync(uri, new ByteArrayContent(bytes) {Headers = {{"content-type", "application/json; charset=UTF-8"}}});
-            if (!respMsg.IsSuccessStatusCode) throw new InvalidOperationException(respMsg.ToString());
-
-            await using var stream = await respMsg.Content.ReadAsStreamAsync();
-            if (respMsg.Headers.TryGetValues("ortegastatuscode", out var headers2))
+            for (var attempt = 0; ; attempt++)
             {
-                var ortegastatuscode = headers2.FirstOrDefault() ?? "";
-                if (ortegastatuscode != "0")
+                token.ThrowIfCancellationRequested();
+                if (req is LoginRequest login) login.AppVersion = MoriHttpClientHandler.AppVersion;
+                if (req is CreateUserRequest create) create.AppVersion = MoriHttpClientHandler.AppVersion;
+                using var content = new ByteArrayContent(MessagePackSerializer.Serialize(req));
+                content.Headers.ContentType = new("application/json") { CharSet = "UTF-8" };
+                using var responseMessage = await _httpClient.PostAsync(uri, content, token);
+                responseMessage.EnsureSuccessStatusCode();
+                await using var stream = await responseMessage.Content.ReadAsStreamAsync(token);
+                if (responseMessage.Headers.TryGetValues("ortegastatuscode", out var headers) && headers.FirstOrDefault() != "0")
                 {
-                    var apiErrResponse = MessagePackSerializer.Deserialize<ApiErrorResponse>(stream);
-
-                    if (apiErrResponse.ErrorCode == ErrorCode.CommonRequireClientUpdate)
+                    var error = await MessagePackSerializer.DeserializeAsync<ApiErrorResponse>(stream, cancellationToken: token);
+                    if (error.ErrorCode == ErrorCode.CommonRequireClientUpdate && attempt == 0)
                     {
-                        await GetLatestAvailableVersion();
-                        goto UPDATEREDO;
+                        await GetLatestAvailableVersion(token);
+                        continue;
                     }
-
-                    if (apiErrResponse.ErrorCode == ErrorCode.InvalidRequestHeader) log(ResourceStrings.Login_expired__please_log_in_again);
-
-                    if (apiErrResponse.ErrorCode == ErrorCode.AuthLoginInvalidRequest) log(ResourceStrings.Login_failed__please_check_your_account_configuration);
-
-                    if (apiErrResponse.ErrorCode == ErrorCode.CommonNoSession) log(TextResourceTable.GetErrorCodeMessage(ErrorCode.CommonNoSession));
-
-                    var errorCodeMessage = TextResourceTable.GetErrorCodeMessage(apiErrResponse.ErrorCode);
-                    log(uri.ToString());
-                    log($"{errorCodeMessage}");
-                    log(apiErrResponse.ToJson());
-                    throw new ApiErrorException(apiErrResponse.ErrorCode);
+                    log($"{uri.AbsolutePath}: {TextResourceTable.GetErrorCodeMessage(error.ErrorCode)}");
+                    throw new ApiErrorException(error.ErrorCode);
                 }
+                var response = await MessagePackSerializer.DeserializeAsync<TResp>(stream, cancellationToken: token);
+                if (response is IUserSyncApiResponse sync) userData?.Invoke(sync.UserSyncData);
+                return response;
             }
-
-            var response = MessagePackSerializer.Deserialize<TResp>(stream);
-            // if (Debugger.IsAttached) log(response.ToJson());
-            if (response is IUserSyncApiResponse userSyncApiResponse) userData?.Invoke(userSyncApiResponse.UserSyncData);
-
-            return response;
         }
-        catch (TaskCanceledException e)
+        catch (OperationCanceledException e) when (!token.IsCancellationRequested)
         {
-            throw new Exception(ResourceStrings.Request_timed_out__check_your_network);
+            throw new TimeoutException(ResourceStrings.Request_timed_out__check_your_network, e);
         }
     }
 
-    private async Task GetLatestAvailableVersion()
+    private async Task GetLatestAvailableVersion(CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("auto get latest version...");
-
-        var httpClient = new HttpClient();
-        var html = await httpClient.GetStringAsync("https://mememori-game.com/apps/vars.js");
-        // '/apps/mementomori_2.14.1.apk'
-        var match = Regex.Match(html, @"/apps/mementomori_(?<version>\d+.\d+.\d+).apk");
-        if (match.Success && Version.TryParse(match.Groups["version"].Value.Trim(), out var version))
-        {
-            _authOption.Update(x => { x.AppVersion = version.ToString(); });
-            MoriHttpClientHandler.AppVersion = version.ToString();
-        }
-
-        var buildAddCount = 5;
-        var minorAddCount = 5;
-        var majorAddCount = 5;
-
-        var handler = new MeMoriHttpClientHandler {AppVersion = _authOption.Value.AppVersion};
-        var client = new HttpClient(handler);
-
-        while (true)
-        {
-            var path = typeof(GetDataUriRequest).GetCustomAttribute<OrtegaAuthAttribute>()!.Uri;
-            var uri = new Uri(_apiAuth, path);
-
-            var bytes = MessagePackSerializer.Serialize(new GetDataUriRequest {CountryCode = OrtegaConst.Addressable.LanguageNameDictionary[LanguageType], UserId = UserId});
-            using var respMsg = await client.PostAsync(uri, new ByteArrayContent(bytes) {Headers = {{"content-type", "application/json; charset=UTF-8"}}});
-            if (!respMsg.IsSuccessStatusCode) throw new InvalidOperationException(respMsg.ToString());
-
-            await using var stream = await respMsg.Content.ReadAsStreamAsync();
-            if (respMsg.Headers.TryGetValues("ortegastatuscode", out var headers2))
-            {
-                var ortegastatuscode = headers2.FirstOrDefault() ?? "";
-                if (ortegastatuscode != "0")
-                {
-                    var apiErrResponse = MessagePackSerializer.Deserialize<ApiErrorResponse>(stream);
-                    if (apiErrResponse.ErrorCode != ErrorCode.CommonRequireClientUpdate) throw new InvalidOperationException(TextResourceTable.GetErrorCodeMessage(apiErrResponse.ErrorCode));
-
-                    version = new Version(handler.AppVersion);
-                    if (buildAddCount > 0)
-                    {
-                        var newVersion = new Version(version.Major, version.Minor, version.Build + 1);
-                        handler.AppVersion = newVersion.ToString(3);
-                        _logger.LogInformation($"trying {handler.AppVersion}");
-                        buildAddCount--;
-                        continue;
-                    }
-
-                    if (minorAddCount > 0)
-                    {
-                        var newVersion = new Version(version.Major, version.Minor + 1, 0);
-                        handler.AppVersion = newVersion.ToString(3);
-                        _logger.LogInformation($"trying {handler.AppVersion}");
-                        minorAddCount--;
-                        buildAddCount = 5;
-                        continue;
-                    }
-
-                    if (majorAddCount > 0)
-                    {
-                        var newVersion = new Version(version.Major + 1, 0, 0);
-                        handler.AppVersion = newVersion.ToString(3);
-                        _logger.LogInformation($"trying {handler.AppVersion}");
-                        majorAddCount--;
-                        buildAddCount = 5;
-                        minorAddCount = 5;
-                        continue;
-                    }
-
-                    throw new InvalidOperationException("reached max try out");
-                }
-
-                _logger.LogInformation($"found latest version {handler.AppVersion}");
-                _authOption.Update(x => { x.AppVersion = handler.AppVersion; });
-                MoriHttpClientHandler.AppVersion = handler.AppVersion;
-                return;
-            }
-
-            throw new InvalidOperationException("no ortegastatuscode");
-        }
+        var script = await _unityHttpClient.GetStringAsync("https://mememori-game.com/apps/vars.js", cancellationToken);
+        var match = Regex.Match(script, @"/apps/mementomori_(?<version>\d+\.\d+\.\d+)\.apk");
+        if (!match.Success || !Version.TryParse(match.Groups["version"].Value, out var version))
+            throw new InvalidDataException("The official download page did not provide a valid game version.");
+        var appVersion = version.ToString(3);
+        if (_authOption.Value.AppVersion != appVersion) _authOption.Update(x => x.AppVersion = appVersion);
+        MoriHttpClientHandler.AppVersion = appVersion;
+        _logger.LogInformation("Using official game version {Version}", appVersion);
     }
 }

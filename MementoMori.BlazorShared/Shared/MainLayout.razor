@@ -1,4 +1,5 @@
-﻿@using MementoMori.Common.Localization
+﻿@inject AccountSelection AccountSelection
+@using MementoMori.Common.Localization
 @using static MementoMori.Ortega.Share.Masters
 @using System.Globalization
 @using DynamicData.Binding
@@ -23,7 +24,7 @@
             Edge="Edge.Start"
             @onclick="e => DrawerToggle()">
         </MudIconButton>
-        <MudSelect T="long" Label="@ResourceStrings.SwitchAccount" Variant="Variant.Text" Dense="true" @bind-Value="AccountManager.CurrentUserId">
+        <MudSelect T="long" Label="@ResourceStrings.SwitchAccount" Variant="Variant.Text" Dense="true" @bind-Value="AccountSelection.CurrentUserId">
             @foreach (var account in AuthOption.Value.Accounts)
             {
                 <MudSelectItem T="long" Value="account.UserId">@account.Name</MudSelectItem>

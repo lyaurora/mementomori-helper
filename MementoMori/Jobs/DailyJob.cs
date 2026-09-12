@@ -13,7 +13,7 @@ public partial class DailyJob: IJob
     {
         var userId = context.MergedJobDataMap.GetLongValue("userId");
         if (userId <= 0) return;
-        var account = _accountManager.Get(userId);
-        await account.Funcs.ExecuteScheduledJob(account.Funcs.ExecuteAllQuickAction, context.CancellationToken);
+        if (!_accountManager.TryGet(userId, out var account)) return;
+        await account.Funcs.ExecuteScheduledJob(account.Funcs.ExecuteAllQuickAction, context.CancellationToken, jobName: context.JobDetail.Key.Name);
     }
 }

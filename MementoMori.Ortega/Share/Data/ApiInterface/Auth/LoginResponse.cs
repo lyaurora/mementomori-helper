@@ -9,6 +9,9 @@ namespace MementoMori.Ortega.Share.Data.ApiInterface.Auth
     [MessagePackObject(true)]
     public class LoginResponse : ApiResponseBase, IUserSyncApiResponse
     {
+        public List<MaintenanceDebugUserInfo> MaintenanceDebugUserInfos { get; set; }
+
+
         public AccountMessageInfo AccountMessageInfo { get; set; }
 
         public List<AccountMessageInfo> AccountMessageInfos { get; set; }

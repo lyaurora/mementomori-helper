@@ -5,8 +5,7 @@ using MudBlazor.Services;
 using Quartz;
 using Microsoft.Extensions.FileProviders;
 using MudBlazor;
-using MementoMori.Apis;
-using Refit;
+using MementoMori.Jobs;
 
 namespace MementoMori.Maui
 {
@@ -39,14 +38,13 @@ namespace MementoMori.Maui
             builder.Services.ConfigureWritable<GameConfig>(builder.Configuration.GetSection("GameConfig"), "appsettings.user.json");
             builder.Services.ConfigureWritable<PlayersOption>(builder.Configuration.GetSection("PlayersOption"), "appsettings.user.json");
 
-            builder.Services.AddSingleton(sp =>
+            builder.Services.AddQuartz(q =>
             {
-                var serverUrl = sp.GetRequiredService<IWritableOptions<GameConfig>>().Value.ServerUrl;
-                if (string.IsNullOrEmpty(serverUrl)) serverUrl = "https://github.com";
-                return RestService.For<IMemeMoriServerApi>(serverUrl);
+                var key = new JobKey(nameof(AutoLoginJob));
+                q.AddJob<AutoLoginJob>(j => j.WithIdentity(key));
+                q.AddTrigger(t => t.ForJob(key).WithIdentity(nameof(AutoLoginJob))
+                    .StartNow().WithSimpleSchedule(s => s.WithIntervalInMinutes(1).RepeatForever()));
             });
-
-            builder.Services.AddQuartz();
             builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();

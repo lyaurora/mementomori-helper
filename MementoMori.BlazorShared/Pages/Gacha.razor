@@ -74,7 +74,7 @@
         try
         {
             alertMessage = Funcs.LoginOk ? string.Empty : ResourceStrings.PleaseLogin;
-            ViewModel = AccountManager.Current.Funcs;
+            ViewModel = AccountSelection.Current.Funcs;
             await GetGachaList();
         }
         catch (Exception e)

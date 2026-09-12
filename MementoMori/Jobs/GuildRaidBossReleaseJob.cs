@@ -21,7 +21,7 @@ internal partial class GuildRaidBossReleaseJob : IJob
         if (!_gameConfig.Value.AutoJob.AutoOpenGuildRaid) return;
         var userId = context.MergedJobDataMap.GetLongValue("userId");
         if (userId <= 0) return;
-        var account = _accountManager.Get(userId);
-        await account.Funcs.ExecuteScheduledJob(account.Funcs.OpenGuildRaid, context.CancellationToken, () => _gameConfig.Value.AutoJob.AutoOpenGuildRaid);
+        if (!_accountManager.TryGet(userId, out var account)) return;
+        await account.Funcs.ExecuteScheduledJob(account.Funcs.OpenGuildRaid, context.CancellationToken, () => _gameConfig.Value.AutoJob.AutoOpenGuildRaid, context.JobDetail.Key.Name);
     }
 }

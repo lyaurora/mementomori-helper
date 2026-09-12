@@ -73,7 +73,7 @@
             const iframe = document.querySelector('#log_viewer');
             iframe.contentWindow.postMessage(new File([log_content], {
                 type: 'application/json'
-            }), 'https://mentemori.icu/');
+            }), new URL(iframe.src).origin);
         }
     </script>
 

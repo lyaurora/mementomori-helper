@@ -9,6 +9,9 @@ namespace MementoMori.Ortega.Share.Data.Shop
 	[Description("Stripe商品情報")]
 	public class StripeShopProductInfo
 	{
+        public List<BulkShopProductInfo> BulkShopProductInfos { get; set; }
+
+
 		public long GivePlayerId { get; set; }
 
 		public long MbId { get; set; }

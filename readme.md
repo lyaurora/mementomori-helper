@@ -1,4 +1,4 @@
-﻿[ [Zh](readme.md) | [En](readme.en.md) ]
+[ [Zh](readme.md) | [En](readme.en.md) ]
 
 # MementoMori 游戏助手
 
@@ -8,7 +8,9 @@
 [![GitHub all releases](https://img.shields.io/github/downloads/moonheart/mementomori-helper/total)](https://github.com/moonheart/mementomori-helper/releases)
 [![Docker Pulls](https://img.shields.io/docker/pulls/moonheartmoon/mementomori-webui)](https://hub.docker.com/r/moonheartmoon/mementomori-webui/)
 
-施工中 
+本 fork 已迁移到 .NET 10 LTS，并同步游戏 4.22.0 的相关协议。构建、回归检查、版本同步和配置迁移见 [维护说明](docs/maintenance.md)。推荐使用仓库中的 Docker Compose 示例。
+
+
 
 [Telegram](https://t.me/+gTRe8AxKxIdkOTg9) [Discord](https://discord.gg/mJ3fWxrypx)
 
@@ -142,7 +144,7 @@
 
 ### 方式2 用 Docker 运行
 
-见 [docker-compose](expamples/docker-compose)
+见 [docker-compose](examples/docker-compose)
 
 ## 自动任务
 

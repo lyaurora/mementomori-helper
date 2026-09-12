@@ -62,8 +62,10 @@
             </MudCardHeader>
             <MudCardContent>
                 <MudField Label="@ResourceStrings.AutoRequestDelay" Variant="Variant.Outlined">
-                    <MudNumericField @bind-Value="AutoRequestDelay"></MudNumericField>
+                    <MudNumericField @bind-Value="AutoRequestDelay" Min="0"></MudNumericField>
                 </MudField>
+                <MudTextField T="string" @bind-Value="AssetsUrl" Label="@ResourceStrings.ResourceManager.GetString("ResourceServer")" Validation="@(new Func<string, string?>(ValidateHttpUrl))" />
+                <MudTextField T="string" @bind-Value="BattleLogViewerUrl" Label="@ResourceStrings.ResourceManager.GetString("BattleLogViewer")" Validation="@(new Func<string, string?>(ValidateHttpUrl))" />
             </MudCardContent>
         </MudCard>
     </MudItem>
@@ -86,6 +88,21 @@
     {
         get => WritableGameConfig.Value.AutoRequestDelay;
         set => WritableGameConfig.Update(x => x.AutoRequestDelay = value);
+    }
+
+    private static string? ValidateHttpUrl(string value) => Uri.TryCreate(value, UriKind.Absolute, out var uri)
+        && uri.Scheme is "http" or "https" ? null : ResourceStrings.ResourceManager.GetString("HttpUrlRequired");
+
+    private string AssetsUrl
+    {
+        get => WritableGameConfig.Value.AssetsUrl;
+        set { if (ValidateHttpUrl(value) == null) WritableGameConfig.Update(x => x.AssetsUrl = value.TrimEnd('/')); }
+    }
+
+    private string BattleLogViewerUrl
+    {
+        get => WritableGameConfig.Value.BattleLogViewerUrl;
+        set { if (ValidateHttpUrl(value) == null) WritableGameConfig.Update(x => x.BattleLogViewerUrl = value); }
     }
 
     #endregion

@@ -1,2 +1,3 @@
-docker build -t moonheartmoon/mementomori-webui:v1 -f MementoMori.WebUI/Dockerfile .
-docker push moonheartmoon/mementomori-webui:v1
+#!/usr/bin/env bash
+set -euo pipefail
+docker build -t "${1:-mementomori-webui:local}" -f MementoMori.WebUI/Dockerfile .

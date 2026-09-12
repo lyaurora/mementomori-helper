@@ -8,6 +8,8 @@ public class AuthOption
     public string AuthUrl { get; set; }
     public string DeviceToken { get; set; }
     public string AppVersion { get; set; }
+    public int? CachedAuthToken { get; set; }
+    public string? CachedAuthTokenVersion { get; set; }
     public string OSVersion { get; set; }
     public string ModelName { get; set; }
 

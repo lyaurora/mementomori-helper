@@ -9,6 +9,11 @@ namespace MementoMori.Ortega.Share.Data.Character
 	[MessagePackObject(true)]
 	public class MonologueSettingData
 	{
+        public float SongLyricsEndTime { get; set; }
+
+        public MonologueTextType MonologueTextType { get; set; }
+
+
 		[PropertyOrder(1)]
 		[Description("歌詞開始時間（秒）")]
 		public float SongLyricsStartTime { get; set; }

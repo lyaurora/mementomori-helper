@@ -21,6 +21,7 @@ namespace MementoMori.Ortega.Share.Enums
 		[Description("Guild")]
 		Guild,
 		[Description("ChangePlayerName")]
-		ChangePlayerName
-	}
+		ChangePlayerName,
+        ChatRecruitGuildMember = 9,
+    }
 }

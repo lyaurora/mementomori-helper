@@ -8,6 +8,10 @@ namespace MementoMori.Ortega.Share.Data.Chat
 	[MessagePackObject(false)]
 	public class ChatInfo : IPlayerIconInfo
 	{
+        [Key(16)]
+        public ChatRecruitGuildMemberInfo ChatRecruitGuildMemberInfo { get; set; }
+
+
 		[Key(0)]
 		public long CharacterId { get; set; }
 

@@ -6,6 +6,12 @@ namespace MementoMori.Ortega.Share.MagicOnionShare.Interfaces.Sender
 {
 	public interface IOrtegaSender : IStreamingHub<IOrtegaSender, IOrtegaReceiver>, IStreamingHubMarker, IServiceMarker
 	{
+        Task InviteRefuseAsync(InviteRefuseRequest request);
+        Task LocalGvgSetCastleMemo(SetCastleMemoRequest request);
+        Task LocalGvgResetCastleMemo(ResetCastleMemoRequest request);
+        Task GlobalGvgSetCastleMemo(SetCastleMemoRequest request);
+        Task GlobalGvgResetCastleMemo(ResetCastleMemoRequest request);
+
 		Task AuthenticateAsync(AuthenticateRequest request);
 
 		Task KeepAliveAsync();

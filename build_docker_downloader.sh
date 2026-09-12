@@ -1,2 +1,3 @@
-docker build -t moonheartmoon/mementomori-downloader:v1 -f MementoMori.AssetDownloader/Dockerfile .
-docker push moonheartmoon/mementomori-downloader:v1
+#!/usr/bin/env bash
+set -euo pipefail
+docker build -t "${1:-mementomori-downloader:local}" -f MementoMori.AssetDownloader/Dockerfile .

@@ -104,6 +104,7 @@ namespace MementoMori.Ortega.Share.Enums
 		[Description("マイニングクエスト")]
 		MiningQuest = 360,
 		[Description("フレンド")]
-		Friend = 4
-	}
+		Friend = 4,
+        WebStoreDescription = 350,
+    }
 }

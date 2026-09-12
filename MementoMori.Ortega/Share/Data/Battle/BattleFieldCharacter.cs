@@ -8,6 +8,9 @@ namespace MementoMori.Ortega.Share.Data.Battle
     [MessagePackObject(true)]
     public class BattleFieldCharacter
     {
+        public EquipmentRarityFlags ExclusiveEquipmentRarityFlags { get; set; }
+
+
         public string PlayerName { get; set; }
 
         public string CharacterGuid { get; set; }

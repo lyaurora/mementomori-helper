@@ -98,6 +98,9 @@ namespace MementoMori.Ortega.Share.Enums
 		[Description("動画再生")]
 		PlayVideo = 2701,
 		[Description("レンタルレイド")]
-		RentalRaid = 2801
-	}
+		RentalRaid = 2801,
+        WebStoreGuidance = 602,
+        WebStoreGuidanceFreeProduct = 603,
+        MiningQuest = 2901,
+    }
 }

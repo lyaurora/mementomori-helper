@@ -186,6 +186,7 @@ namespace MementoMori.Ortega.Share.Enums
 		[Description("武具固定(ギルドバトル用)")]
 		LockEquipmentGuildBattle,
 		[Description("武具固定(属性の塔用)")]
-		LockEquipmentElementTower
-	}
+		LockEquipmentElementTower,
+        EquipmentSpecifyReinforceLevel = 640,
+    }
 }

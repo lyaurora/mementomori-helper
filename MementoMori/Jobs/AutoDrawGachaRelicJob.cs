@@ -21,7 +21,7 @@ internal partial class AutoDrawGachaRelicJob : IJob
         if (!_gameConfig.Value.AutoJob.AutoDrawGachaRelic) return;
         var userId = context.MergedJobDataMap.GetLongValue("userId");
         if (userId <= 0) return;
-        var account = _accountManager.Get(userId);
-        await account.Funcs.ExecuteScheduledJob(account.Funcs.DrawGachaRelic, context.CancellationToken, () => _gameConfig.Value.AutoJob.AutoDrawGachaRelic);
+        if (!_accountManager.TryGet(userId, out var account)) return;
+        await account.Funcs.ExecuteScheduledJob(account.Funcs.DrawGachaRelic, context.CancellationToken, () => _gameConfig.Value.AutoJob.AutoDrawGachaRelic, context.JobDetail.Key.Name);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Collections.Concurrent;
 using AutoCtor;
 using Injectio.Attributes;
 using MementoMori.Jobs;
@@ -40,6 +41,12 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
     private CancellationTokenSource? _cancellationTokenSource;
     private int _logoutVersion;
     private volatile bool _loggedOut;
+    private int _disposed;
+    private string? _operationError;
+    private CancellationToken OperationCancellation => _ownsExecutionSemaphore.Value ? _cancellationTokenSource?.Token ?? default : default;
+
+    public ConcurrentDictionary<string, JobRun> JobRuns { get; } = new();
+    public record JobRun(DateTimeOffset StartedAt, DateTimeOffset? FinishedAt = null, string? Error = null, bool Cancelled = false);
 
     private PlayerDataInfo _lastPlayerDataInfo;
     public TimeManager TimeManager => NetworkManager.TimeManager;
@@ -108,6 +115,7 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
 
     public void Dispose()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
         _cancellationTokenSource?.Cancel();
         _cancellationTokenSource?.Dispose();
         _executionSemaphore.Dispose();
@@ -133,7 +141,7 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
             AdverisementId = Guid.NewGuid().ToString("D"),
             UserId = UserId
         };
-        return await NetworkManager.GetPlayerDataInfoList(reqBody, AddLog);
+        return await NetworkManager.GetPlayerDataInfoList(reqBody, AddLog, OperationCancellation);
     }
 
     public async Task<GetUserDataResponse> UserGetUserData()
@@ -153,7 +161,7 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
         {
             UserSyncData.UserItemEditorMergeUserSyncData(data);
             this.RaisePropertyChanged(nameof(UserSyncData));
-        });
+        }, cancellationToken: OperationCancellation);
     }
 
     public async Task SyncUserData()
@@ -173,20 +181,28 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
 
     public async Task ExecuteQuickAction(Func<Action<string>, CancellationToken, Task> func, CancellationToken cancellationToken = default)
     {
-        await ExecuteExclusive(async token =>
+        var nested = _ownsExecutionSemaphore.Value;
+        try
         {
-            try
+            await ExecuteExclusive(async token =>
             {
-                await func(AddLog, token);
-            }
-            catch (Exception e)
-            {
-                AddLog(e.ToString());
-            }
-        }, cancellationToken);
+                try
+                {
+                    await func(AddLog, token);
+                    token.ThrowIfCancellationRequested();
+                }
+                catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
+                catch (Exception e)
+                {
+                    _operationError = e.Message;
+                    AddLog(e.ToString());
+                }
+            }, cancellationToken);
+        }
+        catch (OperationCanceledException) when (!nested) { }
     }
 
-    public async Task ExecuteScheduledJob(Func<Task> func, CancellationToken cancellationToken, Func<bool>? canExecute = null)
+    public async Task ExecuteScheduledJob(Func<Task> func, CancellationToken cancellationToken, Func<bool>? canExecute = null, string? jobName = null)
     {
         var logoutVersion = Volatile.Read(ref _logoutVersion);
         if (_loggedOut || GameConfig.AutoJob.DisableAll || canExecute?.Invoke() == false) return;
@@ -195,10 +211,27 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
         {
             if (_loggedOut || logoutVersion != Volatile.Read(ref _logoutVersion)
                 || GameConfig.AutoJob.DisableAll || canExecute?.Invoke() == false) return;
-            await Login();
-            if (token.IsCancellationRequested || _loggedOut || !LoginOk
-                || GameConfig.AutoJob.DisableAll || canExecute?.Invoke() == false) return;
-            await func();
+            var key = jobName ?? func.Method.Name;
+            var run = new JobRun(DateTimeOffset.UtcNow);
+            JobRuns[key] = run;
+            this.RaisePropertyChanged(nameof(JobRuns));
+            try
+            {
+                await Login();
+                if (token.IsCancellationRequested || _loggedOut || !LoginOk
+                    || GameConfig.AutoJob.DisableAll || canExecute?.Invoke() == false) return;
+                await func();
+            }
+            catch (Exception e)
+            {
+                _operationError = e.Message;
+                throw;
+            }
+            finally
+            {
+                JobRuns[key] = run with { FinishedAt = DateTimeOffset.UtcNow, Error = _operationError, Cancelled = token.IsCancellationRequested || _loggedOut || GameConfig.AutoJob.DisableAll || canExecute?.Invoke() == false };
+                this.RaisePropertyChanged(nameof(JobRuns));
+            }
         }, cancellationToken);
     }
 
@@ -215,6 +248,7 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
 
     private async Task ExecuteExclusive(Func<CancellationToken, Task> func, CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(_disposed != 0, this);
         if (_ownsExecutionSemaphore.Value)
         {
             var token = _cancellationTokenSource?.Token ?? cancellationToken;
@@ -227,6 +261,7 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _ownsExecutionSemaphore.Value = true;
         _cancellationTokenSource = cts;
+        _operationError = null;
         IsQuickActionExecuting = true;
         try
         {

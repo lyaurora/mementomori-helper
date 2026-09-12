@@ -22,12 +22,12 @@ internal partial class PvpJob : IJob
 
         var userId = context.MergedJobDataMap.GetLongValue("userId");
         if (userId <= 0) return;
-        var account = _accountManager.Get(userId);
+        if (!_accountManager.TryGet(userId, out var account)) return;
         await account.Funcs.ExecuteScheduledJob(async () =>
         {
             await account.Funcs.PvpAuto();
             await account.Funcs.CompleteMissions();
             await account.Funcs.RewardMissonActivity();
-        }, context.CancellationToken, () => _gameConfig.Value.AutoJob.AutoPvp);
+        }, context.CancellationToken, () => _gameConfig.Value.AutoJob.AutoPvp, context.JobDetail.Key.Name);
     }
 }

@@ -8,6 +8,9 @@ namespace MementoMori.Ortega.Share.Data.Shop
 	[MessagePackObject(true)]
 	public class ShopProductDefault
 	{
+        public long OpenVipLevel { get; set; }
+
+
 		[Description("お得バッジ画像ID")]
 		public long BadgeImageId { get; set; }
 

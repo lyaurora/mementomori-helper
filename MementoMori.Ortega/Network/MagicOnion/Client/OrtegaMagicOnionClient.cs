@@ -15,6 +15,17 @@ namespace MementoMori.Ortega.Network.MagicOnion.Client
 {
     public class OrtegaMagicOnionClient : MagicOnionClient<IOrtegaSender, IOrtegaReceiver>, IOrtegaReceiver, IDisconnectReceiver
     {
+        void IOrtegaReceiver.OnInviteRefuse(OnInviteRefuseResponse response) => _localRaidReceiver?.OnInviteRefuse(response);
+
+        // ponytail: these notifications have no UI consumers yet; add handlers with the corresponding chat/GvG features.
+        void IOrtegaReceiver.OnReceiveBlockChatLog(OnReceiveBlockChatLogResponse response) { }
+        void IOrtegaReceiver.OnReactChat(OnReactChatResponse response) { }
+        void IOrtegaReceiver.OnChangeChatOption(OnChangeChatOptionResponse response) { }
+        void IOrtegaReceiver.OnLocalGvgUpdateCastleMemo(OnUpdateCastleMemoResponse response) { }
+        void IOrtegaReceiver.OnGlobalGvgUpdateCastleMemo(OnUpdateCastleMemoResponse response) { }
+        void IOrtegaReceiver.OnNoticeGuildTowerInfo(GuildTowerInfoResponse response) { }
+        void IOrtegaReceiver.OnReceiveAchieveReward(OnReceiveAchieveRewardResponse response) { }
+
         public ChatInfo GetLatestChatInfo(ChatType chatType)
         {
             // if (chatType <= ChatType.Guild)
@@ -231,13 +242,13 @@ namespace MementoMori.Ortega.Network.MagicOnion.Client
             return _playerId;
         }
 
-        public void SendKeepAliveAsync()
+        public Task SendKeepAliveAsync() => _state == HubClientState.Ready && _sender != null ? _sender.KeepAliveAsync() : Task.CompletedTask;
+
+        public async Task KeepAlive(CancellationToken cancellationToken)
         {
-            TryReconnect();
-            if (_state == HubClientState.Ready)
-            {
-                _sender.KeepAliveAsync();
-            }
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+            do { await SendKeepAliveAsync().WaitAsync(cancellationToken); }
+            while (await timer.WaitForNextTickAsync(cancellationToken));
         }
 
         protected override async Task Authenticate()

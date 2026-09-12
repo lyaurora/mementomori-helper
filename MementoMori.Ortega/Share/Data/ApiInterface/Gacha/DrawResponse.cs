@@ -7,6 +7,9 @@ namespace MementoMori.Ortega.Share.Data.ApiInterface.Gacha
     [MessagePackObject(true)]
     public class DrawResponse : ApiResponseBase, IUserSyncApiResponse
     {
+        public List<GachaStarsGuidanceLogInfo> GachaStarsGuidanceLogInfoList { get; set; }
+
+
         public List<GachaResultItem> BonusRewardItemList { get; set; }
 
         public List<UserItem> CharacterReleaseItemList { get; set; }

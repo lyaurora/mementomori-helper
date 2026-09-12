@@ -489,6 +489,7 @@
 		MiningQuestReinforcementMaxLevel,
 		MiningQuestReinforcementCollectionLevel,
 		MiningQuestRewardReceived,
-		MiningQuestGameStartBlocked
-	}
+		MiningQuestGameStartBlocked,
+        GuildMemberRecruitIsCoolTime = 600306,
+    }
 }

@@ -1,70 +1,96 @@
-﻿@using Quartz
+@using Quartz
 @using Quartz.Impl.Matchers
+@using System.Reactive.Linq
+@using Microsoft.Extensions.Logging
 @using MementoMori.Common.Localization
 @inherits MementoMori.BlazorShared.Models.AccountComponent
 @inject ISchedulerFactory SchedulerFactory
 
 <MudCard>
     <MudCardHeader>
-        <CardHeaderContent>
-            <MudText>@ResourceStrings.AutoJobCrons (Global)</MudText>
-        </CardHeaderContent>
+        <CardHeaderContent><MudText>@ResourceStrings.AutoJobCrons</MudText></CardHeaderContent>
+        <CardHeaderActions><MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="Refresh" Title="Refresh" /></CardHeaderActions>
     </MudCardHeader>
     <MudCardContent>
-        <MudSimpleTable Dense="true">
-            <thead>
-            <tr>
+        @if (!string.IsNullOrEmpty(Funcs.LastLoginError))
+        {
+            <MudAlert Severity="Severity.Warning">@Funcs.LastLoginError
+                @if (Funcs.NextAutoLoginAttempt > DateTimeOffset.UtcNow)
+                {
+                    <div>@ResourceStrings.ResourceManager.GetString("RetryAt"): @Funcs.NextAutoLoginAttempt.LocalDateTime.ToString("yyyy-MM-dd HH:mm:ss")</div>
+                }
+            </MudAlert>
+        }
+        <MudSimpleTable Dense="true" Style="overflow-x: auto;">
+            <thead><tr>
                 <th>@ResourceStrings.Name</th>
                 <th>@ResourceStrings.NextExecutionTime</th>
-            </tr>
-            </thead>
+                <th>@ResourceStrings.ResourceManager.GetString("LastRun")</th>
+            </tr></thead>
             <tbody>
-            @foreach (var jobInfo in JobInfos)
-            {
-                <tr>
-                    <td>@jobInfo.Desc</td>
-                    <td>@jobInfo.NextFireTime</td>
-                </tr>
-            }
+                @foreach (var job in JobInfos)
+                {
+                    var run = Funcs.JobRuns.GetValueOrDefault(job.Key);
+                    <tr>
+                        <td>@job.Description</td>
+                        <td>@job.NextFireTime</td>
+                        <td>
+                            @if (run == null) { <span>—</span> }
+                            else
+                            {
+                                <div>@(run.FinishedAt == null ? ResourceStrings.ResourceManager.GetString("TaskRunning")
+                                    : run.Cancelled ? ResourceStrings.Cancel
+                                    : run.Error == null ? ResourceStrings.Success : ResourceStrings.ResourceManager.GetString("TaskFailed"))</div>
+                                <div>@ResourceStrings.ResourceManager.GetString("TaskStarted"): @run.StartedAt.LocalDateTime.ToString("yyyy-MM-dd HH:mm:ss")</div>
+                                @if (run.FinishedAt.HasValue)
+                                {
+                                    <div>@ResourceStrings.ResourceManager.GetString("TaskFinished"): @run.FinishedAt.Value.LocalDateTime.ToString("yyyy-MM-dd HH:mm:ss")</div>
+                                }
+                                @if (run.Error != null && !run.Cancelled) { <MudText Color="Color.Error">@run.Error</MudText> }
+                            }
+                        </td>
+                    </tr>
+                }
             </tbody>
         </MudSimpleTable>
     </MudCardContent>
 </MudCard>
 
 @code {
-
-    public Task Refresh() => AccountChanged();
+    private List<JobInfo> JobInfos = new();
+    private record JobInfo(string Key, string Description, string? NextFireTime);
 
     protected override async Task AccountChanged()
     {
+        TrackAccountSubscription(Funcs.Changed.Where(change => change.PropertyName is nameof(Funcs.JobRuns) or nameof(Funcs.Logining) or nameof(Funcs.IsQuickActionExecuting))
+            .Throttle(TimeSpan.FromMilliseconds(100))
+            .Subscribe(change => { _ = RefreshSafely(); }));
+        await Refresh();
+    }
+
+    private async Task RefreshSafely()
+    {
+        try { await InvokeAsync(Refresh); }
+        catch (Exception e) { Logger.LogWarning(e, "Unable to refresh task status"); }
+    }
+
+    public async Task Refresh()
+    {
+        var funcs = Funcs;
+        var userId = AccountInfo?.UserId ?? 0;
         var scheduler = await SchedulerFactory.GetScheduler();
         var triggerKeys = await scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
-        JobInfos.Clear();
-        foreach (var triggerKey in triggerKeys)
+        var jobs = new List<JobInfo>();
+        foreach (var key in triggerKeys)
         {
-            var trigger = await scheduler.GetTrigger(triggerKey);
-            if (!trigger.JobKey.Name.StartsWith(AccountManager.CurrentUserId.ToString()))
-            {
-                continue;
-            }
-            var jobDetail = await scheduler.GetJobDetail(trigger.JobKey);
-            JobInfos.Add(new JobInfo()
-            {
-                Desc = jobDetail.Description,
-                NextFireTime = trigger.GetNextFireTimeUtc()?.LocalDateTime.ToString("yyyy-MM-dd HH:mm:ss")
-            });
+            var trigger = await scheduler.GetTrigger(key);
+            if (trigger == null || !trigger.JobKey.Name.StartsWith($"{userId}-", StringComparison.Ordinal)) continue;
+            var detail = await scheduler.GetJobDetail(trigger.JobKey);
+            if (detail != null) jobs.Add(new(trigger.JobKey.Name, detail.Description ?? trigger.JobKey.Name,
+                trigger.GetNextFireTimeUtc()?.LocalDateTime.ToString("yyyy-MM-dd HH:mm:ss")));
         }
+        if (funcs != Funcs) return;
+        JobInfos = jobs;
         await InvokeAsync(StateHasChanged);
     }
-
-
-    List<JobInfo> JobInfos = new();
-
-    private class JobInfo
-    {
-        public string Desc { get; set; }
-        public string NextFireTime { get; set; }
-    }
-
-
 }

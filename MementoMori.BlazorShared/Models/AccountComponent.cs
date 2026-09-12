@@ -20,6 +20,9 @@ public class AccountComponent : ComponentBase, IDisposable
     public AccountManager AccountManager { get; set; }
 
     [Inject]
+    public AccountSelection AccountSelection { get; set; }
+
+    [Inject]
     public ILogger<AccountComponent> Logger { get; set; }
 
     protected virtual Task AccountChanged()
@@ -29,10 +32,10 @@ public class AccountComponent : ComponentBase, IDisposable
 
     protected override async Task OnInitializedAsync()
     {
-        var initialUserId = AccountManager.CurrentUserId;
+        var initialUserId = AccountSelection.CurrentUserId;
         await ChangeAccount(initialUserId);
         if (_accountSubscriptions.IsDisposed) return;
-        _accountManagerSubscription = AccountManager.WhenAnyValue(d => d.CurrentUserId)
+        _accountManagerSubscription = AccountSelection.WhenAnyValue(d => d.CurrentUserId)
             .StartWith(initialUserId)
             .DistinctUntilChanged()
             .Skip(1)

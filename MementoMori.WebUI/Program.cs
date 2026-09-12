@@ -1,6 +1,5 @@
 using System.Globalization;
 using MementoMori;
-using MementoMori.Apis;
 using MementoMori.Common;
 using MementoMori.Jobs;
 using MementoMori.Option;
@@ -17,7 +16,6 @@ using Microsoft.Net.Http.Headers;
 using Index = MementoMori.BlazorShared.Pages.Index;
 using Ortega.Common.Manager;
 using MudBlazor;
-using Refit;
 using MagicOnion;
 using Microsoft.Extensions.FileProviders;
 
@@ -25,10 +23,24 @@ internal class Program
 {
     public static void Main(string[] args)
     {
+        if (args is ["--healthcheck", var healthUrl])
+        {
+            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+            try
+            {
+                using var response = client.GetAsync(healthUrl).GetAwaiter().GetResult();
+                Environment.ExitCode = response.IsSuccessStatusCode ? 0 : 1;
+            }
+            catch (HttpRequestException) { Environment.ExitCode = 1; }
+            catch (OperationCanceledException) { Environment.ExitCode = 1; }
+            return;
+        }
         PlatformRegistrationManager.SetRegistrationNamespaces(RegistrationNamespace.Blazor);
         var builder = WebApplication.CreateBuilder(args);
 
-        IFileProvider physicalProvider = new PhysicalFileProvider(Directory.GetCurrentDirectory());
+        var configDirectory = Path.GetFullPath(builder.Configuration["ConfigDirectory"] ?? Directory.GetCurrentDirectory());
+        Directory.CreateDirectory(configDirectory);
+        IFileProvider physicalProvider = new PhysicalFileProvider(configDirectory);
         builder.Services.AddSingleton(physicalProvider);
 
         builder.Configuration.AddJsonFile(physicalProvider, "appsettings.other.json", true, true);
@@ -63,15 +75,13 @@ internal class Program
             };
         });
 
-        builder.Services.AddSingleton(sp =>
+        builder.Services.AddQuartz(q =>
         {
-            var serverUrl = sp.GetRequiredService<IWritableOptions<GameConfig>>().Value.ServerUrl;
-            if (string.IsNullOrEmpty(serverUrl)) serverUrl = "https://github.com";
-            return RestService.For<IMemeMoriServerApi>(serverUrl);
+            var key = new JobKey(nameof(AutoLoginJob));
+            q.AddJob<AutoLoginJob>(j => j.WithIdentity(key));
+            q.AddTrigger(t => t.ForJob(key).WithIdentity(nameof(AutoLoginJob))
+                .StartNow().WithSimpleSchedule(s => s.WithIntervalInMinutes(1).RepeatForever()));
         });
-
-
-        builder.Services.AddQuartz();
         builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
         var app = builder.Build();
         Services.Setup(app.Services);
@@ -81,6 +91,7 @@ internal class Program
 
         app.UseStaticFiles();
         app.UseAntiforgery();
+        app.MapGet("/healthz", () => Results.Ok(new { status = "ready" }));
         app.MapRazorComponents<App>()
             .AddAdditionalAssemblies(typeof(Index).Assembly)
             .AddInteractiveServerRenderMode();
@@ -105,11 +116,10 @@ internal class Program
             await networkManager.Initialize();
             await networkManager.DownloadMasterCatalog();
         }
-        catch (Exception e) when (Directory.Exists("Master") && Directory.EnumerateFiles("Master").Any())
+        catch (Exception e) when (MementoNetworkManager.HasUsableMasterData())
         {
             logger.LogWarning(e, "Failed to update master data; using existing files");
         }
         networkManager.SetCultureInfo(CultureInfo.CurrentCulture);
-        await accountManager.AutoLogin();
     }
 }

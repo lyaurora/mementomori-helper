@@ -73,6 +73,7 @@ public class WritableOptions<T> : IWritableOptions<T> where T : class, new()
                     writer.Write(JsonConvert.SerializeObject(jObject, Formatting.Indented));
                 if (!OperatingSystem.IsWindows() && File.Exists(physicalPath))
                     File.SetUnixFileMode(tempPath, File.GetUnixFileMode(physicalPath));
+                if (File.Exists(physicalPath)) File.Copy(physicalPath, physicalPath + ".bak", true);
                 try
                 {
                     File.Move(tempPath, physicalPath, true);

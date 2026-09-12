@@ -2218,6 +2218,10 @@ namespace MementoMori.Ortega.Share
 		[Description("不正なトークン価格です。")]
 		GmoInvalidTokenPrice,
 		[Description("支払いが完了していません。")]
-		GmoNotPaid
-	}
+		GmoNotPaid,
+        ChatRecruitGuildMemberInterval = 272023,
+        ChatRecruitGuildMemberNotFound = 272024,
+        ChatRecruitGuildMemberExpired = 272025,
+        ChatRecruitGuildMemberGuildDisbanded = 272026,
+    }
 }

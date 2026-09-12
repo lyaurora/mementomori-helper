@@ -7,6 +7,9 @@ namespace MementoMori.Ortega.Share.Data.Battle
     [MessagePackObject(true)]
     public class BattleField
     {
+        public List<long> JoinPlayerIds { get; set; }
+
+
         public BattleType BattleType { get; set; }
 
         public List<BattleFieldCharacter> Characters { get; set; }

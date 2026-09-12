@@ -6,6 +6,9 @@ namespace MementoMori.Ortega.Share.Data.ApiInterface.Auth;
 [OrtegaAuth("auth/createWorldPlayer")]
 public class CreateWorldPlayerRequest : ApiRequestBase, IHasSteamTicketApiRequest
 {
+        public long DeepLinkId { get; set; }
+
+
     public long WorldId { get; set; }
 
     public string Comment { get; set; }

@@ -1,5 +1,6 @@
 ﻿using AutoCtor;
 using Injectio.Attributes;
+using MementoMori.Option;
 using MementoMori.Ortega.Common;
 using MementoMori.Ortega.Share.Enums;
 using MementoMori.Ortega.Share.Master.Data;
@@ -7,9 +8,11 @@ using MementoMori.Ortega.Share.Master.Data;
 namespace MementoMori.WebUI.UI
 {
     [RegisterSingleton]
+    [AutoConstruct]
     public partial class AtlasManager
     {
-        public const string AssetsUrl = "https://list.moonheart.dev/d/public/mmtm";
+        private readonly IWritableOptions<GameConfig> _config;
+        public string AssetsUrl => _config.Value.AssetsUrl.TrimEnd('/');
 
         public string GetCharacterIcon(long characterId)
         {

@@ -1,4 +1,5 @@
-﻿@using MementoMori.Ortega.Share.Data.Character
+﻿@inject AccountSelection AccountSelection
+@using MementoMori.Ortega.Share.Data.Character
 @using MementoMori.WebUI.UI
 @using MementoMori.Ortega.Share
 @using MementoMori.Ortega.Share.Enums
@@ -12,8 +13,8 @@
     var characterMb = Masters.CharacterTable.GetById(UserCharacterInfo.CharacterId);
     var element = AtlasManager.GetIconCharacterElement(characterMb.ElementType);
     var scale = Size / 128.0; // 128 默认大小
-    var isLevelLinkMember = AccountManager.Current.Funcs.UserSyncData.IsLevelLinkMember(UserCharacterInfo.Guid);
-    var level = isLevelLinkMember ? AccountManager.Current.Funcs.UserSyncData.GetLevelLinkLevel(UserCharacterInfo.CharacterId) : UserCharacterInfo.Level;
+    var isLevelLinkMember = AccountSelection.Current.Funcs.UserSyncData.IsLevelLinkMember(UserCharacterInfo.Guid);
+    var level = isLevelLinkMember ? AccountSelection.Current.Funcs.UserSyncData.GetLevelLinkLevel(UserCharacterInfo.CharacterId) : UserCharacterInfo.Level;
     var filter = UserCharacterInfo.RarityFlags switch
     {
         CharacterRarityFlags.None => "none",

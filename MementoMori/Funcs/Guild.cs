@@ -42,32 +42,22 @@ public partial class MementoMoriFuncs
             var client = NetworkManager.GetOnionClient();
             var localGvgReceiver = new MagicOnionGvgReceiver(client, log);
             client.SetupGvg(localGvgReceiver, localGvgReceiver, BattleType.GuildBattle);
-            await client.Connect();
-            while (client.GetState() != HubClientState.Ready)
-            {
-                if (token.IsCancellationRequested) return;
-                log("waiting for connection...");
-                await Task.Delay(1000);
-            }
-
-            var keepaliveCts = new CancellationTokenSource();
-            _ = Task.Run(async () =>
-            {
-                while (!keepaliveCts.IsCancellationRequested)
-                {
-                    client.SendKeepAliveAsync();
-                    await Task.Delay(5000);
-                }
-            });
-
+            using var keepaliveCts = CancellationTokenSource.CreateLinkedTokenSource(token);
+            var keepaliveTask = Task.CompletedTask;
             try
             {
+                await client.Connect(token);
+                using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
+                timeout.CancelAfter(TimeSpan.FromMinutes(1));
+                while (client.GetState() != HubClientState.Ready) await Task.Delay(1000, timeout.Token);
+                keepaliveTask = client.KeepAlive(keepaliveCts.Token);
                 client.SendGvgOpenMap(BattleType.GuildBattle, 0);
                 while (!localGvgReceiver.IsCastleInfoUpdated)
                 {
                     if (token.IsCancellationRequested) return;
                     log("waiting for castle info...");
-                    await Task.Delay(1000);
+                    await Task.Delay(1000, token);
+                            if (keepaliveTask.IsFaulted) await keepaliveTask;
                 }
 
                 var castleInfos = localGvgReceiver.CastleInfos
@@ -96,7 +86,8 @@ public partial class MementoMoriFuncs
                         {
                             if (token.IsCancellationRequested) return;
                             log("waiting for deploy dialog to open...");
-                            await Task.Delay(1000);
+                            await Task.Delay(1000, token);
+                            if (keepaliveTask.IsFaulted) await keepaliveTask;
                         }
 
                         // calculate character count
@@ -119,7 +110,8 @@ public partial class MementoMoriFuncs
                         {
                             if (token.IsCancellationRequested) return;
                             log("waiting for deploy...");
-                            await Task.Delay(1000);
+                            await Task.Delay(1000, token);
+                            if (keepaliveTask.IsFaulted) await keepaliveTask;
                         }
 
                         // log
@@ -127,15 +119,21 @@ public partial class MementoMoriFuncs
                         var characters = string.Join(", ", characterIds.Select(d => CharacterTable.GetById(d).GetCombinedName()));
                         log(string.Format(ResourceStrings.Successfully_deployed, name, characters));
                         client.SendGvgCloseCastleDialog(BattleType.GuildBattle, GvgDialogType.Deploy);
-                        await Task.Delay(1000);
+                        await Task.Delay(1000, token);
+                            if (keepaliveTask.IsFaulted) await keepaliveTask;
                     }
                 }
             }
             finally
             {
                 keepaliveCts.Cancel();
-                client.ClearGvgReceiver();
-                await client.DisposeAsync();
+                try { await keepaliveTask; }
+                catch (OperationCanceledException) when (keepaliveCts.IsCancellationRequested) { }
+                finally
+                {
+                    client.ClearGvgReceiver();
+                    await client.DisposeAsync();
+                }
             }
 
             log($"{ResourceStrings.Deploy_defense} {ResourceStrings.Finished}");

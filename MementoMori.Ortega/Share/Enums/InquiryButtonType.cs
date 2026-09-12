@@ -12,6 +12,7 @@ namespace MementoMori.Ortega.Share.Enums
 		[Description("メール")]
 		Mail,
 		[Description("アカウント削除")]
-		AccountDelete
-	}
+		AccountDelete,
+        Precaution = 4,
+    }
 }

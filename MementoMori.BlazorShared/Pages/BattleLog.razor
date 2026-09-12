@@ -7,7 +7,7 @@
 @inject IFileSaver FileSaver
 
 <MudText Typo="Typo.h6">
-    @ResourceStrings.You_can_download_the_battle_log_and_parse_it_here: <MudLink Href="https://mentemori.icu/battle_log.html" Target="_blank">Battle Log Viewer</MudLink>
+    @ResourceStrings.You_can_download_the_battle_log_and_parse_it_here: <MudLink Href="@GameConfig.Value.BattleLogViewerUrl" Target="_blank">Battle Log Viewer</MudLink>
 </MudText>
 
 <MudStack Row="true" Class="justify-start ">
@@ -42,7 +42,7 @@
     </MudSelect>
 </MudStack>
 
-<iframe id="log_viewer" src="https://mentemori.icu/battle_log.html"></iframe>
+<iframe id="log_viewer" src="@GameConfig.Value.BattleLogViewerUrl"></iframe>
 <style>
     #log_viewer {
         width: 100%;

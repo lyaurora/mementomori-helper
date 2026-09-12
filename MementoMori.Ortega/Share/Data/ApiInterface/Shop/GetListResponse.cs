@@ -7,6 +7,9 @@ namespace MementoMori.Ortega.Share.Data.ApiInterface.Shop;
 [MessagePackObject(true)]
 public class GetListResponse : ApiResponseBase
 {
+        public ShopBannerInfo ShopBannerInfo { get; set; }
+
+
     public List<ShopTabInfo> ShopTabInfoList{ get; set; }
 
     // public ShopContractPrivilegeData GetContractPrivilegeData()

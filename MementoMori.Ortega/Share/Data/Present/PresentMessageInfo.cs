@@ -6,6 +6,15 @@ namespace MementoMori.Ortega.Share.Data.Present
     [MessagePackObject(true)]
     public class PresentMessageInfo
     {
+        public string SerialCode { get; set; }
+
+        public string SerialCodeGroupId { get; set; }
+
+        public int RentalRaidRankingType { get; set; }
+
+        public int MiningQuestGradeType { get; set; }
+
+
         public long Damage { get; set; }
 
         public int GlobalGvgGroupType { get; set; }

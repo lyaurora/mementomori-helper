@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -587,4 +587,13 @@
   <data name="Confirm" xml:space="preserve">
       <value>Confirm</value>
   </data>
+  <data name="LastRun" xml:space="preserve"><value>Last result</value></data>
+  <data name="TaskRunning" xml:space="preserve"><value>Running</value></data>
+  <data name="TaskFailed" xml:space="preserve"><value>Failed / partially completed</value></data>
+  <data name="TaskStarted" xml:space="preserve"><value>Started</value></data>
+  <data name="TaskFinished" xml:space="preserve"><value>Finished</value></data>
+  <data name="RetryAt" xml:space="preserve"><value>Next login retry</value></data>
+  <data name="ResourceServer" xml:space="preserve"><value>Asset server URL</value></data>
+  <data name="BattleLogViewer" xml:space="preserve"><value>Battle log viewer URL</value></data>
+  <data name="HttpUrlRequired" xml:space="preserve"><value>Enter an HTTP or HTTPS URL.</value></data>
 </root>

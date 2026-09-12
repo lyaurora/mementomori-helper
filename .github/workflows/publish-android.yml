@@ -1,0 +1,38 @@
+name: Publish Android
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Android display version
+        required: true
+        default: 1.0.0
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet workload install maui
+      - name: Prepare signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64_ENCODED }}
+        run: |
+          if (!$env:KEYSTORE_BASE64) { throw 'Configure KEYSTORE_BASE64_ENCODED and KEYSTORE_PASSWORD before publishing Android.' }
+          [IO.File]::WriteAllBytes('MementoMori.Maui/mementomori-helper.keystore', [Convert]::FromBase64String($env:KEYSTORE_BASE64))
+      - name: Publish
+        env:
+          DISPLAY_VERSION: ${{ inputs.version }}
+          BUILD_NUMBER: ${{ github.run_number }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: dotnet publish MementoMori.Maui/MementoMori.Maui.csproj -c Release -f net10.0-android -p:AndroidSigningStorePass=env:KEYSTORE_PASSWORD -p:AndroidSigningKeyPass=env:KEYSTORE_PASSWORD -p:ApplicationDisplayVersion=$env:DISPLAY_VERSION -p:ApplicationVersion=$env:BUILD_NUMBER -o publish-android
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: publish-android/*-Signed.apk
