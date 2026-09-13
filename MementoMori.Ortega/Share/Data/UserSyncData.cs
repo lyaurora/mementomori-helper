@@ -176,6 +176,7 @@ public class UserSyncData
     public void UserItemEditorMergeUserSyncData(UserSyncData userSyncData)
     {
         if (userSyncData == null) return;
+        if (userSyncData.ChatSettingData != null) ChatSettingData = userSyncData.ChatSettingData;
         if (userSyncData.BlockPlayerIdList.IsNotNullOrEmpty()) BlockPlayerIdList = BlockPlayerIdList.Merge(userSyncData.BlockPlayerIdList);
         if (userSyncData.CanJoinTodayLegendLeague != null) CanJoinTodayLegendLeague = userSyncData.CanJoinTodayLegendLeague;
         if (userSyncData.ClearedTutorialIdList.IsNotNullOrEmpty()) ClearedTutorialIdList = ClearedTutorialIdList.Merge(userSyncData.ClearedTutorialIdList);

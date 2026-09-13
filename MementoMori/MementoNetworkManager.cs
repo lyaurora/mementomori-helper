@@ -59,6 +59,7 @@ public partial class MementoNetworkManager : IDisposable
 
     public long UserId { get; set; }
     public long PlayerId { get; set; }
+    public PlayerGuildPositionType GuildPositionType { get; internal set; }
     public CultureInfo CultureInfo { get; private set; } = new("zh-CN");
     public LanguageType LanguageType => parseLanguageType(CultureInfo);
 
@@ -317,6 +318,7 @@ public partial class MementoNetworkManager : IDisposable
         }, log, cancellationToken: cancellationToken);
         PlayerId = playerDataInfo.PlayerId;
         AuthTokenOfMagicOnion = loginPlayerResp.AuthTokenOfMagicOnion;
+        GuildPositionType = loginPlayerResp.GuildSyncData?.PlayerGuildPositionType ?? PlayerGuildPositionType.None;
     }
 
     public async Task SetServerHost(long worldId, Action<string> log = null, CancellationToken cancellationToken = default)
@@ -377,6 +379,8 @@ public partial class MementoNetworkManager : IDisposable
                 }
                 var response = await MessagePackSerializer.DeserializeAsync<TResp>(stream, cancellationToken: token);
                 if (response is IUserSyncApiResponse sync) userData?.Invoke(sync.UserSyncData);
+                if (response is IGuildSyncApiResponse guild && guild.GuildSyncData != null)
+                    GuildPositionType = guild.GuildSyncData.PlayerGuildPositionType;
                 return response;
             }
         }

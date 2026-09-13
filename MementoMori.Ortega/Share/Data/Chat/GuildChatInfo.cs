@@ -16,6 +16,7 @@ public class GuildChatInfo
     public Dictionary<ChatReactionType,int> ChatReactionCountMap { get; set; }
 
     [Key(3)]
+    // Retained wire member; the 4.22.0 client no longer uses it to gate reactions.
     public bool CanReact { get; set; }
 
     [Key(4)]

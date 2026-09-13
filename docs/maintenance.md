@@ -13,7 +13,7 @@ dotnet build MementoMori.AssetDownloader/MementoMori.AssetDownloader.csproj -c R
 docker build -f MementoMori.WebUI/Dockerfile -t mementomori-webui:local .
 ```
 
-The regression executable runs offline. It checks account selection, logout/deletion races, login preferences and backoff, request cancellation and version retry limits, wire-format compatibility, master integrity, and configuration permissions.
+The regression executable runs offline. It checks account selection, logout/deletion races, login preferences and backoff, request cancellation and version retry limits, wire-format compatibility, master integrity, configuration permissions, and chat routing/delivery/cancellation.
 
 GitHub Actions runs these checks on pushes and pull requests. Successful default-branch/tag builds publish the Docker image to `ghcr.io/<owner>/<repository>`. Release tags also publish desktop archives. Android builds use the separate manual workflow and require the signing secrets `KEYSTORE_BASE64_ENCODED` and `KEYSTORE_PASSWORD`.
 
@@ -36,7 +36,27 @@ DOTNET_ROLL_FORWARD=Major /tmp/mementomori-moc/dotnet-moc \
   -o MementoMori.Ortega/Share/MagicOnionShare/Interfaces/Sender/OrtegaSenderClient.cs
 ```
 
-The 4.22.0 sync includes shop language and banner fields, user/notice/gacha responses, battle effect details, guild recruitment, new real-time callbacks, and additional Master models. Notifications for unimplemented chat/GvG UI features are accepted without activating new behavior.
+The 4.22.0 sync includes shop language and banner fields, user/notice/gacha responses, battle effect details, guild recruitment, new real-time callbacks, and additional Master models. GvG notifications without UI consumers are accepted without activating new behavior.
+
+## Chat
+
+The left-menu **聊天** page supports World, Guild, SvS, Block and private conversations. `Block` is the cross-world guild-battle channel, not the blocked-player list. The page shares one MagicOnion connection per account, starts it only after interactive rendering, and releases it when the last chat component is disposed (browser disconnects use Blazor's circuit retention). Logout/world changes cancel pending work and clear cached messages. Transport failures retry after 5, 10, 20, 40, then 60 seconds; rejected authentication requires reconnecting or logging in again.
+
+All 16 `chat/*` HTTP request/response pairs were checked against the official 4.22.0 metadata, together with the three guild-survey list/detail/vote APIs. The UI exposes private contacts/history (including older messages), friend/guild/world player selection, guild announcements, reactions and reaction details, complete guild-survey results and voting, shared battle-log download/forwarding, and font settings. Registering an announcement requires the game's guild-rank permission and one's own ordinary guild message; deleting other players' announcements requires the stronger deletion permission. Shared playlists and guild recruitment render their attached information. Game permissions, mute restrictions and rate limits still apply.
+
+**显示设置** adjusts web text from 12–24 px and message stickers from 24–96 px in 1 px steps. Defaults are 16/48 px; preferences stay in the browser's local storage. The separate game-font control preserves the existing balloon/background settings and uses the game's four supported sizes. Chat scripts use fingerprinted asset URLs so an image update cannot leave an old module in the browser cache.
+
+The picker contains the official 39 stickers, with character stickers enabled by owned `ItemType.ChatEmoticon` items. Clicking inserts a token and shows a preview; it does not send immediately. The four reaction icons are also official game assets. Messages and announcements share the same reaction component, including live updates for pinned messages outside the recent-history window. Only existing reactions display counters; the add-reaction menu offers four types. Selecting one's current reaction sends `ChatReactionType.None` to cancel it. The retained `CanReact` wire field and `switchChatReactionOption` contract are legacy: the 4.22.0 client no longer uses that flag to gate ordinary reactions, so the UI does not expose that switch. System messages resolve nested text-resource keys, and message content is HTML-escaped.
+
+Player avatars reuse the configured asset service. Negative avatar IDs encode special icons: clear the sign bit, resolve `SpecialIconItemMB`, and use its character/icon resource path. Unknown or unavailable images fall back to a name initial. Frames and message bubbles use the WebUI theme. System notices, date separators, announcement cards and vote results have distinct, compact layouts; all panels can be collapsed again.
+
+Chat images are bundled locally. To update them from another official client, install `UnityPy` and `Pillow` in an isolated Python environment and run `python tools/update-chat-emoticons.py <game-version>`. This reads only the APK catalog and required bundles, validates CRCs, and regenerates the atlas/rectangles/reaction images. Review the resulting art and remove superseded versioned image files when committing an update.
+
+Public messages wait for the server's matching echo or error. Private messages use `chat/sendPrivateMessage`; a successful HTTP response confirms delivery even if the following history refresh fails. Sends are not automatically replayed after disconnects/timeouts. The composer retains failed drafts, uses the game's 80-character limit, and submits with the send button or Ctrl+Enter. Private notifications refresh the contact list and only read conversations currently open in a chat page. There is no periodic chat-history polling.
+
+Each conversation keeps at most 200 messages in memory. Server history and reconnect events are deduplicated by sender/timestamp, blocked players are filtered, and reaction cancellation is applied. Message text is HTML-escaped. Nothing stores chat content in files or logs. Chat shopping and playlist management remain separate game features.
+
+With Playwright available, `node tests/check-chat-ui.cjs http://127.0.0.1:5290` verifies controls using a logged-in guild account. It opens existing private conversations (marking those messages read), checks appearance persistence and sticker previews, and opens the reaction picker. It never sends chat, submits votes or changes announcements. Offline regression checks cover the send/reaction request paths and cancellation without contacting the game.
 
 ## Runtime behavior
 

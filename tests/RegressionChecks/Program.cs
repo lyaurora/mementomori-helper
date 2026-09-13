@@ -15,6 +15,15 @@ using MessagePack;
 using System.Collections.Concurrent;
 using System.Reflection;
 using MementoMori;
+using MementoMori.Chat;
+using Grpc.Net.Client;
+using MementoMori.Ortega.Network.MagicOnion.Client;
+using MementoMori.Ortega.Network.MagicOnion.Interface;
+using MementoMori.Ortega.Share.Data.ApiInterface.Chat;
+using MementoMori.Ortega.Share.MagicOnionShare.Interfaces.Receiver;
+using MementoMori.Ortega.Share.MagicOnionShare.Interfaces.Sender;
+using MementoMori.Ortega.Share.MagicOnionShare.Request;
+using MementoMori.Ortega.Share.MagicOnionShare.Response;
 using MementoMori.BlazorShared.Models;
 using MementoMori.Funcs;
 using MementoMori.Jobs;
@@ -22,6 +31,9 @@ using MementoMori.Option;
 using MementoMori.Ortega.Share.Data.Auth;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.RenderTree;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
+using MudBlazor.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
@@ -39,6 +51,7 @@ var checks = new (string Name, Func<Task> Run)[]
     ("login preferences, retry backoff and deletion", CheckAccountLifecycle),
     ("HTTP cancellation and bounded version negotiation", CheckTransport),
     ("manual quick-action batch stops after cancellation", CheckBatchCancellation),
+    ("chat routing, history, reactions, delivery confirmation and cancellation", CheckChat),
     ("4.22 wire data and master rollback", CheckProtocol),
     ("master download rejects corruption without replacing cached files", CheckMasterDownload)
 };
@@ -340,6 +353,19 @@ static Task CheckProtocol()
     var chat = MessagePackSerializer.Deserialize<ChatInfo>(MessagePackSerializer.ConvertFromJson(
         """[0,0,"message",1,"player","",0,0,0,0,[],"guild",0,null,null,0,[2,"recruit guild",3,4,0,0,"join us"]]"""));
     Require(chat.ChatRecruitGuildMemberInfo.GuildId == 2 && chat.ChatRecruitGuildMemberInfo.RecruitMessage == "join us", "Chat recruitment key 16 is not decoded");
+    var privatePlayer = MessagePackSerializer.Deserialize<PrivateChatLogPlayerInfo>(MessagePackSerializer.ConvertFromJson(
+        """[true,{"PlayerId":123,"PlayerName":"private player"},456]"""));
+    Require(privatePlayer.ExistUnread && privatePlayer.PlayerInfo.PlayerId == 123 && privatePlayer.LocalTimestamp == 456, "Private chat numeric keys drifted");
+    var privatePush = MessagePackSerializer.Deserialize<OnReceiveMessageResponse>(MessagePackSerializer.ConvertFromJson(
+        """[[0,3,"private",101,"me","",0,456,0,0,[],"",0,null,null,0,null],202]"""));
+    Require(privatePush.OtherPlayerId == 202 && privatePush.ChatInfo.PlayerId == 101, "Private push peer key 1 is missing");
+    var guildChat = MessagePackSerializer.Deserialize<OnReceiveGuildChatLogResponse>(MessagePackSerializer.ConvertFromJson(
+        """[null,[[[0,2,"guild",123,"player","",0,456,0,0,[],"guild",0,null,null,0,null],0,{},true,true]],789]"""));
+    Require(guildChat.GuildChatInfoList[0].CanReact && guildChat.GuildChatInfoList[0].IsAnnounced && guildChat.AnnounceChatEndIntervalTimestamp == 789, "Modern guild chat keys drifted");
+    var settings = new ChatSettingData { FontSize = 25, BalloonItemId = 7, BackgroundTypeDictionary = new() { [ChatType.Guild] = ChatBackgroundType.Default } };
+    var copy = settings.DeepCopy();
+    copy.BackgroundTypeDictionary.Clear();
+    Require(settings.BackgroundTypeDictionary.Count == 1 && copy.FontSize == 25 && copy.BalloonItemId == 7, "Chat settings copy loses data or aliases mutable settings");
     var effect = MessagePackSerializer.Deserialize<Effect>(MessagePackSerializer.ConvertFromJson("""{"EffectType":6005,"EffectValue":20,"EffectSubValue":123}"""));
     Require(effect.EffectType == EffectType.Imprison && effect.DeepCopy().EffectSubValue == 123, "New battle effect data is lost");
     var boss = MessagePackSerializer.Deserialize<GuildRaidBossMB>(MessagePackSerializer.ConvertFromJson("""{"Id":1,"EventTutorialId":42}"""));
@@ -352,6 +378,198 @@ static Task CheckProtocol()
     catch (MessagePackSerializationException) { }
     Require(table.Get("known") == "before", "Failed text update erased the working cache");
     return Task.CompletedTask;
+}
+
+static async Task CheckChat()
+{
+    var auth = new Writable<AuthOption>(new() { AuthUrl = "https://offline.invalid/api/", AppVersion = "4.22.0" });
+    var config = new Writable<GameConfig>(new());
+    using var network = Construct<MementoNetworkManager>(auth, config, NullLogger<MementoNetworkManager>.Instance);
+    Field(network, "_apiHost").SetValue(network, new Uri("https://offline.invalid/api/"));
+    network.PlayerId = 101;
+    using var funcs = Construct<MementoMoriFuncs>(auth, config, NullLogger<MementoMoriFuncs>.Instance);
+    funcs.NetworkManager = network;
+    funcs.LoginOk = true;
+    funcs.UserSyncData.BlockPlayerIdList = [999];
+    using var chat = funcs.Chat;
+    using var otherChat = new ChatSession(funcs);
+    using var lifetime = new CancellationTokenSource();
+    Field(chat, "_lifetime").SetValue(chat, lifetime);
+    Field(chat, "_playerId").SetValue(chat, 101L);
+    Field(chat, "_connected").SetValue(chat, true);
+    var receiverType = typeof(ChatSession).GetNestedType("Receiver", BindingFlags.NonPublic)!;
+    var receiver = (IMagicOnionChatReceiver)Activator.CreateInstance(receiverType,
+        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, [chat, lifetime.Token], null)!;
+    using var channel = GrpcChannel.ForAddress("https://offline.invalid");
+    var client = new OrtegaMagicOnionClient(channel, 101, "offline", null);
+    client.SetupChat(receiver, (IMagicOnionAuthenticateReceiver)receiver, (IMagicOnionErrorReceiver)receiver);
+    Field(chat, "_client").SetValue(chat, client);
+    var inbound = (IOrtegaReceiver)client;
+    inbound.OnAuthenticateSuccess();
+    var hub = DispatchProxy.Create<IOrtegaSender, ChatHubProxy>();
+    Field(client, "_sender").SetValue(client, hub);
+    var proxy = (ChatHubProxy)hub;
+    var sentRequests = new List<SendMessageRequest>();
+    long echoTimestamp = 10_000;
+    proxy.Send = request =>
+    {
+        sentRequests.Add(request);
+        inbound.OnReceiveMessage(new() { ChatInfo = new() { ChatType = request.ChatType, PlayerId = 101, Message = request.Message, LocalTimeStamp = echoTimestamp++ } });
+        return Task.CompletedTask;
+    };
+    try
+    {
+        ChatInfo Message(long id, long time, string text = "hello", ChatType type = ChatType.World) => new() { PlayerId = id, LocalTimeStamp = time, Message = text, ChatType = type };
+        inbound.OnReceiveWorldChatLog(new() { ChatInfoList = [Message(2, 20), Message(2, 10), Message(999, 30)] });
+        inbound.OnReceiveWorldChatLog(new() { ChatInfoList = [Message(2, 20)] });
+        inbound.OnReceiveBlockChatLog(new() { ChatInfoList = [Message(3, 30, type: ChatType.Block)] });
+        inbound.OnReceiveSvSChatLog(new() { ChatInfoList = [Message(4, 40, type: ChatType.SvS)] });
+        Require(chat.Read(ChatType.World).Messages.Select(m => m.ChatInfo.LocalTimeStamp).SequenceEqual([10L, 20L]), "History is not deduplicated/sorted or blocked players leak");
+        Require(chat.Read(ChatType.Block).Messages.Count == 1 && chat.Read(ChatType.SvS).Messages.Count == 1, "Cross-world channels are dropped");
+        Require(otherChat.Read(ChatType.World).Messages.Count == 0, "Chat state leaks across sessions");
+
+        var guildMessage = Message(5, 50, type: ChatType.Guild);
+        inbound.OnReceiveGuildChatLog(new() { GuildChatInfoList = [new() { ChatInfo = guildMessage, CanReact = true, ChatReactionCountMap = new() }] });
+        var reaction = new ReactChatInfo { ChatIdentityInfo = ChatSession.Identity(guildMessage), ChatReactionType = ChatReactionType.Heart, ReactPlayerId = 101 };
+        inbound.OnReactChat(new() { ReactChatInfoList = [reaction, reaction] });
+        var guild = chat.Read(ChatType.Guild).Messages.Single();
+        Require(guild.MyChatReactionType == ChatReactionType.Heart && guild.ChatReactionCountMap[ChatReactionType.Heart] == 1, "Duplicate reaction increments twice");
+        reaction.IsCanceled = true;
+        inbound.OnReactChat(new() { ReactChatInfoList = [reaction, reaction] });
+        guild = chat.Read(ChatType.Guild).Messages.Single();
+        Require(guild.MyChatReactionType == ChatReactionType.None && guild.ChatReactionCountMap[ChatReactionType.Heart] == 0, "Reaction cancellation is ignored or goes negative");
+        inbound.OnChangeChatOption(new() { ChangeChatOptionInfoList = [new() { ChatIdentityInfo = ChatSession.Identity(guildMessage), CanReact = false, IsAnnounced = true }] });
+        inbound.OnReceiveMessage(new() { ChatInfo = guildMessage });
+        guild = chat.Read(ChatType.Guild).Messages.Single();
+        Require(!guild.CanReact && guild.IsAnnounced, "Duplicate message resets guild chat options");
+        guild.ChatReactionCountMap[ChatReactionType.Heart] = 42;
+        Require(chat.Read(ChatType.Guild).Messages.Single().ChatReactionCountMap[ChatReactionType.Heart] == 0, "Snapshot exposes live mutable reaction counts");
+        inbound.OnRemovedFromGuild();
+        Require(chat.Read(ChatType.Guild).Messages.Count == 0, "Leaving a guild retains its chat");
+        inbound.OnReceiveWorldChatLog(new() { ChatInfoList = Enumerable.Range(1, 250).Select(i => Message(2, i)).ToList() });
+        Require(chat.Read(ChatType.World).Messages.Count == ChatSession.HistoryLimit && chat.Read(ChatType.World).Messages[0].ChatInfo.LocalTimeStamp == 51, "History grows without a bound");
+
+        await Throws<ArgumentException>(() => chat.SendAsync(ChatType.World, "   "));
+        await Throws<ArgumentException>(() => chat.SendAsync(ChatType.World, new string('x', 81)));
+        await Throws<ArgumentOutOfRangeException>(() => chat.SendAsync(ChatType.Friend, "hello"));
+        await Throws<ArgumentException>(() => chat.SendAsync(ChatType.Private, "hello", 101));
+        await Throws<InvalidOperationException>(() => chat.SendAsync(ChatType.World, "#1001#"));
+        Require(chat.IsEmoticonUnlocked(1) && !chat.IsEmoticonUnlocked(1001), "Sticker ownership rules differ from the game");
+        funcs.UserSyncData.UserItemDtoInfo = [new() { ItemType = ItemType.ChatEmoticon, ItemId = 1001, ItemCount = 1 }];
+        Require(chat.IsEmoticonUnlocked(1001), "Owned character sticker remains locked");
+        Require(!ChatSession.CanManageGuildChat(PlayerGuildPositionType.Member)
+            && ChatSession.CanDeleteGuildPost(PlayerGuildPositionType.Veteran, 101, 101)
+            && !ChatSession.CanDeleteGuildPost(PlayerGuildPositionType.Veteran, 202, 101), "Guild management permissions are wrong");
+        Require(!ChatSession.CanRegisterAnnouncement(PlayerGuildPositionType.Member, Message(101, 1, type: ChatType.Guild), 101)
+            && !ChatSession.CanRegisterAnnouncement(PlayerGuildPositionType.Veteran, Message(202, 1, type: ChatType.Guild), 101)
+            && ChatSession.CanRegisterAnnouncement(PlayerGuildPositionType.Veteran, Message(101, 1, type: ChatType.Guild), 101), "Announcement registration ignores ownership or rank");
+        Require(sentRequests.Count == 0, "Invalid input reached the hub");
+        await chat.SendAsync(ChatType.Block, " hello ");
+        Require(sentRequests.Single().ChatType == ChatType.Block && sentRequests[0].Message == "hello", "Send targets the wrong channel or loses text");
+        proxy.Send = request => { sentRequests.Add(request); inbound.OnError(ErrorCode.MagicOnionChatLimitOver); return Task.CompletedTask; };
+        await Throws<ApiErrorException>(() => chat.SendAsync(ChatType.World, "rejected"));
+        Require(sentRequests.Count == 2, "Rejected send was retried");
+
+        inbound.OnReceiveGuildChatLog(new() { GuildChatInfoList = [new() { ChatInfo = guildMessage, CanReact = false, MyChatReactionType = ChatReactionType.Heart, ChatReactionCountMap = new() { [ChatReactionType.Heart] = 1 } }] });
+        var reactionRequests = new List<ChatReactionType>();
+        var oldAnnouncement = Message(404, 1, "old announcement", ChatType.Guild);
+        ReplaceClient(network, "_httpClient", new HttpClient(new Handler(async (request, token) =>
+        {
+            if (request.RequestUri!.AbsolutePath == "/api/chat/getAnnounceChat")
+                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(MessagePackSerializer.Serialize(new GetAnnounceChatResponse
+                {
+                    GuildChatInfoList = [new() { RegisterLocalTimestamp = 2, GuildChatInfo = new() { ChatInfo = oldAnnouncement, IsAnnounced = true, MyChatReactionType = ChatReactionType.Heart, ChatReactionCountMap = new() { [ChatReactionType.Heart] = 2 } } }]
+                })) };
+            Require(request.RequestUri!.AbsolutePath == "/api/chat/reactChat", "Reaction uses the wrong route");
+            var requestData = MessagePackSerializer.Deserialize<ReactChatRequest>(await request.Content!.ReadAsByteArrayAsync(token));
+            reactionRequests.Add(requestData.ChatReactionType);
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(MessagePackSerializer.ConvertFromJson("{}")) };
+        })));
+        await chat.ReactAsync(guildMessage, ChatReactionType.Heart);
+        await chat.ReactAsync(guildMessage, ChatReactionType.Cheers);
+        Require(reactionRequests.SequenceEqual([ChatReactionType.None, ChatReactionType.Cheers]), "Cancel must send None; switching must send the newly selected type");
+        await chat.RequestAsync<GetAnnounceChatRequest, GetAnnounceChatResponse>(new());
+        Require(chat.ReadAnnouncements().Single().GuildChatInfo.ChatReactionCountMap[ChatReactionType.Heart] == 2, "Announcement reactions are missing");
+        inbound.OnReactChat(new() { ReactChatInfoList = [new() { ChatIdentityInfo = ChatSession.Identity(oldAnnouncement), ReactPlayerId = 303, ChatReactionType = ChatReactionType.Heart }] });
+        Require(chat.ReadAnnouncements().Single().GuildChatInfo.ChatReactionCountMap[ChatReactionType.Heart] == 3, "Live reactions ignore announcements outside recent history");
+        await chat.ReactAsync(oldAnnouncement, ChatReactionType.Heart);
+        Require(reactionRequests.Last() == ChatReactionType.None, "Old announcements cannot be reacted to or canceled");
+
+        var requests = new List<string>();
+        inbound.OnReceiveMessage(new() { ChatInfo = Message(101, 499, "sent on another client", ChatType.Private), OtherPlayerId = 202 });
+        Require(chat.Read(ChatType.Private, 202).Messages.Count == 1, "Outgoing private push lacks recipient routing");
+        ReplaceClient(network, "_httpClient", new HttpClient(new Handler(async (request, token) =>
+        {
+            requests.Add(request.RequestUri!.AbsolutePath);
+            var body = await request.Content!.ReadAsByteArrayAsync(token);
+            byte[] response;
+            if (request.RequestUri.AbsolutePath.EndsWith("sendPrivateMessage"))
+            {
+                var message = MessagePackSerializer.Deserialize<SendPrivateMessageRequest>(body);
+                Require(message.TargetPlayerId == 202 && message.Message == "private hello", "Private send lost target or content");
+                response = MessagePackSerializer.ConvertFromJson("{}");
+            }
+            else if (request.RequestUri.AbsolutePath.EndsWith("getPrivateMessage"))
+            {
+                var history = MessagePackSerializer.Deserialize<GetPrivateMessageRequest>(body);
+                Require(history.TargetPlayerId == 202, "Private history uses a different recipient");
+                Require(history.LatestTimestamp == 0 && history.OldestTimestamp == 0, "An early private push skips initial history");
+                response = MessagePackSerializer.Serialize(new GetPrivateMessageResponse { ChatInfoList = [Message(101, 500, "private hello", ChatType.Private), Message(202, 501, "reply", ChatType.Private)] });
+            }
+            else if (request.RequestUri.AbsolutePath.EndsWith("getPrivateChatLogPlayer"))
+                response = MessagePackSerializer.ConvertFromJson("""{"PrivateChatLogPlayerInfoList":[[false,{"PlayerId":202,"PlayerName":"recipient"},501]]}""");
+            else throw new InvalidOperationException("Unexpected chat API " + request.RequestUri.AbsolutePath);
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(response) };
+        })));
+        await chat.SendAsync(ChatType.Private, "private hello", 202);
+        Require(requests.SequenceEqual(["/api/chat/sendPrivateMessage", "/api/chat/getPrivateMessage"]), "Private send must use HTTP and refresh once");
+        Require(chat.Read(ChatType.Private, 202).Messages.Count == 3 && chat.Read(ChatType.Private, 203).Messages.Count == 0, "Private conversations are mixed");
+        await chat.RefreshContactsAsync();
+        inbound.OnNoticePrivateMessage(new() { PlayerId = 202 });
+        Require(chat.Read(ChatType.Private, 202).Contacts.Single().ExistUnread, "Private notice is ignored");
+
+        inbound.OnReceiveMessage(new() { ChatInfo = Message(8, 9_000, "<script>alert('chat')</script>") });
+        Masters.TextResourceTable.Load(MessagePackSerializer.ConvertFromJson("""[{"StringKey":"[ChatTestSystem]","Text":"Castle {0}"},{"StringKey":"[GlobalGvgCastleName21]","Text":"Rula"}]"""));
+        inbound.OnReceiveMessage(new() { ChatInfo = new() { PlayerId = 0, ChatType = ChatType.World, LocalTimeStamp = 9001, SystemChatMessageKey = "[ChatTestSystem]", SystemChatMessageArgs = ["[GlobalGvgCastleName21]"] } });
+        auth.Value.Accounts.Add(new AccountInfo { UserId = 1, Name = "offline account" });
+        var manager = Construct<AccountManager>(auth, config, NullLogger<AccountManager>.Instance);
+        var accounts = (ConcurrentDictionary<long, Account>)Field(manager, "_accounts").GetValue(manager)!;
+        accounts[1] = new Account { AccountInfo = auth.Value.Accounts[0], Funcs = funcs, NetworkManager = network };
+        var services = new ServiceCollection().AddLogging().AddSingleton(manager).AddScoped<AccountSelection>()
+            .AddSingleton(Construct<MementoMori.WebUI.UI.AtlasManager>(config))
+            .AddSingleton<IJSRuntime, ChatJsStub>().AddSingleton<NavigationManager, ChatNavigation>()
+            .AddSingleton<MementoMori.BlazorShared.IFileSaver, ChatFileSaver>();
+        services.AddMudServices();
+        Masters.SpecialIconItemTable.Load(MessagePackSerializer.ConvertFromJson("""[{"Id":2,"CharacterId":109,"IconId":1}]"""));
+        var atlas = Construct<MementoMori.WebUI.UI.AtlasManager>(config);
+        Require(atlas.GetPlayerIcon(109)!.EndsWith("CHR_000109_00_s.png")
+            && atlas.GetPlayerIcon(long.MinValue | 2)!.EndsWith("CHR_000109_00_em_001.png"), "Special player avatar ID is treated as missing or as a character ID");
+        await using (var provider = services.BuildServiceProvider())
+        await using (var renderer = new HtmlRenderer(provider, NullLoggerFactory.Instance))
+        {
+            var html = await renderer.Dispatcher.InvokeAsync(async () =>
+                (await renderer.RenderComponentAsync<MementoMori.BlazorShared.Pages.Chat>()).ToHtmlString());
+            Require(html.Contains("&lt;script&gt;") && !html.Contains("<script>"), "Chat text is interpreted as HTML");
+            Require(html.Contains("Castle Rula") && !html.Contains("[GlobalGvgCastleName21]"), "System-message parameters are not localized");
+            Require(ChatEmoticons.Ids.Count() == 39 && ChatEmoticons.TryGetId("#1007#", out var sticker) && sticker == 1007
+                && !ChatEmoticons.TryGetId("#999999#", out _), "Sticker token or atlas lookup is wrong");
+            Require((int)Field(chat, "_viewers").GetValue(chat)! == 0, "Prerender opens a live chat connection");
+        }
+
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        proxy.Send = request => { sentRequests.Add(request); started.TrySetResult(); return Task.CompletedTask; };
+        var waiting = chat.SendAsync(ChatType.World, "pending");
+        await started.Task;
+        Require(!waiting.IsCompleted, "Hub return is mistaken for delivery confirmation");
+        var queued = chat.SendAsync(ChatType.World, "must not send");
+        await chat.ResetAsync();
+        await Throws<Exception>(() => waiting);
+        await Throws<OperationCanceledException>(() => queued);
+        Require(sentRequests.Count == 3, "A queued message was sent after session cancellation");
+        inbound.OnReceiveWorldChatLog(new() { ChatInfoList = [Message(8, 88)] });
+        Require(chat.Read(ChatType.World).Messages.Count == 0 && chat.Read(ChatType.Private, 202).Contacts.Count == 0, "Late callbacks repopulate a cleared session");
+    }
+    finally { await client.DisposeAsync(); }
 }
 
 static async Task CheckMasterDownload()
@@ -415,7 +633,40 @@ static T Construct<T>(params object[] services)
     return (T)ctor.Invoke(ctor.GetParameters().Select(parameter => services.FirstOrDefault(parameter.ParameterType.IsInstanceOfType)).ToArray());
 }
 
-static FieldInfo Field(object value, string name) => value.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!;
+static FieldInfo Field(object value, string name)
+{
+    for (var type = value.GetType(); type != null; type = type.BaseType)
+        if (type.GetField(name, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly) is { } field) return field;
+    throw new MissingFieldException(value.GetType().Name, name);
+}
+
+public class ChatHubProxy : DispatchProxy
+{
+    public Func<SendMessageRequest, Task> Send { get; set; } = _ => Task.CompletedTask;
+    protected override object? Invoke(MethodInfo? method, object?[]? args) => method?.Name switch
+    {
+        "SendMessageAsync" => Send((SendMessageRequest)args![0]!),
+        "DisposeAsync" => Task.CompletedTask,
+        _ => throw new NotSupportedException(method?.Name)
+    };
+}
+
+sealed class ChatJsStub : IJSRuntime
+{
+    public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => ValueTask.FromResult(default(TValue)!);
+    public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args) => InvokeAsync<TValue>(identifier, args);
+}
+
+sealed class ChatNavigation : NavigationManager
+{
+    public ChatNavigation() => Initialize("http://offline.invalid/", "http://offline.invalid/Chat");
+    protected override void NavigateToCore(string uri, bool forceLoad) { }
+}
+
+sealed class ChatFileSaver : MementoMori.BlazorShared.IFileSaver
+{
+    public Task SaveFile(string content, string filename) => Task.CompletedTask;
+}
 
 sealed class Monitor<T>(T value) : IOptionsMonitor<T>
 {
