@@ -1,0 +1,28 @@
+@using System.Globalization
+@inject MementoMori.WebUI.UI.AtlasManager Atlas
+
+@{ var url = Atlas.GetPlayerIcon(IconId); }
+<span class="player-avatar" style="width: @(Size)px; height: @(Size)px" role="img" aria-label="@($"{Name}的头像")" data-icon-id="@IconId" data-load-failed="@_failed">
+    @if (url != null && !_failed)
+    {
+        <img src="@url" alt="" loading="lazy" decoding="async" @onerror="() => _failed = true" />
+    }
+    else
+    {
+        <span>@(string.IsNullOrWhiteSpace(Name) ? "?" : StringInfo.GetNextTextElement(Name))</span>
+    }
+</span>
+
+@code {
+    [Parameter] public long IconId { get; set; }
+    [Parameter] public string? Name { get; set; }
+    [Parameter] public int Size { get; set; } = 36;
+    private long _previousIcon;
+    private bool _failed;
+    protected override void OnParametersSet()
+    {
+        if (_previousIcon == IconId) return;
+        _previousIcon = IconId;
+        _failed = false;
+    }
+}

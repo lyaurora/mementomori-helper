@@ -1,0 +1,6 @@
+.chat-reactions { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; }
+.chat-reactions > button { border: 1px solid var(--mud-palette-lines-default); border-radius: 1rem; padding: .2rem .55rem; font-size: .8rem; cursor: pointer; color: var(--mud-palette-text-primary); }
+.chat-reactions > button:disabled { cursor: default; opacity: .65; }
+.chat-reactions > button.selected { background: var(--mud-palette-primary-hover); border-color: var(--mud-palette-primary); }
+.chat-reaction-icon { width: 32px; height: 28px; object-fit: contain; vertical-align: middle; }
+.chat-reaction-choice { width: 42px; height: 36px; object-fit: contain; vertical-align: middle; margin-right: .5rem; }

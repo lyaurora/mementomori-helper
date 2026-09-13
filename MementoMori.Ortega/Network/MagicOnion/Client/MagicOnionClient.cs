@@ -21,6 +21,8 @@ namespace MementoMori.Ortega.Network.MagicOnion.Client
 
         private CancellationTokenSource _connectionCancellation;
 
+        public Task WaitForDisconnectAsync() => _sender?.WaitForDisconnect() ?? Task.CompletedTask;
+
         public override async Task DisposeAsync()
         {
             _connectionCancellation?.Cancel();

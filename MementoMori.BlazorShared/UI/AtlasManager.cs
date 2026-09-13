@@ -19,6 +19,15 @@ namespace MementoMori.WebUI.UI
             return $"{AssetsUrl}/AddressableConvertAssets/CharacterIcon/CHR_{characterId:000000}/CHR_{characterId:000000}_00_s.png";
         }
 
+        public string? GetPlayerIcon(long iconId)
+        {
+            if (iconId == 0) return null;
+            if (iconId > 0) return GetCharacterIcon(iconId);
+            // PlayerIconUtil uses the sign bit to distinguish SpecialIconItemMB IDs.
+            var special = MementoMori.Ortega.Share.Masters.SpecialIconItemTable.GetById(iconId & long.MaxValue);
+            return special == null ? null : $"{AssetsUrl}/AddressableConvertAssets/CharacterIcon/CHR_{special.CharacterId:000000}/CHR_{special.CharacterId:000000}_00_em_{special.IconId:000}.png";
+        }
+
         public string GetCharacterFrame(CharacterRarityFlags characterRarityFlags)
         {
             if (characterRarityFlags > CharacterRarityFlags.LR)

@@ -19,12 +19,14 @@ public partial class MementoMoriFuncs
         _cancellationTokenSource?.Token.ThrowIfCancellationRequested();
         _lastPlayerDataInfo = playerDataInfo;
         LoginOk = false;
+        if (_chat != null) await _chat.ResetAsync();
         await NetworkManager.Login(playerDataInfo.WorldId, AddLog, OperationCancellation);
         _cancellationTokenSource?.Token.ThrowIfCancellationRequested();
         await UserGetUserData();
         _cancellationTokenSource?.Token.ThrowIfCancellationRequested();
         LoginOk = true;
         await _timeZoneAwareJobRegister.RegisterJobs(UserId);
+        _chat?.Resume();
     }
 
     public async Task AutoLogin(bool manual = false, CancellationToken cancellationToken = default)
@@ -52,6 +54,7 @@ public partial class MementoMoriFuncs
             catch (Exception e)
             {
                 LoginOk = false;
+                if (_chat != null) await _chat.ResetAsync();
                 LastLoginError = e.Message;
                 AddLog(e.ToString());
             }
@@ -76,6 +79,7 @@ public partial class MementoMoriFuncs
         {
             _loggedOut = true;
             LoginOk = false;
+            if (_chat != null) await _chat.ResetAsync();
             LastLoginError = null;
             NextAutoLoginAttempt = default;
             _autoLoginFailures = 0;
@@ -113,11 +117,13 @@ public partial class MementoMoriFuncs
         catch (OperationCanceledException) when (OperationCancellation.IsCancellationRequested)
         {
             LoginOk = false;
+            if (_chat != null) await _chat.ResetAsync();
             throw;
         }
         catch (Exception e)
         {
             LoginOk = false;
+            if (_chat != null) await _chat.ResetAsync();
             LastLoginError = e.Message;
             _operationError = e.Message;
             AddLog(e.ToString());

@@ -4,6 +4,12 @@ namespace MementoMori.Ortega.Network.MagicOnion.Interface
 {
 	public interface IMagicOnionChatReceiver
 	{
+        void OnReceiveBlockChatLog(OnReceiveBlockChatLogResponse response);
+
+        void OnReactChat(OnReactChatResponse response);
+
+        void OnChangeChatOption(OnChangeChatOptionResponse response);
+
 		void OnNoticePrivateMessage(OnNoticePrivateMessageResponse response);
 
 		void OnRemovedFromGuild();

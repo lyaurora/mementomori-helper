@@ -1,0 +1,43 @@
+@using MementoMori.Ortega.Share.Data.Chat
+@using MementoMori.Ortega.Share.Enums
+
+<div class="chat-reactions">
+    @foreach (var reaction in Reactions)
+    {
+        var count = Entry.ChatReactionCountMap?.GetValueOrDefault(reaction) ?? 0;
+        if (count <= 0) continue;
+        <button type="button" class="@(Entry.MyChatReactionType == reaction ? "selected" : "")"
+                aria-label="@($"{Name(reaction)}，{count} 人回应")" aria-pressed="@(Entry.MyChatReactionType == reaction ? "true" : "false")"
+                disabled="@Disabled" @onclick="() => OnReact.InvokeAsync(reaction)">
+            <img class="chat-reaction-icon" src="@ChatEmoticons.ReactionUrl(reaction)" alt="@Name(reaction)" /> @count
+        </button>
+    }
+    <MudMenu Disabled="Disabled">
+        <ActivatorContent><MudIconButton Icon="@Icons.Material.Filled.AddReaction" Size="Size.Small" aria-label="添加回应" title="添加回应" Disabled="Disabled" /></ActivatorContent>
+        <ChildContent>
+            @foreach (var reaction in Reactions)
+            {
+                <MudMenuItem OnClick="() => OnReact.InvokeAsync(reaction)">
+                    <img class="chat-reaction-choice" src="@ChatEmoticons.ReactionUrl(reaction)" alt="" />
+                    @Name(reaction)@(Entry.MyChatReactionType == reaction ? "（再次选择取消）" : "")
+                </MudMenuItem>
+            }
+        </ChildContent>
+    </MudMenu>
+    @if (Entry.ChatReactionCountMap?.Values.Any(count => count > 0) == true)
+    {
+        <MudIconButton Icon="@Icons.Material.Filled.PeopleOutline" Size="Size.Small" aria-label="回应详情" title="回应详情" OnClick="() => OnDetails.InvokeAsync()" Disabled="Disabled" />
+    }
+</div>
+
+@code {
+    private static readonly ChatReactionType[] Reactions = [ChatReactionType.Wink, ChatReactionType.Cheers, ChatReactionType.Heart, ChatReactionType.Sad];
+    [Parameter, EditorRequired] public GuildChatInfo Entry { get; set; } = null!;
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public EventCallback<ChatReactionType> OnReact { get; set; }
+    [Parameter] public EventCallback OnDetails { get; set; }
+    private static string Name(ChatReactionType type) => type switch
+    {
+        ChatReactionType.Wink => "眨眼", ChatReactionType.Cheers => "干杯", ChatReactionType.Heart => "爱心", ChatReactionType.Sad => "难过", _ => "回应"
+    };
+}

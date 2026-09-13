@@ -1,0 +1,16 @@
+@foreach (var part in ChatEmoticons.Split(Text))
+{
+    @if (ChatEmoticons.TryGetId(part, out var id))
+    {
+        <span class="chat-sticker" style="@ChatEmoticons.Style(id, StickerSize)" role="img" aria-label="@($"贴图 {id}")" title="@($"贴图 {id}")"></span>
+    }
+    else
+    {
+        @part
+    }
+}
+
+@code {
+    [Parameter] public string? Text { get; set; }
+    [Parameter] public int StickerSize { get; set; } = 48;
+}

@@ -2,7 +2,6 @@
 using MementoMori.Ortega.Common.Enums;
 using MementoMori.Ortega.Network.MagicOnion.Interface;
 using MementoMori.Ortega.Share;
-using MementoMori.Ortega.Share.Data.Chat;
 using MementoMori.Ortega.Share.Data.LocalRaid;
 using MementoMori.Ortega.Share.Enums;
 using MementoMori.Ortega.Share.Extensions;
@@ -17,175 +16,34 @@ namespace MementoMori.Ortega.Network.MagicOnion.Client
     {
         void IOrtegaReceiver.OnInviteRefuse(OnInviteRefuseResponse response) => _localRaidReceiver?.OnInviteRefuse(response);
 
-        // ponytail: these notifications have no UI consumers yet; add handlers with the corresponding chat/GvG features.
-        void IOrtegaReceiver.OnReceiveBlockChatLog(OnReceiveBlockChatLogResponse response) { }
-        void IOrtegaReceiver.OnReactChat(OnReactChatResponse response) { }
-        void IOrtegaReceiver.OnChangeChatOption(OnChangeChatOptionResponse response) { }
+        void IOrtegaReceiver.OnReceiveBlockChatLog(OnReceiveBlockChatLogResponse response) => _chatReceiver?.OnReceiveBlockChatLog(response);
+        void IOrtegaReceiver.OnReactChat(OnReactChatResponse response) => _chatReceiver?.OnReactChat(response);
+        void IOrtegaReceiver.OnChangeChatOption(OnChangeChatOptionResponse response) => _chatReceiver?.OnChangeChatOption(response);
+        // ponytail: add consumers for these notifications with their corresponding GvG features.
         void IOrtegaReceiver.OnLocalGvgUpdateCastleMemo(OnUpdateCastleMemoResponse response) { }
         void IOrtegaReceiver.OnGlobalGvgUpdateCastleMemo(OnUpdateCastleMemoResponse response) { }
         void IOrtegaReceiver.OnNoticeGuildTowerInfo(GuildTowerInfoResponse response) { }
         void IOrtegaReceiver.OnReceiveAchieveReward(OnReceiveAchieveRewardResponse response) { }
 
-        public ChatInfo GetLatestChatInfo(ChatType chatType)
+        public Task SendChatMessageAsync(ChatType chatType, string message)
         {
-            // if (chatType <= ChatType.Guild)
-            // {
-            // 	Dictionary<ChatType, List<ChatInfo>> chatInfoList = this._chatInfoList;
-            // 	List<ChatInfo> list;
-            // 	List<ChatInfo> removedBlockPlayerChat = ChatUtil.GetRemovedBlockPlayerChat(list);
-            // 	if (!removedBlockPlayerChat.IsNullOrEmpty<ChatInfo>())
-            // 	{
-            // 		int size = removedBlockPlayerChat._size;
-            // 		return removedBlockPlayerChat[size];
-            // 	}
-            // }
-            // throw new NullReferenceException();
-            throw new NotImplementedException();
+            if (_state != HubClientState.Ready || _sender == null)
+                throw new InvalidOperationException("Chat is not connected.");
+            return _sender.SendMessageAsync(new SendMessageRequest { ChatType = chatType, Message = message });
         }
 
-        public List<ChatInfo> GetChatInfos(ChatType chatType)
-        {
-            // if (chatType > ChatType.Guild)
-            // {
-            // }
-            // Dictionary<ChatType, List<ChatInfo>> chatInfoList = this._chatInfoList;
-            // List<ChatInfo> list;
-            // return ChatUtil.GetRemovedBlockPlayerChat(list);
-            throw new NotImplementedException();
-        }
-
-        public List<long> GetAllWorldPlayerIds()
-        {
-            // List<long> list = new List();
-            // List<ChatInfo> removedBlockPlayerChat = ChatUtil.GetRemovedBlockPlayerChat(this._chatInfoList[(uint)1]);
-            // int num = 0;
-            // if (removedBlockPlayerChat[num].<SystemChatType>k__BackingField == SystemChatType.None)
-            // {
-            // 	long <PlayerId>k__BackingField = removedBlockPlayerChat[num].<PlayerId>k__BackingField;
-            // 	if (!list.Contains(<PlayerId>k__BackingField))
-            // 	{
-            // 	}
-            // }
-            // num++;
-            // return list;
-            throw new NotImplementedException();
-        }
-
-        public void ClearGuildChat()
-        {
-            // throw new AnalysisFailedException("CPP2IL failed to recover any usable IL for this method.");
-        }
-
-        public void ClearSvsChat()
-        {
-            // throw new AnalysisFailedException("CPP2IL failed to recover any usable IL for this method.");
-        }
-
-        public void ClearWorldChat()
-        {
-            // throw new AnalysisFailedException("CPP2IL failed to recover any usable IL for this method.");
-        }
-
-        public void SendChatMessageAsync(ChatType chatType, string message)
-        {
-            // base.TryReconnect();
-            // int num = 0;
-            // string text = string.Format("SendChatMessageAsync : {0} : {1}", "SendChatMessageAsync : {0} : {1}", message);
-            // SendMessageRequest sendMessageRequest = new SendMessageRequest();
-            // sendMessageRequest.<ChatType>k__BackingField = chatType;
-            // sendMessageRequest.<Message>k__BackingField = message;
-            // int num2 = 0;
-            // if (num2 < num)
-            // {
-            // 	num2 += num2;
-            // 	num2++;
-            // }
-        }
-
-        public void SendChatJoinGuildAsync()
-        {
-            // base.TryReconnect();
-        }
-
-        void IOrtegaReceiver.OnNoticePrivateMessage(OnNoticePrivateMessageResponse response)
-        {
-            // UserDataManager instance = SingletonMonoBehaviour.Instance;
-            // long <PlayerId>k__BackingField = response.<PlayerId>k__BackingField;
-            // bool flag = instance.IsBlockedPlayer(<PlayerId>k__BackingField);
-            // long <PlayerId>k__BackingField2 = response.<PlayerId>k__BackingField;
-            // if (!flag)
-            // {
-            // 	string text = string.Format("OnNoticePrivateMessage : PlayerId -> {0}", flag);
-            // 	if (this._chatReceiver != 0)
-            // 	{
-            // 		int num = 0;
-            // 		uint num2;
-            // 		if (num < (int)num2)
-            // 		{
-            // 			num += num;
-            // 			num++;
-            // 		}
-            // 	}
-            // 	return;
-            // }
-            // string text2 = string.Format("OnNoticePrivateMessage Blocked : PlayerId -> {0}", flag);
-        }
-
-        void IOrtegaReceiver.OnRemovedFromGuild()
-        {
-            // if (this._chatReceiver != 0)
-            // {
-            // }
-        }
-
-        void IOrtegaReceiver.OnReceiveGuildChatLog(OnReceiveGuildChatLogResponse response)
-        {
-            // throw new AnalysisFailedException("CPP2IL failed to recover any usable IL for this method.");
-        }
-
-        void IOrtegaReceiver.OnReceiveSvSChatLog(OnReceiveSvSChatLogResponse response)
-        {
-            // throw new AnalysisFailedException("CPP2IL failed to recover any usable IL for this method.");
-        }
-
-        void IOrtegaReceiver.OnReceiveWorldChatLog(OnReceiveWorldChatLogResponse response)
-        {
-            // throw new AnalysisFailedException("CPP2IL failed to recover any usable IL for this method.");
-        }
-
-        void IOrtegaReceiver.OnReceiveMessage(OnReceiveMessageResponse response)
-        {
-            // ChatInfo <ChatInfo>k__BackingField = response.<ChatInfo>k__BackingField;
-            // ChatType <ChatType>k__BackingField = <ChatInfo>k__BackingField.<ChatType>k__BackingField;
-            // long <PlayerId>k__BackingField = <ChatInfo>k__BackingField.<PlayerId>k__BackingField;
-            // string <Message>k__BackingField = <ChatInfo>k__BackingField.<Message>k__BackingField;
-            // int num = 0;
-            // string text = string.Format("OnReceiveMessage -> {0} : {1} : {2}", <ChatType>k__BackingField, <ChatType>k__BackingField, <Message>k__BackingField);
-            // if (<ChatInfo>k__BackingField.<ChatType>k__BackingField <= ChatType.Guild)
-            // {
-            // 	Dictionary<ChatType, List<ChatInfo>> chatInfoList = this._chatInfoList;
-            // 	ChatType <ChatType>k__BackingField2 = <ChatInfo>k__BackingField.<ChatType>k__BackingField;
-            // 	chatInfoList[<ChatType>k__BackingField2].Add(<ChatInfo>k__BackingField);
-            // }
-            // uint num2;
-            // if (this._chatReceiver != 0 && num < (int)num2)
-            // {
-            // 	num += num;
-            // 	num++;
-            // }
-        }
+        void IOrtegaReceiver.OnNoticePrivateMessage(OnNoticePrivateMessageResponse response) => _chatReceiver?.OnNoticePrivateMessage(response);
+        void IOrtegaReceiver.OnRemovedFromGuild() => _chatReceiver?.OnRemovedFromGuild();
+        void IOrtegaReceiver.OnReceiveGuildChatLog(OnReceiveGuildChatLogResponse response) => _chatReceiver?.OnReceiveGuildChatLog(response);
+        void IOrtegaReceiver.OnReceiveSvSChatLog(OnReceiveSvSChatLogResponse response) => _chatReceiver?.OnReceiveSvSChatLog(response);
+        void IOrtegaReceiver.OnReceiveWorldChatLog(OnReceiveWorldChatLogResponse response) => _chatReceiver?.OnReceiveWorldChatLog(response);
+        void IOrtegaReceiver.OnReceiveMessage(OnReceiveMessageResponse response) => _chatReceiver?.OnReceiveMessage(response);
 
         public OrtegaMagicOnionClient(GrpcChannel channel, long playerId, string authToken, IMagicOnionLocalRaidNotificaiton localRaidNotificaiton)
             : base(channel, playerId, authToken)
         {
             _localRaidNotificaiton = localRaidNotificaiton;
             _currentLocalRaidPartyInfo = new LocalRaidPartyInfo();
-            _chatInfoList = new Dictionary<ChatType, List<ChatInfo>>()
-            {
-                [ChatType.SvS] = new List<ChatInfo>(),
-                [ChatType.World] = new List<ChatInfo>(),
-                [ChatType.Guild] = new List<ChatInfo>()
-            };
             AttachInternalReceiver(this, this);
         }
 
@@ -784,8 +642,6 @@ namespace MementoMori.Ortega.Network.MagicOnion.Client
         private IMagicOnionLocalRaidNotificaiton _localRaidNotificaiton;
 
         private IMagicOnionLocalRaidReceiver _localRaidReceiver;
-
-        private Dictionary<ChatType, List<ChatInfo>> _chatInfoList;
 
         private LocalRaidPartyInfo _currentLocalRaidPartyInfo;
     }

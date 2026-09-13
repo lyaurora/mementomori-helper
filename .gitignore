@@ -28,3 +28,4 @@ publish-android
 *.db
 *.keystore
 *.log
+__pycache__/

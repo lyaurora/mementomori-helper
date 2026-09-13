@@ -15,6 +15,11 @@ public class ChatSettingData : IDeepCopy<ChatSettingData>
 
     public ChatSettingData DeepCopy()
     {
-        return null;
+        return new ChatSettingData
+        {
+            BalloonItemId = BalloonItemId,
+            FontSize = FontSize,
+            BackgroundTypeDictionary = BackgroundTypeDictionary == null ? new() : new(BackgroundTypeDictionary)
+        };
     }
 }

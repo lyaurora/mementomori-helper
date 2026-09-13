@@ -46,6 +46,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\MementoMori\MementoMori.csproj" />
+        <EmbeddedResource Include="wwwroot/chat/emoticons.json" />
     </ItemGroup>
 
 </Project>

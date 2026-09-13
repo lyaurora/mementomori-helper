@@ -1,7 +1,355 @@
-﻿@page "/Chat"
-<PageTitle>聊天</PageTitle>
-<h3>聊天</h3>
+@page "/Chat"
+@using MementoMori.Chat
+@using MementoMori.BlazorShared.Components
+@using MementoMori.Ortega.Share.Enums
+@inherits AccountComponent
+@implements IAsyncDisposable
 
-@code {
-    
-}
+<PageTitle>聊天</PageTitle>
+
+<div class="chat-page">
+    <div class="chat-heading">
+        <MudText Typo="Typo.h5">聊天</MudText>
+        <span class="chat-status" role="status" data-testid="chat-status">
+            <span class="chat-status-dot @(_snapshot.Connected ? "connected" : "")"></span>@_snapshot.Status
+        </span>
+        <MudSpacer />
+        <MudButton OnClick="Reconnect" Disabled="@(!Funcs.LoginOk)" StartIcon="@Icons.Material.Filled.Refresh">重新连接</MudButton>
+        <MudButton OnClick="() => _showSettings = !_showSettings" StartIcon="@Icons.Material.Filled.TextFields">显示设置</MudButton>
+    </div>
+
+    @if (!Funcs.LoginOk)
+    {
+        <MudAlert Severity="Severity.Info">请先到<MudLink Href="/">首页</MudLink>登录账号。</MudAlert>
+    }
+    @if (!string.IsNullOrEmpty(_error ?? _snapshot.Error))
+    {
+        <MudAlert Severity="Severity.Warning" Dense="true">@(_error ?? _snapshot.Error)</MudAlert>
+    }
+    @if (_details != null)
+    {
+        <MudAlert Severity="Severity.Info" ShowCloseIcon="true" CloseIconClicked="() => _details = null"><span style="white-space: pre-wrap">@_details</span></MudAlert>
+    }
+    @if (_showSettings)
+    {
+        <div class="chat-settings">
+            <div class="chat-size-control">
+                <label for="chat-text-size">消息文字</label>
+                <input id="chat-text-size" type="range" min="12" max="24" step="1" @bind="_textSize" @bind:event="oninput" @bind:after="SaveAppearance" />
+                <output for="chat-text-size">@_textSize px</output>
+            </div>
+            <div class="chat-size-control">
+                <label for="chat-sticker-size">消息表情包</label>
+                <input id="chat-sticker-size" type="range" min="24" max="96" step="1" @bind="_stickerSize" @bind:event="oninput" @bind:after="SaveAppearance" />
+                <output for="chat-sticker-size">@_stickerSize px</output>
+            </div>
+            <div class="chat-compose-actions">
+                <span class="chat-muted">每次调整 1px，自动保存到当前浏览器。</span>
+                <MudButton Size="Size.Small" OnClick="ResetAppearance">恢复默认</MudButton>
+            </div>
+            <details class="chat-game-settings">
+                <summary>游戏内字号（游戏提供四档）</summary>
+                <select id="chat-game-font-size" aria-label="游戏内字号" @bind="_fontSize">
+                    @foreach (var size in new[] { 15, 20, 25, 30 }) { <option value="@size">@size</option> }
+                </select>
+                <MudButton OnClick="SaveSettings" Disabled="@(_busy || !_snapshot.Connected)" Variant="Variant.Outlined">同步至游戏</MudButton>
+            </details>
+        </div>
+    }
+
+    <nav class="chat-channels" aria-label="聊天频道">
+        @foreach (var channel in Channels)
+        {
+            <MudButton Variant="@(channel == _channel ? Variant.Filled : Variant.Outlined)" Color="Color.Primary"
+                       OnClick="() => ChangeChannel(channel)" Disabled="_busy">@ChannelName(channel)
+                @if (channel == ChatType.Private && _snapshot.Contacts.Any(c => c.ExistUnread)) { <span class="chat-unread" aria-label="有未读私聊">●</span> }
+            </MudButton>
+        }
+    </nav>
+
+    <div class="chat-workspace @(_channel == ChatType.Private ? "with-contacts" : "")">
+        @if (_channel == ChatType.Private)
+        {
+            <aside class="chat-contacts" aria-label="私聊会话">
+                <div class="chat-contact-tools">
+                    <MudButton Size="Size.Small" OnClick="TogglePlayers" Disabled="@(_busy || !_snapshot.Connected)">@(_showPlayers ? "收起玩家选择" : "选择玩家")</MudButton>
+                    <MudButton Size="Size.Small" OnClick="RefreshContacts" Disabled="@(_busy || !_snapshot.Connected)">刷新</MudButton>
+                </div>
+                @if (_showPlayers)
+                {
+                <div class="chat-new-contact">
+                    <label for="chat-player-id">玩家 ID</label>
+                    <input id="chat-player-id" inputmode="numeric" @bind="_targetInput" placeholder="输入玩家 ID" />
+                    <MudButton OnClick="AddPrivate" Size="Size.Small" Disabled="@(_busy || !_snapshot.Connected)">开始私聊</MudButton>
+                </div>
+                @if (_players.Count > 0)
+                {
+                    <label for="chat-player-picker">好友、公会及世界玩家</label>
+                    <select id="chat-player-picker" value="" @onchange="SelectPlayer">
+                        <option value="">选择玩家</option>
+                        @foreach (var player in _players) { <option value="@player.PlayerId">@player.PlayerName · @player.PlayerId</option> }
+                    </select>
+                }
+                }
+                @foreach (var contact in _snapshot.Contacts)
+                {
+                    <button type="button" class="chat-contact @(contact.PlayerInfo.PlayerId == _target ? "selected" : "")"
+                            @onclick="() => SelectPrivate(contact.PlayerInfo.PlayerId)" disabled="@_busy">
+                        <PlayerAvatar IconId="contact.PlayerInfo.MainCharacterIconId" Name="@contact.PlayerInfo.PlayerName" Size="32" />
+                        <span class="chat-contact-copy"><span>@PlayerName(contact.PlayerInfo.PlayerName, contact.PlayerInfo.PlayerId)</span><small>@contact.PlayerInfo.PlayerId</small></span>
+                        @if (contact.ExistUnread) { <span class="chat-unread" aria-label="未读">●</span> }
+                    </button>
+                }
+                @if (_snapshot.Contacts.Count == 0) { <p class="chat-muted">暂无私聊会话</p> }
+            </aside>
+        }
+
+        <section class="chat-conversation" aria-label="当前会话">
+            <div class="chat-conversation-heading">
+                <strong>@ConversationName</strong>
+                <span class="chat-muted">@(_snapshot.Messages.Count) 条 · 服务器时间</span>
+                <MudSpacer />
+                @if (_channel == ChatType.Guild)
+                {
+                    <MudButton OnClick="ToggleGuildInfo" Disabled="@(_busy || !_snapshot.Connected)" Size="Size.Small">@(_showGuildInfo ? "收起公告与投票" : "公告与投票")</MudButton>
+                }
+                @if (_channel == ChatType.Private && _target > 0)
+                {
+                    <MudButton OnClick="RemovePrivate" Disabled="@(_busy || !_snapshot.Connected)" Size="Size.Small">移除会话</MudButton>
+                }
+            </div>
+            @if (_showGuildInfo && _channel == ChatType.Guild)
+            {
+                <div class="chat-guild-info">
+                    <div class="chat-guild-toolbar">
+                        <span class="chat-muted">公会动态 · 时间均为服务器时间</span>
+                        <MudSpacer />
+                        <MudButton Size="Size.Small" StartIcon="@Icons.Material.Filled.Refresh" OnClick="LoadGuildInfo" Disabled="_busy">刷新</MudButton>
+                    </div>
+                    <MudTabs @bind-ActivePanelIndex="_guildTab" Elevation="0" Rounded="true" KeepPanelsAlive="true">
+                        <MudTabPanel Text="@($"公告 · {_announcements.Count}")">
+                            <div class="chat-guild-scroll">
+                                @foreach (var announcement in _announcements)
+                                {
+                                    var message = announcement.GuildChatInfo.ChatInfo;
+                                    <article class="chat-announcement chat-guild-card">
+                                        <div class="chat-card-heading">
+                                            <PlayerAvatar IconId="message.CharacterId" Name="@message.PlayerName" Size="28" />
+                                            <strong>@PlayerName(message.PlayerName, message.PlayerId)</strong>
+                                            <MudSpacer />
+                                            @if (CanDeleteAnnouncement(message))
+                                            {
+                                                <MudMenu Icon="@Icons.Material.Filled.MoreHoriz" Size="Size.Small" aria-label="公告管理">
+                                                    <MudMenuItem OnClick="() => SetAnnouncement(message, false)" Disabled="@(_busy || !_snapshot.Connected)">撤销公告</MudMenuItem>
+                                                </MudMenu>
+                                            }
+                                        </div>
+                                        <div class="chat-announcement-body" style="font-size: @(_textSize)px">
+                                            <ChatText Text="@MessageText(message)" StickerSize="_stickerSize" />
+                                        </div>
+                                        <p class="chat-entry-meta chat-muted" title="@($"原消息：{FormatTime(message.LocalTimeStamp)}")">
+                                            公告发布：<time>@FormatTime(announcement.RegisterLocalTimestamp)</time>
+                                        </p>
+                                        <div class="chat-announcement-reactions">
+                                            <ChatReactions Entry="announcement.GuildChatInfo" Disabled="@(_busy || !_snapshot.Connected)" OnReact="reaction => React(message, reaction)" OnDetails="() => ReactionDetails(message)" />
+                                        </div>
+                                    </article>
+                                }
+                                @if (_announcements.Count == 0)
+                                {
+                                    <div class="chat-panel-empty"><MudIcon Icon="@Icons.Material.Outlined.Campaign" /><p>暂无公会公告</p></div>
+                                }
+                            </div>
+                        </MudTabPanel>
+                        <MudTabPanel Text="@($"投票 · {_surveys.Count}")">
+                            <div class="chat-guild-scroll">
+                                @foreach (var survey in _surveys)
+                                {
+                                    var open = VotingOpen(survey);
+                                    <article class="chat-survey chat-guild-card">
+                                        <div class="chat-card-heading">
+                                            <span class="chat-card-symbol"><MudIcon Icon="@Icons.Material.Filled.Poll" Size="Size.Small" /></span>
+                                            <strong>@survey.Content</strong>
+                                            <MudSpacer />
+                                            <span class="chat-survey-status @(open ? "open" : "")">@(open ? survey.IsVoted ? "已投票" : "投票中" : "已结束")</span>
+                                        </div>
+                                        <p class="chat-entry-meta chat-muted">@survey.CreateSurveyPlayerInfo?.PlayerName · 发起于 @FormatTime(survey.CreateLocalTimestamp)</p>
+                                        <div class="chat-vote-options">
+                                            @foreach (var choice in survey.ChoiceMap ?? [])
+                                            {
+                                                var count = Math.Max(0, survey.VoteCountMap?.GetValueOrDefault(choice.Key) ?? 0);
+                                                var selected = _surveyChoices.TryGetValue(survey.SurveyGuid, out var value) && value == choice.Key;
+                                                <label class="chat-vote-option @(selected ? "selected" : "")">
+                                                    <div class="chat-vote-label">
+                                                        @if (open && !survey.IsVoted)
+                                                        {
+                                                            <input type="radio" name="@($"survey-{survey.SurveyGuid}")" checked="@selected"
+                                                                   @onchange="() => _surveyChoices[survey.SurveyGuid] = choice.Key" disabled="@_busy" />
+                                                        }
+                                                        <span>@choice.Value</span>
+                                                        <span class="chat-vote-count">@count 票 · @VotePercent(survey, choice.Key)%</span>
+                                                    </div>
+                                                    <div class="chat-vote-track" aria-hidden="true"><div style="@($"width:{VotePercent(survey, choice.Key)}%")"></div></div>
+                                                </label>
+                                            }
+                                        </div>
+                                        <div class="chat-vote-footer">
+                                            <span class="chat-muted">@VoteTotal(survey) 人参与 · @(open ? "截止" : "结束于") @FormatTime(survey.VotingEndLocalTimestamp)</span>
+                                            <MudSpacer />
+                                            <MudButton Size="Size.Small" OnClick="() => SurveyDetails(survey)" Disabled="@(_busy || !_snapshot.Connected)">@(_surveyDetails.ContainsKey(survey.SurveyGuid) ? "收起详情" : "投票详情")</MudButton>
+                                            @if (open && !survey.IsVoted)
+                                            {
+                                                <MudButton Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled" OnClick="() => Vote(survey)" Disabled="@(_busy || !_snapshot.Connected || !_surveyChoices.ContainsKey(survey.SurveyGuid))">提交投票</MudButton>
+                                            }
+                                        </div>
+                                        @if (_surveyDetails.TryGetValue(survey.SurveyGuid, out var details)) { <p class="chat-vote-details">@details</p> }
+                                    </article>
+                                }
+                                @if (_surveys.Count == 0)
+                                {
+                                    <div class="chat-panel-empty"><MudIcon Icon="@Icons.Material.Outlined.Poll" /><p>暂无公会投票</p></div>
+                                }
+                            </div>
+                        </MudTabPanel>
+                    </MudTabs>
+                </div>
+            }
+
+            <div @ref="_messageElement" class="chat-messages" role="log" aria-live="polite" aria-relevant="additions text" tabindex="0" data-testid="chat-messages">
+                @if (_channel == ChatType.Private && _target > 0)
+                {
+                    <div class="chat-history-button">
+                        <MudButton OnClick="LoadOlder" Size="Size.Small" Disabled="@(_busy || !_snapshot.Connected || _noOlder || _snapshot.Messages.Count >= ChatSession.HistoryLimit)">
+                            @(_noOlder ? "没有更早的消息" : _snapshot.Messages.Count >= ChatSession.HistoryLimit ? "已达缓存上限" : "加载更早消息")
+                        </MudButton>
+                    </div>
+                }
+                @if (_snapshot.Messages.Count == 0)
+                {
+                    <p class="chat-empty">@(_channel == ChatType.Private && _target == 0 ? "选择一个玩家开始私聊" : _snapshot.Connected ? "暂无消息；有新消息时会自动显示。" : "连接建立后会自动加载消息。")</p>
+                }
+                @{ string? previousDate = null; }
+                @foreach (var entry in _snapshot.Messages)
+                {
+                    var message = entry.ChatInfo;
+                    var date = FormatTime(message.LocalTimeStamp, "yyyy-MM-dd");
+                    if (date != previousDate)
+                    {
+                        <div class="chat-day-divider"><span>@date</span></div>
+                        previousDate = date;
+                    }
+                    if (IsSystemMessage(message))
+                    {
+                        <div class="chat-system-message" style="font-size: @(Math.Max(12, _textSize - 2))px" @key="(message.PlayerId, message.LocalTimeStamp)">
+                            <time>@FormatTime(message.LocalTimeStamp, "HH:mm")</time><span>@MessageText(message)</span>
+                        </div>
+                        continue;
+                    }
+                    var own = message.PlayerId > 0 && message.PlayerId == _snapshot.PlayerId;
+                    <article class="chat-message @(own ? "own" : "")" @key="(message.PlayerId, message.LocalTimeStamp)">
+                        <div class="chat-message-avatar"><PlayerAvatar IconId="message.CharacterId" Name="@message.PlayerName" /></div>
+                        <div class="chat-message-content">
+                        <div class="chat-message-meta">
+                            <button class="chat-sender" type="button" @onclick="() => StartPrivate(message.PlayerId)" disabled="@(own || message.PlayerId <= 0 || _busy)">
+                                @PlayerName(message.PlayerName, message.PlayerId)@(own ? "（我）" : "")
+                            </button>
+                            @if (!string.IsNullOrEmpty(message.GuildName)) { <span>[@message.GuildName]</span> }
+                            <time title="@FormatTime(message.LocalTimeStamp)">@FormatTime(message.LocalTimeStamp, "HH:mm")</time>
+                            @if (entry.IsAnnounced) { <span title="公会公告">📌</span> }
+                        </div>
+                        <div class="chat-bubble @(IsStickerMessage(message) ? "sticker-only" : "")" style="font-size: @(DisplayFontSize)px">
+                            <p><ChatText Text="@MessageText(message)" StickerSize="_stickerSize" /></p>
+                            @if (message.ChatRecruitGuildMemberInfo is { } recruit)
+                            {
+                                <p>公会招募：@recruit.GuildName（Lv.@recruit.GuildLv）</p><p>@recruit.RecruitMessage</p>
+                            }
+                            @if (message.ChatMusicPlaylistInfo is { } playlist)
+                            {
+                                <p>♫ @playlist.PlaylistName · @playlist.MusicCount 首</p><p>分享码：@playlist.PlaylistShareCode</p>
+                            }
+                            @if (message.ChatBattleInfo is { } battle)
+                            {
+                                <p>战报 · @battle.ChatBattlePropertyInfo?.BattleType</p>
+                                @foreach (var party in battle.ChatBattlePartyInfoList ?? []) { <p>@party.PlayerName · @(party.IsWin ? "胜利" : "失败")</p> }
+                                <MudButton Size="Size.Small" OnClick="() => DownloadBattle(message)" Disabled="@(_busy || !_snapshot.Connected)">下载战报</MudButton>
+                                <MudButton Size="Size.Small" OnClick="() => PrepareBattleShare(message)" Disabled="@(_busy || !_snapshot.Connected)">转发战报</MudButton>
+                            }
+                        </div>
+                        @if (_channel == ChatType.Guild && message.PlayerId > 0)
+                        {
+                            <div class="chat-message-actions">
+                                <ChatReactions Entry="entry" Disabled="@(_busy || !_snapshot.Connected)" OnReact="reaction => React(message, reaction)" OnDetails="() => ReactionDetails(message)" />
+                                @if (entry.IsAnnounced ? CanDeleteAnnouncement(message) : CanAnnounce(message))
+                                {
+                                    <MudMenu>
+                                        <ActivatorContent><MudIconButton Icon="@Icons.Material.Filled.MoreHoriz" Size="Size.Small" aria-label="消息操作" title="消息操作" /></ActivatorContent>
+                                        <ChildContent>
+                                            <MudMenuItem OnClick="() => SetAnnouncement(message, !entry.IsAnnounced)" Disabled="@(_busy || !_snapshot.Connected)">@(entry.IsAnnounced ? "撤销公告" : "设为公告")</MudMenuItem>
+                                        </ChildContent>
+                                    </MudMenu>
+                                }
+                            </div>
+                        }
+                        </div>
+                    </article>
+                }
+            </div>
+
+            @if (_shareBattle != null)
+            {
+                <div class="chat-share">
+                    <span>转发已选战报至</span>
+                    <select aria-label="战报目标频道" @bind="_shareChannel">
+                        @foreach (var channel in Channels) { <option value="@channel">@ChannelName(channel)</option> }
+                    </select>
+                    @if (_shareChannel == ChatType.Private)
+                    {
+                        <input aria-label="战报接收玩家 ID" inputmode="numeric" @bind="_shareTarget" placeholder="玩家 ID" />
+                    }
+                    <MudButton OnClick="ShareBattle" Disabled="@(_busy || !_snapshot.Connected)">确认转发</MudButton>
+                    <MudButton OnClick="() => _shareBattle = null">取消</MudButton>
+                </div>
+            }
+            <div class="chat-composer">
+                <div class="chat-compose-actions">
+                    <label for="chat-message-input">发送至 @ConversationName</label>
+                    <MudSpacer />
+                    <MudButton Size="Size.Small" StartIcon="@Icons.Material.Filled.SentimentSatisfiedAlt" OnClick="() => _showEmoticons = !_showEmoticons"
+                               Disabled="@(_busy || !_snapshot.Connected)">@(_showEmoticons ? "收起表情包" : "表情包")</MudButton>
+                </div>
+                @if (_showEmoticons)
+                {
+                    <div class="chat-emoticons" aria-label="表情包选择">
+                        <div class="chat-contact-tools">
+                            <MudButton Size="Size.Small" Variant="@(_emoticonTab == 1 ? Variant.Filled : Variant.Text)" OnClick="() => _emoticonTab = 1">猫猫</MudButton>
+                            <MudButton Size="Size.Small" Variant="@(_emoticonTab == 2 ? Variant.Filled : Variant.Text)" OnClick="() => _emoticonTab = 2">角色</MudButton>
+                            <span class="chat-muted">点击插入；灰色贴图尚未解锁</span>
+                        </div>
+                        <div class="chat-emoticon-grid">
+                            @foreach (var id in EmoticonIds)
+                            {
+                                var unlocked = _chat.IsEmoticonUnlocked(id);
+                                <button type="button" @onclick="() => InsertEmoticon(id)" disabled="@(!unlocked || _busy)" aria-label="@($"插入贴图 {id}")" title="@(unlocked ? $"贴图 {id}" : "尚未解锁")">
+                                    <span style="@ChatEmoticons.Style(id, 64)" role="img" aria-label="@($"贴图 {id}")"></span>
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+                <textarea id="chat-message-input" @ref="_inputElement" @bind="Draft" @bind:event="oninput" @onkeydown="MessageKeyDown" maxlength="80" rows="2"
+                          placeholder="输入消息…" disabled="@(!_snapshot.Connected || _busy || (_channel == ChatType.Private && _target == 0))"></textarea>
+                @if (ChatEmoticons.Split(Draft).Any(part => ChatEmoticons.TryGetId(part, out _)))
+                {
+                    <div class="chat-draft-preview" style="font-size: @(_textSize)px"><span class="chat-muted">预览</span><ChatText Text="@Draft" StickerSize="_stickerSize" /></div>
+                }
+                <div class="chat-compose-actions">
+                    <span class="chat-muted">Ctrl+Enter 发送 · @Draft.Length/80</span>
+                    <span class="chat-result" role="status">@_result</span>
+                    <MudSpacer />
+                    <MudButton OnClick="Send" Color="Color.Primary" Variant="Variant.Filled" Disabled="@(!CanSend)" StartIcon="@Icons.Material.Filled.Send" data-testid="chat-send">@(_busy ? "处理中…" : "发送")</MudButton>
+                </div>
+            </div>
+        </section>
+    </div>
+    <p class="chat-footnote">每个会话保留最近 @ChatSession.HistoryLimit 条消息；关闭聊天页面后停止接收，重新打开会加载服务器记录。</p>
+</div>

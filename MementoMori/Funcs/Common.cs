@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using AutoCtor;
 using Injectio.Attributes;
 using MementoMori.Jobs;
+using MementoMori.Chat;
 using MementoMori.Option;
 using MementoMori.Ortega.Share.Data;
 using MementoMori.Ortega.Share.Data.ApiInterface;
@@ -42,6 +43,8 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
     private int _logoutVersion;
     private volatile bool _loggedOut;
     private int _disposed;
+    private ChatSession? _chat;
+    public ChatSession Chat => LazyInitializer.EnsureInitialized(ref _chat, () => new ChatSession(this));
     private string? _operationError;
     private CancellationToken OperationCancellation => _ownsExecutionSemaphore.Value ? _cancellationTokenSource?.Token ?? default : default;
 
@@ -116,6 +119,7 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
     public void Dispose()
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+        _chat?.Dispose();
         _cancellationTokenSource?.Cancel();
         _cancellationTokenSource?.Dispose();
         _executionSemaphore.Dispose();
@@ -153,15 +157,16 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
         return data;
     }
 
-    public async Task<TResp> GetResponse<TReq, TResp>(TReq req)
+    public async Task<TResp> GetResponse<TReq, TResp>(TReq req, CancellationToken cancellationToken = default)
         where TReq : ApiRequestBase
         where TResp : ApiResponseBase
     {
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(OperationCancellation, cancellationToken);
         return await NetworkManager.GetResponse<TReq, TResp>(req, AddLog, data =>
         {
             UserSyncData.UserItemEditorMergeUserSyncData(data);
             this.RaisePropertyChanged(nameof(UserSyncData));
-        }, cancellationToken: OperationCancellation);
+        }, cancellationToken: linked.Token);
     }
 
     public async Task SyncUserData()
