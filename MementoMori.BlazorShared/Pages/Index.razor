@@ -1,7 +1,6 @@
 ﻿@inject IJSRuntime JsRuntime
 @inject IDialogService DialogService
 @inject IWritableOptions<GameConfig> GameConfig
-@inject IHttpClientFactory HttpClientFactory
 
 @inherits MementoMori.BlazorShared.Models.AccountComponent
 @page "/"
@@ -10,7 +9,6 @@
 @using MementoMori.Ortega.Share.Enums
 @using MementoMori.WebUI.Extensions
 @using MementoMori.BlazorShared.Components
-@using Newtonsoft.Json.Linq
 @using ReactiveUI
 @using DynamicData.Binding
 @using MementoMori.Ortega.Common.Utils
@@ -23,29 +21,11 @@
 @using MementoMori.Ortega.Custom
 @using Microsoft.Extensions.Options
 @using static MementoMori.Ortega.Share.Masters
-@using System.Reflection
 @using MementoMori.BlazorShared.Models
 
 <PageTitle>@Tr("[CommonFooterHomeButtonLabel]")</PageTitle>
 
 <MudGrid>
-@if (!string.IsNullOrEmpty(newVersionMessage))
-{
-    <MudItem md="12">
-        <MudAlert Severity="Severity.Warning">
-                <MudText>@newVersionMessage</MudText>
-            <MudButton Href="https://github.com/moonheart/mementomori-helper/releases"
-                       Target="_blank"
-                       Variant="Variant.Outlined"
-                       Style="text-transform:none"
-                       StartIcon="@Icons.Custom.Brands.GitHub"
-                       Color="Color.Primary">
-                mementomori-helper
-            </MudButton>
-            <MudMarkdown Value="@releaseBody"/>
-        </MudAlert>
-    </MudItem>
-}
 @if (!string.IsNullOrEmpty(alertMessage))
 {
     <MudItem md="12">
@@ -443,8 +423,6 @@
     private long selectedTargetQuerstId;
     private long selectedTargetTowerLayer;
     string alertMessage = "";
-    string newVersionMessage = "";
-    string releaseBody = "";
 
     private List<PlayerDataInfo> playerDataInfos = new();
 
@@ -468,7 +446,6 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        _ = CheckLatestVersion();
 
         _ = Funcs.GetNoticeInfoList();
     }
@@ -493,32 +470,6 @@
         if (!result.Canceled && result.Data is PlayerDataInfoEx playerDataInfoEx && playerDataInfoEx.PlayerDataInfo is PlayerDataInfo playerDataInfo)
         {
             await Funcs.Login(playerDataInfo, playerDataInfoEx.AutoLoginThisWorld);
-        }
-    }
-
-    private async Task CheckLatestVersion()
-    {
-        try
-        {
-            var githubUrl = "https://api.github.com/repos/moonheart/mementomori-helper/releases/latest";
-            var httpClient = HttpClientFactory.CreateClient();
-            httpClient.DefaultRequestHeaders.Add("User-Agent", "mementomori-helper");
-            var json = await httpClient.GetStringAsync(githubUrl);
-            var release = JObject.Parse(json);
-            var version = release["tag_name"].ToString();
-            releaseBody = release["body"].ToString();
-            var newVersion = Version.Parse(version.TrimStart('v'));
-            Assembly assembly = Assembly.GetEntryAssembly();
-            var currentVersion = assembly.GetName().Version;
-            if (newVersion > currentVersion)
-            {
-                newVersionMessage = string.Format(ResourceStrings.The_current_version___0___is_not_the_latest_version___1____Click_to_download_the_latest_version_, currentVersion, version);
-                this.InvokeAsync(() => StateHasChanged());
-            }
-        }
-        catch
-        {
-            
         }
     }
 

@@ -38,6 +38,7 @@ var checks = new (string Name, Func<Task> Run)[]
     ("configuration permissions and contents", CheckPermissions),
     ("login preferences, retry backoff and deletion", CheckAccountLifecycle),
     ("HTTP cancellation and bounded version negotiation", CheckTransport),
+    ("manual quick-action batch stops after cancellation", CheckBatchCancellation),
     ("4.22 wire data and master rollback", CheckProtocol),
     ("master download rejects corruption without replacing cached files", CheckMasterDownload)
 };
@@ -300,6 +301,37 @@ static async Task CheckTransport()
     })));
     await Throws<ApiErrorException>(() => network.GetResponse<GetDataUriRequest, GetDataUriResponse>(new()).WaitAsync(TimeSpan.FromSeconds(2)));
     Require(calls == 2 && versionRequests == 1 && auth.Value.AppVersion == "4.22.0", "Version negotiation retries indefinitely or fails to update the version");
+}
+
+static async Task CheckBatchCancellation()
+{
+    var auth = new Writable<AuthOption>(new() { AuthUrl = "https://offline.invalid/api/", AppVersion = "4.22.0" });
+    var config = new Writable<GameConfig>(new());
+    using var network = Construct<MementoNetworkManager>(auth, config, NullLogger<MementoNetworkManager>.Instance);
+    Field(network, "_apiHost").SetValue(network, new Uri("https://offline.invalid/api/"));
+    using var funcs = Construct<MementoMoriFuncs>(auth, config, NullLogger<MementoMoriFuncs>.Instance);
+    funcs.NetworkManager = network;
+    var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    var requests = 0;
+    ReplaceClient(network, "_httpClient", new HttpClient(new Handler(async (_, token) =>
+    {
+        if (++requests == 1)
+        {
+            started.TrySetResult();
+            await Task.Delay(Timeout.InfiniteTimeSpan, token);
+        }
+        return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+    })));
+    var batch = funcs.ExecuteAllQuickAction();
+    try
+    {
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        Require(funcs.IsQuickActionExecuting, "The manual batch is not marked busy");
+        funcs.CancelQuickAction();
+        await batch.WaitAsync(TimeSpan.FromSeconds(2));
+        Require(requests == 1 && !funcs.IsQuickActionExecuting, "Cancelling one step allowed later batch operations to run");
+    }
+    finally { funcs.CancelQuickAction(); }
 }
 
 static Task CheckProtocol()

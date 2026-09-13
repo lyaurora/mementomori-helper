@@ -303,32 +303,35 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
     }
 
 
-    public async Task ExecuteAllQuickAction()
+    public Task ExecuteAllQuickAction()
     {
-        await GetLoginBonus();
-        await GetVipGift();
-        await ReceiveMonthlyBoost();
-        await GetAutoBattleReward();
-        await BulkTransferFriendPoint();
-        await PresentReceiveItem();
-        if (GameConfig.AutoJob.AutoReinforcementEquipmentOneTime) await ReinforcementEquipmentOneTime();
-        await BattleBossQuick();
-        await InfiniteTowerQuick();
-        await BossHishSpeedBattle();
-        await ReceiveGvgReward();
-        await GuildCheckin();
-        await GuildRaid();
-        await AutoGuildTower();
-        await AutoFriendManage();
-        await ReceiveAchievementReward();
-        await BountyQuestRewardAuto();
-        await BountyQuestStartAuto();
-        if (GameConfig.AutoJob.AutoDungeonBattle) await AutoDungeonBattle();
-        await CompleteMissions();
-        await RewardMissonActivity();
-        if (GameConfig.AutoJob.AutoUseItems) await AutoUseItems();
-        if (GameConfig.AutoJob.AutoFreeGacha) await FreeGacha();
-        if (GameConfig.AutoJob.AutoUseItems) await AutoUseItems();
-        if (GameConfig.AutoJob.AutoRankUpCharacter) await AutoRankUpCharacter();
+        return ExecuteQuickAction(async (_, _) =>
+        {
+            await GetLoginBonus();
+            await GetVipGift();
+            await ReceiveMonthlyBoost();
+            await GetAutoBattleReward();
+            await BulkTransferFriendPoint();
+            await PresentReceiveItem();
+            if (GameConfig.AutoJob.AutoReinforcementEquipmentOneTime) await ReinforcementEquipmentOneTime();
+            await BattleBossQuick();
+            await InfiniteTowerQuick();
+            await BossHishSpeedBattle();
+            await ReceiveGvgReward();
+            await GuildCheckin();
+            await GuildRaid();
+            await AutoGuildTower();
+            await AutoFriendManage();
+            await ReceiveAchievementReward();
+            await BountyQuestRewardAuto();
+            await BountyQuestStartAuto();
+            if (GameConfig.AutoJob.AutoDungeonBattle) await AutoDungeonBattle();
+            await CompleteMissions();
+            await RewardMissonActivity();
+            if (GameConfig.AutoJob.AutoUseItems) await AutoUseItems();
+            if (GameConfig.AutoJob.AutoFreeGacha) await FreeGacha();
+            if (GameConfig.AutoJob.AutoUseItems) await AutoUseItems();
+            if (GameConfig.AutoJob.AutoRankUpCharacter) await AutoRankUpCharacter();
+        });
     }
 }
