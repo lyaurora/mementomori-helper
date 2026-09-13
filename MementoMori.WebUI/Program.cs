@@ -18,6 +18,7 @@ using Ortega.Common.Manager;
 using MudBlazor;
 using MagicOnion;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.AspNetCore.DataProtection;
 
 internal class Program
 {
@@ -42,6 +43,8 @@ internal class Program
         Directory.CreateDirectory(configDirectory);
         IFileProvider physicalProvider = new PhysicalFileProvider(configDirectory);
         builder.Services.AddSingleton(physicalProvider);
+        builder.Services.AddDataProtection()
+            .PersistKeysToFileSystem(Directory.CreateDirectory(Path.Combine(configDirectory, "DataProtection-Keys")));
 
         builder.Configuration.AddJsonFile(physicalProvider, "appsettings.other.json", true, true);
         builder.Configuration.AddJsonFile(physicalProvider, "appsettings.user.json", true, true);
@@ -90,6 +93,7 @@ internal class Program
         if (!app.Environment.IsDevelopment()) app.UseExceptionHandler("/Error");
 
         app.UseStaticFiles();
+        app.MapStaticAssets();
         app.UseAntiforgery();
         app.MapGet("/healthz", () => Results.Ok(new { status = "ready" }));
         app.MapRazorComponents<App>()

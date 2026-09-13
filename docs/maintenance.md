@@ -46,4 +46,6 @@ Settings shows each scheduled task's last start/end time, result and error. This
 
 `GET /healthz` reports process readiness after initial Master loading. It does not assert that every account logged in or every game task succeeded; use the account/task status for that.
 
+After deploying, run `python3 tests/check-webui.py http://127.0.0.1:5290` and check a menu or theme toggle in a browser. HTTP 200 for the HTML page alone does not verify Blazor interactivity. Framework scripts use the static-asset manifest and fingerprinted URLs. ASP.NET data-protection keys are persisted under the configuration directory so redeployments retain the cookie encryption keys.
+
 Set `ConfigDirectory` to mount a writable configuration directory, as in the compose example. Saves keep a `.bak` copy and preserve file permissions. `GameConfig.AssetsUrl` and `GameConfig.BattleLogViewerUrl` can be changed in Settings. The public AuthToken is cached only for its matching game version; account client keys remain in the private configuration file.
