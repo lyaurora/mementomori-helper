@@ -26,7 +26,6 @@ namespace MementoMori.Maui
             builder.Configuration.AddJsonFile(fileProvider, "appsettings.user.json", true, true);
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddMudServices();
-            builder.Services.AddMudMarkdownServices();
 
             builder.Services.AddMementoMori();
             builder.Services.AddMementoMoriBlazorShared();

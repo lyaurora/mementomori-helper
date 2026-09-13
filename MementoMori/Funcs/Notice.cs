@@ -4,7 +4,9 @@ namespace MementoMori.Funcs;
 
 public partial class MementoMoriFuncs
 {
-    public async Task GetNoticeInfoList()
+    public Task GetNoticeInfoList() => GetNoticeInfoList(CancellationToken.None);
+
+    public async Task GetNoticeInfoList(CancellationToken cancellationToken)
     {
         var countryCode = OrtegaConst.Addressable.LanguageNameDictionary[NetworkManager.LanguageType];
 
@@ -14,7 +16,8 @@ public partial class MementoMoriFuncs
             CountryCode = countryCode,
             LanguageType = NetworkManager.LanguageType,
             UserId = this.UserId
-        });
+        }, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
         NoticeInfoList = response.NoticeInfoList.Where(d => d.Id % 10 != 6).ToList();
 
         EventInfoList = response.EventInfoList

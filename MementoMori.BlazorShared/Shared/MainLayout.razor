@@ -13,7 +13,8 @@
 @inject IJSRuntime JS
 @inject ISnackbar Snackbar
 
-<MudThemeProvider @ref="_themeProvider" Theme="_theme" @bind-IsDarkMode="_isDarkMode" ObserveSystemThemeChange="@(_themeMode == "system")" DefaultScrollbar="true"/>
+<MudThemeProvider Theme="_theme" IsDarkMode="false" ObserveSystemThemeChange="false" DefaultScrollbar="true"/>
+<MudThemeProvider Theme="DarkTheme" IsDarkMode="true" ObserveSystemThemeChange="false" DefaultScrollbar="true"/>
 <MudPopoverProvider/>
 <MudDialogProvider/>
 <MudSnackbarProvider/>
@@ -67,10 +68,8 @@
 
 @code {
     bool _drawerOpen = true;
-    bool _isDarkMode = false;
     bool _themeReady, _disposed;
     string _themeMode = "system";
-    MudThemeProvider _themeProvider = null!;
     IDisposable? _accountManagerSubscription;
     string ThemeName => _themeMode switch { "light" => "浅色", "dark" => "深色", _ => "跟随系统" };
     string ThemeIcon => _themeMode switch { "light" => Icons.Material.Filled.LightMode, "dark" => Icons.Material.Filled.DarkMode, _ => Icons.Material.Filled.BrightnessAuto };
@@ -126,6 +125,13 @@
             HoverOpacity = .1
         }
     };
+    // Both palettes are available during prerender; theme.js selects one before the first paint.
+    static readonly MudTheme DarkTheme = new()
+    {
+        PaletteDark = _theme.PaletteDark,
+        LayoutProperties = _theme.LayoutProperties,
+        PseudoCss = new() { Scope = ":root[data-theme=\"dark\"]" }
+    };
 
     CultureInfo SelectedLanguage
     {
@@ -160,12 +166,11 @@
         {
             try
             {
-                var saved = await JS.InvokeAsync<string?>("localStorage.getItem", "mementomori.theme");
+                var saved = await JS.InvokeAsync<string?>("mementoTheme.getMode");
                 if (saved is "light" or "dark") _themeMode = saved;
             }
             catch (JSException) { }
             if (_disposed) return;
-            _isDarkMode = _themeMode == "dark" || _themeMode == "system" && await _themeProvider.GetSystemPreference();
             _themeReady = true;
             if (!_disposed) StateHasChanged();
         }
@@ -176,8 +181,11 @@
     async Task SetThemeMode(string mode)
     {
         _themeMode = mode;
-        _isDarkMode = mode == "dark" || mode == "system" && await _themeProvider.GetSystemPreference();
-        try { await JS.InvokeVoidAsync("localStorage.setItem", "mementomori.theme", mode); }
+        try
+        {
+            if (!await JS.InvokeAsync<bool>("mementoTheme.setMode", mode))
+                Snackbar.Add("主题已切换，但浏览器未能保存设置。", Severity.Warning);
+        }
         catch (JSDisconnectedException) { }
         catch (JSException) { Snackbar.Add("主题已切换，但浏览器未能保存设置。", Severity.Warning); }
     }

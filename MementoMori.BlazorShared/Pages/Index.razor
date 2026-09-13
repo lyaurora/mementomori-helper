@@ -423,6 +423,7 @@
     private long selectedTargetQuerstId;
     private long selectedTargetTowerLayer;
     string alertMessage = "";
+    private bool _interactive;
 
     private List<PlayerDataInfo> playerDataInfos = new();
 
@@ -441,13 +442,23 @@
         {
             await InvokeAsync(StateHasChanged);
         }
+        if (_interactive) await LoadNotices();
     }
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await base.OnInitializedAsync();
+        if (firstRender) { _interactive = true; await LoadNotices(); }
+    }
 
-        _ = Funcs.GetNoticeInfoList();
+    private async Task LoadNotices()
+    {
+        var token = CreateAccountCancellation();
+        try { await Funcs.GetNoticeInfoList(token); }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception e)
+        {
+            if (!token.IsCancellationRequested) { alertMessage = e.Message; await InvokeAsync(StateHasChanged); }
+        }
     }
 
     private void ShowNotice(NoticeInfo context)

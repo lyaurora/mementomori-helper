@@ -50,7 +50,6 @@ internal class Program
         builder.Configuration.AddJsonFile(physicalProvider, "appsettings.user.json", true, true);
 
         builder.Services.AddMudServices();
-        builder.Services.AddMudMarkdownServices();
 
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents();

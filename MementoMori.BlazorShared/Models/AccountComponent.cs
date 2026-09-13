@@ -55,6 +55,14 @@ public class AccountComponent : ComponentBase, IDisposable
         _accountSubscriptions.Add(subscription);
     }
 
+    protected CancellationToken CreateAccountCancellation()
+    {
+        var cancellation = new CancellationTokenSource();
+        var token = cancellation.Token;
+        TrackAccountSubscription(Disposable.Create(() => { cancellation.Cancel(); cancellation.Dispose(); }));
+        return token;
+    }
+
     private async Task ChangeAccount(long userId)
     {
         _accountSubscriptions.Clear();
