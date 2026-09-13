@@ -35,7 +35,11 @@ public partial class Chat
     private IJSObjectReference? _module;
     private ElementReference _messageElement;
     private ElementReference _inputElement;
+    private ElementReference _emoticonElement;
+    private bool _revealEmoticons;
     private ChatType _channel = ChatType.World;
+    private ChatType? _savedChannel;
+    private bool _restoreChannel;
     private long _target;
     private int _revision;
     private int _operationVersion;
@@ -54,6 +58,7 @@ public partial class Chat
     private ChatInfo? _shareBattle;
     private ChatType _shareChannel;
     private string _shareTarget = "";
+    private long ViewAccountId => AccountInfo?.UserId ?? 0;
     private (ChatType, long) DraftKey => (_channel, _channel == ChatType.Private ? _target : 0);
     private string Draft { get => _drafts.GetValueOrDefault(DraftKey, ""); set => _drafts[DraftKey] = value; }
     private int DisplayFontSize => _textSize;
@@ -74,7 +79,10 @@ public partial class Chat
         TrackAccountSubscription(Disposable.Create(() => _privateLease?.Dispose()));
         _privateLease = null;
         _chat = Funcs.Chat;
-        _channel = ChatType.World;
+        _restoreChannel = !AccountSelection.ChatChannels.TryGetValue(ViewAccountId, out _channel);
+        if (_restoreChannel) _channel = ChatType.World;
+        _savedChannel = _restoreChannel ? null : _channel;
+        (_textSize, _stickerSize) = AccountSelection.ChatAppearance ?? (16, 48);
         _target = 0;
         _drafts.Clear();
         _players.Clear();
@@ -85,7 +93,7 @@ public partial class Chat
         _targetInput = "";
         _error = _result = _details = null;
         _shareBattle = null;
-        _busy = _showGuildInfo = _showPlayers = _showEmoticons = _noOlder = false;
+        _busy = _showGuildInfo = _showPlayers = _showEmoticons = _revealEmoticons = _noOlder = false;
         _fontSize = Funcs.UserSyncData?.ChatSettingData?.FontSize is 15 or 20 or 25 or 30 ? Funcs.UserSyncData.ChatSettingData.FontSize : 25;
         _snapshot = _chat.Read(_channel);
         _scrollMode = "end";
@@ -149,23 +157,76 @@ public partial class Chat
             {
                 _interactive = true;
                 TrackAccountSubscription(_chat.Attach());
+                var revision = _revision;
+                var account = ViewAccountId.ToString();
                 var module = await JS.InvokeAsync<IJSObjectReference>("import", "./" + Assets["_content/MementoMori.BlazorShared/chat.js"]);
                 if (_disposed) { await module.DisposeAsync(); return; }
+                var appearanceTask = AccountSelection.ChatAppearance is { } cached
+                    ? Task.FromResult(new Appearance(cached.TextSize, cached.StickerSize))
+                    : module.InvokeAsync<Appearance>("getAppearance").AsTask();
+                var channelTask = _restoreChannel ? module.InvokeAsync<string?>("getChannel", account).AsTask() : Task.FromResult<string?>(null);
+                await Task.WhenAll(appearanceTask, channelTask);
+                if (_disposed) { await module.DisposeAsync(); return; }
                 _module = module;
-                var appearance = await module.InvokeAsync<Appearance>("getAppearance");
+                var appearance = await appearanceTask;
                 _textSize = Math.Clamp(appearance.TextSize, 12, 24);
                 _stickerSize = Math.Clamp(appearance.StickerSize, 24, 96);
-                if (!_disposed) StateHasChanged();
+                AccountSelection.ChatAppearance = (_textSize, _stickerSize);
+                if (revision == _revision && _restoreChannel) RestoreChannel(await channelTask);
+                StateHasChanged();
+                return;
             }
             if (_module != null && !_disposed)
             {
+                var revision = _revision;
+                var account = ViewAccountId.ToString();
+                if (_restoreChannel)
+                {
+                    var saved = await _module.InvokeAsync<string?>("getChannel", account);
+                    if (_disposed || revision != _revision) return;
+                    // A channel chosen while storage was loading takes precedence.
+                    if (_restoreChannel)
+                    {
+                        RestoreChannel(saved);
+                        StateHasChanged();
+                        return;
+                    }
+                }
+                if (_savedChannel != _channel)
+                {
+                    _savedChannel = _channel;
+                    var saved = await _module.InvokeAsync<bool>("saveChannel", account, _channel.ToString());
+                    if (_disposed || revision != _revision) return;
+                    if (!saved) { _error = "频道已切换，但浏览器未能保存设置。"; StateHasChanged(); }
+                }
                 var mode = _scrollMode;
                 _scrollMode = "follow";
                 await _module.InvokeVoidAsync("followMessages", _messageElement, mode);
+                if (_revealEmoticons && _showEmoticons)
+                {
+                    _revealEmoticons = false;
+                    await _module.InvokeVoidAsync("revealEmoticons", _emoticonElement);
+                }
             }
         }
         catch (JSDisconnectedException) { }
         catch (OperationCanceledException) when (_disposed) { }
+    }
+
+    private void RestoreChannel(string? saved)
+    {
+        _restoreChannel = false;
+        _channel = Enum.TryParse<ChatType>(saved, out var channel) && Channels.Contains(channel) ? channel : ChatType.World;
+        _savedChannel = _channel;
+        AccountSelection.ChatChannels[ViewAccountId] = _channel;
+        RefreshSnapshot();
+        _scrollMode = "end";
+    }
+
+    private void ToggleEmoticons()
+    {
+        _showEmoticons = !_showEmoticons;
+        _revealEmoticons = _showEmoticons;
     }
 
     public async ValueTask DisposeAsync()
@@ -210,7 +271,9 @@ public partial class Chat
         if (_busy) return Task.CompletedTask;
         _privateLease?.Dispose();
         _privateLease = null;
+        _restoreChannel = false;
         _channel = channel;
+        AccountSelection.ChatChannels[ViewAccountId] = _channel;
         _error = _result = _details = null;
         _scrollMode = "end";
         RefreshSnapshot();
@@ -228,7 +291,9 @@ public partial class Chat
     {
         _privateLease?.Dispose();
         _privateLease = _chat.WatchPrivate(target);
+        _restoreChannel = false;
         _channel = ChatType.Private;
+        AccountSelection.ChatChannels[ViewAccountId] = _channel;
         _target = target;
         _targetInput = target.ToString();
         _noOlder = false;
@@ -395,6 +460,7 @@ public partial class Chat
     {
         _textSize = Math.Clamp(_textSize, 12, 24);
         _stickerSize = Math.Clamp(_stickerSize, 24, 96);
+        AccountSelection.ChatAppearance = (_textSize, _stickerSize);
         if (_module == null) return;
         try
         {

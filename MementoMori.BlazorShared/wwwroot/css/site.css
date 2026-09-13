@@ -1,0 +1,28 @@
+html { color-scheme: var(--mud-native-html-color-scheme, light); }
+* { scrollbar-width: thin; scrollbar-color: var(--mud-palette-lines-inputs) transparent; }
+body { background: var(--mud-palette-background); color: var(--mud-palette-text-primary); }
+.app-header { border-bottom: 1px solid var(--mud-palette-lines-default); }
+.app-header .mud-toolbar { gap: .5rem; }
+.app-header .app-account-select { flex: 0 1 220px; min-width: 0; }
+.app-header .app-language-select { flex: 0 1 140px; min-width: 0; }
+.app-nav { border-right: 1px solid var(--mud-palette-lines-default); }
+.app-nav .mud-drawer-header { align-items: center; min-height: 72px; }
+.app-nav .mud-typography-h5 { font-size: 1.25rem; font-weight: 600; }
+.app-nav .mud-nav-link { width: calc(100% - 1.3rem); margin: .2rem .65rem; border-radius: .5rem; }
+.app-nav .mud-nav-link.active { font-weight: 600; }
+.app-content { padding-top: 1.25rem; padding-bottom: 1.5rem; }
+.app-content .mud-card, .app-content .mud-grid-item > .mud-paper {
+    border: 1px solid var(--mud-palette-lines-default);
+    box-shadow: 0 2px 8px rgb(0 0 0 / .08);
+}
+.app-content .mud-card-header { border-bottom: 1px solid var(--mud-palette-lines-default); }
+.app-content .mud-chip { max-width: 100%; height: auto; min-height: 32px; }
+.app-content .mud-chip-content { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+.mud-popover, .mud-dialog { border: 1px solid var(--mud-palette-lines-default); }
+:focus-visible { outline: 2px solid var(--mud-palette-primary); outline-offset: 2px; }
+@media (max-width: 600px) {
+    .app-header .mud-toolbar { gap: 0; padding-left: .5rem; padding-right: .5rem; }
+    .app-header .app-account-select { flex: 1 1 100px; }
+    .app-header .app-language-select { flex: 0 1 90px; }
+    .app-content { padding-top: .85rem; }
+}
