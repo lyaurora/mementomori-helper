@@ -64,9 +64,21 @@ With Playwright available, `node tests/check-chat-ui.cjs http://127.0.0.1:5290` 
 
 ## WebUI appearance
 
-The app-bar **外观模式** menu offers **跟随系统**, **浅色** and **深色**. New browsers follow the system automatically; changes to the system preference apply immediately while that mode is selected. Explicit light/dark choices override the system and persist in browser storage. The shared MudBlazor palette controls page backgrounds, navigation, cards, menus, chat and native inputs; dark mode uses distinct background/surface levels and readable text and action colors.
+The app-bar **外观模式** menu offers **跟随系统**, **浅色** and **深色**. New browsers follow the system automatically; changes to the system preference apply immediately while that mode is selected. Explicit light/dark choices override the system and persist in browser storage. The shared MudBlazor palette controls page backgrounds, navigation, cards, menus, chat and native inputs; dark mode uses distinct background/surface levels and readable text and action colors. Both palettes are rendered during prerender, with the dark palette scoped to the document's theme attribute. The small fingerprinted `theme.js` script chooses the palette in the document head, so initial rendering and system changes do not wait for a Blazor connection.
 
-`node tests/check-theme-ui.cjs http://127.0.0.1:5290` checks system changes, manual overrides, reload persistence, dark text contrast, mobile controls and storage-denied fallback. It uses Playwright and does not invoke game actions.
+`node tests/check-theme-ui.cjs http://127.0.0.1:5290` checks the palette before Blazor starts, system changes, manual overrides, reload persistence, dark text contrast, mobile controls and storage-denied fallback. It uses Playwright and does not invoke game actions.
+
+## Performance checks
+
+Master tables build an ID index on load and publish the array and index together. Lookups preserve the original first-match behavior and array ordering; an invalid reload leaves the previous snapshot intact. The read-only game master objects are shared by the array and index. To compare indexed lookups with the old array scan using local public master data:
+
+```sh
+dotnet run --project tests/RegressionChecks/RegressionChecks.csproj -c Release -- --benchmark-master /path/to/Master
+```
+
+Home notices, shop lists and gacha lists load after the page becomes interactive, avoiding duplicate game requests during prerender and hydration. Leaving the page or switching accounts cancels outstanding reads. Shop and gacha data remain freshly requested; game request pacing and purchase/draw behavior are preserved. The unused Markdown package and its global browser assets were removed.
+
+With a logged-in account, `node tests/check-pages-ui.cjs http://127.0.0.1:5290` checks all eight navigation entries, character selection, inventory/shop tabs and draw details. It does not purchase, summon, spend inventory, start jobs or delete logs. Run the chat and theme checks alongside it after deployment. Browser timing and server CPU/GC measurements should be compared using the same account, network latency and cache state; a master-lookup microbenchmark is not a whole-page speedup.
 
 ## Runtime behavior
 

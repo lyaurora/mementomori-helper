@@ -13,6 +13,20 @@ const assert = require('node:assert/strict');
         await page.locator('.mud-popover-open').getByText(name, { exact: true }).click();
     };
     try {
+        // Hold back Blazor completely: the first rendered page must already use the right palette.
+        for (const [system, saved, expected] of [['dark', null, 'dark'], ['light', 'dark', 'dark'], ['dark', 'light', 'light']]) {
+            const initial = await browser.newPage({ colorScheme: system });
+            if (saved) await initial.addInitScript(value => localStorage.setItem('mementomori.theme', value), saved);
+            await initial.route(/\/_framework\/blazor\.web[^/]*\.js$/, route => route.abort());
+            await initial.goto(`${url}/Chat`, { waitUntil: 'domcontentloaded' });
+            await checkScheme(initial, expected);
+            assert(await initial.getByRole('button', { name: '外观模式', exact: true }).isDisabled(), 'Theme test unexpectedly started Blazor');
+            if (!saved) {
+                await initial.emulateMedia({ colorScheme: 'light' });
+                await checkScheme(initial, 'light');
+            }
+            await initial.close();
+        }
         const page = await browser.newPage({ colorScheme: 'dark', viewport: { width: 1440, height: 1000 } });
         page.on('pageerror', e => errors.push(e.message));
         await page.goto(`${url}/Settings`);

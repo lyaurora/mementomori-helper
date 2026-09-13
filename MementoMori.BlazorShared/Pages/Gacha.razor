@@ -17,6 +17,7 @@
 {
     <MudAlert Severity="Severity.Warning">@alertMessage</MudAlert>
 }
+@if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="正在加载召唤信息" /> }
 
 @if (ViewModel?.UserSyncData?.UserItemDtoInfo != null)
 {
@@ -68,29 +69,41 @@
     private List<GachaCaseInfo> gachaCaseInfos = new();
     private MementoMoriFuncs ViewModel;
     string alertMessage = "";
+    private bool _interactive, _loading;
 
     protected override async Task AccountChanged()
     {
+        ViewModel = Funcs;
+        gachaCaseInfos = new();
+        alertMessage = Funcs.LoginOk ? string.Empty : ResourceStrings.PleaseLogin;
+        _loading = Funcs.LoginOk;
+        if (!_interactive || !Funcs.LoginOk) return;
+        var token = CreateAccountCancellation();
         try
         {
-            alertMessage = Funcs.LoginOk ? string.Empty : ResourceStrings.PleaseLogin;
-            ViewModel = AccountSelection.Current.Funcs;
-            await GetGachaList();
+            await InvokeAsync(StateHasChanged);
+            await GetGachaList(token);
         }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
         catch (Exception e)
         {
-            alertMessage = e.Message;
+            if (!token.IsCancellationRequested) alertMessage = e.Message;
         }
         finally
         {
-            await InvokeAsync(StateHasChanged);
+            if (!token.IsCancellationRequested) { _loading = false; await InvokeAsync(StateHasChanged); }
         }
     }
 
-
-    private async Task GetGachaList()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        var listResponse = await ViewModel.GetResponse<GetListRequest, GetListResponse>(new GetListRequest());
+        if (firstRender) { _interactive = true; await AccountChanged(); }
+    }
+
+    private async Task GetGachaList(CancellationToken token)
+    {
+        var listResponse = await ViewModel.GetResponse<GetListRequest, GetListResponse>(new GetListRequest(), token);
+        token.ThrowIfCancellationRequested();
         gachaCaseInfos = listResponse.GachaCaseInfoList;
         alertMessage = string.Empty;
     }

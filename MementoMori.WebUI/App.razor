@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
     <link href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" rel="stylesheet" />
-    <link href="@Assets["_content/MudBlazor.Markdown/MudBlazor.Markdown.min.css"]" rel="stylesheet" />
     <link href="@Assets["_content/MementoMori.BlazorShared/css/site.css"]" rel="stylesheet" />
     <link href="@Assets["MementoMori.WebUI.styles.css"]" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
+    <script src="@Assets["_content/MementoMori.BlazorShared/theme.js"]"></script>
     <HeadOutlet @rendermode="@RenderMode.InteractiveServer" />
 </head>
 <body>
@@ -43,7 +43,6 @@
 
     <script src="@Assets["_framework/blazor.web.js"]"></script>
     <script src="@Assets["_content/MudBlazor/MudBlazor.min.js"]"></script>
-    <script src="@Assets["_content/MudBlazor.Markdown/MudBlazor.Markdown.min.js"]"></script>
     <script>
         window.downloadFileFromStream = async (fileName, contentStreamReference) => {
             const arrayBuffer = await contentStreamReference.arrayBuffer();

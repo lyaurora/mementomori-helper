@@ -25,6 +25,7 @@
 {
     <MudAlert Severity="Severity.Warning">@_alertMessage</MudAlert>
 }
+@if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="正在加载商店信息" /> }
 @if (Funcs?.UserSyncData?.UserItemDtoInfo != null)
 {
     <MudTabs MinimumTabWidth="20px" @bind-ActivePanelIndex="_selectedTabIndex">
@@ -181,29 +182,45 @@
     string _alertMessage = "";
 
     private List<UserItem> _consumableItems = new();
+    private bool _interactive, _loading;
 
     protected override async Task AccountChanged()
     {
+        _tradeShopTabInfoList = new();
+        _selectedTabIndex = 0;
+        _autoBuyDialogVisible = false;
+        _alertMessage = Funcs.LoginOk ? string.Empty : ResourceStrings.PleaseLogin;
+        _loading = Funcs.LoginOk;
+        if (!_interactive || !Funcs.LoginOk) return;
+        var token = CreateAccountCancellation();
         try
         {
-            _alertMessage = Funcs!.LoginOk ? string.Empty : ResourceStrings.PleaseLogin;
-            await GetShopInfo();
+            await InvokeAsync(StateHasChanged);
+            await GetShopInfo(token);
         }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
         catch (Exception e)
         {
-            _alertMessage = e.Message;
+            if (!token.IsCancellationRequested) _alertMessage = e.Message;
         }
         finally
         {
-            await InvokeAsync(StateHasChanged);
+            if (!token.IsCancellationRequested) { _loading = false; await InvokeAsync(StateHasChanged); }
         }
     }
 
-    private async Task GetShopInfo()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        var listResponse = await Funcs!.GetResponse<GetListRequest, GetListResponse>(new GetListRequest());
+        if (firstRender) { _interactive = true; await AccountChanged(); }
+    }
+
+    private async Task GetShopInfo(CancellationToken token)
+    {
+        var funcs = Funcs;
+        var listResponse = await funcs.GetResponse<GetListRequest, GetListResponse>(new GetListRequest(), token);
+        var weeklyTopicInfo = await funcs.GetResponse<GetWeeklyTopicsInfoRequest, GetWeeklyTopicsInfoResponse>(new GetWeeklyTopicsInfoRequest(), token);
+        token.ThrowIfCancellationRequested();
         _tradeShopTabInfoList = listResponse.TradeShopTabInfoList.OrderBy(d => Masters.TradeShopTabTable.GetById(d.TradeShopTabId).SortOrder).ToList();
-        var weeklyTopicInfo = await Funcs!.GetResponse<GetWeeklyTopicsInfoRequest, GetWeeklyTopicsInfoResponse>(new GetWeeklyTopicsInfoRequest());
         foreach (var tradeShopItems in weeklyTopicInfo.ShopData.TradeShopItemList.GroupBy(d => d.TradeShopItemId / 10000))
         {
             _tradeShopTabInfoList.Add(new TradeShopTabInfo

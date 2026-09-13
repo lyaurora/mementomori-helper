@@ -42,6 +42,15 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 using Quartz;
 using Quartz.Impl;
+using System.Diagnostics;
+
+if (args is ["--benchmark-master", var masterDirectory])
+{
+    BenchmarkMaster(new EquipmentTable(), masterDirectory);
+    BenchmarkMaster(new ItemTable(), masterDirectory);
+    BenchmarkMaster(new CharacterTable(), masterDirectory);
+    return;
+}
 
 var checks = new (string Name, Func<Task> Run)[]
 {
@@ -53,6 +62,7 @@ var checks = new (string Name, Func<Task> Run)[]
     ("manual quick-action batch stops after cancellation", CheckBatchCancellation),
     ("chat routing, history, reactions, delivery confirmation and cancellation", CheckChat),
     ("4.22 wire data and master rollback", CheckProtocol),
+    ("master ID index preserves order and survives reload failure", CheckMasterIndex),
     ("master download rejects corruption without replacing cached files", CheckMasterDownload)
 };
 foreach (var (name, run) in checks)
@@ -93,6 +103,7 @@ static async Task CheckAccountSwitch()
         await renderer.Dispatcher.InvokeAsync(() => renderer.Attach(component));
         var initializing = renderer.Dispatcher.InvokeAsync(component.Initialize);
         await component.Started.Task;
+        var readToken = component.NewReadToken();
         if (switchDuringLoad) selection.CurrentUserId = 2;
         component.Release.SetResult();
         await initializing;
@@ -100,7 +111,9 @@ static async Task CheckAccountSwitch()
         else await Task.Delay(250);
         Require(component.BoundUserId == selection.CurrentUserId, "Component is bound to the previous account");
         Require(component.Changes == (switchDuringLoad ? 2 : 1), "Initialization repeats an unchanged account");
+        Require(readToken.IsCancellationRequested == switchDuringLoad, "Account switch did not cancel its previous reads");
         component.Dispose();
+        Require(readToken.IsCancellationRequested && component.NewReadToken().IsCancellationRequested, "Disposed page permits pending or new reads");
         var changes = component.Changes;
         selection.CurrentUserId = switchDuringLoad ? 1 : 2;
         await Task.Delay(250);
@@ -383,6 +396,58 @@ static Task CheckProtocol()
     return Task.CompletedTask;
 }
 
+static Task CheckMasterIndex()
+{
+    var table = new EquipmentTable();
+    Require(table.GetById(1) == null, "An unloaded master table returned an item");
+    table.Load(MessagePackSerializer.ConvertFromJson("""[{"Id":2,"Memo":"first"},{"Id":1,"Memo":"other"},{"Id":2,"Memo":"duplicate"}]"""));
+    Require(table.GetById(2).Memo == "first" && table.GetById(99) == null, "ID index changed lookup semantics");
+    Require(table.GetArray().Select(row => row.Id).SequenceEqual([2L, 1L, 2L]), "ID indexing reordered master data");
+    var previous = table.GetArray();
+    try { table.Load([0xc1]); throw new Exception("Invalid master data was accepted"); }
+    catch (MessagePackSerializationException) { }
+    Require(ReferenceEquals(previous, table.GetArray()) && table.GetById(2).Memo == "first", "Failed reload replaced the working master index");
+    table.Load(MessagePackSerializer.ConvertFromJson("""[{"Id":3,"Memo":"replacement"}]"""));
+    Require(table.GetById(1) == null && table.GetById(3).Memo == "replacement", "Reload retained stale IDs");
+
+    var directory = Directory.CreateTempSubdirectory("mementomori-index-check-");
+    var original = Directory.GetCurrentDirectory();
+    try
+    {
+        Directory.SetCurrentDirectory(directory.FullName);
+        Directory.CreateDirectory("Master");
+        File.WriteAllBytes("Master/EquipmentMB", MessagePackSerializer.ConvertFromJson("""[{"Id":4,"Memo":"file"}]"""));
+        table.Load();
+        Require(table.GetById(3) == null && table.GetById(4).Memo == "file", "File loading did not update the ID index");
+    }
+    finally { Directory.SetCurrentDirectory(original); directory.Delete(true); }
+    return Task.CompletedTask;
+}
+
+static void BenchmarkMaster<T>(TableBase<T> table, string directory) where T : MasterBookBase
+{
+    table.Load(File.ReadAllBytes(Path.Combine(directory, table.GetMasterBookName())));
+    var rows = table.GetArray();
+    var ids = Enumerable.Range(0, 5000).Select(i => rows[(int)(i * 7919L % rows.Length)].Id).ToArray();
+    foreach (var id in ids.Take(100)) Require(ReferenceEquals(table.GetById(id), rows.First(row => row.Id == id)), "Indexed lookup differs from linear search");
+    foreach (var (name, lookup) in new (string, Func<long, T>)[] { ("linear", id => rows.FirstOrDefault(row => row.Id == id)!), ("indexed", table.GetById) })
+    {
+        foreach (var id in ids.Take(100)) _ = lookup(id);
+        var samples = new List<double>();
+        long allocation = 0, checksum = 0;
+        for (var round = 0; round < 3; round++)
+        {
+            var allocated = GC.GetAllocatedBytesForCurrentThread();
+            var watch = Stopwatch.StartNew();
+            foreach (var id in ids) checksum ^= lookup(id).Id;
+            watch.Stop();
+            allocation += GC.GetAllocatedBytesForCurrentThread() - allocated;
+            samples.Add(watch.Elapsed.TotalMilliseconds);
+        }
+        Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(new { table = table.GetMasterBookName(), rows = rows.Length, strategy = name, lookups = ids.Length, medianMs = samples.Order().ElementAt(1), allocatedBytes = allocation / 3, checksum }));
+    }
+}
+
 static async Task CheckChat()
 {
     var auth = new Writable<AuthOption>(new() { AuthUrl = "https://offline.invalid/api/", AppVersion = "4.22.0" });
@@ -540,6 +605,7 @@ static async Task CheckChat()
         var accounts = (ConcurrentDictionary<long, Account>)Field(manager, "_accounts").GetValue(manager)!;
         accounts[1] = new Account { AccountInfo = auth.Value.Accounts[0], Funcs = funcs, NetworkManager = network };
         var services = new ServiceCollection().AddLogging().AddSingleton(manager).AddScoped<AccountSelection>()
+            .AddSingleton<IWritableOptions<GameConfig>>(config)
             .AddSingleton(Construct<MementoMori.WebUI.UI.AtlasManager>(config))
             .AddSingleton<IJSRuntime, ChatJsStub>().AddSingleton<NavigationManager, ChatNavigation>()
             .AddSingleton<MementoMori.BlazorShared.IFileSaver, ChatFileSaver>();
@@ -555,6 +621,10 @@ static async Task CheckChat()
             {
                 var initial = (await renderer.RenderComponentAsync<MementoMori.BlazorShared.Pages.Chat>()).ToHtmlString();
                 Require(initial.Contains("chat-loading") && !initial.Contains("chat-messages"), "Prerender exposes a channel before browser preferences load");
+                var count = requests.Count;
+                var gacha = (await renderer.RenderComponentAsync<MementoMori.BlazorShared.Pages.Gacha>()).ToHtmlString();
+                var shop = (await renderer.RenderComponentAsync<MementoMori.BlazorShared.Pages.Shop>()).ToHtmlString();
+                Require(requests.Count == count && gacha.Contains("mud-progress-linear") && shop.Contains("mud-progress-linear"), "Shop/gacha make game requests during prerender");
                 provider.GetRequiredService<AccountSelection>().ChatChannels[1] = ChatType.World;
                 return (await renderer.RenderComponentAsync<MementoMori.BlazorShared.Pages.Chat>()).ToHtmlString();
             });
@@ -705,6 +775,7 @@ sealed class AccountProbe : AccountComponent
     public long BoundUserId => AccountInfo.UserId;
     public int Changes { get; private set; }
     public Task Initialize() => base.OnInitializedAsync();
+    public CancellationToken NewReadToken() => CreateAccountCancellation();
     protected override Task AccountChanged()
     {
         Changes++;
