@@ -15,7 +15,7 @@
         </span>
         <MudSpacer />
         <MudButton OnClick="Reconnect" Disabled="@(!Funcs.LoginOk)" StartIcon="@Icons.Material.Filled.Refresh">重新连接</MudButton>
-        <MudButton OnClick="() => _showSettings = !_showSettings" StartIcon="@Icons.Material.Filled.TextFields">显示设置</MudButton>
+        <MudButton OnClick="() => _showSettings = !_showSettings" Disabled="@_restoreChannel" StartIcon="@Icons.Material.Filled.TextFields">显示设置</MudButton>
     </div>
 
     @if (!Funcs.LoginOk)
@@ -57,6 +57,12 @@
         </div>
     }
 
+    @if (_restoreChannel)
+    {
+        <div class="chat-loading" role="status">正在恢复聊天频道…</div>
+    }
+    else
+    {
     <nav class="chat-channels" aria-label="聊天频道">
         @foreach (var channel in Channels)
         {
@@ -105,6 +111,7 @@
         }
 
         <section class="chat-conversation" aria-label="当前会话">
+            <div class="chat-conversation-layout @(_showEmoticons ? "with-stickers" : "")">
             <div class="chat-conversation-heading">
                 <strong>@ConversationName</strong>
                 <span class="chat-muted">@(_snapshot.Messages.Count) 条 · 服务器时间</span>
@@ -215,6 +222,7 @@
                 </div>
             }
 
+            <div class="chat-history">
             <div @ref="_messageElement" class="chat-messages" role="log" aria-live="polite" aria-relevant="additions text" tabindex="0" data-testid="chat-messages">
                 @if (_channel == ChatType.Private && _target > 0)
                 {
@@ -294,6 +302,7 @@
                     </article>
                 }
             </div>
+            </div>
 
             @if (_shareBattle != null)
             {
@@ -311,19 +320,34 @@
                 </div>
             }
             <div class="chat-composer">
-                <div class="chat-compose-actions">
-                    <label for="chat-message-input">发送至 @ConversationName</label>
-                    <MudSpacer />
-                    <MudButton Size="Size.Small" StartIcon="@Icons.Material.Filled.SentimentSatisfiedAlt" OnClick="() => _showEmoticons = !_showEmoticons"
-                               Disabled="@(_busy || !_snapshot.Connected)">@(_showEmoticons ? "收起表情包" : "表情包")</MudButton>
-                </div>
-                @if (_showEmoticons)
+                <label for="chat-message-input">发送至 @ConversationName</label>
+                <textarea id="chat-message-input" @ref="_inputElement" @bind="Draft" @bind:event="oninput" @onkeydown="MessageKeyDown" maxlength="80" rows="2"
+                          placeholder="输入消息…" disabled="@(!_snapshot.Connected || _busy || (_channel == ChatType.Private && _target == 0))"></textarea>
+                @if (ChatEmoticons.Split(Draft).Any(part => ChatEmoticons.TryGetId(part, out _)))
                 {
-                    <div class="chat-emoticons" aria-label="表情包选择">
+                    <div class="chat-draft-preview" style="font-size: @(_textSize)px"><span class="chat-muted">预览</span><ChatText Text="@Draft" StickerSize="_stickerSize" /></div>
+                }
+                <div class="chat-compose-actions">
+                    <span class="chat-muted">Ctrl+Enter 发送 · @Draft.Length/80</span>
+                    <span class="chat-result" role="status">@_result</span>
+                    <MudSpacer />
+                    <div class="chat-send-actions">
+                        <MudButton Class="chat-emoticon-toggle" StartIcon="@Icons.Material.Filled.SentimentSatisfiedAlt" OnClick="ToggleEmoticons" Disabled="@(_busy || !_snapshot.Connected)"
+                                   aria-expanded="@_showEmoticons.ToString().ToLowerInvariant()" aria-controls="chat-emoticon-picker" data-testid="chat-emoticons-toggle">@(_showEmoticons ? "收起表情包" : "表情包")</MudButton>
+                        <MudButton OnClick="Send" Color="Color.Primary" Variant="Variant.Filled" Disabled="@(!CanSend)" StartIcon="@Icons.Material.Filled.Send" data-testid="chat-send">@(_busy ? "处理中…" : "发送")</MudButton>
+                    </div>
+                </div>
+            </div>
+            @if (_showEmoticons)
+            {
+                <aside id="chat-emoticon-picker" @ref="_emoticonElement" class="chat-emoticons" aria-label="表情包选择">
+                    <div class="chat-emoticon-body">
                         <div class="chat-contact-tools">
-                            <MudButton Size="Size.Small" Variant="@(_emoticonTab == 1 ? Variant.Filled : Variant.Text)" OnClick="() => _emoticonTab = 1">猫猫</MudButton>
-                            <MudButton Size="Size.Small" Variant="@(_emoticonTab == 2 ? Variant.Filled : Variant.Text)" OnClick="() => _emoticonTab = 2">角色</MudButton>
-                            <span class="chat-muted">点击插入；灰色贴图尚未解锁</span>
+                            <div class="chat-emoticon-tabs" role="group" aria-label="表情分类">
+                                <button type="button" class="@(_emoticonTab == 1 ? "selected" : "")" aria-pressed="@((_emoticonTab == 1).ToString().ToLowerInvariant())" @onclick="() => _emoticonTab = 1">猫猫</button>
+                                <button type="button" class="@(_emoticonTab == 2 ? "selected" : "")" aria-pressed="@((_emoticonTab == 2).ToString().ToLowerInvariant())" @onclick="() => _emoticonTab = 2">角色</button>
+                            </div>
+                            <span class="chat-muted">可连续添加，灰色为未解锁</span>
                         </div>
                         <div class="chat-emoticon-grid">
                             @foreach (var id in EmoticonIds)
@@ -335,21 +359,11 @@
                             }
                         </div>
                     </div>
-                }
-                <textarea id="chat-message-input" @ref="_inputElement" @bind="Draft" @bind:event="oninput" @onkeydown="MessageKeyDown" maxlength="80" rows="2"
-                          placeholder="输入消息…" disabled="@(!_snapshot.Connected || _busy || (_channel == ChatType.Private && _target == 0))"></textarea>
-                @if (ChatEmoticons.Split(Draft).Any(part => ChatEmoticons.TryGetId(part, out _)))
-                {
-                    <div class="chat-draft-preview" style="font-size: @(_textSize)px"><span class="chat-muted">预览</span><ChatText Text="@Draft" StickerSize="_stickerSize" /></div>
-                }
-                <div class="chat-compose-actions">
-                    <span class="chat-muted">Ctrl+Enter 发送 · @Draft.Length/80</span>
-                    <span class="chat-result" role="status">@_result</span>
-                    <MudSpacer />
-                    <MudButton OnClick="Send" Color="Color.Primary" Variant="Variant.Filled" Disabled="@(!CanSend)" StartIcon="@Icons.Material.Filled.Send" data-testid="chat-send">@(_busy ? "处理中…" : "发送")</MudButton>
-                </div>
+                </aside>
+            }
             </div>
         </section>
     </div>
     <p class="chat-footnote">每个会话保留最近 @ChatSession.HistoryLimit 条消息；关闭聊天页面后停止接收，重新打开会加载服务器记录。</p>
+    }
 </div>

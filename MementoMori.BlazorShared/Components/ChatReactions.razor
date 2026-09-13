@@ -12,18 +12,24 @@
             <img class="chat-reaction-icon" src="@ChatEmoticons.ReactionUrl(reaction)" alt="@Name(reaction)" /> @count
         </button>
     }
-    <MudMenu Disabled="Disabled">
-        <ActivatorContent><MudIconButton Icon="@Icons.Material.Filled.AddReaction" Size="Size.Small" aria-label="添加回应" title="添加回应" Disabled="Disabled" /></ActivatorContent>
-        <ChildContent>
-            @foreach (var reaction in Reactions)
-            {
-                <MudMenuItem OnClick="() => OnReact.InvokeAsync(reaction)">
-                    <img class="chat-reaction-choice" src="@ChatEmoticons.ReactionUrl(reaction)" alt="" />
-                    @Name(reaction)@(Entry.MyChatReactionType == reaction ? "（再次选择取消）" : "")
-                </MudMenuItem>
-            }
-        </ChildContent>
-    </MudMenu>
+    <div class="chat-reaction-picker" @onkeydown="CloseOnEscape">
+        <MudIconButton @ref="_reactionButton" Icon="@Icons.Material.Filled.AddReaction" Size="Size.Small" aria-label="添加回应" title="添加回应" aria-expanded="@_showChoices.ToString().ToLowerInvariant()" Disabled="Disabled" OnClick="() => _showChoices = !_showChoices" />
+        @if (_showChoices)
+        {
+            <MudPopover Open="true" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
+                <div class="chat-reaction-options" role="group" aria-label="选择回应" @onkeydown="CloseOnEscape">
+                    @foreach (var reaction in Reactions)
+                    {
+                        <button type="button" disabled="@Disabled" @onclick="() => ChooseReaction(reaction)">
+                            <img class="chat-reaction-choice" src="@ChatEmoticons.ReactionUrl(reaction)" alt="" />
+                            @Name(reaction)@(Entry.MyChatReactionType == reaction ? "（再次选择取消）" : "")
+                        </button>
+                    }
+                </div>
+            </MudPopover>
+            <MudOverlay Visible="true" AutoClose="true" OnClosed="() => _showChoices = false" />
+        }
+    </div>
     @if (Entry.ChatReactionCountMap?.Values.Any(count => count > 0) == true)
     {
         <MudIconButton Icon="@Icons.Material.Filled.PeopleOutline" Size="Size.Small" aria-label="回应详情" title="回应详情" OnClick="() => OnDetails.InvokeAsync()" Disabled="Disabled" />
@@ -36,6 +42,15 @@
     [Parameter] public bool Disabled { get; set; }
     [Parameter] public EventCallback<ChatReactionType> OnReact { get; set; }
     [Parameter] public EventCallback OnDetails { get; set; }
+    private bool _showChoices;
+    private MudIconButton? _reactionButton;
+    private Task ChooseReaction(ChatReactionType reaction) { _showChoices = false; return OnReact.InvokeAsync(reaction); }
+    private async Task CloseOnEscape(KeyboardEventArgs args)
+    {
+        if (args.Key != "Escape") return;
+        _showChoices = false;
+        if (_reactionButton != null) await _reactionButton.FocusAsync();
+    }
     private static string Name(ChatReactionType type) => type switch
     {
         ChatReactionType.Wink => "眨眼", ChatReactionType.Cheers => "干杯", ChatReactionType.Heart => "爱心", ChatReactionType.Sad => "难过", _ => "回应"

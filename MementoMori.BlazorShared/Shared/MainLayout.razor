@@ -10,44 +10,56 @@
 @inject AccountManager AccountManager
 @inject IWritableOptions<AuthOption> AuthOption
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+@inject ISnackbar Snackbar
 
-<MudThemeProvider @bind-IsDarkMode="_isDarkMode"/>
+<MudThemeProvider @ref="_themeProvider" Theme="_theme" @bind-IsDarkMode="_isDarkMode" ObserveSystemThemeChange="@(_themeMode == "system")" DefaultScrollbar="true"/>
 <MudPopoverProvider/>
 <MudDialogProvider/>
 <MudSnackbarProvider/>
 
 <MudLayout>
-    <MudAppBar Dense="false" Color="Color.Transparent">
+    <MudAppBar Dense="false" Elevation="0" Class="app-header">
         <MudIconButton
             Icon="@Icons.Material.Filled.Menu"
             Color="Color.Inherit"
             Edge="Edge.Start"
+            aria-label="展开或收起导航"
             @onclick="e => DrawerToggle()">
         </MudIconButton>
-        <MudSelect T="long" Label="@ResourceStrings.SwitchAccount" Variant="Variant.Text" Dense="true" @bind-Value="AccountSelection.CurrentUserId">
+        <MudSelect T="long" Label="@ResourceStrings.SwitchAccount" Variant="Variant.Text" Dense="true" Class="app-account-select" @bind-Value="AccountSelection.CurrentUserId">
             @foreach (var account in AuthOption.Value.Accounts)
             {
                 <MudSelectItem T="long" Value="account.UserId">@account.Name</MudSelectItem>
             }
         </MudSelect>
         <MudSpacer />
-        <MudSelect T="CultureInfo" Label="Select Language" Variant="Variant.Text" Dense="true" @bind-Value="SelectedLanguage">
+        <MudSelect T="CultureInfo" Label="Select Language" Variant="Variant.Text" Dense="true" Class="app-language-select" @bind-Value="SelectedLanguage">
             <MudSelectItem Value="@(new CultureInfo("en-US"))"></MudSelectItem>
             <MudSelectItem Value="@(new CultureInfo("zh-CN"))"></MudSelectItem>
             <MudSelectItem Value="@(new CultureInfo("ja-JP"))"></MudSelectItem>
             <MudSelectItem Value="@(new CultureInfo("ko-KR"))"></MudSelectItem>
         </MudSelect>
-        <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)" Color="Color.Inherit" Title="Toggle dark mode" @onclick="ToggleDarkMode" />
-        <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Target="_blank" Color="Color.Inherit" Href="https://github.com/lyaurora/mementomori-helper/" />
+        <MudMenu Disabled="@(!_themeReady)" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+            <ActivatorContent>
+                <MudIconButton Icon="@ThemeIcon" Color="Color.Inherit" title="@($"外观：{ThemeName}")" aria-label="外观模式" Disabled="@(!_themeReady)" />
+            </ActivatorContent>
+            <ChildContent>
+                <MudMenuItem Icon="@(_themeMode == "system" ? Icons.Material.Filled.Check : Icons.Material.Filled.BrightnessAuto)" OnClick='() => SetThemeMode("system")'>跟随系统</MudMenuItem>
+                <MudMenuItem Icon="@(_themeMode == "light" ? Icons.Material.Filled.Check : Icons.Material.Filled.LightMode)" OnClick='() => SetThemeMode("light")'>浅色</MudMenuItem>
+                <MudMenuItem Icon="@(_themeMode == "dark" ? Icons.Material.Filled.Check : Icons.Material.Filled.DarkMode)" OnClick='() => SetThemeMode("dark")'>深色</MudMenuItem>
+            </ChildContent>
+        </MudMenu>
+        <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Target="_blank" Color="Color.Inherit" Href="https://github.com/lyaurora/mementomori-helper/" aria-label="GitHub 项目" />
     </MudAppBar>
-    <MudDrawer @bind-Open="_drawerOpen">
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="0" Class="app-nav">
         <MudDrawerHeader>
             <MudText Typo="Typo.h5" Class="mt-1">@ResourceStrings.GameAssistant</MudText>
         </MudDrawerHeader>
         <NavMenu />
     </MudDrawer>
     <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge">
+        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="app-content">
             @Body
         </MudContainer>
     </MudMainContent>
@@ -56,8 +68,64 @@
 @code {
     bool _drawerOpen = true;
     bool _isDarkMode = false;
-    bool _languageSelectOpen = false;
+    bool _themeReady, _disposed;
+    string _themeMode = "system";
+    MudThemeProvider _themeProvider = null!;
     IDisposable? _accountManagerSubscription;
+    string ThemeName => _themeMode switch { "light" => "浅色", "dark" => "深色", _ => "跟随系统" };
+    string ThemeIcon => _themeMode switch { "light" => Icons.Material.Filled.LightMode, "dark" => Icons.Material.Filled.DarkMode, _ => Icons.Material.Filled.BrightnessAuto };
+    static readonly MudTheme _theme = new()
+    {
+        LayoutProperties = new() { DefaultBorderRadius = "10px" },
+        PaletteLight = new()
+        {
+            Primary = "#6754A6",
+            Background = "#F5F6FA",
+            BackgroundGray = "#F0F2F7",
+            AppbarBackground = "#FFFFFF",
+            AppbarText = "#303643",
+            LinesDefault = "#E0E4EC",
+            TableLines = "#E0E4EC",
+            Divider = "#E0E4EC"
+        },
+        PaletteDark = new()
+        {
+            Primary = "#B9ADF3",
+            PrimaryContrastText = "#201A38",
+            Secondary = "#E9ADC1",
+            SecondaryContrastText = "#2E1925",
+            Info = "#91C9F4",
+            InfoContrastText = "#152736",
+            Success = "#93CFAC",
+            SuccessContrastText = "#182B20",
+            Warning = "#EAC18A",
+            WarningContrastText = "#332619",
+            Error = "#E6A0A7",
+            ErrorContrastText = "#331C23",
+            Background = "#15171C",
+            BackgroundGray = "#1C2028",
+            Surface = "#22262F",
+            AppbarBackground = "#191C23",
+            AppbarText = "#E6EAF2",
+            DrawerBackground = "#191C23",
+            DrawerText = "#D4D8E3",
+            DrawerIcon = "#A4ADBF",
+            TextPrimary = "#E6EAF2",
+            TextSecondary = "#B1BACB",
+            TextDisabled = "#788294",
+            ActionDefault = "#C4CBD8",
+            ActionDisabled = "#788294",
+            ActionDisabledBackground = "#2C313C",
+            LinesDefault = "#343B48",
+            LinesInputs = "#697489",
+            TableLines = "#343B48",
+            TableStriped = "#262B36",
+            TableHover = "#303747",
+            Divider = "#343B48",
+            DividerLight = "#2C313C",
+            HoverOpacity = .1
+        }
+    };
 
     CultureInfo SelectedLanguage
     {
@@ -76,6 +144,7 @@
 
     public void Dispose()
     {
+        _disposed = true;
         _accountManagerSubscription?.Dispose();
     }
 
@@ -84,8 +153,32 @@
         _drawerOpen = !_drawerOpen;
     }
 
-    void ToggleDarkMode()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        _isDarkMode = !_isDarkMode;
+        if (!firstRender) return;
+        try
+        {
+            try
+            {
+                var saved = await JS.InvokeAsync<string?>("localStorage.getItem", "mementomori.theme");
+                if (saved is "light" or "dark") _themeMode = saved;
+            }
+            catch (JSException) { }
+            if (_disposed) return;
+            _isDarkMode = _themeMode == "dark" || _themeMode == "system" && await _themeProvider.GetSystemPreference();
+            _themeReady = true;
+            if (!_disposed) StateHasChanged();
+        }
+        catch (JSDisconnectedException) { }
+        catch (OperationCanceledException) when (_disposed) { }
+    }
+
+    async Task SetThemeMode(string mode)
+    {
+        _themeMode = mode;
+        _isDarkMode = mode == "dark" || mode == "system" && await _themeProvider.GetSystemPreference();
+        try { await JS.InvokeVoidAsync("localStorage.setItem", "mementomori.theme", mode); }
+        catch (JSDisconnectedException) { }
+        catch (JSException) { Snackbar.Add("主题已切换，但浏览器未能保存设置。", Severity.Warning); }
     }
 }

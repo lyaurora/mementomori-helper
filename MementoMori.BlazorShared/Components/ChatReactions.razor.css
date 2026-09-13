@@ -4,3 +4,7 @@
 .chat-reactions > button.selected { background: var(--mud-palette-primary-hover); border-color: var(--mud-palette-primary); }
 .chat-reaction-icon { width: 32px; height: 28px; object-fit: contain; vertical-align: middle; }
 .chat-reaction-choice { width: 42px; height: 36px; object-fit: contain; vertical-align: middle; margin-right: .5rem; }
+.chat-reaction-picker { position: relative; }
+.chat-reaction-options { display: grid; padding: .35rem; }
+.chat-reaction-options button { display: flex; align-items: center; padding: .35rem .65rem; border-radius: .35rem; color: var(--mud-palette-text-primary); font: inherit; white-space: nowrap; cursor: pointer; }
+.chat-reaction-options button:hover:not(:disabled) { background: var(--mud-palette-primary-hover); }

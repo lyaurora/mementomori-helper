@@ -1,6 +1,7 @@
 using Injectio.Attributes;
 using ReactiveUI;
 using System.Reactive.Linq;
+using MementoMori.Ortega.Share.Enums;
 
 namespace MementoMori.BlazorShared.Models;
 
@@ -10,6 +11,8 @@ public sealed class AccountSelection : ReactiveObject, IDisposable
     private readonly AccountManager _manager;
     private readonly IDisposable _subscription;
     private long _userId;
+    public Dictionary<long, ChatType> ChatChannels { get; } = new();
+    public (int TextSize, int StickerSize)? ChatAppearance { get; set; }
 
     public AccountSelection(AccountManager manager)
     {

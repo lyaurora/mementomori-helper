@@ -77,6 +77,9 @@ static async Task CheckAccountSwitch()
     using var otherSelection = new AccountSelection(manager);
     selection.CurrentUserId = 2;
     Require(otherSelection.CurrentUserId == 1, "Account selection leaks across browser sessions");
+    selection.ChatChannels[1] = ChatType.Guild;
+    selection.ChatAppearance = (17, 53);
+    Require(otherSelection.ChatChannels.Count == 0 && otherSelection.ChatAppearance == null, "Chat preferences leak across browser sessions");
     var accounts = (ConcurrentDictionary<long, Account>)Field(manager, "_accounts").GetValue(manager)!;
     accounts[1] = new Account {AccountInfo = new AccountInfo {UserId = 1}};
     accounts[2] = new Account {AccountInfo = new AccountInfo {UserId = 2}};
@@ -391,9 +394,9 @@ static async Task CheckChat()
     funcs.NetworkManager = network;
     funcs.LoginOk = true;
     funcs.UserSyncData.BlockPlayerIdList = [999];
+    using var lifetime = new CancellationTokenSource();
     using var chat = funcs.Chat;
     using var otherChat = new ChatSession(funcs);
-    using var lifetime = new CancellationTokenSource();
     Field(chat, "_lifetime").SetValue(chat, lifetime);
     Field(chat, "_playerId").SetValue(chat, 101L);
     Field(chat, "_connected").SetValue(chat, true);
@@ -530,7 +533,8 @@ static async Task CheckChat()
 
         inbound.OnReceiveMessage(new() { ChatInfo = Message(8, 9_000, "<script>alert('chat')</script>") });
         Masters.TextResourceTable.Load(MessagePackSerializer.ConvertFromJson("""[{"StringKey":"[ChatTestSystem]","Text":"Castle {0}"},{"StringKey":"[GlobalGvgCastleName21]","Text":"Rula"}]"""));
-        inbound.OnReceiveMessage(new() { ChatInfo = new() { PlayerId = 0, ChatType = ChatType.World, LocalTimeStamp = 9001, SystemChatMessageKey = "[ChatTestSystem]", SystemChatMessageArgs = ["[GlobalGvgCastleName21]"] } });
+        var systemMessage = new ChatInfo { PlayerId = 0, ChatType = ChatType.World, LocalTimeStamp = 9001, SystemChatMessageKey = "[ChatTestSystem]", SystemChatMessageArgs = ["[GlobalGvgCastleName21]"] };
+        inbound.OnReceiveMessage(new() { ChatInfo = systemMessage });
         auth.Value.Accounts.Add(new AccountInfo { UserId = 1, Name = "offline account" });
         var manager = Construct<AccountManager>(auth, config, NullLogger<AccountManager>.Instance);
         var accounts = (ConcurrentDictionary<long, Account>)Field(manager, "_accounts").GetValue(manager)!;
@@ -548,7 +552,12 @@ static async Task CheckChat()
         await using (var renderer = new HtmlRenderer(provider, NullLoggerFactory.Instance))
         {
             var html = await renderer.Dispatcher.InvokeAsync(async () =>
-                (await renderer.RenderComponentAsync<MementoMori.BlazorShared.Pages.Chat>()).ToHtmlString());
+            {
+                var initial = (await renderer.RenderComponentAsync<MementoMori.BlazorShared.Pages.Chat>()).ToHtmlString();
+                Require(initial.Contains("chat-loading") && !initial.Contains("chat-messages"), "Prerender exposes a channel before browser preferences load");
+                provider.GetRequiredService<AccountSelection>().ChatChannels[1] = ChatType.World;
+                return (await renderer.RenderComponentAsync<MementoMori.BlazorShared.Pages.Chat>()).ToHtmlString();
+            });
             Require(html.Contains("&lt;script&gt;") && !html.Contains("<script>"), "Chat text is interpreted as HTML");
             Require(html.Contains("Castle Rula") && !html.Contains("[GlobalGvgCastleName21]"), "System-message parameters are not localized");
             Require(ChatEmoticons.Ids.Count() == 39 && ChatEmoticons.TryGetId("#1007#", out var sticker) && sticker == 1007
