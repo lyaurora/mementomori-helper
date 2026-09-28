@@ -10,7 +10,7 @@ const assert = require('node:assert/strict');
     const errors = [], failed = [];
     page.on('pageerror', e => errors.push(e.message));
     page.on('response', r => { if (r.url().startsWith(url) && r.status() >= 400) failed.push([new URL(r.url()).pathname, r.status()]); });
-    const channel = name => page.getByRole('navigation', { name: '聊天频道' }).getByRole('button', { name, exact: true });
+    const channel = name => page.getByRole('navigation', { name: '聊天频道' }).getByRole('button', { name: name === '私聊' ? /^私聊(?: 有未读私聊)?$/ : name, exact: true });
     const waitIdle = () => page.waitForFunction(() => !document.querySelector('[data-testid="chat-send"]')?.textContent.includes('处理中'));
     try {
         await page.goto(`${url}/Chat`);
