@@ -296,11 +296,12 @@
 
     private void ShowAutoBuyDialog(TradeShopTabMB tab, TradeShopItem item)
     {
-        _consumableItems = tab.ConsumeItemInfos.Select(d => new UserItem {ItemType = d.ItemType, ItemId = d.ItemId}).ToList();
+        _consumableItems = (tab.ConsumeItemInfos ?? []).Select(d => new UserItem {ItemType = d.ItemType, ItemId = d.ItemId}).ToList();
         _autoBuyDialogVisible = true;
         _selectedAutoBuyItem = item.GiveItem;
-        _selectedConsumeItem = _consumableItems.First(d => d.IsEqual(item.ConsumeItem1.ItemType, item.ConsumeItem1.ItemId));
-        _selectedConsumeCount = item.ConsumeItem1.ItemCount;
+        _selectedConsumeItem = item.ConsumeItem1 == null ? null
+            : _consumableItems.FirstOrDefault(d => d.IsEqual(item.ConsumeItem1.ItemType, item.ConsumeItem1.ItemId));
+        _selectedConsumeCount = item.ConsumeItem1?.ItemCount ?? 0;
     }
 
     private List<GameConfig.ShopAutoBuyItem> ShopAutoBuyItems

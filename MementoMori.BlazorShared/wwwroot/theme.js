@@ -12,6 +12,7 @@
         document.documentElement.style.colorScheme = theme;
     }
     window.mementoTheme = {
+        apply,
         getMode: () => mode,
         setMode: value => {
             mode = value === 'light' || value === 'dark' ? value : 'system';

@@ -33,7 +33,8 @@ public partial class BattleLog
 
     private void GetLogs()
     {
-        var files = Directory.GetFiles(GameConfig.Value.BattleLogDir);
+        var files = Directory.Exists(GameConfig.Value.BattleLogDir)
+            ? Directory.GetFiles(GameConfig.Value.BattleLogDir) : [];
         var prefix = logTypePrefixes[selectedBattleLogType];
         BattleResults.Clear();
         foreach (var file in files.OrderByDescending(File.GetLastWriteTimeUtc))

@@ -66,7 +66,9 @@ With Playwright available, `node tests/check-chat-ui.cjs http://127.0.0.1:5290` 
 
 The app-bar **外观模式** menu offers **跟随系统**, **浅色** and **深色**. New browsers follow the system automatically; changes to the system preference apply immediately while that mode is selected. Explicit light/dark choices override the system and persist in browser storage. The shared MudBlazor palette controls page backgrounds, navigation, cards, menus, chat and native inputs; dark mode uses distinct background/surface levels and readable text and action colors. Both palettes are rendered during prerender, with the dark palette scoped to the document's theme attribute. The small fingerprinted `theme.js` script chooses the palette in the document head, so initial rendering and system changes do not wait for a Blazor connection.
 
-`node tests/check-theme-ui.cjs http://127.0.0.1:5290` checks the palette before Blazor starts, system changes, manual overrides, reload persistence, dark text contrast, mobile controls and storage-denied fallback. It uses Playwright and does not invoke game actions.
+Enhanced navigation reapplies the current browser theme after Blazor patches the document, including sidebar clicks before the interactive connection is ready.
+
+`node tests/check-theme-ui.cjs http://127.0.0.1:5290` checks the palette before Blazor starts, early sidebar navigation, system changes, manual overrides, reload persistence, dark text contrast, mobile controls and storage-denied fallback. It uses Playwright and does not invoke game actions.
 
 ## Performance checks
 

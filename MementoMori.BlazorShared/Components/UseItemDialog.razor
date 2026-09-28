@@ -62,14 +62,19 @@
 
     private async Task UseItem()
     {
+        if (_processing || _buyed) return;
         _processing = true;
-        var items = await UseItemFunc(_useCount);
-        _buyed = true;
-        var msg = new StringBuilder();
-        msg.AppendLine($"{ButtonText}{ResourceStrings.Success}");
-        items.PrintUserItems(s => msg.AppendLine(s));
-        message = msg.ToString();
-        _processing = false;
+        try
+        {
+            var items = await UseItemFunc(_useCount);
+            _buyed = true;
+            var msg = new StringBuilder();
+            msg.AppendLine($"{ButtonText}{ResourceStrings.Success}");
+            items.PrintUserItems(s => msg.AppendLine(s));
+            message = msg.ToString();
+        }
+        catch (Exception e) { message = e.Message; }
+        finally { _processing = false; }
     }
 
 }

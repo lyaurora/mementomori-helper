@@ -55,6 +55,7 @@ if (args is ["--benchmark-master", var masterDirectory])
 var checks = new (string Name, Func<Task> Run)[]
 {
     ("account switching during initialization", CheckAccountSwitch),
+    ("UI recovers from item errors, missing logs and free shop items", CheckUiRecovery),
     ("logout invalidates queued jobs and waits for active work", CheckLogout),
     ("configuration permissions and contents", CheckPermissions),
     ("login preferences, retry backoff and deletion", CheckAccountLifecycle),
@@ -77,6 +78,40 @@ foreach (var (name, run) in checks)
         Environment.ExitCode = 1;
         Console.Error.WriteLine($"FAIL: {name}: {e}");
     }
+}
+
+static async Task CheckUiRecovery()
+{
+    var dialog = new MementoMori.BlazorShared.Components.UseItemDialog();
+    var use = dialog.GetType().GetMethod("UseItem", BindingFlags.Instance | BindingFlags.NonPublic)!;
+    dialog.UseItemFunc = _ => throw new InvalidOperationException("offline rejection");
+    await (Task)use.Invoke(dialog, null)!;
+    Require(!(bool)Field(dialog, "_processing").GetValue(dialog)!, "Failed item action stays busy");
+    Require(!(bool)Field(dialog, "_buyed").GetValue(dialog)!, "Failed item action is marked successful");
+    Require((string)Field(dialog, "message").GetValue(dialog)! == "offline rejection", "Item error is not shown");
+    var calls = 0;
+    dialog.UseItemFunc = _ => { calls++; return Task.FromResult<IList<MementoMori.Ortega.Share.Data.Item.IUserItem>>([]); };
+    await (Task)use.Invoke(dialog, null)!;
+    await (Task)use.Invoke(dialog, null)!;
+    Require(calls == 1 && (bool)Field(dialog, "_buyed").GetValue(dialog)!, "Item retry or duplicate-submit guard failed");
+
+    var logs = new MementoMori.BlazorShared.Pages.BattleLog();
+    var flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+    logs.GetType().GetProperty("GameConfig", flags)!.SetValue(logs,
+        new Writable<GameConfig>(new() { BattleLogDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N")) }));
+    logs.GetType().GetProperty("selectedBattleLogType", flags)!.SetValue(logs,
+        MementoMori.BlazorShared.Pages.BattleLog.BattleLogType.TowerInfinite);
+    Require(logs.GetType().GetProperty("SelectedBattleResult", flags)!.GetValue(logs) == null, "Missing log directory retains a selected log");
+
+    using var shop = new MementoMori.BlazorShared.Pages.Shop();
+    var tab = Newtonsoft.Json.JsonConvert.DeserializeObject<TradeShopTabMB>("{}")!;
+    var item = new MementoMori.Ortega.Share.Data.TradeShop.TradeShopItem
+        { GiveItem = new() { ItemType = ItemType.Gold, ItemId = 1, ItemCount = 1 } };
+    shop.GetType().GetMethod("ShowAutoBuyDialog", flags)!.Invoke(shop, [tab, item]);
+    Require(Field(shop, "_selectedConsumeItem").GetValue(shop) == null
+        && (long)Field(shop, "_selectedConsumeCount").GetValue(shop)! == 0,
+        "Free shop item creates a paid consumption rule");
+    Require(ReferenceEquals(Field(shop, "_selectedAutoBuyItem").GetValue(shop), item.GiveItem), "Free shop item selection was lost");
 }
 
 static async Task CheckAccountSwitch()
@@ -625,6 +660,19 @@ static async Task CheckChat()
                 var gacha = (await renderer.RenderComponentAsync<MementoMori.BlazorShared.Pages.Gacha>()).ToHtmlString();
                 var shop = (await renderer.RenderComponentAsync<MementoMori.BlazorShared.Pages.Shop>()).ToHtmlString();
                 Require(requests.Count == count && gacha.Contains("mud-progress-linear") && shop.Contains("mud-progress-linear"), "Shop/gacha make game requests during prerender");
+                Masters.CharacterTable.Load(MessagePackSerializer.ConvertFromJson("""[{"Id":1,"JobFlags":1,"NameKey":"offline warrior"}]"""));
+                Masters.EquipmentTable.Load(MessagePackSerializer.ConvertFromJson("""[{"Id":1,"EquipmentLv":180,"NameKey":"offline equipment","BattleParameterChangeInfo":{}}]"""));
+                funcs.UserSyncData.UserLevelLinkMemberDtoInfos = [];
+                funcs.UserSyncData.UserCharacterDtoInfos = [new() { Guid = "character", CharacterId = 1, Level = 180 }];
+                funcs.UserSyncData.UserEquipmentDtoInfos = [new() { Guid = "equipment", CharacterGuid = "character", EquipmentId = 1 }];
+                await renderer.RenderComponentAsync<MudBlazor.MudPopoverProvider>();
+                await renderer.RenderComponentAsync<MementoMori.BlazorShared.Components.EquipmentTraining>();
+                Require(funcs.TrainingEquipmentGuid == "equipment" && funcs.EquipmentTrainingTargetType == BaseParameterType.Muscle,
+                    "Initial training character does not populate equipment and target");
+                funcs.UserSyncData.UserCharacterDtoInfos = [];
+                funcs.UserSyncData.UserEquipmentDtoInfos = [];
+                await renderer.RenderComponentAsync<MementoMori.BlazorShared.Components.EquipmentTraining>();
+                Require(string.IsNullOrEmpty(funcs.TrainingEquipmentGuid), "Empty training character retains previous equipment");
                 provider.GetRequiredService<AccountSelection>().ChatChannels[1] = ChatType.World;
                 return (await renderer.RenderComponentAsync<MementoMori.BlazorShared.Pages.Chat>()).ToHtmlString();
             });

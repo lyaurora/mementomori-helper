@@ -13,6 +13,34 @@ const assert = require('node:assert/strict');
         await page.locator('.mud-popover-open').getByText(name, { exact: true }).click();
     };
     try {
+        // Sidebar navigation before the server circuit connects patches <html> attributes.
+        // Stored dark mode must survive that patch, including later interactive navigation.
+        const navigating = await browser.newPage({ colorScheme: 'light' });
+        navigating.on('pageerror', e => errors.push(e.message));
+        await navigating.addInitScript(() => localStorage.setItem('mementomori.theme', 'dark'));
+        let releaseConnection;
+        const connectionGate = new Promise(resolve => { releaseConnection = resolve; });
+        await navigating.route('**/_blazor/negotiate**', async route => {
+            await connectionGate;
+            await route.continue();
+        });
+        try {
+            await navigating.goto(`${url}/Settings`, { waitUntil: 'domcontentloaded' });
+            await navigating.waitForFunction(() => window.Blazor !== undefined);
+            assert(await navigating.getByRole('button', { name: '外观模式', exact: true }).isDisabled());
+            for (const path of ['Chat', 'Settings']) {
+                await navigating.locator(`.app-nav a[href$="${path}" i]`).click();
+                await navigating.waitForURL(`**/${path}`);
+                await checkScheme(navigating, 'dark');
+                assert.equal(await navigating.evaluate(() => document.documentElement.dataset.theme), 'dark');
+            }
+        } finally { releaseConnection(); }
+        await navigating.getByTitle('外观：深色', { exact: true }).waitFor();
+        await navigating.locator('.app-nav a[href$="Chat" i]').click();
+        await navigating.waitForSelector('.chat-channels');
+        await checkScheme(navigating, 'dark');
+        await navigating.close();
+
         // Hold back Blazor completely: the first rendered page must already use the right palette.
         for (const [system, saved, expected] of [['dark', null, 'dark'], ['light', 'dark', 'dark'], ['dark', 'light', 'light']]) {
             const initial = await browser.newPage({ colorScheme: system });

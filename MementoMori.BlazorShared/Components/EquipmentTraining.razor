@@ -50,7 +50,7 @@
     <MudSlider T="double" Min="0d" Max="0.6d" @bind-Value="@Funcs.EquipmentTrainingTargetPercent" Step="0.01">
         @(((equipmentMb?.AdditionalParameterTotal ?? 0) * Funcs.EquipmentTrainingTargetPercent).ToString("F0")) (@Funcs.EquipmentTrainingTargetPercent.ToString("P0"))
     </MudSlider>
-    <MudButton Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.AutoEquipmentTraning">@TextResourceTable.Get("[CommonForgedLabel]")</MudButton>
+    <MudButton Variant="Variant.Filled" Disabled="@(Funcs.IsQuickActionExecuting || string.IsNullOrEmpty(Funcs.TrainingEquipmentGuid))" @onclick="@Funcs.AutoEquipmentTraning">@TextResourceTable.Get("[CommonForgedLabel]")</MudButton>
 </MudPaper>
 
 @code {
@@ -60,6 +60,7 @@
 
     protected override Task AccountChanged()
     {
+        _selectedCharacterGuid = null;
         TrackAccountSubscription(Funcs.WhenAnyValue(d => d.UserSyncData).Subscribe(data =>
         {
             var chas = data?.UserEquipmentDtoInfos?.GroupBy(d => d.CharacterGuid).ToDictionary(d => d.Key);
@@ -70,7 +71,8 @@
                 var characterName = CharacterTable.GetCharacterName(d.CharacterId);
                 return new CharacterInfo(characterName, level, d.Guid, CharacterTable.GetById(d.CharacterId).JobFlags);
             }).OrderByDescending(d => d.Lv).ToList() ?? [];
-            _selectedCharacterGuid = _characterGuids.FirstOrDefault();
+            if (_selectedCharacterGuid == null || !_characterGuids.Any(d => d.Guid == _selectedCharacterGuid.Guid))
+                SelectedCharacterChanged(_characterGuids.FirstOrDefault());
         }));
         return Task.CompletedTask;
     }
@@ -96,10 +98,10 @@
                     CharacterGuid = d.CharacterGuid, CharacterName = name, EquipmentGuid = d.Guid, EquipmentName = equipmentName, UserEquipmentDtoInfo = d
                 };
             }).Where(d => d != null)
-            .Where(d => d.CharacterGuid == obj.Guid)
+            .Where(d => d.CharacterGuid == obj?.Guid)
             .OrderBy(d => d.CharacterGuid).ToList() ?? [];
         Funcs.TrainingEquipmentGuid = _characterEquipments.FirstOrDefault()?.EquipmentGuid;
-        Funcs.EquipmentTrainingTargetType = obj.Job switch
+        Funcs.EquipmentTrainingTargetType = obj?.Job switch
         {
             JobFlags.Warrior => BaseParameterType.Muscle,
             JobFlags.Sorcerer => BaseParameterType.Intelligence,

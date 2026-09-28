@@ -60,7 +60,7 @@
 .chat-emoticon-grid button { border: 1px solid transparent; border-radius: .35rem; padding: .2rem; cursor: pointer; }
 .chat-emoticon-grid button:hover:not(:disabled), .chat-emoticon-grid button:focus-visible { background: var(--mud-palette-primary-hover); border-color: var(--mud-palette-primary); }
 .chat-emoticon-grid button:disabled { opacity: .35; filter: grayscale(1); cursor: default; }
-.chat-draft-preview { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; margin-top: .5rem; white-space: pre-wrap; }
+.chat-draft-preview { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; margin-top: .5rem; white-space: pre-wrap; overflow-wrap: anywhere; }
 .chat-composer textarea, .chat-page input, .chat-page select { background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-lines-inputs); border-radius: .35rem; color: var(--mud-palette-text-primary); padding: .5rem .65rem; max-width: 100%; }
 .chat-composer textarea { resize: vertical; display: block; width: 100%; min-height: 4rem; font: inherit; }
 .chat-composer textarea::placeholder, .chat-page input::placeholder { color: var(--mud-palette-text-secondary); opacity: 1; }

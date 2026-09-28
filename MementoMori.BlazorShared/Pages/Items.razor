@@ -62,15 +62,15 @@
                     </MudTh>
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd>@context.Name</MudTd>
-                    <MudTd>@(Masters.TextResourceTable.Get(context.EquipmentMb.SlotType))</MudTd>
-                    <MudTd>@(Masters.TextResourceTable.Get(context.EquipmentMb.RarityFlags))</MudTd>
-                    <MudTd>@context.EquipmentMb.EquipmentLv</MudTd>
-                    <MudTd>@context.Count</MudTd>
-                    <MudTd>@context.EquipmentMb.PerformancePoint</MudTd>
-                    <MudTd>@(Masters.TextResourceTable.Get(context.EquipmentMb.BattleParameterChangeInfo.BattleParameterType))</MudTd>
-                    <MudTd>@(ParameterUtil.GetBaseParameterValueText(context.EquipmentMb.BattleParameterChangeInfo.ChangeParameterType, context.EquipmentMb.BattleParameterChangeInfo.Value))</MudTd>
-                    <MudTd>@context.EquipmentMb.AdditionalParameterTotal</MudTd>
+                    <MudTd DataLabel="@ResourceStrings.Name">@context.Name</MudTd>
+                    <MudTd DataLabel="@ResourceStrings.Slot">@(Masters.TextResourceTable.Get(context.EquipmentMb.SlotType))</MudTd>
+                    <MudTd DataLabel="@Masters.TextResourceTable.Get("[CharacterSortTypeRarity]")">@(Masters.TextResourceTable.Get(context.EquipmentMb.RarityFlags))</MudTd>
+                    <MudTd DataLabel="@Masters.TextResourceTable.Get("[CommonEquipmentLevelLabel]")">@context.EquipmentMb.EquipmentLv</MudTd>
+                    <MudTd DataLabel="@Masters.TextResourceTable.Get("[CommonOwnCurrencyLabel]")">@context.Count</MudTd>
+                    <MudTd DataLabel="@Masters.TextResourceTable.Get("[EquipmentUniquePowerLabel]")">@context.EquipmentMb.PerformancePoint</MudTd>
+                    <MudTd DataLabel="@Masters.TextResourceTable.Get("[CharacterEquipmentBasicEffect]")">@(Masters.TextResourceTable.Get(context.EquipmentMb.BattleParameterChangeInfo.BattleParameterType))</MudTd>
+                    <MudTd DataLabel="@Masters.TextResourceTable.Get("[CommonBaseParameterLabel]")">@(ParameterUtil.GetBaseParameterValueText(context.EquipmentMb.BattleParameterChangeInfo.ChangeParameterType, context.EquipmentMb.BattleParameterChangeInfo.Value))</MudTd>
+                    <MudTd DataLabel="@Masters.TextResourceTable.Get("[CommonGrantParameterLabel]")">@context.EquipmentMb.AdditionalParameterTotal</MudTd>
                 </RowTemplate>
             </MudTable>
         </MudTabPanel>
@@ -102,16 +102,16 @@
                     </MudTh>
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd>@context.Name</MudTd>
-                    <MudTd>
+                    <MudTd DataLabel="@ResourceStrings.Name">@context.Name</MudTd>
+                    <MudTd DataLabel="@ResourceStrings.Operation">
                         @if (context.Item.ItemType == ItemType.QuestQuickTicket)
                         {
                             <MudButton OnClick="() => UseAutoBattleRewardItem(context.Name, context.Item)" Size="Size.Small" Variant="Variant.Outlined">@Masters.TextResourceTable.Get("[ItemBoxButtonUse]")</MudButton>
                         }
                     </MudTd>
-                    <MudTd>@(context.ItemRarityFlags)</MudTd>
-                    <MudTd>@(context.MaxItemCount)</MudTd>
-                    <MudTd>@context.Count</MudTd>
+                    <MudTd DataLabel="@Masters.TextResourceTable.Get("[CharacterSortTypeRarity]")">@(context.ItemRarityFlags)</MudTd>
+                    <MudTd DataLabel="@ResourceStrings.ItemLimitCount">@(context.MaxItemCount)</MudTd>
+                    <MudTd DataLabel="@Masters.TextResourceTable.Get("[CommonOwnCurrencyLabel]")">@context.Count</MudTd>
                 </RowTemplate>
             </MudTable>
         </MudTabPanel>
@@ -148,10 +148,10 @@
                     </MudTh>
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd>@context.Name</MudTd>
-                    <MudTd>@(context.ItemRarityFlags)</MudTd>
-                    <MudTd>@(context.MaxItemCount)</MudTd>
-                    <MudTd>@context.Count</MudTd>
+                    <MudTd DataLabel="@ResourceStrings.Name">@context.Name</MudTd>
+                    <MudTd DataLabel="@Masters.TextResourceTable.Get("[CharacterSortTypeRarity]")">@(context.ItemRarityFlags)</MudTd>
+                    <MudTd DataLabel="@ResourceStrings.ItemLimitCount">@(context.MaxItemCount)</MudTd>
+                    <MudTd DataLabel="@Masters.TextResourceTable.Get("[CommonOwnCurrencyLabel]")">@context.Count</MudTd>
                 </RowTemplate>
             </MudTable>
         </MudTabPanel>
@@ -187,17 +187,16 @@
                     <MudTh>
                         <MudTableSortLabel SortBy="new Func<UserItemExtensions.SphereInfo, object>(x => x.Count)">@Masters.TextResourceTable.Get("[CommonOwnCurrencyLabel]")</MudTableSortLabel>
                     </MudTh>
-                    <MudTh>@Masters.TextResourceTable.Get("[ItemDescriptionLabel]")</MudTh>
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd>@context.Name</MudTd>
-                    <MudTd>@(context.SphereMB.RarityFlags)</MudTd>
-                    <MudTd>@(context.SphereMB.Lv)</MudTd>
-                    <MudTd>@(context.SphereMB.BaseParameterChangeInfo == null ? "" : Masters.TextResourceTable.Get(context.SphereMB.BaseParameterChangeInfo.BaseParameterType))</MudTd>
-                    <MudTd>@(context.SphereMB.BaseParameterChangeInfo == null ? "" : ParameterUtil.GetBaseParameterValueText(context.SphereMB.BaseParameterChangeInfo.ChangeParameterType, context.SphereMB.BaseParameterChangeInfo.Value))</MudTd>
-                    <MudTd>@(context.SphereMB.BattleParameterChangeInfo == null ? "" : Masters.TextResourceTable.Get(context.SphereMB.BattleParameterChangeInfo.BattleParameterType))</MudTd>
-                    <MudTd>@(context.SphereMB.BattleParameterChangeInfo == null ? "" : ParameterUtil.GetBaseParameterValueText(context.SphereMB.BattleParameterChangeInfo.ChangeParameterType, context.SphereMB.BattleParameterChangeInfo.Value))</MudTd>
-                    <MudTd>@context.Count</MudTd>
+                    <MudTd DataLabel="@ResourceStrings.Name">@context.Name</MudTd>
+                    <MudTd DataLabel="@Masters.TextResourceTable.Get("[CharacterSortTypeRarity]")">@(context.SphereMB.RarityFlags)</MudTd>
+                    <MudTd DataLabel="@Masters.TextResourceTable.Get("[EquipmentSphereSynthesisSphereLv]")">@(context.SphereMB.Lv)</MudTd>
+                    <MudTd DataLabel="@Masters.TextResourceTable.Get("[CharacterEquipmentBasicEffect]")">@(context.SphereMB.BaseParameterChangeInfo == null ? "" : Masters.TextResourceTable.Get(context.SphereMB.BaseParameterChangeInfo.BaseParameterType))</MudTd>
+                    <MudTd DataLabel="@Masters.TextResourceTable.Get("[CommonBaseParameterLabel]")">@(context.SphereMB.BaseParameterChangeInfo == null ? "" : ParameterUtil.GetBaseParameterValueText(context.SphereMB.BaseParameterChangeInfo.ChangeParameterType, context.SphereMB.BaseParameterChangeInfo.Value))</MudTd>
+                    <MudTd DataLabel="@Masters.TextResourceTable.Get("[CharacterDetailTabBattleParameter]")">@(context.SphereMB.BattleParameterChangeInfo == null ? "" : Masters.TextResourceTable.Get(context.SphereMB.BattleParameterChangeInfo.BattleParameterType))</MudTd>
+                    <MudTd DataLabel="@Masters.TextResourceTable.Get("[CommonBaseParameterLabel]")">@(context.SphereMB.BattleParameterChangeInfo == null ? "" : ParameterUtil.GetBaseParameterValueText(context.SphereMB.BattleParameterChangeInfo.ChangeParameterType, context.SphereMB.BattleParameterChangeInfo.Value))</MudTd>
+                    <MudTd DataLabel="@Masters.TextResourceTable.Get("[CommonOwnCurrencyLabel]")">@context.Count</MudTd>
                 </RowTemplate>
             </MudTable>
         </MudTabPanel>
@@ -223,10 +222,10 @@
                     </MudTh>
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd>@context.Name</MudTd>
-                    <MudTd>@(context.ItemRarityFlags)</MudTd>
-                    <MudTd>@(context.MaxItemCount)</MudTd>
-                    <MudTd>@context.Count</MudTd>
+                    <MudTd DataLabel="@ResourceStrings.Name">@context.Name</MudTd>
+                    <MudTd DataLabel="@Masters.TextResourceTable.Get("[CharacterSortTypeRarity]")">@(context.ItemRarityFlags)</MudTd>
+                    <MudTd DataLabel="@ResourceStrings.ItemLimitCount">@(context.MaxItemCount)</MudTd>
+                    <MudTd DataLabel="@Masters.TextResourceTable.Get("[CommonOwnCurrencyLabel]")">@context.Count</MudTd>
                 </RowTemplate>
             </MudTable>
         </MudTabPanel>

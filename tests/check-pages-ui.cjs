@@ -45,6 +45,14 @@ const assert = require('node:assert/strict');
                 await tabs.nth(index).click();
                 await page.waitForFunction(i => document.querySelectorAll('.app-content .mud-tab')[i]?.classList.contains('mud-tab-active'), index);
             }
+            if (path === 'Items') {
+                await tabs.first().click();
+                await page.setViewportSize({ width: 390, height: 844 });
+                await page.waitForSelector('.app-content tbody td');
+                assert(await page.locator('.app-content tbody td').evaluateAll(cells => cells.every(cell => cell.dataset.label?.trim())),
+                    'Mobile inventory cells lack field labels');
+                await page.setViewportSize({ width: 1440, height: 1000 });
+            }
         }
 
         await go('Gacha', '.app-content .mud-card');
