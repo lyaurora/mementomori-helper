@@ -53,7 +53,7 @@
         添加角色筛选
     </TitleContent>
     <DialogContent>
-        <MudPaper MinWidth="300px" Elevation="0">
+        <MudPaper Elevation="0">
             <MudSelect Label="@ResourceStrings.Filtering_strategy" @bind-Value="settingFilter.FilterStrategy">
                 <MudSelectItem Value="CharacterFilterStrategy.Character">@ResourceStrings.Exclude_character</MudSelectItem>
                 <MudSelectItem Value="CharacterFilterStrategy.PropertyMoreThanSelf">@ResourceStrings.Exclude_enemy_character_with_higher_stats_in_the_same_attribute_as_ours</MudSelectItem>

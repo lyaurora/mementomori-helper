@@ -13,6 +13,9 @@ const assert = require('node:assert/strict');
     const channel = name => page.getByRole('navigation', { name: '聊天频道' }).getByRole('button', { name: name === '私聊' ? /^私聊(?: 有未读私聊)?$/ : name, exact: true });
     const waitIdle = () => page.waitForFunction(() => !document.querySelector('[data-testid="chat-send"]')?.textContent.includes('处理中'));
     try {
+        const offlinePreview = ['127.0.0.1', 'localhost', '[::1]'].includes(new URL(url).hostname)
+            && await page.request.get(`${url}/__preview`).then(response => response.json())
+                .then(state => state.offline === true && state.purpose === 'chat-dialog-preview' && state.gameNetwork === false).catch(() => false);
         await page.goto(`${url}/Chat`);
         await page.waitForFunction(() => document.querySelector('[data-testid="chat-status"]')?.textContent.includes('实时连接已建立'));
         await page.waitForSelector('.chat-channels');
@@ -34,12 +37,13 @@ const assert = require('node:assert/strict');
         await page.waitForSelector('#chat-text-size', { state: 'detached' });
         assert(await page.getByTestId('chat-send').isDisabled(), 'Empty message can be sent');
         const sendBeforePicker = await page.getByTestId('chat-send').boundingBox();
+        const sendBeforePickerY = await page.getByTestId('chat-send').evaluate(e => e.getBoundingClientRect().y + scrollY);
         const stickerButton = await page.getByTestId('chat-emoticons-toggle').boundingBox();
         assert(stickerButton.x + stickerButton.width <= sendBeforePicker.x && Math.abs(stickerButton.y - sendBeforePicker.y) < 3,
             'Sticker picker is not beside the send button');
         await page.getByRole('button', { name: '表情包', exact: true }).click();
         await page.waitForSelector('.chat-emoticon-grid button');
-        assert(Math.abs((await page.getByTestId('chat-send').boundingBox()).y - sendBeforePicker.y) < 3, 'Opening stickers moves the send button');
+        assert(Math.abs((await page.getByTestId('chat-send').evaluate(e => e.getBoundingClientRect().y + scrollY)) - sendBeforePickerY) < 3, 'Opening stickers moves the send button');
         const desktopPicker = await page.locator('#chat-emoticon-picker').boundingBox();
         const input = await page.locator('#chat-message-input').boundingBox();
         const messageHeight = (await page.getByTestId('chat-messages').boundingBox()).height;
@@ -146,10 +150,36 @@ const assert = require('node:assert/strict');
         });
         assert.equal(result.wrapping.shortLines, 1, 'Short messages wrap before using available space');
         assert(result.wrapping.preservesNewline && result.wrapping.longLinkFits, 'Explicit newlines or long-link wrapping is broken');
-        await page.getByRole('button', { name: '公告、投票与笔记', exact: true }).click();
-        await page.waitForSelector('.chat-guild-info');
+        const guildButton = page.getByRole('button', { name: '公告、投票与笔记', exact: true });
+        const conversationLayout = () => page.locator('.chat-history, .chat-composer').evaluateAll(elements =>
+            elements.map(e => ({ top: e.offsetTop, height: e.offsetHeight })));
+        const beforeGuild = await conversationLayout();
+        await page.locator('#chat-message-input').fill('公会聊天草稿');
+        await guildButton.click();
+        const guildDialog = page.getByRole('dialog', { name: '公会动态', exact: true });
+        await guildDialog.waitFor();
+        if (offlinePreview) {
+            const attemptedBusyGuildOpen = await guildDialog.evaluate(dialog => {
+                const send = document.querySelector('[data-testid="chat-send"]');
+                const close = dialog.querySelector('button[aria-label="关闭公会动态"]');
+                const open = document.querySelector('button[aria-controls="chat-guild-info"]');
+                if (!send?.textContent.includes('处理中') || !close || !open) return false;
+                close.click();
+                open.click();
+                return true;
+            });
+            assert(attemptedBusyGuildOpen, 'Offline preview did not expose the busy guild-loading state');
+            await waitIdle();
+            await guildDialog.waitFor({ state: 'detached', timeout: 5000 });
+            result.busyGuildOpenIgnored = true;
+            await guildButton.click();
+            await guildDialog.waitFor();
+        }
         await waitIdle();
-        assert.equal(await page.locator('.chat-guild-info').count(), 1, 'Guild panel did not open');
+        assert.deepEqual(await conversationLayout(), beforeGuild, 'Opening guild info moves or resizes the conversation');
+        assert.equal(await page.locator('.chat-conversation .chat-guild-info').count(), 0, 'Guild info is still inserted into the conversation');
+        const desktopDialog = await guildDialog.boundingBox();
+        assert(desktopDialog.width >= 800 && desktopDialog.height >= 650, 'Guild dialog is too small for reading');
         result.announcements = await page.locator('.chat-announcement').count();
         result.surveys = await page.locator('.chat-survey').count();
         if (result.announcements) {
@@ -171,14 +201,34 @@ const assert = require('node:assert/strict');
             await page.locator('#chat-note-title').fill('离线界面检查');
             await page.locator('#chat-note-content').fill('第一行\n第二行');
             await page.locator('#chat-note-category').selectOption('Priority');
-            assert(!(await page.getByRole('button', { name: '保存笔记', exact: true }).isDisabled()), 'A valid guild-note draft cannot be saved');
+            await page.waitForFunction(() => document.querySelector('.chat-note-editor button[type="submit"]')?.disabled === false);
+            await page.getByRole('button', { name: '关闭公会动态', exact: true }).click();
+            await guildDialog.waitFor({ state: 'detached' });
+            assert(await guildButton.evaluate(e => e === document.activeElement), 'Closing guild info loses keyboard focus');
+            await guildButton.click();
+            await guildDialog.waitFor();
+            await waitIdle();
+            assert.equal(await page.locator('#chat-note-title').inputValue(), '离线界面检查', 'Closing the dialog loses the note title');
+            assert.equal(await page.locator('#chat-note-content').inputValue(), '第一行\n第二行', 'Closing the dialog loses the note body');
             await page.getByRole('button', { name: '取消编辑', exact: true }).click();
             await page.waitForSelector('.chat-note-editor', { state: 'detached' });
             result.noteDraftCancelled = true;
         }
-        await page.getByRole('button', { name: '收起公会动态', exact: true }).click();
+        await page.setViewportSize({ width: 390, height: 844 });
+        const mobileGuildDialog = await guildDialog.boundingBox();
+        assert(mobileGuildDialog.x >= 0 && mobileGuildDialog.y >= 0 && mobileGuildDialog.width <= 391 && mobileGuildDialog.height <= 845, 'Guild dialog overflows mobile');
+        assert(mobileGuildDialog.width >= 389 && mobileGuildDialog.height >= 843, 'Mobile guild dialog does not fill the screen');
+        assert(await guildDialog.evaluate(e => e.scrollWidth <= e.clientWidth), 'Guild content overflows horizontally');
+        await page.getByRole('button', { name: '关闭公会动态', exact: true }).focus();
+        await page.keyboard.press('Escape');
         await page.waitForSelector('.chat-guild-info', { state: 'detached' });
         assert.equal(await page.locator('.chat-guild-info').count(), 0, 'Guild panel did not close');
+        assert(await guildButton.evaluate(e => e === document.activeElement), 'Escape does not return focus to the guild button');
+        assert.equal(await page.locator('#chat-message-input').inputValue(), '公会聊天草稿', 'Guild dialog loses the message draft');
+        await page.locator('#chat-message-input').fill('');
+        await page.setViewportSize({ width: 1440, height: 1000 });
+        assert.deepEqual(await conversationLayout(), beforeGuild, 'Closing guild info shifts the conversation');
+        result.guildDialog = { independent: true, preservesDraft: true, keyboardClose: true, mobileFullScreen: true };
         result.unresolvedCastleNames = await page.locator('.chat-bubble, .chat-system-message').filter({ hasText: /\[(Global|Local)GvgCastleName\d+\]/ }).count();
         assert.equal(result.unresolvedCastleNames, 0, 'System message parameters remain untranslated');
         if (await page.locator('.chat-bubble').count()) {
@@ -246,6 +296,10 @@ const assert = require('node:assert/strict');
         await page.getByRole('group', { name: '表情分类' }).getByRole('button', { name: '角色', exact: true }).click();
         await page.waitForSelector('#chat-emoticon-picker button[aria-label="插入贴图 1001"]');
         assert(Math.abs((await page.locator('#chat-emoticon-picker').boundingBox()).height - picker.height) < 1, 'Mobile sticker categories change panel size');
+        await page.locator('#chat-emoticon-picker button').first().focus();
+        await page.keyboard.press('Escape');
+        await page.waitForSelector('#chat-emoticon-picker', { state: 'detached' });
+        assert(await page.getByTestId('chat-emoticons-toggle').evaluate(e => e === document.activeElement), 'Closing stickers loses keyboard focus');
         await channel('世界').click();
         await page.locator('#chat-message-input').fill('a'.repeat(77) + '#1#');
         await page.waitForSelector('.chat-draft-preview .chat-sticker');

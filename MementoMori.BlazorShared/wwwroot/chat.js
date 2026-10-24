@@ -31,6 +31,15 @@ export function saveChannel(account, channel) {
     catch { return false; }
 }
 
-export function revealEmoticons(element) {
-    element?.scrollIntoView({ block: 'nearest' });
+export function labelGuildDialog() {
+    const label = () => {
+        const dialog = document.querySelector('.chat-guild-dialog');
+        dialog?.setAttribute('aria-labelledby', 'chat-guild-dialog-title');
+        return dialog;
+    };
+    if (label()) return;
+    // Inline MudBlazor dialogs render through a separate provider.
+    const observer = new MutationObserver(() => { if (label()) observer.disconnect(); });
+    observer.observe(document.body, { childList: true, subtree: true });
+    setTimeout(() => observer.disconnect(), 1000);
 }

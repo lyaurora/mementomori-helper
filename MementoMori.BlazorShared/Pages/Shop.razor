@@ -61,7 +61,7 @@
                     </MudPaper>
                     @if (tradeShopTabMb.TradeShopType != TradeShopType.Sphere)
                     {
-                        <MudGrid>
+                        <MudGrid Spacing="1">
                             @foreach (var item in tab.TradeShopItems?.OrderBy(d => d.SortOrder).ToArray() ?? Array.Empty<TradeShopItem>())
                             {
                                 var (itemName, subName) = GetItemName(item.GiveItem);

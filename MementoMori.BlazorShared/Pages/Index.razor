@@ -28,17 +28,17 @@
 <MudGrid>
 @if (!string.IsNullOrEmpty(alertMessage))
 {
-    <MudItem md="12">
+    <MudItem xs="12" md="12">
         <MudAlert Severity="Severity.Warning">@alertMessage</MudAlert>
     </MudItem>
 }
 @if (AccountSelection.CurrentUserId > 0)
 {
-    <MudItem sm="12" md="6" lg="4" xl="3">
+    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
         <MudCard>
-            <MudCardHeader Class="justify-space-between">
+            <MudCardHeader Class="justify-space-between flex-wrap gap-2">
                 <MudText>@ResourceStrings.CharacterInfo</MudText>
-                <MudPaper Elevation="0" Class="d-flex justify-end gap-2">
+                <MudPaper Elevation="0" Class="d-flex justify-end flex-wrap gap-2">
                     <MudButton Size="Size.Small" Variant="Variant.Filled" Disabled="Funcs.Logining" @onclick="ShowPlayerList">
                         @ResourceStrings.Login
                         @if (Funcs.Logining)
@@ -103,9 +103,9 @@
             </MudCardContent>
         </MudCard>
     </MudItem>
-    <MudItem sm="12" md="6" lg="4" xl="3">
+    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
         <MudPaper Class="pa-4">
-            <MudPaper Elevation="0" Class="d-flex">
+            <MudPaper Elevation="0" Class="d-flex flex-wrap align-center gap-2">
                 <MudText>@Tr("[CommonFooterHomeButtonLabel]")</MudText>
                 <MudSpacer/>
                 <MudButton Variant="Variant.Filled" Size="Size.Small" @onclick="Funcs.GetMyPage" StartIcon="@Icons.Material.Filled.Sync">@ResourceStrings.Sync</MudButton>
@@ -138,7 +138,7 @@
                 }
             </MudPaper>
             <MudDivider Class="my-2"/>
-            <MudPaper Elevation="0" Class="d-flex flex-wrap align-center">
+            <MudPaper Elevation="0" Class="d-flex flex-wrap align-center gap-2">
                 <MudText>@Tr("[CommonHeaderBountyQuestLabel]")</MudText>
                 <MudSpacer/>
                 @if (GameConfig.Value.BountyQuestAuto.TargetItems.Count > 0)
@@ -150,7 +150,7 @@
                 <MudButton Variant="Variant.Filled" Size="Size.Small" @onclick="Funcs.RemakeBountyRequest" StartIcon="@Icons.Material.Filled.Refresh">
                     @Tr("[CommonAlternativesItemFormat]", Tr("[CommonCurrencyName]"), 20)
                 </MudButton>
-                <MudButton Class="ml-2" Variant="Variant.Filled" Size="Size.Small" @onclick="Funcs.GetBountyRequestInfo" StartIcon="@Icons.Material.Filled.Sync">@ResourceStrings.Sync</MudButton>
+                <MudButton Variant="Variant.Filled" Size="Size.Small" @onclick="Funcs.GetBountyRequestInfo" StartIcon="@Icons.Material.Filled.Sync">@ResourceStrings.Sync</MudButton>
             </MudPaper>
             <MudPaper Elevation="0">
                 @foreach (var info in Funcs.BountyQuestResponseInfo?.UserBountyQuestDtoInfos ?? new List<UserBountyQuestDtoInfo>())
@@ -183,11 +183,11 @@
             </MudPaper>
         </MudPaper>
     </MudItem>
-    <MudItem sm="12" md="6" lg="4" xl="3">
+    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
         <MudCard>
-            <MudCardHeader Class="justify-space-between">
+            <MudCardHeader Class="justify-space-between flex-wrap gap-2">
                 <MudText>@Tr("[MyPageMenuButtonMissionLabel]")</MudText>
-                <MudPaper Elevation="0" Class="d-flex justify-end gap-2">
+                <MudPaper Elevation="0" Class="d-flex justify-end flex-wrap gap-2">
                     <MudButton Size="Size.Small" Variant="Variant.Filled" @onclick="@Funcs.GetMissionInfo">@ResourceStrings.Sync</MudButton>
                     <MudButton Size="Size.Small" Variant="Variant.Filled" @onclick="@Funcs.CompleteMissions">@Tr("[MissionAllReceiveButton]")</MudButton>
                     <MudButton Size="Size.Small" Variant="Variant.Filled" @onclick="@Funcs.RewardMissonActivity">@ResourceStrings.RewardMissonActivity</MudButton>
@@ -252,18 +252,18 @@
             </MudCardContent>
         </MudCard>
     </MudItem>
-    <MudItem sm="12" md="6" lg="4" xl="3">
+    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
         <MudCard>
-            <MudCardHeader Class="">
+            <MudCardHeader Class="flex-wrap gap-2">
                 <MudText>@ResourceStrings.QuickActions</MudText>
                 <MudSpacer/>
                 <MudButton Size="Size.Small" Variant="Variant.Filled" Disabled="Funcs.IsQuickActionExecuting" @onclick="Funcs.ExecuteAllQuickAction">@ResourceStrings.ExecuteAllQuick</MudButton>
-                <MudButton Class="ml-2" Size="Size.Small" Variant="Variant.Filled" Disabled="!Funcs.IsQuickActionExecuting" @onclick="Funcs.CancelQuickAction">@Tr("[CommonCancelLabel]")</MudButton>
+                <MudButton Size="Size.Small" Variant="Variant.Filled" Disabled="!Funcs.IsQuickActionExecuting" @onclick="Funcs.CancelQuickAction">@Tr("[CommonCancelLabel]")</MudButton>
             </MudCardHeader>
             <MudCardContent>
-                <MudTabs Position="Position.Left" MinimumTabWidth="20px">
+                <MudTabs Position="Position.Top" MinimumTabWidth="20px">
                     <MudTabPanel Text="@ResourceStrings.ExecuteAllQuick">
-                        <MudPaper Elevation="0" Class="pa-2">
+                        <MudPaper Elevation="0" Class="pa-2 d-flex flex-wrap gap-2">
                             <MudButton Size="Size.Small" Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.GetLoginBonus">@Tr("[MyPageButtonLoginBonusLabel]")</MudButton>
                             <MudButton Size="Size.Small" Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.GetVipGift">@Tr("[VipDailyRewardLabelFormat]", Funcs.UserSyncData?.UserStatusDtoInfo?.Vip)</MudButton>
                             <MudButton Size="Size.Small" Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.ReceiveMonthlyBoost">@Tr("[CommonMonthlyBoosterLabel]")</MudButton>
@@ -295,7 +295,7 @@
                         </MudPaper>
                     </MudTabPanel>
                     <MudTabPanel Text="@Tr("[ItemBoxButtonBulkCasting]")">
-                        <MudPaper Elevation="0" Class="pa-2">
+                        <MudPaper Elevation="0" Class="pa-2 d-flex flex-wrap gap-2">
                             <MudButton Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.AutoEquipmentMatchlessInheritance">@ResourceStrings.AutoMatchlessInheritance</MudButton>
                             <MudButton Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.AutoEquipmentLegendInheritance">@ResourceStrings.AutoLegendInheritance</MudButton>
                         </MudPaper>
@@ -344,7 +344,7 @@
                         <EquipmentTraining />
                     </MudTabPanel>
                     <MudTabPanel Text="Debug">
-                        <MudPaper Elevation="0" Class="pa-2">
+                        <MudPaper Elevation="0" Class="pa-2 d-flex flex-wrap gap-2">
                             <MudButton Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.Debug">Debug</MudButton>
                             <MudButton Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.LogDebug">LogTest</MudButton>
                         </MudPaper>
@@ -353,15 +353,15 @@
             </MudCardContent>
         </MudCard>
     </MudItem>
-    <MudItem sm="12" md="6" lg="4" xl="3">
+    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
         <MudCard>
-            <MudCardHeader>@ResourceStrings.ExecutionOutput</MudCardHeader>
+            <MudCardHeader Class="flex-wrap gap-2">@ResourceStrings.ExecutionOutput</MudCardHeader>
             <MudCardContent>
                 <MessageList/>
             </MudCardContent>
         </MudCard>
     </MudItem>
-    <MudItem sm="12" md="6" lg="4" xl="3">
+    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
         <MudPaper>
             <MudTabs HeaderPosition="TabHeaderPosition.After" MinimumTabWidth="20px">
                 <Header>
@@ -401,9 +401,9 @@
             </MudTabs>
         </MudPaper>
     </MudItem>
-    <MudItem sm="12" md="6" lg="4" xl="3">
+    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
         <MudCard>
-            <MudCardHeader>
+            <MudCardHeader Class="flex-wrap gap-2">
                 <MudSwitch T="bool" Color="Color.Info" @bind-Value="@Funcs.ShowDebugInfo" Label="Debug Info"></MudSwitch>
             </MudCardHeader>
             <MudCardContent Style="max-height: 400px; overflow: scroll">

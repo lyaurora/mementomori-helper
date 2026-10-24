@@ -29,16 +29,17 @@ public partial class Chat
     [Inject] public IFileSaver FileSaver { get; set; } = null!;
 
     private static readonly ChatType[] Channels = [ChatType.World, ChatType.Guild, ChatType.SvS, ChatType.Block, ChatType.Private];
+    private static readonly DialogOptions GuildDialogOptions = new() { FullWidth = true, MaxWidth = MaxWidth.Medium, BackdropClick = false, CloseOnEscapeKey = false };
     private readonly Dictionary<(ChatType, long), string> _drafts = new();
     private ChatSession _chat = null!;
     private ChatSession.Snapshot _snapshot = new(false, "未连接", null, 0, [], []);
     private CancellationTokenSource _accountCancellation = new();
     private IDisposable? _privateLease;
     private IJSObjectReference? _module;
+    private MudDialog? _guildDialog;
+    private MudButton? _emoticonButton;
     private ElementReference _messageElement;
     private ElementReference _inputElement;
-    private ElementReference _emoticonElement;
-    private bool _revealEmoticons;
     private ChatType _channel = ChatType.World;
     private ChatType? _savedChannel;
     private bool _restoreChannel;
@@ -105,7 +106,7 @@ public partial class Chat
         _targetInput = "";
         _error = _result = _details = null;
         _shareBattle = null;
-        _busy = _showGuildInfo = _showPlayers = _showEmoticons = _revealEmoticons = _noOlder = false;
+        _busy = _showGuildInfo = _showPlayers = _showEmoticons = _noOlder = false;
         _fontSize = Funcs.UserSyncData?.ChatSettingData?.FontSize is 15 or 20 or 25 or 30 ? Funcs.UserSyncData.ChatSettingData.FontSize : 25;
         _snapshot = _chat.Read(_channel);
         _scrollMode = "end";
@@ -163,6 +164,7 @@ public partial class Chat
         _announcements = _chat.ReadAnnouncements();
         if (NetworkManager.GuildPositionType == PlayerGuildPositionType.None)
         {
+            _showGuildInfo = false;
             _guildNotes.Clear();
             CancelGuildNoteEdit();
         }
@@ -221,11 +223,6 @@ public partial class Chat
                 var mode = _scrollMode;
                 _scrollMode = "follow";
                 await _module.InvokeVoidAsync("followMessages", _messageElement, mode);
-                if (_revealEmoticons && _showEmoticons)
-                {
-                    _revealEmoticons = false;
-                    await _module.InvokeVoidAsync("revealEmoticons", _emoticonElement);
-                }
             }
         }
         catch (JSDisconnectedException) { }
@@ -242,15 +239,18 @@ public partial class Chat
         _scrollMode = "end";
     }
 
-    private void ToggleEmoticons()
+    private void ToggleEmoticons() => _showEmoticons = !_showEmoticons;
+    private async Task CloseEmoticons()
     {
-        _showEmoticons = !_showEmoticons;
-        _revealEmoticons = _showEmoticons;
+        _showEmoticons = false;
+        if (_emoticonButton != null) await _emoticonButton.FocusAsync();
     }
+    private Task EmoticonKeyDown(KeyboardEventArgs args) => args.Key == "Escape" ? CloseEmoticons() : Task.CompletedTask;
 
     public async ValueTask DisposeAsync()
     {
         _disposed = true;
+        if (_guildDialog != null) await _guildDialog.CloseAsync();
         Dispose();
         _accountCancellation.Dispose();
         if (_module != null)
@@ -292,6 +292,8 @@ public partial class Chat
         _privateLease = null;
         _restoreChannel = false;
         _channel = channel;
+        _showGuildInfo = false;
+        _showEmoticons = false;
         AccountSelection.ChatChannels[ViewAccountId] = _channel;
         _error = _result = _details = null;
         _scrollMode = "end";
@@ -389,11 +391,13 @@ public partial class Chat
         {
             if (_drafts.GetValueOrDefault((channel, target)) == text) _drafts.Remove((channel, target));
             _result = "已发送";
+            _showEmoticons = false;
             _scrollMode = "end";
         });
     }
 
-    private Task MessageKeyDown(KeyboardEventArgs args) => args.Key == "Enter" && args.CtrlKey ? Send() : Task.CompletedTask;
+    private Task MessageKeyDown(KeyboardEventArgs args) => args.Key == "Escape" && _showEmoticons ? CloseEmoticons()
+        : args.Key == "Enter" && args.CtrlKey ? Send() : Task.CompletedTask;
     private async Task InsertEmoticon(int id)
     {
         if (_busy || !_chat.IsEmoticonUnlocked(id)) return;
@@ -422,7 +426,6 @@ public partial class Chat
         _surveys = data.surveys.SurveyList?.OrderByDescending(s => s.CreateLocalTimestamp).ToList() ?? [];
         _announcements = data.announcements.GuildChatInfoList?.Where(a => a.GuildChatInfo?.ChatInfo != null).ToList() ?? [];
         _guildNotes = data.notes.GuildNoteInfoList?.OrderBy(n => n.Order).ThenBy(n => n.GuildNoteId).ToList() ?? [];
-        _showGuildInfo = true;
     });
 
     private Task LoadGuildNotes() => Run((chat, token) => chat.RequestAsync<GetGuildNoteListRequest, GetGuildNoteListResponse>(new(), token), response =>
@@ -539,11 +542,17 @@ public partial class Chat
         return string.Join("\n", (response.PlayerInfoListByReactionType ?? []).Select(pair => $"{ReactionName(pair.Key)}：{string.Join("、", pair.Value.Select(p => p.PlayerName))}"));
     }, details => _details = string.IsNullOrWhiteSpace(details) ? "这篇笔记暂无回应。" : details);
 
-    private Task ToggleGuildInfo()
+    private async Task OpenGuildInfo()
     {
-        if (_showGuildInfo) { _showGuildInfo = false; return Task.CompletedTask; }
-        return LoadGuildInfo();
+        if (_busy || _disposed) return;
+        _showGuildInfo = true;
+        var loading = LoadGuildInfo();
+        StateHasChanged();
+        if (_module != null) await _module.InvokeVoidAsync("labelGuildDialog");
+        await loading;
     }
+
+    private void GuildInfoKeyDown(KeyboardEventArgs args) { if (args.Key == "Escape") _showGuildInfo = false; }
 
     private Task SetAnnouncement(ChatInfo message, bool announced) => Run(async (chat, token) =>
     {

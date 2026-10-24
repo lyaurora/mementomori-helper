@@ -12,7 +12,7 @@
             <img class="chat-reaction-icon" src="@ChatEmoticons.ReactionUrl(reaction)" alt="@Name(reaction)" /> @count
         </button>
     }
-    <div class="chat-reaction-picker" @onkeydown="CloseOnEscape">
+    <div class="chat-reaction-picker" @onkeydown="CloseOnEscape" @onkeydown:stopPropagation="_showChoices">
         <MudIconButton @ref="_reactionButton" Icon="@Icons.Material.Filled.AddReaction" Size="Size.Small" aria-label="添加回应" title="添加回应" aria-expanded="@_showChoices.ToString().ToLowerInvariant()" Disabled="Disabled" OnClick="() => _showChoices = !_showChoices" />
         @if (_showChoices)
         {

@@ -22,25 +22,27 @@
             {
                 var funcs = AccountManager.Get(accountInfo.UserId).Funcs;
                 <MudListItem Value="accountInfo" Dense="true">
-                    <MudStack Row="true" Class="align-content-center align-center">
-                        <MudPaper Elevation="0" Class="d-flex align-content-center align-center">
-                            <MudText>@accountInfo.Name</MudText>
-                        </MudPaper>
-                        <MudSpacer/>
-                        @if (funcs.LoginOk)
-                        {
-                            var text = accountInfo.AutoLogin ? ResourceStrings.AutoLogin : ResourceStrings.LoggedIn;
-                            <MudChip T="string" Color="Color.Success" Size="Size.Small">@text</MudChip>
-                        }
-                        else
-                        {
-                            var text = accountInfo.AutoLogin ? ResourceStrings.AutoLogin : ResourceStrings.NotLoggedIn;
-                            <MudChip T="string" Color="Color.Warning" Size="Size.Small">@text</MudChip>
-                        }
-                        <MudIconButton title="@ResourceStrings.Login" Icon="@Icons.Material.Filled.Login" Disabled="_accountDoingAction" OnClick="() => LoginAccount(accountInfo.UserId)" Size="Size.Small"></MudIconButton>
-                        <MudIconButton title="@ResourceStrings.Exit" Icon="@Icons.Material.Filled.Logout" Disabled="_accountDoingAction" OnClick="() => LogoutAccount(accountInfo.UserId)" Size="Size.Small"></MudIconButton>
-                        <MudIconButton title="@ResourceStrings.Settings" Icon="@Icons.Material.Filled.Settings" Disabled="_accountDoingAction" OnClick="() => ShowAccountSetting(accountInfo.UserId)" Size="Size.Small"></MudIconButton>
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Disabled="_accountDoingAction" OnClick="() => DeleteAccount(accountInfo.UserId)" Size="Size.Small"></MudIconButton>
+                    <MudStack Spacing="1" Class="flex-grow-1" Style="min-width: 0;">
+                        <MudText Style="overflow-wrap: anywhere;">@accountInfo.Name</MudText>
+                        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" AlignItems="AlignItems.Center">
+                            @if (funcs.LoginOk)
+                            {
+                                var text = accountInfo.AutoLogin ? ResourceStrings.AutoLogin : ResourceStrings.LoggedIn;
+                                <MudChip T="string" Color="Color.Success" Size="Size.Small">@text</MudChip>
+                            }
+                            else
+                            {
+                                var text = accountInfo.AutoLogin ? ResourceStrings.AutoLogin : ResourceStrings.NotLoggedIn;
+                                <MudChip T="string" Color="Color.Warning" Size="Size.Small">@text</MudChip>
+                            }
+                            <MudSpacer/>
+                            <MudStack Row="true" Spacing="0">
+                                <MudIconButton title="@ResourceStrings.Login" aria-label="@ResourceStrings.Login" Icon="@Icons.Material.Filled.Login" Disabled="_accountDoingAction" OnClick="() => LoginAccount(accountInfo.UserId)" Size="Size.Small"></MudIconButton>
+                                <MudIconButton title="@ResourceStrings.Exit" aria-label="@ResourceStrings.Exit" Icon="@Icons.Material.Filled.Logout" Disabled="_accountDoingAction" OnClick="() => LogoutAccount(accountInfo.UserId)" Size="Size.Small"></MudIconButton>
+                                <MudIconButton title="@ResourceStrings.Settings" aria-label="@ResourceStrings.Settings" Icon="@Icons.Material.Filled.Settings" Disabled="_accountDoingAction" OnClick="() => ShowAccountSetting(accountInfo.UserId)" Size="Size.Small"></MudIconButton>
+                                <MudIconButton title="@ResourceStrings.Confirm_removal_of_this_account_" aria-label="@ResourceStrings.Confirm_removal_of_this_account_" Icon="@Icons.Material.Filled.Delete" Disabled="_accountDoingAction" OnClick="() => DeleteAccount(accountInfo.UserId)" Size="Size.Small"></MudIconButton>
+                            </MudStack>
+                        </MudStack>
                     </MudStack>
                 </MudListItem>
             }
