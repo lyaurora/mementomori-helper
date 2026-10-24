@@ -80,10 +80,12 @@ namespace MementoMori.Ortega.Share.Master.Data
         [PropertyOrder(3)]
         public int Weight { get; }
 
+        public IReadOnlyList<string> SearchKeywordsJP { get; }
+
         [SerializationConstructor]
         public CharacterProfileMB(long id, bool? isIgnore, string memo, int birthday, CharacterBloodType bloodType, string characterVoiceJPKey, string characterVoiceUSKey, long equipmentCompositeId,
             int height, string descriptionKey, string vocalJPKey, string vocalUSKey, string lamentJPKey, string lamentUSKey, int weight, TranslatedText movieJpUrl, TranslatedText movieUsUrl,
-            string gachaResultMessage2Key, string lyricsJPKey, string lyricsUSKey)
+            string gachaResultMessage2Key, string lyricsJPKey, string lyricsUSKey, IReadOnlyList<string> searchKeywordsJP = null)
             : base(id, isIgnore, memo)
         {
             Birthday = birthday;
@@ -103,6 +105,7 @@ namespace MementoMori.Ortega.Share.Master.Data
             GachaResultMessage2Key = gachaResultMessage2Key;
             LyricsJPKey = lyricsJPKey;
             LyricsUSKey = lyricsUSKey;
+            SearchKeywordsJP = searchKeywordsJP;
         }
 
         public CharacterProfileMB() : base(0L, null, null)

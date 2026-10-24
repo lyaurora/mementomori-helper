@@ -272,11 +272,17 @@ public static class Masters
 
     public static EffectGroupTable EffectGroupTable { get; } = new();
 
+    public static UnionMissionClassTable UnionMissionClassTable { get; } = new();
+
+    public static UnionMissionEventTable UnionMissionEventTable { get; } = new();
+
     public static ITable[] GetAllTables()
     {
         return new ITable[]
         {
             AchieveRankingRewardTable,
+            UnionMissionClassTable,
+            UnionMissionEventTable,
             CharacterProfileTable,
             CharacterDetailVoiceTable,
             CommunityTable,

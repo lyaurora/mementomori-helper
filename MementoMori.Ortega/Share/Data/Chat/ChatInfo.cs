@@ -1,5 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using MementoMori.Ortega.Share.Data.Interface;
+using MementoMori.Ortega.Share.Data.GuildNote;
 using MementoMori.Ortega.Share.Enums;
 using MessagePack;
 
@@ -8,6 +9,9 @@ namespace MementoMori.Ortega.Share.Data.Chat
 	[MessagePackObject(false)]
 	public class ChatInfo : IPlayerIconInfo
 	{
+        [Key(17)]
+        public ChatGuildNoteInfo ChatGuildNoteInfo { get; set; }
+
         [Key(16)]
         public ChatRecruitGuildMemberInfo ChatRecruitGuildMemberInfo { get; set; }
 

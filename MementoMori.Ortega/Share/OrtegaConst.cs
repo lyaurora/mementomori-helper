@@ -7,6 +7,13 @@ namespace MementoMori.Ortega.Share
 {
 	public static class OrtegaConst
 	{
+        public static class GuildNote
+        {
+            public static int MaxGuildNoteCount { get; } = 10;
+            public static int MaxTitleLength { get; } = 20;
+            public static int MaxContentLength { get; } = 2000;
+        }
+
 		public static class Item
 		{
 			public static long EnergySphereId { get; }

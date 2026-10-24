@@ -1,6 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using MementoMori.Ortega.Share.Data.Guild;
 using MementoMori.Ortega.Share.Data.GuildTower;
+using MementoMori.Ortega.Share.Enums;
 using MessagePack;
 
 namespace MementoMori.Ortega.Share.Data.ApiInterface.Guild
@@ -8,6 +9,12 @@ namespace MementoMori.Ortega.Share.Data.ApiInterface.Guild
     [MessagePackObject(true)]
     public class GetGuildBaseInfoResponse : ApiResponseBase, IGuildSyncApiResponse, IUserSyncApiResponse
     {
+        public UnionMissionClassType ClassType { get; set; }
+
+        public bool IsAlreadyEntryUnionMission { get; set; }
+
+        public bool IsUnionMissionMatchingWorld { get; set; }
+
         public int DefaultGlobalGvgMatchingNumber { get; set; }
 
         public GuildGvgInfo GlobalGuildGvgInfo { get; set; }

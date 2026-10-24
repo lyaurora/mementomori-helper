@@ -104,6 +104,7 @@ namespace MementoMori.Ortega.Share.Enums
 		[Description("Webストア(au PAY)")]
 		WebStoreAuPay,
 		[Description("Webストア(ソフトバンクまとめて支払い)")]
-		WebStoreSoftBankPay
+		WebStoreSoftBankPay,
+        UnionMission = 50
 	}
 }

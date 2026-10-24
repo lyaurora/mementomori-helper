@@ -1,4 +1,4 @@
-This fork uses .NET 10 LTS and updates the relevant game protocols to 4.22.0. See the [maintenance guide](docs/maintenance.md) for builds, offline checks, updates and configuration migration.
+This fork uses .NET 10 LTS and aligns the relevant game protocols, chat assets and guild notes with 5.0.0. See the [maintenance guide](docs/maintenance.md) for builds, offline checks, updates and configuration migration.
 
 [ [Zh](readme.md) | [En](readme.en.md) ]
 

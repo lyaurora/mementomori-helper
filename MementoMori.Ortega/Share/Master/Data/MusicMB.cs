@@ -42,8 +42,10 @@ namespace MementoMori.Ortega.Share.Master.Data
 		[Description("専用消費アイテム個数")]
 		public int ConsumeMusicTicketCount { get; set; }
 
+        public IReadOnlyList<string> SearchKeywordsJP { get; }
+
 		[SerializationConstructor]
-		public MusicMB(long id, bool? isIgnore, string memo, string startTime, int order, string nameKey, string singerKey, string lyricsKey, string musicPath, string thumbnailPath, int consumeMusicTicketCount)
+		public MusicMB(long id, bool? isIgnore, string memo, string startTime, int order, string nameKey, string singerKey, string lyricsKey, string musicPath, string thumbnailPath, int consumeMusicTicketCount, IReadOnlyList<string> searchKeywordsJP = null)
 			: base(id, isIgnore, memo)
 		{
 			StartTime = startTime;
@@ -54,6 +56,7 @@ namespace MementoMori.Ortega.Share.Master.Data
             MusicPath = musicPath;
             ThumbnailPath = thumbnailPath;
             ConsumeMusicTicketCount = consumeMusicTicketCount;
+            SearchKeywordsJP = searchKeywordsJP;
 		}
 
 		public MusicMB():base(0L, null, null)

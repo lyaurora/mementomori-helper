@@ -188,5 +188,6 @@ namespace MementoMori.Ortega.Share.Enums
 		[Description("武具固定(属性の塔用)")]
 		LockEquipmentElementTower,
         EquipmentSpecifyReinforceLevel = 640,
+        UnionMission = 650,
     }
 }

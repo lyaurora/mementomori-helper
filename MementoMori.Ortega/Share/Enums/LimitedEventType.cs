@@ -21,6 +21,7 @@ namespace MementoMori.Ortega.Share.Enums
 		CheckDeeplinkPurchaseStateFetchProductWait,
         PlayVideoTotalCount = 4,
         BountyQuestRewardBonus = 5,
+        DisableAgeAssurance = 7,
         WebstoreRelease = 20000,
         DisableAssetCacheClear = 30000,
     }

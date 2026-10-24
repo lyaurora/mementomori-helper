@@ -1,6 +1,8 @@
 @page "/Chat"
 @using MementoMori.Chat
 @using MementoMori.BlazorShared.Components
+@using MementoMori.Ortega.Share
+@using MementoMori.Ortega.Share.Data.Chat
 @using MementoMori.Ortega.Share.Enums
 @inherits AccountComponent
 @implements IAsyncDisposable
@@ -118,7 +120,7 @@
                 <MudSpacer />
                 @if (_channel == ChatType.Guild)
                 {
-                    <MudButton OnClick="ToggleGuildInfo" Disabled="@(_busy || !_snapshot.Connected)" Size="Size.Small">@(_showGuildInfo ? "收起公告与投票" : "公告与投票")</MudButton>
+                    <MudButton OnClick="ToggleGuildInfo" Disabled="@(_busy || !_snapshot.Connected)" Size="Size.Small">@(_showGuildInfo ? "收起公会动态" : "公告、投票与笔记")</MudButton>
                 }
                 @if (_channel == ChatType.Private && _target > 0)
                 {
@@ -153,6 +155,13 @@
                                         </div>
                                         <div class="chat-announcement-body" style="font-size: @(_textSize)px">
                                             <ChatText Text="@MessageText(message)" StickerSize="_stickerSize" />
+                                            @if (message.ChatGuildNoteInfo is { } note)
+                                            {
+                                                <div class="chat-guild-note">
+                                                    <strong>公会笔记：@(string.IsNullOrWhiteSpace(note.Title) ? "未命名笔记" : note.Title)</strong>
+                                                    <p>@note.Content</p>
+                                                </div>
+                                            }
                                         </div>
                                         <p class="chat-entry-meta chat-muted" title="@($"原消息：{FormatTime(message.LocalTimeStamp)}")">
                                             公告发布：<time>@FormatTime(announcement.RegisterLocalTimestamp)</time>
@@ -218,6 +227,77 @@
                                 }
                             </div>
                         </MudTabPanel>
+                        <MudTabPanel Text="@($"笔记 · {_guildNotes.Count}")">
+                            <div class="chat-guild-scroll">
+                                <div class="chat-compose-actions">
+                                    <span class="chat-muted">@_guildNotes.Count/@OrtegaConst.GuildNote.MaxGuildNoteCount 篇</span>
+                                    <MudSpacer />
+                                    <MudButton Size="Size.Small" OnClick="LoadGuildNotes" Disabled="@(_busy || !_snapshot.Connected)">刷新笔记</MudButton>
+                                    @if (CanManageGuildNotes)
+                                    {
+                                        <MudButton Size="Size.Small" OnClick="() => BeginGuildNote()" Disabled="@(_busy || !_snapshot.Connected || _guildNotes.Count >= OrtegaConst.GuildNote.MaxGuildNoteCount)">新建笔记</MudButton>
+                                    }
+                                </div>
+                                @if (_editingGuildNoteId != null)
+                                {
+                                    <form class="chat-note-editor chat-guild-card" @onsubmit="SaveGuildNote" @onsubmit:preventDefault="true">
+                                        <strong>@(_editingGuildNoteId == 0 ? "新建公会笔记" : "编辑公会笔记")</strong>
+                                        <label for="chat-note-title">标题 <span>@_noteTitle.Length/@OrtegaConst.GuildNote.MaxTitleLength</span></label>
+                                        <input id="chat-note-title" @bind="_noteTitle" @bind:event="oninput" maxlength="@OrtegaConst.GuildNote.MaxTitleLength" disabled="@_busy" />
+                                        <label for="chat-note-category">分类</label>
+                                        <select id="chat-note-category" @bind="_noteCategory" disabled="@_busy">
+                                            <option value="@GuildNoteCategoryType.Normal">普通</option>
+                                            <option value="@GuildNoteCategoryType.Priority">优先</option>
+                                        </select>
+                                        <label for="chat-note-content">正文 <span>@_noteContent.Length/@OrtegaConst.GuildNote.MaxContentLength</span></label>
+                                        <textarea id="chat-note-content" @bind="_noteContent" @bind:event="oninput" maxlength="@OrtegaConst.GuildNote.MaxContentLength" rows="7" disabled="@_busy"></textarea>
+                                        <div class="chat-compose-actions">
+                                            <MudButton ButtonType="ButtonType.Submit" Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" Disabled="@(_busy || !_snapshot.Connected || string.IsNullOrWhiteSpace(_noteTitle) || string.IsNullOrWhiteSpace(_noteContent))">保存笔记</MudButton>
+                                            <MudButton Size="Size.Small" OnClick="CancelGuildNoteEdit" Disabled="_busy">取消编辑</MudButton>
+                                        </div>
+                                    </form>
+                                }
+                                @foreach (var note in _guildNotes)
+                                {
+                                    var reactions = new GuildChatInfo { MyChatReactionType = note.MyChatReactionType, ChatReactionCountMap = note.ChatReactionCountMap };
+                                    var index = _guildNotes.IndexOf(note);
+                                    <article class="chat-note-entry chat-guild-card" @key="note.GuildNoteId">
+                                        <div class="chat-card-heading">
+                                            <PlayerAvatar IconId="note.IconId" Name="@note.PlayerName" Size="28" />
+                                            <strong>@(string.IsNullOrWhiteSpace(note.Title) ? "未命名笔记" : note.Title)</strong>
+                                            @if (note.GuildNoteCategoryType == GuildNoteCategoryType.Priority) { <span class="chat-survey-status open">优先</span> }
+                                        </div>
+                                        <p class="chat-note-content">@note.Content</p>
+                                        <p class="chat-entry-meta chat-muted">@(note.IsDeletedPlayer ? "已注销玩家" : PlayerName(note.PlayerName, note.PlayerId)) · 更新于 @FormatTime(note.UpdateLocalTimeStamp)</p>
+                                        <div class="chat-compose-actions">
+                                            <ChatReactions Entry="reactions" Disabled="@(_busy || !_snapshot.Connected)" OnReact="reaction => ReactGuildNote(note, reaction)" OnDetails="() => GuildNoteReactionDetails(note)" />
+                                            <MudSpacer />
+                                            @if (CanManageGuildNotes)
+                                            {
+                                                <MudButton Size="Size.Small" OnClick="() => ShareGuildNote(note)" Disabled="@(_busy || !_snapshot.Connected)">分享至公会</MudButton>
+                                            }
+                                            @if (CanEditGuildNote(note))
+                                            {
+                                                <MudButton Size="Size.Small" OnClick="() => BeginGuildNote(note)" Disabled="@(_busy || !_snapshot.Connected)">编辑</MudButton>
+                                            }
+                                            @if (CanDeleteGuildNote(note))
+                                            {
+                                                <MudButton Size="Size.Small" Color="Color.Error" OnClick="() => DeleteGuildNote(note)" Disabled="@(_busy || !_snapshot.Connected)">删除</MudButton>
+                                            }
+                                            @if (CanSortGuildNotes)
+                                            {
+                                                <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward" Size="Size.Small" aria-label="笔记上移" title="笔记上移" OnClick="() => MoveGuildNote(note, -1)" Disabled="@(_busy || !_snapshot.Connected || index == 0)" />
+                                                <MudIconButton Icon="@Icons.Material.Filled.ArrowDownward" Size="Size.Small" aria-label="笔记下移" title="笔记下移" OnClick="() => MoveGuildNote(note, 1)" Disabled="@(_busy || !_snapshot.Connected || index == _guildNotes.Count - 1)" />
+                                            }
+                                        </div>
+                                    </article>
+                                }
+                                @if (_guildNotes.Count == 0)
+                                {
+                                    <div class="chat-panel-empty"><MudIcon Icon="@Icons.Material.Outlined.Description" /><p>暂无公会笔记</p></div>
+                                }
+                            </div>
+                        </MudTabPanel>
                     </MudTabs>
                 </div>
             }
@@ -266,7 +346,17 @@
                             @if (entry.IsAnnounced) { <span title="公会公告">📌</span> }
                         </div>
                         <div class="chat-bubble @(IsStickerMessage(message) ? "sticker-only" : "")" style="font-size: @(DisplayFontSize)px">
-                            <p><ChatText Text="@MessageText(message)" StickerSize="_stickerSize" /></p>
+                            @if (!string.IsNullOrWhiteSpace(MessageText(message)))
+                            {
+                                <p><ChatText Text="@MessageText(message)" StickerSize="_stickerSize" /></p>
+                            }
+                            @if (message.ChatGuildNoteInfo is { } note)
+                            {
+                                <div class="chat-guild-note">
+                                    <strong>公会笔记：@(string.IsNullOrWhiteSpace(note.Title) ? "未命名笔记" : note.Title)</strong>
+                                    <p>@note.Content</p>
+                                </div>
+                            }
                             @if (message.ChatRecruitGuildMemberInfo is { } recruit)
                             {
                                 <p>公会招募：@recruit.GuildName（Lv.@recruit.GuildLv）</p><p>@recruit.RecruitMessage</p>

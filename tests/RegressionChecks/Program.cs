@@ -4,6 +4,10 @@ using System.Net;
 using MementoMori.Exceptions;
 using MementoMori.Ortega.Share;
 using MementoMori.Ortega.Share.Data.ApiInterface;
+using MementoMori.Ortega.Share.Data;
+using MementoMori.Ortega.Share.Data.ApiInterface.Guild;
+using MementoMori.Ortega.Share.Data.ApiInterface.GuildNote;
+using MementoMori.Ortega.Share.Data.ApiInterface.UnionMission;
 using MementoMori.Ortega.Share.Data.ApiInterface.Auth;
 using MementoMori.Ortega.Share.Data.Battle;
 using MementoMori.Ortega.Share.Data.Chat;
@@ -62,7 +66,7 @@ var checks = new (string Name, Func<Task> Run)[]
     ("HTTP cancellation and bounded version negotiation", CheckTransport),
     ("manual quick-action batch stops after cancellation", CheckBatchCancellation),
     ("chat routing, history, reactions, delivery confirmation and cancellation", CheckChat),
-    ("4.22 wire data and master rollback", CheckProtocol),
+    ("4.22/5.0 wire data, incremental sync and master rollback", CheckProtocol),
     ("master ID index preserves order and survives reload failure", CheckMasterIndex),
     ("master download rejects corruption without replacing cached files", CheckMasterDownload)
 };
@@ -400,10 +404,69 @@ static async Task CheckBatchCancellation()
 
 static Task CheckProtocol()
 {
-    // Fixed wire payloads from the 4.22.0 contract, independent of the serializer's output.
+    // Fixed 4.22.0/5.0.0 wire payloads, independent of the serializer's output.
     var chat = MessagePackSerializer.Deserialize<ChatInfo>(MessagePackSerializer.ConvertFromJson(
         """[0,0,"message",1,"player","",0,0,0,0,[],"guild",0,null,null,0,[2,"recruit guild",3,4,0,0,"join us"]]"""));
-    Require(chat.ChatRecruitGuildMemberInfo.GuildId == 2 && chat.ChatRecruitGuildMemberInfo.RecruitMessage == "join us", "Chat recruitment key 16 is not decoded");
+    Require(chat.ChatRecruitGuildMemberInfo.GuildId == 2 && chat.ChatRecruitGuildMemberInfo.RecruitMessage == "join us"
+        && chat.ChatGuildNoteInfo == null, "4.22 chat recruitment key 16 or absent 5.0 attachment is not decoded");
+    var noteChat = MessagePackSerializer.Deserialize<ChatInfo>(MessagePackSerializer.ConvertFromJson(
+        """[0,2,"",101,"player","",0,456,0,0,[],"guild",0,null,null,0,null,{"GuildNoteId":42,"Title":"raid plan","Content":"first\nsecond #1013#"}]"""));
+    Require(noteChat.ChatGuildNoteInfo is { GuildNoteId: 42, Title: "raid plan", Content: "first\nsecond #1013#" }
+        && noteChat.ChatRecruitGuildMemberInfo == null && noteChat.PlayerId == 101, "5.0 chat key 17 loses note content or shifts existing numeric keys");
+    var sync = MessagePackSerializer.Deserialize<UserSyncData>(MessagePackSerializer.Serialize(
+        new Dictionary<string, Dictionary<long, long>> { ["GuildNoteShareLocalTimestampMap"] = new() { [42] = 100, [43] = 200 } }));
+    sync.UserItemEditorMergeUserSyncData(MessagePackSerializer.Deserialize<UserSyncData>(MessagePackSerializer.Serialize(
+        new Dictionary<string, Dictionary<long, long>> { ["GuildNoteShareLocalTimestampMap"] = new() { [42] = 300, [44] = 400 } })));
+    sync.UserItemEditorMergeUserSyncData(new());
+    sync.UserItemEditorMergeUserSyncData(new() { GuildNoteShareLocalTimestampMap = new() });
+    Require(sync.GuildNoteShareLocalTimestampMap.Count == 3 && sync.GuildNoteShareLocalTimestampMap[42] == 300
+        && sync.GuildNoteShareLocalTimestampMap[43] == 200 && sync.GuildNoteShareLocalTimestampMap[44] == 400,
+        "Sparse guild-note sync erases other notes, misses updates or ignores new keys");
+    var firstSync = new UserSyncData();
+    firstSync.UserItemEditorMergeUserSyncData(sync);
+    Require(firstSync.GuildNoteShareLocalTimestampMap[43] == 200, "First guild-note sync requires an existing map");
+    var guildBase = MessagePackSerializer.Deserialize<GetGuildBaseInfoResponse>(MessagePackSerializer.ConvertFromJson(
+        """{"ClassType":2,"IsAlreadyEntryUnionMission":true,"IsUnionMissionMatchingWorld":true}"""));
+    Require(guildBase.ClassType == UnionMissionClassType.Silver && guildBase.IsAlreadyEntryUnionMission && guildBase.IsUnionMissionMatchingWorld,
+        "Guild base response loses UnionMission eligibility");
+    foreach (var (requestType, uri) in new (Type, string)[]
+    {
+        (typeof(CreateGuildNoteRequest), "guildNote/createGuildNote"), (typeof(GetGuildNoteListRequest), "guildNote/getGuildNoteList"),
+        (typeof(GetReactionDetailInfoRequest), "guildNote/getReactionDetailInfo"), (typeof(ReactGuildNoteRequest), "guildNote/reactGuildNote"),
+        (typeof(ShareGuildNoteRequest), "guildNote/shareGuildNote"), (typeof(UpdateGuildNoteRequest), "guildNote/updateGuildNote"),
+        (typeof(UpdateGuildNoteListRequest), "guildNote/updateGuildNoteList"), (typeof(EntryUnionMissionRequest), "unionMission/entryUnionMission")
+    })
+    {
+        var api = requestType.GetCustomAttribute<OrtegaApiAttribute>();
+        Require(api is { IsRequiredLogin: true, IsIgnoreMaintenance: false } && api.Uri == uri, "5.0 API route or authentication metadata drifted: " + requestType.Name);
+    }
+    Require(new CreateGuildNoteResponse() is IUserSyncApiResponse && new GetGuildNoteListResponse() is IUserSyncApiResponse
+        && new ShareGuildNoteResponse() is IUserSyncApiResponse && new UpdateGuildNoteListResponse() is IUserSyncApiResponse
+        && new EntryUnionMissionResponse() is IGuildSyncApiResponse, "5.0 API responses bypass automatic user/guild state updates");
+    var notes = MessagePackSerializer.Deserialize<GetGuildNoteListResponse>(MessagePackSerializer.ConvertFromJson(
+        """{"GuildNoteInfoList":[{"GuildNoteId":42,"Title":"raid plan","Content":"first\nsecond","GuildNoteCategoryType":2,"IconId":109,"IconEffectId":7,"LegendLeagueClass":1,"PlayerId":101,"PlayerName":"author","IsDeletedPlayer":false,"MyChatReactionType":3,"ChatReactionCountMap":{},"UpdateLocalTimeStamp":456,"Order":1}],"UserSyncData":{}}"""));
+    var noteReactions = MessagePackSerializer.Deserialize<MementoMori.Ortega.Share.Data.GuildNote.GuildNoteInfo>(MessagePackSerializer.Serialize(
+        new Dictionary<string, Dictionary<int, int>> { ["ChatReactionCountMap"] = new() { [3] = 2 } }));
+    Require(notes.GuildNoteInfoList.Single() is { GuildNoteId: 42, GuildNoteCategoryType: GuildNoteCategoryType.Priority, IconId: 109, IconEffectId: 7,
+            PlayerId: 101, PlayerName: "author", MyChatReactionType: ChatReactionType.Heart, UpdateLocalTimeStamp: 456, Order: 1 } note
+        && note.ChatReactionCountMap.Count == 0 && noteReactions.ChatReactionCountMap[ChatReactionType.Heart] == 2 && notes.UserSyncData != null,
+        "Guild-note list named keys lose author, order, reactions or sync data");
+    Require(Enum.GetValues<UnionMissionClassType>().Select(value => (int)value).SequenceEqual([0, 1, 2, 3])
+        && (int)UnionMissionClassType.Bronze == 1 && (int)UnionMissionClassType.Gold == 3
+        && (int)GuildNoteCategoryType.None == 0 && (int)GuildNoteCategoryType.Normal == 1 && (int)GuildNoteCategoryType.Priority == 2,
+        "5.0 class/category enum values drifted");
+    Require(new[] { (int)GuildOperationType.DeleteNotOwnGuildNote, (int)GuildOperationType.ManagementGuildNote,
+            (int)GuildOperationType.SortGuildNote, (int)GuildOperationType.EntryUnionMission, (int)LimitedEventType.DisableAgeAssurance,
+            (int)MaintenanceFunctionType.UnionMission, (int)NotificationType.EntryUnionMissionAvailable, (int)OpenCommandType.UnionMission }
+        .SequenceEqual([21, 22, 23, 24, 7, 50, 30, 650]), "5.0 operation and availability enum values drifted");
+    Require(new[] { ErrorCode.GuildNoteNotFoundGuildNoteDto, ErrorCode.GuildNoteOverMaxCount, ErrorCode.GuildNoteEmptyTitle,
+            ErrorCode.GuildNoteOverMaxLengthTitle, ErrorCode.GuildNoteEmptyContent, ErrorCode.GuildNoteOverMaxLengthContent,
+            ErrorCode.GuildNoteNotBelongToGuild, ErrorCode.GuildNoteHasNoPermission, ErrorCode.GuildNoteInvalidGuildNoteCategoryType,
+            ErrorCode.GuildNoteInvalidGuildNoteList, ErrorCode.GuildNoteNeedRefresh, ErrorCode.GuildNoteOperationInProgress,
+            ErrorCode.GuildRaidTrialNotAvailable, ErrorCode.UnionMissionEntryNotEnoughGuildFame, ErrorCode.UnionMissionDuplicateEntry,
+            ErrorCode.UnionMissionNotInEntryPeriod, ErrorCode.UnionMissionNotBelongToGuild, ErrorCode.UnionMissionNotInMatchingWorld }
+        .Select(value => (int)value).SequenceEqual([570000, 571000, 571001, 571002, 571003, 571004, 571005, 571006, 571007,
+            571008, 571009, 571010, 192018, 581000, 581001, 581002, 581003, 581028]), "5.0 API error codes drifted");
     var privatePlayer = MessagePackSerializer.Deserialize<PrivateChatLogPlayerInfo>(MessagePackSerializer.ConvertFromJson(
         """[true,{"PlayerId":123,"PlayerName":"private player"},456]"""));
     Require(privatePlayer.ExistUnread && privatePlayer.PlayerInfo.PlayerId == 123 && privatePlayer.LocalTimestamp == 456, "Private chat numeric keys drifted");
@@ -422,6 +485,24 @@ static Task CheckProtocol()
     var boss = MessagePackSerializer.Deserialize<GuildRaidBossMB>(MessagePackSerializer.ConvertFromJson("""{"Id":1,"EventTutorialId":42}"""));
     var media = MessagePackSerializer.Deserialize<MediaMB>(MessagePackSerializer.ConvertFromJson("""{"Id":3,"MediaType":2,"DisplayLanguageTypeList":[1,2]}"""));
     Require(boss.EventTutorialId == 42 && media.Id == 3 && media.DisplayLanguageTypeList.Count == 2, "Master constructor does not preserve new fields");
+    var profile = MessagePackSerializer.Deserialize<CharacterProfileMB>(MessagePackSerializer.ConvertFromJson(
+        """{"Id":5,"Birthday":1201,"SearchKeywordsJP":["フローレンス","ふろーれんす"]}"""));
+    var music = MessagePackSerializer.Deserialize<MusicMB>(MessagePackSerializer.ConvertFromJson(
+        """{"Id":6,"NameKey":"lament","SearchKeywordsJP":["ラメント","らめんと"]}"""));
+    Require(profile.Id == 5 && profile.Birthday == 1201 && profile.SearchKeywordsJP.SequenceEqual(["フローレンス", "ふろーれんす"])
+        && music.Id == 6 && music.NameKey == "lament" && music.SearchKeywordsJP.SequenceEqual(["ラメント", "らめんと"]),
+        "Search keywords are dropped by master constructors");
+    Require(MessagePackSerializer.Deserialize<CharacterProfileMB>(MessagePackSerializer.ConvertFromJson("""{"Id":5}""")).SearchKeywordsJP == null
+        && MessagePackSerializer.Deserialize<MusicMB>(MessagePackSerializer.ConvertFromJson("""{"Id":6}""")).SearchKeywordsJP == null,
+        "Historical master rows require 5.0 search keywords");
+    var unionClasses = new UnionMissionClassTable();
+    var unionEvents = new UnionMissionEventTable();
+    Require(unionClasses.GetById(1) == null && unionEvents.GetById(1) == null, "Unpublished UnionMission tables return rows");
+    unionClasses.Load(MessagePackSerializer.ConvertFromJson("""[{"Id":1,"ClassType":3,"ClassNameKey":"gold","GuildCountPerBlock":4,"NpcCountPerBlock":2,"PromotionRank":1,"RelegationRank":6}]"""));
+    unionEvents.Load(MessagePackSerializer.ConvertFromJson("""[{"Id":2,"MissionLotteryIdList":[11,12],"ReadyStartTime":"2026-10-27","StartTime":"2026-10-29","EndTime":"2026-11-01","DisplayBannerEndTime":"2026-11-02"}]"""));
+    Require(unionClasses.GetById(1) is { ClassType: UnionMissionClassType.Gold, GuildCountPerBlock: 4, NpcCountPerBlock: 2, PromotionRank: 1, RelegationRank: 6 }
+        && unionEvents.GetById(2).MissionLotteryIdList.SequenceEqual([11L, 12L]) && unionEvents.GetById(2).DisplayBannerEndTime == "2026-11-02",
+        "UnionMission master constructors lose class or schedule data");
     var table = new TextResourceTable();
     table.SetLanguageType(LanguageType.zhTW);
     table.Load(MessagePackSerializer.ConvertFromJson("""[{"StringKey":"known","Text":"before"}]"""));
@@ -563,9 +644,33 @@ static async Task CheckChat()
         Require(!ChatSession.CanManageGuildChat(PlayerGuildPositionType.Member)
             && ChatSession.CanDeleteGuildPost(PlayerGuildPositionType.Veteran, 101, 101)
             && !ChatSession.CanDeleteGuildPost(PlayerGuildPositionType.Veteran, 202, 101), "Guild management permissions are wrong");
+        Require(!ChatSession.CanSortGuildNotes(PlayerGuildPositionType.Member) && !ChatSession.CanSortGuildNotes(PlayerGuildPositionType.Veteran)
+            && ChatSession.CanSortGuildNotes(PlayerGuildPositionType.Commander) && ChatSession.CanSortGuildNotes(PlayerGuildPositionType.SubLeader)
+            && ChatSession.CanSortGuildNotes(PlayerGuildPositionType.Leader), "Guild-note sorting ignores rank");
+        Require(!ChatSession.CanDeleteGuildNote(PlayerGuildPositionType.None, 101, 101)
+            && !ChatSession.CanDeleteGuildNote(PlayerGuildPositionType.Member, 101, 101)
+            && ChatSession.CanDeleteGuildNote(PlayerGuildPositionType.Veteran, 101, 101)
+            && !ChatSession.CanDeleteGuildNote(PlayerGuildPositionType.Veteran, 202, 101)
+            && ChatSession.CanDeleteGuildNote(PlayerGuildPositionType.Commander, 202, 101)
+            && !ChatSession.CanDeleteGuildNote(PlayerGuildPositionType.Leader, 202, 0), "Guild-note deletion ignores rank, ownership or active player");
+        ChatSession.ValidateGuildNote(new string('t', 20), new string('c', 2000), GuildNoteCategoryType.Priority);
+        foreach (var (title, content) in new[] { ("", "content"), ("  ", "content"), (new string('t', 21), "content"),
+            ("title", ""), ("title", "  \n"), ("title", new string('c', 2001)) })
+            await Throws<ArgumentException>(() => { ChatSession.ValidateGuildNote(title, content, GuildNoteCategoryType.Normal); return Task.CompletedTask; });
+        foreach (var category in new[] { GuildNoteCategoryType.None, (GuildNoteCategoryType)3 })
+            await Throws<ArgumentOutOfRangeException>(() => { ChatSession.ValidateGuildNote("title", "content", category); return Task.CompletedTask; });
         Require(!ChatSession.CanRegisterAnnouncement(PlayerGuildPositionType.Member, Message(101, 1, type: ChatType.Guild), 101)
             && !ChatSession.CanRegisterAnnouncement(PlayerGuildPositionType.Veteran, Message(202, 1, type: ChatType.Guild), 101)
             && ChatSession.CanRegisterAnnouncement(PlayerGuildPositionType.Veteran, Message(101, 1, type: ChatType.Guild), 101), "Announcement registration ignores ownership or rank");
+        var noteMessage = Message(101, 9002, "#1#", ChatType.Guild);
+        noteMessage.ChatGuildNoteInfo = new() { GuildNoteId = 42, Title = "<img src=x onerror=alert(1)>", Content = "first\nsecond <script>note</script> #1013#" };
+        Require(!ChatSession.CanRegisterAnnouncement(PlayerGuildPositionType.Leader, noteMessage, 101), "Guild-note attachments can be registered as ordinary announcements");
+        var pageType = typeof(MementoMori.BlazorShared.Pages.Chat);
+        Require(!(bool)pageType.GetMethod("IsStickerMessage", BindingFlags.Static | BindingFlags.NonPublic)!.Invoke(null, [noteMessage])!,
+            "A guild-note attachment with a sticker token is classified as sticker-only");
+        var systemNote = new ChatInfo { PlayerId = 0, SystemChatType = SystemChatType.None, ChatGuildNoteInfo = noteMessage.ChatGuildNoteInfo };
+        Require(!(bool)pageType.GetMethod("IsSystemMessage", BindingFlags.Static | BindingFlags.NonPublic)!.Invoke(null, [systemNote])!,
+            "A guild-note attachment with an absent author is classified as a system message");
         Require(sentRequests.Count == 0, "Invalid input reached the hub");
         await chat.SendAsync(ChatType.Block, " hello ");
         Require(sentRequests.Single().ChatType == ChatType.Block && sentRequests[0].Message == "hello", "Send targets the wrong channel or loses text");
@@ -631,6 +736,7 @@ static async Task CheckChat()
         inbound.OnNoticePrivateMessage(new() { PlayerId = 202 });
         Require(chat.Read(ChatType.Private, 202).Contacts.Single().ExistUnread, "Private notice is ignored");
 
+        inbound.OnReceiveMessage(new() { ChatInfo = noteMessage });
         inbound.OnReceiveMessage(new() { ChatInfo = Message(8, 9_000, "<script>alert('chat')</script>") });
         Masters.TextResourceTable.Load(MessagePackSerializer.ConvertFromJson("""[{"StringKey":"[ChatTestSystem]","Text":"Castle {0}"},{"StringKey":"[GlobalGvgCastleName21]","Text":"Rula"}]"""));
         var systemMessage = new ChatInfo { PlayerId = 0, ChatType = ChatType.World, LocalTimeStamp = 9001, SystemChatMessageKey = "[ChatTestSystem]", SystemChatMessageArgs = ["[GlobalGvgCastleName21]"] };
@@ -678,8 +784,22 @@ static async Task CheckChat()
             });
             Require(html.Contains("&lt;script&gt;") && !html.Contains("<script>"), "Chat text is interpreted as HTML");
             Require(html.Contains("Castle Rula") && !html.Contains("[GlobalGvgCastleName21]"), "System-message parameters are not localized");
-            Require(ChatEmoticons.Ids.Count() == 39 && ChatEmoticons.TryGetId("#1007#", out var sticker) && sticker == 1007
-                && !ChatEmoticons.TryGetId("#999999#", out _), "Sticker token or atlas lookup is wrong");
+            Require(ChatEmoticons.Ids.Order().SequenceEqual(Enumerable.Range(1, 27).Concat(Enumerable.Range(1001, 14)))
+                && ChatEmoticons.TryGetId("#1013#", out var sticker) && sticker == 1013 && ChatEmoticons.TryGetId("#1014#", out _)
+                && !ChatEmoticons.TryGetId("#999999#", out _), "5.0 sticker IDs are missing or invalid tokens are accepted");
+            Require(ChatEmoticons.Style(1, 100).Contains("emoticons-5.0.0.webp")
+                && ChatEmoticons.Style(1, 100).Contains("background-position:-1px -613px")
+                && ChatEmoticons.Style(1001, 100).Contains("background-position:-307px -205px")
+                && ChatEmoticons.Style(1014, 100).Contains("background-position:-409px -1px"), "5.0 atlas still uses the previous sprite coordinates");
+            var guildHtml = await renderer.Dispatcher.InvokeAsync(async () =>
+            {
+                provider.GetRequiredService<AccountSelection>().ChatChannels[1] = ChatType.Guild;
+                return (await renderer.RenderComponentAsync<MementoMori.BlazorShared.Pages.Chat>()).ToHtmlString();
+            });
+            Require(guildHtml.Contains("chat-guild-note"), "Guild-note attachments are hidden");
+            Require(WebUtility.HtmlDecode(guildHtml).Contains(noteMessage.ChatGuildNoteInfo.Title)
+                && WebUtility.HtmlDecode(guildHtml).Contains(noteMessage.ChatGuildNoteInfo.Content), "Guild-note title/content is missing or parsed as a sticker");
+            Require(!guildHtml.Contains("<img src=x") && !guildHtml.Contains("<script>note</script>"), "Guild-note title/content is interpreted as HTML");
             Require((int)Field(chat, "_viewers").GetValue(chat)! == 0, "Prerender opens a live chat connection");
         }
 

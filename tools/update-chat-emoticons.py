@@ -2,7 +2,7 @@
 """Export the official chat atlas without downloading the entire APK.
 
 Maintenance only: pip install UnityPy Pillow
-Usage: python tools/update-chat-emoticons.py 4.22.0
+Usage: python tools/update-chat-emoticons.py 5.0.0
 """
 import argparse
 import base64

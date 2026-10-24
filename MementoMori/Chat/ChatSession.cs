@@ -11,6 +11,7 @@ using MementoMori.Ortega.Network.MagicOnion.Interface;
 using MementoMori.Ortega.Share.Data.ApiInterface;
 using MementoMori.Ortega.Share.Data.ApiInterface.Chat;
 using MementoMori.Ortega.Share.Data.Chat;
+using MementoMori.Ortega.Share;
 using MementoMori.Ortega.Share.MagicOnionShare.Response;
 
 namespace MementoMori.Chat;
@@ -454,12 +455,24 @@ public sealed class ChatSession(MementoMoriFuncs funcs) : IDisposable
         }, cancellationToken);
     }
     public bool IsEmoticonUnlocked(long id) => id > 0 && (id < 1000 || funcs.UserSyncData?.UserItemDtoInfo?.Any(item => item.ItemType == ItemType.ChatEmoticon && item.ItemId == id && item.ItemCount > 0) == true);
-    // GuildPermissionUtil in client 4.22.0: veterans may manage their own announcements/surveys.
+    // GuildPermissionUtil in clients 4.22/5.0: veterans may manage their own announcements/surveys.
     public static bool CanManageGuildChat(PlayerGuildPositionType position) => position is PlayerGuildPositionType.Leader or PlayerGuildPositionType.SubLeader or PlayerGuildPositionType.Commander or PlayerGuildPositionType.Veteran;
     public static bool CanRegisterAnnouncement(PlayerGuildPositionType position, ChatInfo message, long player) => CanManageGuildChat(position)
         && player > 0 && message.PlayerId == player && message.ChatType == ChatType.Guild && message.SystemChatType == SystemChatType.None
-        && message.ChatBattleInfo == null && message.ChatMusicPlaylistInfo == null && message.ChatRecruitGuildMemberInfo == null;
+        // Client 5.0 ChatInfo.IsSharedInfo excludes all four attachment types from announcements.
+        && message.ChatBattleInfo == null && message.ChatMusicPlaylistInfo == null && message.ChatRecruitGuildMemberInfo == null && message.ChatGuildNoteInfo == null;
     public static bool CanDeleteGuildPost(PlayerGuildPositionType position, long author, long player) => CanManageGuildChat(position) && (author == player || position != PlayerGuildPositionType.Veteran);
+    // Client 5.0 GuildPermissionUtil: veterans manage notes; sorting and deleting others require a higher rank.
+    public static bool CanSortGuildNotes(PlayerGuildPositionType position) => position is PlayerGuildPositionType.Leader or PlayerGuildPositionType.SubLeader or PlayerGuildPositionType.Commander;
+    public static bool CanDeleteGuildNote(PlayerGuildPositionType position, long author, long player) => player > 0 && CanManageGuildChat(position) && (author == player || CanSortGuildNotes(position));
+    public static void ValidateGuildNote(string title, string content, GuildNoteCategoryType category)
+    {
+        if (string.IsNullOrWhiteSpace(title) || title.Length > OrtegaConst.GuildNote.MaxTitleLength)
+            throw new ArgumentException($"笔记标题应为 1–{OrtegaConst.GuildNote.MaxTitleLength} 个字符。");
+        if (string.IsNullOrWhiteSpace(content) || content.Length > OrtegaConst.GuildNote.MaxContentLength)
+            throw new ArgumentException($"笔记正文应为 1–{OrtegaConst.GuildNote.MaxContentLength} 个字符。");
+        if (category is not (GuildNoteCategoryType.Normal or GuildNoteCategoryType.Priority)) throw new ArgumentOutOfRangeException(nameof(category));
+    }
     private bool Blocked(long id) => funcs.UserSyncData?.BlockPlayerIdList?.Contains(id) == true;
     private void ClearGuildChat()
     {

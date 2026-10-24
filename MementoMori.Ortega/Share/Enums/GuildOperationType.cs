@@ -43,5 +43,9 @@ namespace MementoMori.Ortega.Share.Enums
 		[Description("他プレイヤーの作成したチャットアナウンス・アンケートの削除")]
 		DeleteNotOwnChatAnnounceAndSurvey,
         ChatRecruitGuildMember = 20,
+        DeleteNotOwnGuildNote = 21,
+        ManagementGuildNote = 22,
+        SortGuildNote = 23,
+        EntryUnionMission = 24,
     }
 }

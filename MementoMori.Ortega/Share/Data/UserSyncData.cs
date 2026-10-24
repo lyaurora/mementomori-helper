@@ -40,6 +40,8 @@ public class UserSyncData
 
     public int? GuildJoinLimitCount { get; set; }
 
+    public Dictionary<long, long> GuildNoteShareLocalTimestampMap { get; set; }
+
     public bool? HasTransitionedPanelPictureBook { get; set; }
 
     public bool? IsDataLinkage { get; set; }
@@ -208,6 +210,7 @@ public class UserSyncData
         }
 
         if (userSyncData.GuildJoinLimitCount != null) GuildJoinLimitCount = userSyncData.GuildJoinLimitCount;
+        if (userSyncData.GuildNoteShareLocalTimestampMap != null) GuildNoteShareLocalTimestampMap = GuildNoteShareLocalTimestampMap.Merge(userSyncData.GuildNoteShareLocalTimestampMap);
         if (userSyncData.IsDataLinkage != null) IsDataLinkage = userSyncData.IsDataLinkage;
         if (userSyncData.IsJoinedGlobalGvg != null) IsJoinedGlobalGvg = userSyncData.IsJoinedGlobalGvg;
         if (userSyncData.IsJoinedLocalGvg != null) IsJoinedLocalGvg = userSyncData.IsJoinedLocalGvg;

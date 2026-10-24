@@ -50,6 +50,10 @@ const assert = require('node:assert/strict');
         const categories = page.getByRole('group', { name: '表情分类' });
         await categories.getByRole('button', { name: '角色', exact: true }).click();
         await page.waitForFunction(() => document.querySelector('#chat-emoticon-picker button[aria-label="插入贴图 1001"]'));
+        result.characterStickers = await page.locator('.chat-emoticon-grid button').count();
+        assert.equal(result.characterStickers, 14, '5.0 character stickers are missing');
+        for (const id of [1013, 1014])
+            assert.equal(await page.getByRole('button', { name: `插入贴图 ${id}`, exact: true }).count(), 1, `5.0 sticker ${id} is missing`);
         assert(Math.abs((await page.locator('#chat-emoticon-picker').boundingBox()).height - desktopPicker.height) < 1, 'Sticker category changes the panel height');
         assert(Math.abs((await page.getByTestId('chat-messages').boundingBox()).height - messageHeight) < 1, 'Sticker category resizes the conversation');
         await categories.getByRole('button', { name: '猫猫', exact: true }).click();
@@ -62,9 +66,22 @@ const assert = require('node:assert/strict');
         assert(!(await page.getByTestId('chat-send').isDisabled()), 'Composed sticker cannot be sent');
         const style = await page.locator('.chat-draft-preview .chat-sticker').getAttribute('style');
         const atlas = style.match(/url\('([^']+)'\)/)[1];
+        assert(atlas.endsWith('emoticons-5.0.0.webp'), 'Sticker picker uses the previous client atlas');
         const asset = await page.request.get(new URL(atlas, `${url}/`).toString());
         assert.equal(asset.status(), 200, 'Sticker atlas is missing');
         assert(asset.headers()['content-type'].startsWith('image/webp'), 'Sticker atlas is not an image');
+        const images = await page.evaluate(async base => {
+            const paths = ['emoticons-5.0.0.webp', ...[1, 2, 3, 4].map(id => `reaction-${id}-5.0.0.webp`)];
+            return Promise.all(paths.map(path => new Promise((resolve, reject) => {
+                const image = new Image();
+                image.onload = () => resolve({ path, width: image.naturalWidth, height: image.naturalHeight });
+                image.onerror = () => reject(new Error(`Cannot decode chat asset ${path}`));
+                image.src = new URL(`_content/MementoMori.BlazorShared/chat/${path}`, base).toString();
+            })));
+        }, `${url}/`);
+        assert.deepEqual(images.map(({ width, height }) => [width, height]), [[612, 714], [99, 74], [86, 79], [99, 74], [97, 74]],
+            '5.0 atlas or reaction images cannot be decoded at the expected size');
+        result.chatAssets = images;
         await page.getByRole('button', { name: '插入贴图 2', exact: true }).click();
         await page.waitForFunction(() => document.querySelector('#chat-message-input')?.value === '#1##2#');
         assert.equal(await page.locator('.chat-draft-preview .chat-sticker').count(), 2, 'Multiple stickers cannot be composed');
@@ -129,7 +146,7 @@ const assert = require('node:assert/strict');
         });
         assert.equal(result.wrapping.shortLines, 1, 'Short messages wrap before using available space');
         assert(result.wrapping.preservesNewline && result.wrapping.longLinkFits, 'Explicit newlines or long-link wrapping is broken');
-        await page.getByRole('button', { name: '公告与投票', exact: true }).click();
+        await page.getByRole('button', { name: '公告、投票与笔记', exact: true }).click();
         await page.waitForSelector('.chat-guild-info');
         await waitIdle();
         assert.equal(await page.locator('.chat-guild-info').count(), 1, 'Guild panel did not open');
@@ -142,7 +159,24 @@ const assert = require('node:assert/strict');
         }
         await page.locator('.chat-guild-info .mud-tab').filter({ hasText: '投票 ·' }).click();
         if (result.surveys) assert((await page.locator('.chat-vote-footer').first().innerText()).includes('人参与'));
-        await page.getByRole('button', { name: '收起公告与投票', exact: true }).click();
+        await page.locator('.chat-guild-info .mud-tab').filter({ hasText: '笔记 ·' }).click();
+        result.guildNotes = await page.locator('.chat-note-entry').count();
+        const newNote = page.getByRole('button', { name: '新建笔记', exact: true });
+        if (await newNote.count() && !(await newNote.isDisabled())) {
+            await newNote.click();
+            await page.waitForSelector('.chat-note-editor');
+            assert.equal(await page.locator('#chat-note-title').getAttribute('maxlength'), '20');
+            assert.equal(await page.locator('#chat-note-content').getAttribute('maxlength'), '2000');
+            assert(await page.getByRole('button', { name: '保存笔记', exact: true }).isDisabled(), 'An empty guild note can be saved');
+            await page.locator('#chat-note-title').fill('离线界面检查');
+            await page.locator('#chat-note-content').fill('第一行\n第二行');
+            await page.locator('#chat-note-category').selectOption('Priority');
+            assert(!(await page.getByRole('button', { name: '保存笔记', exact: true }).isDisabled()), 'A valid guild-note draft cannot be saved');
+            await page.getByRole('button', { name: '取消编辑', exact: true }).click();
+            await page.waitForSelector('.chat-note-editor', { state: 'detached' });
+            result.noteDraftCancelled = true;
+        }
+        await page.getByRole('button', { name: '收起公会动态', exact: true }).click();
         await page.waitForSelector('.chat-guild-info', { state: 'detached' });
         assert.equal(await page.locator('.chat-guild-info').count(), 0, 'Guild panel did not close');
         result.unresolvedCastleNames = await page.locator('.chat-bubble, .chat-system-message').filter({ hasText: /\[(Global|Local)GvgCastleName\d+\]/ }).count();
