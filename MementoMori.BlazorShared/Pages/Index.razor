@@ -34,11 +34,11 @@
 }
 @if (AccountSelection.CurrentUserId > 0)
 {
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
+    <MudItem xs="12" sm="12" md="6" lg="4" xl="4">
         <MudCard>
-            <MudCardHeader Class="justify-space-between flex-wrap gap-2">
-                <MudText>@ResourceStrings.CharacterInfo</MudText>
-                <MudPaper Elevation="0" Class="d-flex justify-end flex-wrap gap-2">
+            <MudCardHeader Class="justify-space-between">
+                <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.Badge"/><span>@ResourceStrings.CharacterInfo</span></MudText>
+                <MudPaper Elevation="0" Class="d-flex justify-end gap-2">
                     <MudButton Size="Size.Small" Variant="Variant.Filled" Disabled="Funcs.Logining" @onclick="ShowPlayerList">
                         @ResourceStrings.Login
                         @if (Funcs.Logining)
@@ -50,13 +50,13 @@
                 </MudPaper>
             </MudCardHeader>
             <MudCardContent>
-                <MudSimpleTable Elevation="0" Dense="true">
+                <MudSimpleTable Class="profile-table" Elevation="0" Dense="true">
                     <tbody>
                     <tr>
-                        <td colspan="2">@Tr("[CommonPlayerNameFormat]", Funcs.UserSyncData?.UserStatusDtoInfo?.Name)</td>
+                        <td colspan="2"><span class="profile-label">@Tr("[CommonPlayerNameFormat]", "")</span><span class="profile-value profile-player-name">@Funcs.UserSyncData?.UserStatusDtoInfo?.Name</span></td>
                     </tr>
                     <tr>
-                        <td colspan="2">@Tr("[PlayerId]") : @Funcs.UserSyncData?.UserStatusDtoInfo?.PlayerId</td>
+                        <td colspan="2"><span class="profile-label">@Tr("[PlayerId]") : </span><span class="profile-value">@Funcs.UserSyncData?.UserStatusDtoInfo?.PlayerId</span></td>
                     </tr>
                     <tr>
                         @{
@@ -66,47 +66,53 @@
                                 createTime = (Funcs.UserSyncData?.UserStatusDtoInfo?.CreateAt.ToDateTimeOffset() - NetworkManager.TimeManager.DiffFromUtc).ToString();
                             }
                         }
-                        <td colspan="2">@ResourceStrings.Account_Creation_Time : @(createTime)</td>
+                        <td colspan="2"><span class="profile-label">@ResourceStrings.Account_Creation_Time : </span><span class="profile-value">@(createTime)</span></td>
                     </tr>
                     <tr>
-                        <td>@Tr("[CommonPlayerRankLabel]") : @Funcs.UserSyncData?.UserStatusDtoInfo?.Rank</td>
-                        <td>@Tr("[CommonVipWithSpaceFormat]", Funcs.UserSyncData?.UserStatusDtoInfo?.Vip)</td>
+                        <td><span class="profile-label">@Tr("[CommonPlayerRankLabel]") : </span><span class="profile-value">@Funcs.UserSyncData?.UserStatusDtoInfo?.Rank</span></td>
+                        <td><span class="profile-value">@Tr("[CommonVipWithSpaceFormat]", Funcs.UserSyncData?.UserStatusDtoInfo?.Vip)</span></td>
                     </tr>
                     <tr>
-                        <td colspan="2">@Tr("[MyPagePlayerInformationCommentLabel]") : @Funcs.UserSyncData?.UserStatusDtoInfo?.Comment</td>
+                        <td colspan="2"><span class="profile-label">@Tr("[MyPagePlayerInformationCommentLabel]") : </span><span class="profile-value">@Funcs.UserSyncData?.UserStatusDtoInfo?.Comment</span></td>
                     </tr>
                     <tr>
                         @{
                             var free = Funcs.UserSyncData.GetUserItemCount(ItemType.CurrencyFree, 1);
                             var paid = Funcs.UserSyncData.GetUserItemCount(ItemType.CurrencyPaid, 0);
-                            <td colspan="2">@Tr("[ItemName4]") : @($"{free + paid}, {Tr("[CurrencyDetailCurrencyFree]")} {free}, {Tr("[CurrencyDetailCurrencyPaid]")} {paid}") </td>
+                            <td colspan="2"><div class="profile-resources">
+                                <span>@Tr("[ItemName4]") : @(free + paid)</span>
+                                <span>@Tr("[CurrencyDetailCurrencyFree]") @free</span>
+                                <span>@Tr("[CurrencyDetailCurrencyPaid]") @paid</span>
+                            </div></td>
                         }
                     </tr>
                     <tr>
-                        <td>@Tr("[ItemName9]") : @(Funcs.UserSyncData.GetUserItemCount(ItemType.FriendPoint, 1))</td>
-                        <td>@Tr("[ItemName11]") : @(Funcs.UserSyncData.GetUserItemCount(ItemType.CharacterTrainingMaterial, 2))</td>
+                        <td colspan="2"><div class="profile-resources">
+                            <span>@Tr("[ItemName9]") : @(Funcs.UserSyncData.GetUserItemCount(ItemType.FriendPoint, 1))</span>
+                            <span>@Tr("[ItemName11]") : @(Funcs.UserSyncData.GetUserItemCount(ItemType.CharacterTrainingMaterial, 2))</span>
+                        </div></td>
                     </tr>
                     <tr>
-                        <td>@Tr("[ItemName5]") : @(Funcs.UserSyncData.GetUserItemCount(ItemType.Gold, 1).ToString("N0"))</td>
-                        <td>
-                            @Tr("[ItemName10]") : @(Funcs.UserSyncData.GetUserItemCount(ItemType.CharacterTrainingMaterial, 1).ToString("N0"))
-                        </td>
+                        <td colspan="2"><div class="profile-resources">
+                            <span>@Tr("[ItemName5]") : @(Funcs.UserSyncData.GetUserItemCount(ItemType.Gold, 1).ToString("N0"))</span>
+                            <span>@Tr("[ItemName10]") : @(Funcs.UserSyncData.GetUserItemCount(ItemType.CharacterTrainingMaterial, 1).ToString("N0"))</span>
+                        </div></td>
                     </tr>
                     <tr>
-                        <td>@Tr("[ItemName43]") : @(Funcs.UserSyncData.GetUserItemCount(ItemType.ExchangePlaceItem, 4).ToString("N0"))</td>
-                        <td>
-                            @Tr("[ItemName16]") : @(Funcs.UserSyncData.GetUserItemCount(ItemType.EquipmentRarityCrystal, 1).ToString("N0"))
-                        </td>
+                        <td colspan="2"><div class="profile-resources">
+                            <span>@Tr("[ItemName43]") : @(Funcs.UserSyncData.GetUserItemCount(ItemType.ExchangePlaceItem, 4).ToString("N0"))</span>
+                            <span>@Tr("[ItemName16]") : @(Funcs.UserSyncData.GetUserItemCount(ItemType.EquipmentRarityCrystal, 1).ToString("N0"))</span>
+                        </div></td>
                     </tr>
                     </tbody>
                 </MudSimpleTable>
             </MudCardContent>
         </MudCard>
     </MudItem>
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
+    <MudItem xs="12" sm="12" md="6" lg="4" xl="4">
         <MudPaper Class="pa-4">
-            <MudPaper Elevation="0" Class="d-flex flex-wrap align-center gap-2">
-                <MudText>@Tr("[CommonFooterHomeButtonLabel]")</MudText>
+            <MudPaper Elevation="0" Class="d-flex">
+                <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.Home"/><span>@Tr("[CommonFooterHomeButtonLabel]")</span></MudText>
                 <MudSpacer/>
                 <MudButton Variant="Variant.Filled" Size="Size.Small" @onclick="Funcs.GetMyPage" StartIcon="@Icons.Material.Filled.Sync">@ResourceStrings.Sync</MudButton>
             </MudPaper>
@@ -138,8 +144,8 @@
                 }
             </MudPaper>
             <MudDivider Class="my-2"/>
-            <MudPaper Elevation="0" Class="d-flex flex-wrap align-center gap-2">
-                <MudText>@Tr("[CommonHeaderBountyQuestLabel]")</MudText>
+            <MudPaper Elevation="0" Class="d-flex flex-wrap align-center">
+                <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.Explore"/><span>@Tr("[CommonHeaderBountyQuestLabel]")</span></MudText>
                 <MudSpacer/>
                 @if (GameConfig.Value.BountyQuestAuto.TargetItems.Count > 0)
                 {
@@ -150,7 +156,7 @@
                 <MudButton Variant="Variant.Filled" Size="Size.Small" @onclick="Funcs.RemakeBountyRequest" StartIcon="@Icons.Material.Filled.Refresh">
                     @Tr("[CommonAlternativesItemFormat]", Tr("[CommonCurrencyName]"), 20)
                 </MudButton>
-                <MudButton Variant="Variant.Filled" Size="Size.Small" @onclick="Funcs.GetBountyRequestInfo" StartIcon="@Icons.Material.Filled.Sync">@ResourceStrings.Sync</MudButton>
+                <MudButton Class="ml-2" Variant="Variant.Filled" Size="Size.Small" @onclick="Funcs.GetBountyRequestInfo" StartIcon="@Icons.Material.Filled.Sync">@ResourceStrings.Sync</MudButton>
             </MudPaper>
             <MudPaper Elevation="0">
                 @foreach (var info in Funcs.BountyQuestResponseInfo?.UserBountyQuestDtoInfos ?? new List<UserBountyQuestDtoInfo>())
@@ -183,18 +189,19 @@
             </MudPaper>
         </MudPaper>
     </MudItem>
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
+    <MudItem xs="12" sm="12" md="6" lg="4" xl="4">
         <MudCard>
-            <MudCardHeader Class="justify-space-between flex-wrap gap-2">
-                <MudText>@Tr("[MyPageMenuButtonMissionLabel]")</MudText>
-                <MudPaper Elevation="0" Class="d-flex justify-end flex-wrap gap-2">
+            <MudCardHeader Class="justify-space-between">
+                <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.TaskAlt"/><span>@Tr("[MyPageMenuButtonMissionLabel]")</span></MudText>
+                <MudPaper Elevation="0" Class="d-flex justify-end gap-2">
                     <MudButton Size="Size.Small" Variant="Variant.Filled" @onclick="@Funcs.GetMissionInfo">@ResourceStrings.Sync</MudButton>
                     <MudButton Size="Size.Small" Variant="Variant.Filled" @onclick="@Funcs.CompleteMissions">@Tr("[MissionAllReceiveButton]")</MudButton>
                     <MudButton Size="Size.Small" Variant="Variant.Filled" @onclick="@Funcs.RewardMissonActivity">@ResourceStrings.RewardMissonActivity</MudButton>
                 </MudPaper>
             </MudCardHeader>
             <MudCardContent>
-                <MudSimpleTable Elevation="0" Dense="true" Style="height: 400px; overflow: auto">
+                <MudSimpleTable Class="mission-table" Elevation="0" Dense="true" Style="height: 400px; overflow: auto">
+                    <colgroup><col style="width:18%"/><col style="width:52%"/><col style="width:30%"/></colgroup>
                     <tbody>
                     @foreach (var missionInfo in Funcs.MissionInfoDict?.Values.SelectMany(d => d.UserMissionDtoInfoDict?.Values.SelectMany(x => x) ?? Array.Empty<UserMissionDtoInfo>()) ?? Array.Empty<UserMissionDtoInfo>())
                     {
@@ -252,18 +259,18 @@
             </MudCardContent>
         </MudCard>
     </MudItem>
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
+    <MudItem xs="12" sm="12" md="6" lg="4" xl="4">
         <MudCard>
-            <MudCardHeader Class="flex-wrap gap-2">
-                <MudText>@ResourceStrings.QuickActions</MudText>
+            <MudCardHeader Class="">
+                <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.Bolt"/><span>@ResourceStrings.QuickActions</span></MudText>
                 <MudSpacer/>
-                <MudButton Size="Size.Small" Variant="Variant.Filled" Disabled="Funcs.IsQuickActionExecuting" @onclick="Funcs.ExecuteAllQuickAction">@ResourceStrings.ExecuteAllQuick</MudButton>
-                <MudButton Size="Size.Small" Variant="Variant.Filled" Disabled="!Funcs.IsQuickActionExecuting" @onclick="Funcs.CancelQuickAction">@Tr("[CommonCancelLabel]")</MudButton>
+                <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" Disabled="Funcs.IsQuickActionExecuting" @onclick="Funcs.ExecuteAllQuickAction">@ResourceStrings.ExecuteAllQuick</MudButton>
+                <MudButton Class="ml-2" Size="Size.Small" Variant="Variant.Filled" Disabled="!Funcs.IsQuickActionExecuting" @onclick="Funcs.CancelQuickAction">@Tr("[CommonCancelLabel]")</MudButton>
             </MudCardHeader>
             <MudCardContent>
-                <MudTabs Position="Position.Top" MinimumTabWidth="20px">
+                <MudTabs Class="quick-actions-tabs" Position="Position.Left" MinimumTabWidth="20px">
                     <MudTabPanel Text="@ResourceStrings.ExecuteAllQuick">
-                        <MudPaper Elevation="0" Class="pa-2 d-flex flex-wrap gap-2">
+                        <div class="quick-action-content quick-action-list">
                             <MudButton Size="Size.Small" Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.GetLoginBonus">@Tr("[MyPageButtonLoginBonusLabel]")</MudButton>
                             <MudButton Size="Size.Small" Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.GetVipGift">@Tr("[VipDailyRewardLabelFormat]", Funcs.UserSyncData?.UserStatusDtoInfo?.Vip)</MudButton>
                             <MudButton Size="Size.Small" Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.ReceiveMonthlyBoost">@Tr("[CommonMonthlyBoosterLabel]")</MudButton>
@@ -292,17 +299,17 @@
                             <MudButton Size="Size.Small" Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.ReadAllMemories">@Tr("[CharacterDetailMemory]")</MudButton>
                             <MudButton Size="Size.Small" Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.ReceiveAchievementReward">@Tr("[AchieveRankingAchievementTargetLabel]")</MudButton>
                             <MudButton Size="Size.Small" Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.UseFriendCode">@Tr("[InputFriendCodeEnabled]")</MudButton>
-                        </MudPaper>
+                        </div>
                     </MudTabPanel>
                     <MudTabPanel Text="@Tr("[ItemBoxButtonBulkCasting]")">
-                        <MudPaper Elevation="0" Class="pa-2 d-flex flex-wrap gap-2">
+                        <div class="quick-action-content quick-action-list">
                             <MudButton Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.AutoEquipmentMatchlessInheritance">@ResourceStrings.AutoMatchlessInheritance</MudButton>
                             <MudButton Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.AutoEquipmentLegendInheritance">@ResourceStrings.AutoLegendInheritance</MudButton>
-                        </MudPaper>
+                        </div>
                     </MudTabPanel>
                     <MudTabPanel Text="@Tr("[PlayerRankingTypeStage]")">
-                        <MudPaper Elevation="0" Class="pa-2">
-                            <MudSelect T="long" @bind-Value="@selectedTargetQuerstId" Label="@ResourceStrings.StopAfterSpecifiedStage" Variant="Variant.Outlined">
+                        <div class="quick-action-content quick-action-form">
+                            <MudSelect T="long" @bind-Value="@selectedTargetQuerstId" Label="@ResourceStrings.StopAfterSpecifiedStage" Variant="Variant.Outlined" Margin="Margin.Dense">
                                 <MudSelectItem T="long" Value="0">@ResourceStrings.NoStop</MudSelectItem>
                                 @foreach (var quest in QuestTable.GetArray().Where(d => d.BaseBattlePower > 0 && d.Id > Funcs.UserSyncData.UserBattleBossDtoInfo?.BossClearMaxQuestId).Take(50))
                                 {
@@ -310,16 +317,16 @@
                                 }
                             </MudSelect>
                             <MudButton Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" OnClick="() => Funcs.AutoBossRequest(selectedTargetQuerstId)">@Tr("[BattleTypeBoss]") @Tr("[BattleTypeAuto]")</MudButton>
-                        </MudPaper>
+                        </div>
                     </MudTabPanel>
                     <MudTabPanel Text="@Tr("[CommonHeaderDungeonBattleLabel]")">
-                        <MudPaper Elevation="0" Class="pa-2">
+                        <div class="quick-action-content quick-action-list">
                             <MudButton Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.AutoDungeonBattle">@Tr("[CommonHeaderDungeonBattleLabel]") @Tr("[BattleTypeAuto]")</MudButton>
-                        </MudPaper>
+                        </div>
                     </MudTabPanel>
                     <MudTabPanel Text="@Tr("[CommonHeaderTowerBattleLabel]")">
-                        <MudPaper Elevation="0" Class="pa-2">
-                            <MudSelect T="TowerType" Label="@ResourceStrings.TowerType" Variant="Variant.Filled" @bind-Value="@Funcs.SelectedAutoTowerType">
+                        <div class="quick-action-content quick-action-form">
+                            <MudSelect T="TowerType" Label="@ResourceStrings.TowerType" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="@Funcs.SelectedAutoTowerType">
                                 @foreach (var type in Funcs.GetAvailableTower())
                                 {
                                     <MudSelectItem T="TowerType" Value="@type">@(Tr(type))</MudSelectItem>
@@ -329,7 +336,7 @@
                             {
                                 var maxTowerBattleId = Funcs.UserSyncData.UserTowerBattleDtoInfos.ToList().Find(x => x.TowerType == Funcs.SelectedAutoTowerType).MaxTowerBattleId;
                                 var quests = TowerBattleQuestTable.GetArray().Where(d => d.TowerType == Funcs.SelectedAutoTowerType && d.Floor > maxTowerBattleId).Take(50);
-                                <MudSelect @bind-Value="selectedTargetTowerLayer" Label="@ResourceStrings.StopAfterSpecifiedStage">
+                                <MudSelect @bind-Value="selectedTargetTowerLayer" Label="@ResourceStrings.StopAfterSpecifiedStage" Variant="Variant.Outlined" Margin="Margin.Dense">
                                     <MudSelectItem T="long" Value="0">@ResourceStrings.NoStop</MudSelectItem>
                                     @foreach (var layer in quests)
                                     {
@@ -338,43 +345,37 @@
                                 </MudSelect>
                             }
                             <MudButton Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" OnClick="() => Funcs.AutoInfiniteTowerRequest(selectedTargetTowerLayer)">@Tr("[CommonHeaderTowerBattleLabel]") @Tr("[BattleTypeAuto]")</MudButton>
-                        </MudPaper>
+                        </div>
                     </MudTabPanel>
                     <MudTabPanel Text="@Tr("[CommonForgedLabel]")">
-                        <EquipmentTraining />
+                        <div class="quick-action-content"><EquipmentTraining /></div>
                     </MudTabPanel>
                     <MudTabPanel Text="Debug">
-                        <MudPaper Elevation="0" Class="pa-2 d-flex flex-wrap gap-2">
+                        <div class="quick-action-content quick-action-list">
                             <MudButton Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.Debug">Debug</MudButton>
                             <MudButton Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.LogDebug">LogTest</MudButton>
-                        </MudPaper>
+                        </div>
                     </MudTabPanel>
                 </MudTabs>
             </MudCardContent>
         </MudCard>
     </MudItem>
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
-        <MudCard>
-            <MudCardHeader Class="flex-wrap gap-2">@ResourceStrings.ExecutionOutput</MudCardHeader>
+    <MudItem xs="12" sm="12" md="6" lg="4" xl="4">
+        <MudCard Class="dashboard-output">
+            <MudCardHeader><MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.Terminal"/><span>@ResourceStrings.ExecutionOutput</span></MudText></MudCardHeader>
             <MudCardContent>
                 <MessageList/>
             </MudCardContent>
         </MudCard>
     </MudItem>
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
-        <MudPaper>
-            <MudTabs HeaderPosition="TabHeaderPosition.After" MinimumTabWidth="20px">
-                <Header>
-                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center">
-                        <MudSpacer/>
-                        <MudButton Size="Size.Small" Variant="Variant.Filled" @onclick="@Funcs.GetNoticeInfoList">@ResourceStrings.Sync</MudButton>
-                    </MudStack>
-                </Header>
+    <MudItem xs="12" sm="12" md="6" lg="4" xl="4">
+        <MudPaper Class="dashboard-notices">
+            <MudTabs Class="notice-tabs" MinimumTabWidth="20px">
                 <ChildContent>
                     <MudTabPanel Text="@Tr("[NoticeCategoryTypeEventTab]")">
                         @if (Funcs.EventInfoList != null)
                         {
-                            <MudTable Elevation="0" T="NoticeInfo" Items="@Funcs.EventInfoList" Virtualize="true" Dense="true" Height="400px">
+                            <MudTable Class="activity-list" Elevation="0" T="NoticeInfo" Items="@Funcs.EventInfoList" Virtualize="true" Dense="true" Height="400px">
                                 <RowTemplate>
                                     <MudTd>@(context.Title)</MudTd>
                                     <MudTd>
@@ -387,7 +388,7 @@
                     <MudTabPanel Text="@Tr("[NoticeCategoryTypeNoticeTab]")">
                         @if (Funcs.NoticeInfoList != null)
                         {
-                            <MudTable Elevation="0" T="NoticeInfo" Items="@Funcs.NoticeInfoList" Virtualize="true" Dense="true" Height="400px">
+                            <MudTable Class="activity-list" Elevation="0" T="NoticeInfo" Items="@Funcs.NoticeInfoList" Virtualize="true" Dense="true" Height="400px">
                                 <RowTemplate>
                                     <MudTd>@(context.Title)</MudTd>
                                     <MudTd>
@@ -399,11 +400,12 @@
                     </MudTabPanel>
                 </ChildContent>
             </MudTabs>
+            <MudButton Class="dashboard-notices-sync" Size="Size.Small" Variant="Variant.Filled" @onclick="@Funcs.GetNoticeInfoList">@ResourceStrings.Sync</MudButton>
         </MudPaper>
     </MudItem>
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
+    <MudItem xs="12" sm="12" md="6" lg="4" xl="4">
         <MudCard>
-            <MudCardHeader Class="flex-wrap gap-2">
+            <MudCardHeader>
                 <MudSwitch T="bool" Color="Color.Info" @bind-Value="@Funcs.ShowDebugInfo" Label="Debug Info"></MudSwitch>
             </MudCardHeader>
             <MudCardContent Style="max-height: 400px; overflow: scroll">

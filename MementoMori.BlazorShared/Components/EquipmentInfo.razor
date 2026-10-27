@@ -8,35 +8,41 @@
 @using MementoMori.Ortega.Share.Master.Data
 @using MementoMori.Ortega.Share.Utils
 
-<MudStack Spacing="Spacing">
-    <MudField Variant="Variant.Outlined" Label="@ResourceStrings.Name" InnerPadding="InnerPadding">
-        <MudStack Row="true" Spacing="Spacing">
-            <MudText>@equipmentName</MudText>
-            <MudText>@(Tr(equipmentMb.RarityFlags))</MudText>
-            <MudText>@(EquipmentDtoInfo.ReinforcementLv)/@(equipmentMb.EquipmentLv)</MudText>
-        </MudStack>
-    </MudField>
-    <MudField Variant="Variant.Outlined" Label="@(Tr("[CharacterEquipmentBasicEffect]"))" InnerPadding="InnerPadding">
-        <MudStack Row="true" Spacing="Spacing">
-            <MudField Label="@(Tr(baseEffect.BattleParameterType))" InnerPadding="InnerPadding">
-                @(Math.Round(baseEffect.Value))
-            </MudField>
-        </MudStack>
-    </MudField>
-    <MudField Variant="Variant.Outlined" Label="@(Tr("[CharacterEquipmentAdditionalEffect]"))" InnerPadding="InnerPadding">
-        <MudStack Row="true" Spacing="Spacing">
+<div class="equipment-info @(MiniMode ? "equipment-info-compact" : "")">
+    <section class="equipment-section">
+        <h3 class="equipment-section-title">@ResourceStrings.Name</h3>
+        <div class="equipment-name">
+            <strong>@equipmentName</strong>
+            <span>@(Tr(equipmentMb.RarityFlags))</span>
+            <span class="equipment-number">@(EquipmentDtoInfo.ReinforcementLv)/@(equipmentMb.EquipmentLv)</span>
+        </div>
+    </section>
+    <section class="equipment-section">
+        <h3 class="equipment-section-title">@Tr("[CharacterEquipmentBasicEffect]")</h3>
+        <dl class="equipment-stat-grid">
+            <div class="equipment-stat">
+                <dt>@(Tr(baseEffect.BattleParameterType))</dt>
+                <dd>@(Math.Round(baseEffect.Value).ToString("N0"))</dd>
+            </div>
+        </dl>
+    </section>
+    <section class="equipment-section">
+        <h3 class="equipment-section-title">@Tr("[CharacterEquipmentAdditionalEffect]")</h3>
+        <dl class="equipment-stat-grid">
             @foreach (var type in EnumUtil.GetValueList<BaseParameterType>())
             {
-                <MudField Label="@(Tr(type))" InnerPadding="InnerPadding">
-                    @(EquipmentDtoInfo.GetAdditionalParameter(type))
-                </MudField>
+                <div class="equipment-stat">
+                    <dt>@(Tr(type))</dt>
+                    <dd>@(EquipmentDtoInfo.GetAdditionalParameter(type).ToString("N0"))</dd>
+                </div>
             }
-        </MudStack>
-    </MudField>
+        </dl>
+    </section>
     @if (sacredType != SacredTreasureType.None)
     {
-        <MudField Variant="Variant.Outlined" Label="@(Tr("[EquipmentSacredTreasureBonusLabel]"))" InnerPadding="InnerPadding">
-            <MudStack Row="true" Spacing="Spacing">
+        <section class="equipment-section">
+            <h3 class="equipment-section-title">@Tr("[EquipmentSacredTreasureBonusLabel]")</h3>
+            <dl class="equipment-effect-list">
                 @if (sacredType == SacredTreasureType.DualStatus || sacredType == SacredTreasureType.Legend)
                 {
                     var info = @EquipmentUtil.GetSacredParameter(equipmentMb.SlotType, EquipmentDtoInfo.LegendSacredTreasureLv, SacredTreasureType.Legend);
@@ -46,9 +52,10 @@
                         value = $"{info.Value / 100}%";
                     }
 
-                    <MudField Label="@Tr("[CommonItemLegendGenialLevelFormat]", EquipmentDtoInfo.LegendSacredTreasureLv)" InnerPadding="InnerPadding">
-                        @(Tr(info.BattleParameterType)) @(value)
-                    </MudField>
+                    <div class="equipment-effect">
+                        <dt>@Tr("[CommonItemLegendGenialLevelFormat]", EquipmentDtoInfo.LegendSacredTreasureLv)</dt>
+                        <dd><span>@(Tr(info.BattleParameterType))</span><strong>@(value)</strong></dd>
+                    </div>
                 }
                 @if (sacredType == SacredTreasureType.DualStatus || sacredType == SacredTreasureType.Matchless)
                 {
@@ -59,20 +66,22 @@
                         value = $"{info.Value / 100}%";
                     }
 
-                    <MudField Label="@Tr("[CommonItemMatchlessGenialLevelFormat]", EquipmentDtoInfo.MatchlessSacredTreasureLv)" InnerPadding="InnerPadding">
-                        @(Tr(info.BattleParameterType)) @(value)
-                    </MudField>
+                    <div class="equipment-effect">
+                        <dt>@Tr("[CommonItemMatchlessGenialLevelFormat]", EquipmentDtoInfo.MatchlessSacredTreasureLv)</dt>
+                        <dd><span>@(Tr(info.BattleParameterType))</span><strong>@(value)</strong></dd>
+                    </div>
                 }
-            </MudStack>
-        </MudField>
+            </dl>
+        </section>
     }
     @if (equipmentMb.EquipmentSetId > 0)
     {
         var equipmentSetMb = Masters.EquipmentSetTable.GetById(equipmentMb.EquipmentSetId);
         var setName = Tr(equipmentSetMb.NameKey);
 
-        <MudField Variant="Variant.Outlined" Label="@($"{setName} {Tr("[CharacterEquipmentSeriesEffect]")}")" InnerPadding="InnerPadding">
-            <MudStack Row="true" Spacing="Spacing">
+        <section class="equipment-section">
+            <h3 class="equipment-section-title">@($"{setName} {Tr("[CharacterEquipmentSeriesEffect]")}")</h3>
+            <dl class="equipment-effect-list">
                 @foreach (var info in equipmentSetMb.EffectList)
                 {
                     string key;
@@ -88,12 +97,13 @@
                         value = ParameterUtil.GetBaseParameterValueText(info.BaseParameterChangeInfo.ChangeParameterType, info.BaseParameterChangeInfo.Value);
                     }
 
-                    <MudField Label="@Tr("[EquipmentSet]", info.RequiredEquipmentCount)" Disabled="ChangedSetEquipmentCount < info.RequiredEquipmentCount" InnerPadding="InnerPadding">
-                        @key @value
-                    </MudField>
+                    <div class="equipment-effect" aria-disabled="@(ChangedSetEquipmentCount < info.RequiredEquipmentCount ? "true" : "false")">
+                        <dt>@Tr("[EquipmentSet]", info.RequiredEquipmentCount)</dt>
+                        <dd><span>@key</span><strong>@value</strong></dd>
+                    </div>
                 }
-            </MudStack>
-        </MudField>
+            </dl>
+        </section>
     }
     @if (!MiniMode && equipmentMb.ExclusiveEffectId > 0)
     {
@@ -101,56 +111,62 @@
         var skillDescriptionMb = Masters.EquipmentExclusiveSkillDescriptionTable.GetById(equipmentMb.EquipmentExclusiveSkillDescriptionId);
         var desKeys = new[] {skillDescriptionMb.Description1Key, skillDescriptionMb.Description2Key, skillDescriptionMb.Description3Key};
 
-        <MudField Label="@(Tr("[CharacterEquipmentExclusiveSkillEffect]"))" Variant="Variant.Outlined" InnerPadding="InnerPadding">
-            @for (var i = 0; i < OrtegaConst.Equipment.ActiveExclusiveSkillRaritys.Count; i++)
-            {
-                var r = OrtegaConst.Equipment.ActiveExclusiveSkillRaritys[i];
-                var label = $"Lv.{i + 1}";
-                if (equipmentMb.RarityFlags < r)
+        <section class="equipment-section">
+            <h3 class="equipment-section-title">@Tr("[CharacterEquipmentExclusiveSkillEffect]")</h3>
+            <dl class="equipment-effect-list">
+                @for (var i = 0; i < OrtegaConst.Equipment.ActiveExclusiveSkillRaritys.Count; i++)
                 {
-                    label = $"{label} {Tr("[EquipmentExclusiveSkillReleaseConditionFormat]", Tr(r))}";
-                }
+                    var r = OrtegaConst.Equipment.ActiveExclusiveSkillRaritys[i];
+                    var label = $"Lv.{i + 1}";
+                    if (equipmentMb.RarityFlags < r)
+                    {
+                        label = $"{label} {Tr("[EquipmentExclusiveSkillReleaseConditionFormat]", Tr(r))}";
+                    }
 
-                var i1 = i;
-                <MudField Label="@label" Disabled="@(equipmentMb.RarityFlags < r)" InnerPadding="InnerPadding">
-                    @Tr(desKeys[i1])
-                </MudField>
-            }
-        </MudField>
-        <MudField Label="@(Tr("[CharacterEquipmentExclusivePassiveEffect]"))" Variant="Variant.Outlined" InnerPadding="InnerPadding">
-            <MudStack Row="true">
+                    var i1 = i;
+                    <div class="equipment-effect" aria-disabled="@(equipmentMb.RarityFlags < r ? "true" : "false")">
+                        <dt>@label</dt>
+                        <dd class="equipment-description">@Tr(desKeys[i1])</dd>
+                    </div>
+                }
+            </dl>
+        </section>
+        <section class="equipment-section">
+            <h3 class="equipment-section-title">@Tr("[CharacterEquipmentExclusivePassiveEffect]")</h3>
+            <dl class="equipment-stat-grid">
                 @foreach (var info in effectMb.BaseParameterChangeInfoList ?? Array.Empty<BaseParameterChangeInfo>())
                 {
                     var key = Tr(info.BaseParameterType);
                     var value = ParameterUtil.GetBaseParameterValueText(info.ChangeParameterType, info.Value);
-                    <MudField Label="@key" InnerPadding="InnerPadding">@value</MudField>
+                    <div class="equipment-stat"><dt>@key</dt><dd>@value</dd></div>
                 }
                 @foreach (var info in effectMb.BattleParameterChangeInfoList ?? Array.Empty<BattleParameterChangeInfo>())
                 {
                     var key = Tr(info.BattleParameterType);
                     var value = ParameterUtil.GetBaseParameterValueText(info.ChangeParameterType, info.Value);
-                    <MudField Label="@key" InnerPadding="InnerPadding">@value</MudField>
+                    <div class="equipment-stat"><dt>@key</dt><dd>@value</dd></div>
                 }
-            </MudStack>
-        </MudField>
+            </dl>
+        </section>
     }
     @{
         var sphereIds = new[] {EquipmentDtoInfo.SphereId1, EquipmentDtoInfo.SphereId2, EquipmentDtoInfo.SphereId3, EquipmentDtoInfo.SphereId4};
-        <MudField Label="@(Tr("[CommonSphereLabel]"))" Variant="Variant.Outlined" InnerPadding="InnerPadding">
-            <MudStack Row="true">
+        <section class="equipment-section">
+            <h3 class="equipment-section-title">@Tr("[CommonSphereLabel]")</h3>
+            <div class="equipment-spheres">
                 @foreach (var id in sphereIds.Where(d => d > 0))
                 {
                     var sphereMb = Masters.SphereTable.GetById(id);
                     var name = $"{Tr(sphereMb.NameKey)} Lv{sphereMb.Lv}";
                     var (key, value) = ParameterUtil.GetBaseOrBattleParameterChangeText(sphereMb.BattleParameterChangeInfo, sphereMb.BaseParameterChangeInfo);
-                    <div>
-                    <SphereIcon SphereMb="sphereMb" Size="@(MiniMode ? 48 : 48)"></SphereIcon>
+                    <div title="@($"{name} {key} {value}")">
+                        <SphereIcon SphereMb="sphereMb" Size="@(MiniMode ? 48 : 48)"></SphereIcon>
                     </div>
                 }
-            </MudStack>
-        </MudField>
+            </div>
+        </section>
     }
-</MudStack>
+</div>
 
 @code {
 
@@ -162,9 +178,6 @@
 
     [Parameter]
     public bool MiniMode { get; set; }
-
-    public bool InnerPadding { get; set; } = true;
-    public int Spacing { get; set; } = 3;
 
     private EquipmentMB equipmentMb { get; set; }
 
@@ -180,8 +193,6 @@
         equipmentName = Tr(equipmentMb.NameKey);
         baseEffect = EquipmentUtil.GetEquipmentReinforcementBaseParameter(EquipmentDtoInfo.EquipmentId, EquipmentDtoInfo.ReinforcementLv);
         sacredType = EquipmentDtoInfo.GetSacredTreasureType();
-        InnerPadding = !MiniMode;
-        Spacing = MiniMode ? 0 : 3;
     }
 
 }

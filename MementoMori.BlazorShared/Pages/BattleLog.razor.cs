@@ -47,6 +47,19 @@ public partial class BattleLog
         SelectedBattleResult = BattleResults.FirstOrDefault();
     }
 
+    private (string Name, string Result, DateTimeOffset Time)? GetLogDetails(string filename)
+    {
+        var parts = Path.GetFileNameWithoutExtension(filename).Split('-');
+        var prefix = logTypePrefixes[selectedBattleLogType];
+        var descriptor = parts.Length >= 4 ? string.Join("-", parts[..^3]) : string.Empty;
+        if (!filename.EndsWith(".json", StringComparison.OrdinalIgnoreCase)
+            || !filename.StartsWith(prefix, StringComparison.Ordinal) || descriptor.Length <= prefix.Length
+            || parts[^3] is not ("win" or "lose")
+            || !long.TryParse(parts[^2], out var timestamp) || timestamp is < 0 or > 253402300799999
+            || !Guid.TryParseExact(parts[^1], "N", out _)) return null;
+        return (descriptor[prefix.Length..], parts[^3], DateTimeOffset.FromUnixTimeMilliseconds(timestamp));
+    }
+
     private async Task DownloadBattleLog(string filename)
     {
         if (string.IsNullOrEmpty(filename)) return;

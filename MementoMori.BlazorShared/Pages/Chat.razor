@@ -325,16 +325,26 @@
                         @foreach (var announcement in _announcements)
                         {
                             var message = announcement.GuildChatInfo.ChatInfo;
-                            <article class="chat-announcement chat-guild-card">
+                            var menuKey = (message.PlayerId, message.LocalTimeStamp);
+                            <article class="chat-announcement chat-guild-card" @key="menuKey">
                                 <div class="chat-card-heading">
                                     <PlayerAvatar IconId="message.CharacterId" Name="@message.PlayerName" Size="28" />
                                     <strong>@PlayerName(message.PlayerName, message.PlayerId)</strong>
                                     <MudSpacer />
                                     @if (CanDeleteAnnouncement(message))
                                     {
-                                        <MudMenu Icon="@Icons.Material.Filled.MoreHoriz" Size="Size.Small" aria-label="公告管理">
-                                            <MudMenuItem OnClick="() => SetAnnouncement(message, false)" Disabled="@(_busy || !_snapshot.Connected)">撤销公告</MudMenuItem>
-                                        </MudMenu>
+                                        <div @onkeydown="args => AnnouncementMenuKeyDown(args, menuKey)" @onkeydown:stopPropagation="_announcementMenuOpen">
+                                            <MudMenu @ref="_announcementMenus[menuKey]" OpenChanged="open => _announcementMenuOpen = open">
+                                                <ActivatorContent>
+                                                    <MudIconButton @ref="_announcementMenuButtons[menuKey]" Icon="@Icons.Material.Filled.MoreHoriz" Size="Size.Small" OnClick="() => _announcementMenuOpen = true" aria-label="公告管理" title="公告管理" />
+                                                </ActivatorContent>
+                                                <ChildContent>
+                                                    <div @onkeydown="args => AnnouncementMenuKeyDown(args, menuKey)" @onkeydown:stopPropagation="_announcementMenuOpen">
+                                                        <MudMenuItem OnClick="() => SetAnnouncement(message, false)" Disabled="@(_busy || !_snapshot.Connected)">撤销公告</MudMenuItem>
+                                                    </div>
+                                                </ChildContent>
+                                            </MudMenu>
+                                        </div>
                                     }
                                 </div>
                                 <div class="chat-announcement-body" style="font-size: @(_textSize)px">
@@ -427,7 +437,7 @@
                             <form class="chat-note-editor chat-guild-card" @onsubmit="SaveGuildNote" @onsubmit:preventDefault="true">
                                 <strong>@(_editingGuildNoteId == 0 ? "新建公会笔记" : "编辑公会笔记")</strong>
                                 <label for="chat-note-title">标题 <span>@_noteTitle.Length/@OrtegaConst.GuildNote.MaxTitleLength</span></label>
-                                <input id="chat-note-title" @bind="_noteTitle" @bind:event="oninput" maxlength="@OrtegaConst.GuildNote.MaxTitleLength" disabled="@_busy" />
+                                <input id="chat-note-title" @ref="_noteTitleElement" @bind="_noteTitle" @bind:event="oninput" maxlength="@OrtegaConst.GuildNote.MaxTitleLength" disabled="@_busy" />
                                 <label for="chat-note-category">分类</label>
                                 <select id="chat-note-category" @bind="_noteCategory" disabled="@_busy">
                                     <option value="@GuildNoteCategoryType.Normal">普通</option>

@@ -1,0 +1,138 @@
+.character-selected-name {
+    margin-bottom: .65rem;
+    padding: .2rem .1rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.character-detail {
+    display: grid;
+    gap: .75rem;
+    padding-top: .75rem;
+}
+
+.character-stat-group {
+    min-width: 0;
+    padding: .75rem .9rem;
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: .75rem;
+    background: var(--mud-palette-surface);
+}
+
+.character-group-title {
+    margin: 0 0 .5rem;
+    color: var(--mud-palette-text-secondary);
+    font-size: .8125rem;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+.character-power-value {
+    margin: 0;
+    color: var(--mud-palette-primary);
+    font-size: 1.8rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.3;
+    white-space: nowrap;
+}
+
+.character-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 1rem;
+    margin: 0;
+}
+
+.character-stat {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-width: 0;
+    padding: .4rem 0;
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+}
+
+.character-stat dt {
+    margin-bottom: .15rem;
+    color: var(--mud-palette-text-secondary);
+    font-size: .8125rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.character-stat dd {
+    margin: 0;
+    font-size: .875rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.5;
+    white-space: nowrap;
+}
+
+.character-stat-grid:not(.character-battle-stats) .character-stat:nth-last-child(-n+2),
+.character-battle-stats .character-stat:last-child {
+    border-bottom: 0;
+}
+
+.character-battle-stats {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.character-battle-stats .character-stat {
+    flex-direction: row;
+    align-items: baseline;
+    gap: .75rem;
+    padding: .2rem 0;
+}
+
+.character-battle-stats dt {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+}
+
+.character-battle-stats dd {
+    flex-shrink: 0;
+    text-align: end;
+}
+
+.character-equipment {
+    min-width: 0;
+    margin-top: .65rem;
+}
+
+.character-empty-equipment {
+    margin-top: .75rem;
+    padding: 1rem;
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: .7rem;
+    background: var(--mud-palette-surface);
+    color: var(--mud-palette-text-secondary);
+    font-size: .875rem;
+    line-height: 1.6;
+}
+
+.character-choice {
+    display: block;
+    flex: 0 0 72px;
+    width: 72px;
+    height: 72px;
+    padding: 0;
+    border: 0;
+    border-radius: .4rem;
+    background: transparent;
+    cursor: pointer;
+}
+
+.character-choice[aria-pressed="true"] {
+    outline: 3px solid var(--mud-palette-primary);
+    outline-offset: 1px;
+}
+
+.character-choice:focus-visible {
+    outline: 3px solid var(--mud-palette-primary);
+    outline-offset: 3px;
+}

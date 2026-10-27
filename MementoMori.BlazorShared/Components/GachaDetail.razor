@@ -9,19 +9,21 @@
 @using MementoMori.Ortega.Share.Data.Item
 @using MementoMori.Ortega.Share.Extensions
 
-<MudPaper Class="pa-6">
+<section class="gacha-detail">
+<MudPaper Class="gacha-detail-surface" Elevation="0">
     <MudGrid>
-        <MudItem md="12">
-            @((MarkupString) detailHeader.Replace("\n", "<br/>"))
+        <MudItem xs="12" md="12">
+            <div class="gacha-detail-heading">@((MarkupString) detailHeader.Replace("\n", "<br/>"))</div>
         </MudItem>
-        <MudItem md="12">
-            @((MarkupString) detailBody.Replace("\n", "<br/>"))
+        <MudItem xs="12" md="12">
+            <div class="gacha-detail-description">@((MarkupString) detailBody.Replace("\n", "<br/>"))</div>
         </MudItem>
-        <MudItem md="12">
+        <MudItem xs="12" md="12">
             @if (LotteryItemList.GachaBonusRateList.IsNotNullOrEmpty())
             {
-                <MudField Label="@TextResourceTable.Get("[GachaBonusRewardLabel]")" Variant="Variant.Outlined">
-                    <MudSimpleTable Dense="true" Elevation="0">
+                <MudField Class="gacha-detail-section" Label="@TextResourceTable.Get("[GachaBonusRewardLabel]")" Variant="Variant.Outlined">
+                    <MudSimpleTable Class="gacha-detail-table gacha-bonus-table" Dense="true" Elevation="0">
+                        <colgroup><col class="gacha-bonus-count-column"/><col/><col/></colgroup>
                         <tbody>
                         @foreach (var group in LotteryItemList.GachaBonusRateList.GroupBy(d => d.GachaCount).OrderBy(d => d.Key))
                         {
@@ -34,16 +36,13 @@
                                     {
                                         <td rowspan="@bonusRates.Length">@TextResourceTable.Get("[CommonTimesFormat]", bonusRate.GachaCount)</td>
                                     }
-                                    <td>
+                                    <td colspan="2">
                                         @foreach (var item in bonusRate.GachaItemRateList)
                                         {
-                                            <span>@item.Item.GetItemName() × @item.Item.ItemCount</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        @foreach (var item in bonusRate.GachaItemRateList)
-                                        {
-                                            <span>@item.LotteryRate.ToString("P")</span>
+                                            <div class="gacha-bonus-item">
+                                                <span>@item.Item.GetItemName() × @item.Item.ItemCount</span>
+                                                <span class="gacha-detail-rate">@item.LotteryRate.ToString("P")</span>
+                                            </div>
                                         }
                                     </td>
                                 </tr>
@@ -55,8 +54,8 @@
             }
             @if (AddRewardList.IsNotNullOrEmpty())
             {
-                <MudField Label="@TextResourceTable.Get("[GachaRewardAddItem]")" Variant="Variant.Outlined">
-                    <MudSimpleTable Dense="true" Elevation="0">
+                <MudField Class="gacha-detail-section" Label="@TextResourceTable.Get("[GachaRewardAddItem]")" Variant="Variant.Outlined">
+                    <MudSimpleTable Class="gacha-detail-table" Dense="true" Elevation="0">
                         <tbody>
                         @foreach (var item in AddRewardList)
                         {
@@ -71,14 +70,15 @@
             }
             @if (LotteryItemList.GachaRarityRateList.IsNotNullOrEmpty())
             {
-                <MudField Label="@TextResourceTable.Get("[GachaLotteryRarityDropRate]")" Variant="Variant.Outlined">
-                    <MudSimpleTable Dense="true" Elevation="0">
+                <MudField Class="gacha-detail-section" Label="@TextResourceTable.Get("[GachaLotteryRarityDropRate]")" Variant="Variant.Outlined">
+                    <MudSimpleTable Class="gacha-detail-table gacha-rarity-table" Dense="true" Elevation="0">
+                        <colgroup><col/><col class="gacha-rarity-rate-column"/></colgroup>
                         <tbody>
                         @foreach (var rarityRate in LotteryItemList.GachaRarityRateList)
                         {
                             <tr>
                                 <td>@TextResourceTable.Get(rarityRate.CharacterRarityFlags)</td>
-                                <td>@rarityRate.LotteryRate.ToString("P")</td>
+                                <td class="gacha-detail-rate">@rarityRate.LotteryRate.ToString("P")</td>
                             </tr>
                         }
                         </tbody>
@@ -87,14 +87,15 @@
             }
             @if (LotteryItemList.GachaRarityRateSpecialList.IsNotNullOrEmpty())
             {
-                <MudField Label="@TextResourceTable.Get("[GachaLotteryRarityDropRate]")" Variant="Variant.Outlined">
-                    <MudSimpleTable Dense="true" Elevation="0">
+                <MudField Class="gacha-detail-section" Label="@TextResourceTable.Get("[GachaLotteryRarityDropRate]")" Variant="Variant.Outlined">
+                    <MudSimpleTable Class="gacha-detail-table gacha-rarity-table" Dense="true" Elevation="0">
+                        <colgroup><col/><col class="gacha-rarity-rate-column"/></colgroup>
                         <tbody>
                         @foreach (var rarityRate in LotteryItemList.GachaRarityRateSpecialList)
                         {
                             <tr>
                                 <td>@TextResourceTable.Get(rarityRate.CharacterRarityFlags)</td>
-                                <td>@rarityRate.LotteryRate.ToString("P")</td>
+                                <td class="gacha-detail-rate">@rarityRate.LotteryRate.ToString("P")</td>
                             </tr>
                         }
                         </tbody>
@@ -103,15 +104,16 @@
             }
             @if (LotteryItemList.GachaItemRateList.IsNotNullOrEmpty())
             {
-                <MudField Label="@TextResourceTable.Get("[GachaLotteryIndividualDropRates]")" Variant="Variant.Outlined">
-                    <MudSimpleTable Dense="true" Elevation="0">
+                <MudField Class="gacha-detail-section" Label="@TextResourceTable.Get("[GachaLotteryIndividualDropRates]")" Variant="Variant.Outlined">
+                    <MudSimpleTable Class="gacha-detail-table gacha-item-table" Dense="true" Elevation="0">
+                        <colgroup><col/><col class="gacha-item-rarity-column"/><col class="gacha-item-rate-column"/></colgroup>
                         <tbody>
                         @foreach (var itemRate in LotteryItemList.GachaItemRateList)
                         {
                             <tr>
                                 <td>@itemRate.Item.GetItemName() × @itemRate.Item.ItemCount</td>
-                                <td>@TextResourceTable.Get(itemRate.CharacterRarityFlags)</td>
-                                <td>@itemRate.LotteryRate.ToString("P")</td>
+                                <td class="gacha-detail-rarity">@TextResourceTable.Get(itemRate.CharacterRarityFlags)</td>
+                                <td class="gacha-detail-rate">@itemRate.LotteryRate.ToString("P")</td>
                             </tr>
                         }
                         </tbody>
@@ -120,15 +122,16 @@
             }
             @if (LotteryItemList.GachaItemRateSpecialList.IsNotNullOrEmpty())
             {
-                <MudField Label="@TextResourceTable.Get("[GachaLotteryIndividualDropRates]")" Variant="Variant.Outlined">
-                    <MudSimpleTable Dense="true" Elevation="0">
+                <MudField Class="gacha-detail-section" Label="@TextResourceTable.Get("[GachaLotteryIndividualDropRates]")" Variant="Variant.Outlined">
+                    <MudSimpleTable Class="gacha-detail-table gacha-item-table" Dense="true" Elevation="0">
+                        <colgroup><col/><col class="gacha-item-rarity-column"/><col class="gacha-item-rate-column"/></colgroup>
                         <tbody>
                         @foreach (var itemRate in LotteryItemList.GachaItemRateSpecialList)
                         {
                             <tr>
                                 <td>@itemRate.Item.GetItemName() × @itemRate.Item.ItemCount</td>
-                                <td>@TextResourceTable.Get(itemRate.CharacterRarityFlags)</td>
-                                <td>@itemRate.LotteryRate.ToString("P")</td>
+                                <td class="gacha-detail-rarity">@TextResourceTable.Get(itemRate.CharacterRarityFlags)</td>
+                                <td class="gacha-detail-rate">@itemRate.LotteryRate.ToString("P")</td>
                             </tr>
                         }
                         </tbody>
@@ -136,11 +139,12 @@
                 </MudField>
             }
         </MudItem>
-        <MudItem md="12">
-            @((MarkupString) detailFooter.Replace("\n", "<br/>"))
+        <MudItem xs="12" md="12">
+            <div class="gacha-detail-notes">@((MarkupString) detailFooter.Replace("\n", "<br/>"))</div>
         </MudItem>
     </MudGrid>
 </MudPaper>
+</section>
 
 
 @code {

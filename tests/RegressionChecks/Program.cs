@@ -59,7 +59,7 @@ if (args is ["--benchmark-master", var masterDirectory])
 var checks = new (string Name, Func<Task> Run)[]
 {
     ("account switching during initialization", CheckAccountSwitch),
-    ("UI recovers from item errors, missing logs and free shop items", CheckUiRecovery),
+    ("UI recovers from item errors, missing logs, free shop items and failed draw details", CheckUiRecovery),
     ("logout invalidates queued jobs and waits for active work", CheckLogout),
     ("configuration permissions and contents", CheckPermissions),
     ("login preferences, retry backoff and deletion", CheckAccountLifecycle),
@@ -86,7 +86,7 @@ foreach (var (name, run) in checks)
 
 static async Task CheckUiRecovery()
 {
-    var dialog = new MementoMori.BlazorShared.Components.UseItemDialog();
+    var dialog = new MementoMori.BlazorShared.Components.UseItemDialog { Count = 2 };
     var use = dialog.GetType().GetMethod("UseItem", BindingFlags.Instance | BindingFlags.NonPublic)!;
     dialog.UseItemFunc = _ => throw new InvalidOperationException("offline rejection");
     await (Task)use.Invoke(dialog, null)!;
@@ -95,6 +95,13 @@ static async Task CheckUiRecovery()
     Require((string)Field(dialog, "message").GetValue(dialog)! == "offline rejection", "Item error is not shown");
     var calls = 0;
     dialog.UseItemFunc = _ => { calls++; return Task.FromResult<IList<MementoMori.Ortega.Share.Data.Item.IUserItem>>([]); };
+    foreach (var invalidCount in new long[] { 0, 3 })
+    {
+        Field(dialog, "_useCount").SetValue(dialog, invalidCount);
+        await (Task)use.Invoke(dialog, null)!;
+        Require(calls == 0, "An out-of-range item count reached the game action");
+    }
+    Field(dialog, "_useCount").SetValue(dialog, 1L);
     await (Task)use.Invoke(dialog, null)!;
     await (Task)use.Invoke(dialog, null)!;
     Require(calls == 1 && (bool)Field(dialog, "_buyed").GetValue(dialog)!, "Item retry or duplicate-submit guard failed");
@@ -106,6 +113,13 @@ static async Task CheckUiRecovery()
     logs.GetType().GetProperty("selectedBattleLogType", flags)!.SetValue(logs,
         MementoMori.BlazorShared.Pages.BattleLog.BattleLogType.TowerInfinite);
     Require(logs.GetType().GetProperty("SelectedBattleResult", flags)!.GetValue(logs) == null, "Missing log directory retains a selected log");
+    var parseLog = logs.GetType().GetMethod("GetLogDetails", flags)!;
+    var suffix = Guid.NewGuid().ToString("N");
+    var label = ((string Name, string Result, DateTimeOffset Time))parseLog.Invoke(logs, [$"tower-Infinite-enemy-with-hyphens-win-1700000000000-{suffix}.json"])!;
+    Require(label.Name == "enemy-with-hyphens" && label.Result == "win" && label.Time.ToUnixTimeMilliseconds() == 1700000000000, "Battle-log label loses the enemy name or timestamp");
+    Require(parseLog.Invoke(logs, [$"tower-Infinite-name-lose-0-{suffix}.JSON"]) != null, "Battle-log extension matching is case sensitive");
+    foreach (var name in new[] { "tower-Infinite-short.json", $"tower-Infinite-name-draw-0-{suffix}.json", $"tower-Infinite-name-win-invalid-{suffix}.json", $"tower-Infinite-name-win-253402300800000-{suffix}.json", "tower-Infinite-name-win-0-invalid.json", $"main-name-win-0-{suffix}.json" })
+        Require(parseLog.Invoke(logs, [name]) == null, "Unfamiliar battle-log names do not fall back to the filename");
 
     using var shop = new MementoMori.BlazorShared.Pages.Shop();
     var tab = Newtonsoft.Json.JsonConvert.DeserializeObject<TradeShopTabMB>("{}")!;
@@ -116,6 +130,44 @@ static async Task CheckUiRecovery()
         && (long)Field(shop, "_selectedConsumeCount").GetValue(shop)! == 0,
         "Free shop item creates a paid consumption rule");
     Require(ReferenceEquals(Field(shop, "_selectedAutoBuyItem").GetValue(shop), item.GiveItem), "Free shop item selection was lost");
+    var maxBuy = shop.GetType().GetMethod("GetBuyMaxCount", flags)!;
+    item.LimitTradeCount = 5;
+    item.TradeCount = 2;
+    Require((long)maxBuy.Invoke(shop, [item])! == 3, "Free shop item has no purchasable quantity");
+    item.LimitTradeCount = 0;
+    Require((long)maxBuy.Invoke(shop, [item])! == int.MaxValue, "Unlimited free shop item is disabled");
+    item.LimitTradeCount = 1;
+    Require((long)maxBuy.Invoke(shop, [item])! == 0, "Sold-out shop item has a negative quantity");
+
+    var auth = new Writable<AuthOption>(new() { AuthUrl = "https://offline.invalid/api/", AppVersion = "5.0.0" });
+    var config = new Writable<GameConfig>(new());
+    using var network = Construct<MementoNetworkManager>(auth, config, NullLogger<MementoNetworkManager>.Instance);
+    Field(network, "_apiHost").SetValue(network, new Uri("https://offline.invalid/api/"));
+    using var funcs = Construct<MementoMoriFuncs>(auth, config, NullLogger<MementoMoriFuncs>.Instance);
+    funcs.NetworkManager = network;
+    using var gacha = new MementoMori.BlazorShared.Pages.Gacha();
+    Field(gacha, "ViewModel").SetValue(gacha, funcs);
+    var show = gacha.GetType().GetMethod("ShowDetail", flags)!;
+    var gachaCase = new MementoMori.Ortega.Share.Data.Gacha.GachaCaseInfo
+        { GachaButtonInfoList = [new() { GachaButtonId = 1 }] };
+    ReplaceClient(network, "_httpClient", new HttpClient(new Handler((_, _) => throw new InvalidOperationException("offline details failure"))));
+    await (Task)show.Invoke(gacha, [gachaCase])!;
+    Require((string)Field(gacha, "alertMessage").GetValue(gacha)! == "offline details failure", "Failed draw details do not report a recoverable error");
+    Field(gacha, "alertMessage").SetValue(gacha, string.Empty);
+    var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    var cancelled = false;
+    ReplaceClient(network, "_httpClient", new HttpClient(new Handler(async (_, token) =>
+    {
+        started.TrySetResult();
+        try { await Task.Delay(Timeout.InfiniteTimeSpan, token); }
+        finally { cancelled = token.IsCancellationRequested; }
+        return new HttpResponseMessage(HttpStatusCode.OK);
+    })));
+    var pending = (Task)show.Invoke(gacha, [gachaCase])!;
+    await started.Task.WaitAsync(TimeSpan.FromSeconds(2));
+    gacha.Dispose();
+    await pending.WaitAsync(TimeSpan.FromSeconds(2));
+    Require(cancelled && (string)Field(gacha, "alertMessage").GetValue(gacha)! == string.Empty, "Leaving draw details retains a request or a stale error");
 }
 
 static async Task CheckAccountSwitch()

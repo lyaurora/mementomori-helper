@@ -8,10 +8,10 @@
 
 <MudCard>
     <MudCardHeader>
-        <CardHeaderContent><MudText>@ResourceStrings.AutoJobCrons</MudText></CardHeaderContent>
-        <CardHeaderActions><MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="Refresh" Title="Refresh" /></CardHeaderActions>
+        <CardHeaderContent><MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.EventRepeat" aria-hidden="true" /><span>@ResourceStrings.AutoJobCrons</span></MudText></CardHeaderContent>
+        <CardHeaderActions><MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="Refresh" title="@ResourceStrings.Sync" aria-label="@ResourceStrings.Sync" /></CardHeaderActions>
     </MudCardHeader>
-    <MudCardContent>
+    <MudCardContent Class="settings-form">
         @if (!string.IsNullOrEmpty(Funcs.LastLoginError))
         {
             <MudAlert Severity="Severity.Warning">@Funcs.LastLoginError
@@ -21,7 +21,7 @@
                 }
             </MudAlert>
         }
-        <MudSimpleTable Dense="true" Style="overflow-x: auto;">
+        <MudSimpleTable Class="job-runs-table" Dense="true" Style="overflow-x: auto;">
             <thead><tr>
                 <th>@ResourceStrings.Name</th>
                 <th>@ResourceStrings.NextExecutionTime</th>
@@ -32,20 +32,23 @@
                 {
                     var run = Funcs.JobRuns.GetValueOrDefault(job.Key);
                     <tr>
-                        <td>@job.Description</td>
-                        <td>@job.NextFireTime</td>
-                        <td>
+                        <td class="job-name">@job.Description</td>
+                        <td class="job-next-fire">@job.NextFireTime</td>
+                        <td class="job-last-run">
                             @if (run == null) { <span>—</span> }
                             else
                             {
-                                <div>@(run.FinishedAt == null ? ResourceStrings.ResourceManager.GetString("TaskRunning")
+                                <div class="job-run-status @(run.FinishedAt == null ? "is-running" : run.Cancelled ? "is-cancelled" : run.Error == null ? "is-success" : "is-error")">@(run.FinishedAt == null ? ResourceStrings.ResourceManager.GetString("TaskRunning")
                                     : run.Cancelled ? ResourceStrings.Cancel
                                     : run.Error == null ? ResourceStrings.Success : ResourceStrings.ResourceManager.GetString("TaskFailed"))</div>
-                                <div>@ResourceStrings.ResourceManager.GetString("TaskStarted"): @run.StartedAt.LocalDateTime.ToString("yyyy-MM-dd HH:mm:ss")</div>
-                                @if (run.FinishedAt.HasValue)
-                                {
-                                    <div>@ResourceStrings.ResourceManager.GetString("TaskFinished"): @run.FinishedAt.Value.LocalDateTime.ToString("yyyy-MM-dd HH:mm:ss")</div>
-                                }
+                                <details class="job-run-details">
+                                    <summary>@run.StartedAt.LocalDateTime.ToString("HH:mm:ss")</summary>
+                                    <div class="job-run-time">@ResourceStrings.ResourceManager.GetString("TaskStarted"): @run.StartedAt.LocalDateTime.ToString("yyyy-MM-dd HH:mm:ss")</div>
+                                    @if (run.FinishedAt.HasValue)
+                                    {
+                                        <div class="job-run-time">@ResourceStrings.ResourceManager.GetString("TaskFinished"): @run.FinishedAt.Value.LocalDateTime.ToString("yyyy-MM-dd HH:mm:ss")</div>
+                                    }
+                                </details>
                                 @if (run.Error != null && !run.Cancelled) { <MudText Color="Color.Error">@run.Error</MudText> }
                             }
                         </td>

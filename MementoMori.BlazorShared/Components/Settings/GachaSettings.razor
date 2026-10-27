@@ -13,32 +13,31 @@
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText>@Masters.TextResourceTable.Get("[CommonFooterGachaButtonLabel]") (Global)</MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.AutoAwesome" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[CommonFooterGachaButtonLabel]") <span class="panel-scope">(Global)</span></span></MudText>
         </CardHeaderContent>
         <CardHeaderActions>
-            <MudIconButton Variant="Variant.Outlined" Size="Size.Small" Icon="@Icons.Material.Filled.Save" OnClick="() => SavePlayerSetting()"></MudIconButton>
+            <MudButton Class="setting-save-button" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Save" OnClick="() => SavePlayerSetting()">@Masters.TextResourceTable.Get("[CommonSaveLabel]")</MudButton>
         </CardHeaderActions>
     </MudCardHeader>
-    <MudCardContent>
-        <MudField Label="@ResourceStrings.AutoGachaConsumeItems" Variant="Variant.Outlined">
-            <MudSelect T="UserItem" Label="" MultiSelection="true" Dense="true" Comparer="@(new UserItemComparer())"
-                       @bind-SelectedValues="GachaConfigAutoGachaConsumeUserItems" MultiSelectionTextFunc="list => string.Format(ResourceStrings.SelectedXItems, list.Count)">
-                @foreach (var item in _gachaConsumeItems)
-                {
-                    <MudSelectItem T="UserItem" Value="@item">@ItemUtil.GetItemName(item)</MudSelectItem>
-                }
-            </MudSelect>
-        </MudField>
-        <MudField Label="@($"{Tr("[TradeShopTabName11]")} ({Funcs?.UserSyncData?.UserStatusDtoInfo?.Name})")" Variant="Variant.Outlined">
-            <MudSelect T="GachaRelicType" Label="@Tr("[GachaRelicChangeTitle]")" @bind-Value="_targetRelicType" Dense="true">
+    <MudCardContent Class="settings-form">
+        <MudSelect T="UserItem" Label="@ResourceStrings.AutoGachaConsumeItems" MultiSelection="true" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense" Comparer="@(new UserItemComparer())"
+                   @bind-SelectedValues="GachaConfigAutoGachaConsumeUserItems" MultiSelectionTextFunc="list => string.Format(ResourceStrings.SelectedXItems, list.Count)">
+            @foreach (var item in _gachaConsumeItems)
+            {
+                <MudSelectItem T="UserItem" Value="@item">@ItemUtil.GetItemName(item)</MudSelectItem>
+            }
+        </MudSelect>
+        <div class="setting-section">
+            <MudText Class="setting-field-label">@($"{Tr("[TradeShopTabName11]")} ({Funcs?.UserSyncData?.UserStatusDtoInfo?.Name})")</MudText>
+            <MudSelect T="GachaRelicType" Label="@Tr("[GachaRelicChangeTitle]")" @bind-Value="_targetRelicType" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense">
                 <MudSelectItem T="GachaRelicType" Value="GachaRelicType.None">None</MudSelectItem>
                 <MudSelectItem T="GachaRelicType" Value="GachaRelicType.ChaliceOfHeavenly">@Tr("[ItemName45]")</MudSelectItem>
                 <MudSelectItem T="GachaRelicType" Value="GachaRelicType.SilverOrderOfTheBlueSky">@Tr("[ItemName46]")</MudSelectItem>
                 <MudSelectItem T="GachaRelicType" Value="GachaRelicType.DivineWingsOfDesire">@Tr("[ItemName47]")</MudSelectItem>
                 <MudSelectItem T="GachaRelicType" Value="GachaRelicType.FruitOfTheGarden">@Tr("[ItemName48]")</MudSelectItem>
             </MudSelect>
-            <MudSwitch Color="Color.Primary" Label="@ResourceStrings.Auto_draw_10_times__up_to_3_draws_" @bind-Value="_isAutoGacha"></MudSwitch>
-        </MudField>
+            <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Color="Color.Primary" Label="@ResourceStrings.Auto_draw_10_times__up_to_3_draws_" @bind-Value="_isAutoGacha"></MudSwitch>
+        </div>
     </MudCardContent>
 </MudCard>
 

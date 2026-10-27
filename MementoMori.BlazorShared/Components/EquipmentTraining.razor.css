@@ -1,0 +1,142 @@
+.equipment-training {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    flex: 1;
+    width: 100%;
+    gap: .85rem;
+    min-width: 0;
+    padding: 0;
+    align-content: start;
+    align-self: stretch;
+}
+
+.training-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: .85rem;
+    min-width: 0;
+}
+
+.training-selection,
+.training-target {
+    display: grid;
+    align-content: start;
+    gap: .85rem;
+    min-width: 0;
+    padding: 0;
+}
+
+.equipment-training ::deep .mud-input-control {
+    min-width: 0;
+    margin-top: 0;
+}
+
+.equipment-training ::deep .mud-input-outlined-border {
+    border-style: solid;
+}
+
+.equipment-training ::deep .mud-input.mud-select-input {
+    height: auto;
+    min-height: 40px;
+}
+
+.equipment-training ::deep .mud-select div.mud-input-slot {
+    height: auto;
+    min-height: 0;
+    padding: .55rem .75rem;
+    font-size: .875rem;
+    font-weight: 400;
+    line-height: 1.5;
+    white-space: normal;
+    overflow: visible;
+    overflow-wrap: anywhere;
+}
+
+.equipment-training ::deep .mud-input .training-equipment-stats,
+.equipment-training ::deep .mud-input .training-equipment-character {
+    display: none;
+}
+
+.equipment-training ::deep .mud-input .training-equipment-option {
+    display: block;
+    padding: 0;
+}
+
+.training-equipment-option {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: .35rem;
+    min-width: 0;
+    padding: .2rem 0;
+}
+
+.training-equipment-name {
+    min-width: 0;
+    font-size: .875rem;
+    font-weight: 400;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+    white-space: normal;
+}
+
+.training-equipment-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 5.5rem), 1fr));
+    gap: .2rem .85rem;
+}
+
+.training-equipment-stat {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .15rem .45rem;
+    color: var(--mud-palette-text-secondary);
+    font-size: .75rem;
+    line-height: 1.5;
+}
+
+.training-equipment-stat strong {
+    color: var(--mud-palette-text-primary);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.training-target-value {
+    display: inline-block;
+    font-size: .875rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.5;
+    white-space: nowrap;
+}
+
+.training-target ::deep .mud-slider {
+    width: 100%;
+    margin: 0;
+}
+
+.training-target ::deep .mud-slider .mud-typography {
+    margin: 0;
+    line-height: 1.5;
+}
+
+.training-target ::deep .mud-slider-container {
+    height: 28px;
+    margin: 0;
+}
+
+.training-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: .5rem;
+}
+
+.training-actions ::deep .mud-button {
+    min-width: 5rem;
+    min-height: 40px;
+    padding: .5rem 1rem;
+    font-size: .875rem;
+    font-weight: 500;
+}

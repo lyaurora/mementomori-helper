@@ -13,18 +13,18 @@
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText>@Masters.TextResourceTable.Get("[GuildTowerTitle]") (@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name))</MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Castle" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[GuildTowerTitle]") <span class="panel-scope">(@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name))</span></span></MudText>
         </CardHeaderContent>
         <CardHeaderActions>
-            <MudIconButton Icon="@Icons.Material.Filled.Save" Variant="Variant.Outlined" OnClick="SaveFriendManageConfig"></MudIconButton>
+            <MudButton Class="setting-save-button" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Save" OnClick="SaveFriendManageConfig">@Masters.TextResourceTable.Get("[CommonSaveLabel]")</MudButton>
         </CardHeaderActions>
     </MudCardHeader>
-    <MudCardContent>
-        <MudSwitch T="bool" Label="@Tr("[GuildTowerEntryTitle]")" @bind-Value="_autoEntry" Color="Color.Primary"></MudSwitch>
-        <MudSwitch T="bool" Label="@Tr("[GuildTowerChallengeButton]")" @bind-Value="_autoChallenge" Color="Color.Primary"></MudSwitch>
-        <MudNumericField T="int" @bind-Value="_autoChallengeRetryCount" Label="@ResourceStrings.Auto_challenge_retry_count"></MudNumericField>
-        <MudSwitch T="bool" Label="@Tr("[GuildTowerJobReinforceLabel]")" @bind-Value="_autoReinforcement" Color="Color.Primary"></MudSwitch>
-        <MudSwitch T="bool" Label="@Tr("[GuildTowerStageRewardLabel]")" @bind-Value="_autoReceiveReward" Color="Color.Primary"></MudSwitch>
+    <MudCardContent Class="settings-form">
+        <MudSwitch T="bool" Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@Tr("[GuildTowerEntryTitle]")" @bind-Value="_autoEntry" Color="Color.Primary"></MudSwitch>
+        <MudSwitch T="bool" Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@Tr("[GuildTowerChallengeButton]")" @bind-Value="_autoChallenge" Color="Color.Primary"></MudSwitch>
+        <MudNumericField T="int" @bind-Value="_autoChallengeRetryCount" Label="@ResourceStrings.Auto_challenge_retry_count" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+        <MudSwitch T="bool" Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@Tr("[GuildTowerJobReinforceLabel]")" @bind-Value="_autoReinforcement" Color="Color.Primary"></MudSwitch>
+        <MudSwitch T="bool" Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@Tr("[GuildTowerStageRewardLabel]")" @bind-Value="_autoReceiveReward" Color="Color.Primary"></MudSwitch>
     </MudCardContent>
 </MudCard>
 

@@ -4,10 +4,14 @@
 @using MementoMori.Common.Localization
 @using MementoMori.Ortega.Share
 
-<MudCard Class="pa-6">
-    <MudGrid>
+<div class="use-item-dialog">
+<MudCard Class="use-item-card" Elevation="0">
+    <MudGrid Spacing="3">
         <MudItem xs="12" md="12">
-            <MudText>@Name × @Count</MudText>
+            <MudText Class="use-item-name">@Name <span class="use-item-owned">× @Count</span></MudText>
+        </MudItem>
+        <MudItem xs="12" md="12">
+            <MudNumericField T="long" @ref="_countField" Class="use-item-count" Label="@ButtonText" Min="1L" Max="@Count" @bind-Value="_useCount" TextUpdateSuppression="false" Variant="Variant.Outlined" Margin="Margin.Dense" OnBlur="_ => StateHasChanged()" />
         </MudItem>
         <MudItem xs="12" md="12">
             <MudSlider T="long" Min="1L" Max="@Count" ValueLabel="true" @bind-Value="_useCount">
@@ -15,20 +19,23 @@
             </MudSlider>
         </MudItem>
         <MudItem xs="12" md="12">
-            <pre style="white-space: pre-wrap; overflow-wrap: anywhere;">@message</pre>
+            <pre class="use-item-result">@message</pre>
         </MudItem>
         <MudItem xs="12" md="12">
-            <MudButton OnClick="@Cancel">@Masters.TextResourceTable.Get("[CommonCloseLabel]")</MudButton>
-            <MudButton Color="Color.Primary" OnClick="@UseItem" Disabled="_processing || _buyed">
-                @if (_processing)
-                {
-                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
-                }
-                <MudText Class="ms-2">@ButtonText</MudText>
-            </MudButton>
+            <div class="use-item-actions">
+                <MudButton Variant="Variant.Outlined" OnClick="@Cancel">@Masters.TextResourceTable.Get("[CommonCloseLabel]")</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@UseItem" Disabled="_processing || _buyed || _countField?.HasErrors == true || _useCount < 1 || _useCount > Count">
+                    @if (_processing)
+                    {
+                        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+                    }
+                    <MudText Class="ms-2">@ButtonText</MudText>
+                </MudButton>
+            </div>
         </MudItem>
     </MudGrid>
 </MudCard>
+</div>
 
 @code {
 
@@ -50,6 +57,7 @@
     private string message;
 
     private long _useCount = 1;
+    private MudNumericField<long>? _countField;
 
     private bool _processing;
 
@@ -63,6 +71,8 @@
     private async Task UseItem()
     {
         if (_processing || _buyed) return;
+        if (_countField != null) await _countField.Validate();
+        if (_countField?.HasErrors == true || _useCount < 1 || _useCount > Count) return;
         _processing = true;
         try
         {

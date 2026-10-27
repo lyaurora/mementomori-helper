@@ -13,24 +13,25 @@
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText>@Masters.TextResourceTable.Get("[CommonHeaderLocalRaidLabel]") (@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name))</MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Groups" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[CommonHeaderLocalRaidLabel]") <span class="panel-scope">(@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name))</span></span></MudText>
         </CardHeaderContent>
         <CardHeaderActions>
-            <MudIconButton Icon="@Icons.Material.Filled.Save" Variant="Variant.Outlined" OnClick="SaveLocalRaidConfig"></MudIconButton>
+            <MudButton Class="setting-save-button" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Save" OnClick="SaveLocalRaidConfig">@Masters.TextResourceTable.Get("[CommonSaveLabel]")</MudButton>
         </CardHeaderActions>
     </MudCardHeader>
-    <MudCardContent>
-        <MudSwitch T="bool" Label="@(selfCreateRoom ? Masters.TextResourceTable.Get("[LocalRaidRoomSearchButtonCreateRoom]") : Masters.TextResourceTable.Get("[LocalRaidRoomSearchButtonJoinRandomRoom]"))" @bind-Value="selfCreateRoom" Color="Color.Primary"></MudSwitch>
+    <MudCardContent Class="settings-form">
+        <MudSwitch T="bool" Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@(selfCreateRoom ? Masters.TextResourceTable.Get("[LocalRaidRoomSearchButtonCreateRoom]") : Masters.TextResourceTable.Get("[LocalRaidRoomSearchButtonJoinRandomRoom]"))" @bind-Value="selfCreateRoom" Color="Color.Primary"></MudSwitch>
         @if (selfCreateRoom)
         {
-            <MudTextField T="int" Label="@ResourceStrings.Seconds_of_pre_battle_wait_time" @bind-Value="waitSeconds"></MudTextField>
+            <MudTextField T="int" Label="@ResourceStrings.Seconds_of_pre_battle_wait_time" @bind-Value="waitSeconds" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
         }
-        <MudField Label="@ResourceStrings.Select_tasks_based_on_reward_quantity_and_weight" Variant="Variant.Outlined">
+        <div class="setting-section setting-weight-list">
+            <MudText Class="setting-field-label">@ResourceStrings.Select_tasks_based_on_reward_quantity_and_weight</MudText>
             @foreach (var reward in _localRaidRewardItems)
             {
-                <MudNumericField Label="@ItemUtil.GetItemName(reward.ItemType, reward.ItemId)" Margin="Margin.None" @bind-Value="reward.Weight"/>
+                <MudNumericField Label="@ItemUtil.GetItemName(reward.ItemType, reward.ItemId)" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="reward.Weight"/>
             }
-        </MudField>
+        </div>
     </MudCardContent>
 </MudCard>
 

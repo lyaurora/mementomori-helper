@@ -8,23 +8,26 @@
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText>@ResourceStrings.AutoJobSwitchs (Global)</MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Tune" aria-hidden="true" /><span>@ResourceStrings.AutoJobSwitchs <span class="panel-scope">(Global)</span></span></MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent>
-        <MudSwitch Label="@ResourceStrings.DisableAllJobs" @bind-Value="AutoJob__DisableAll" @bind-Value:after="RegisterAllJobs" Color="Color.Primary"></MudSwitch>
-        <MudSwitch Label="@ResourceStrings.ReinforceEquipmentOnce" @bind-Value="AutoJob__AutoReinforcementEquipmentOneTime" Color="Color.Primary"></MudSwitch>
-        <MudSwitch Label="@Tr("[CommonHeaderLocalPvpLabel]")" @bind-Value="AutoJob__AutoPvp" Color="Color.Primary"></MudSwitch>
-        <MudSwitch Label="@Tr("[CommonHeaderGlobalPvpLabel]")" @bind-Value="AutoJob__AutoLegendLeague" Color="Color.Primary"></MudSwitch>
-        <MudSwitch Label="@Tr("[CommonHeaderDungeonBattleLabel]")" @bind-Value="AutoJob__AutoDungeonBattle" Color="Color.Primary"></MudSwitch>
-        <MudSwitch Label="@ResourceStrings.UseNormalItems" @bind-Value="AutoJob__AutoUseItems" Color="Color.Primary"></MudSwitch>
-        <MudSwitch Label="@Tr("[CommonFooterGachaButtonLabel]")" @bind-Value="AutoJob__AutoFreeGacha" Color="Color.Primary"></MudSwitch>
-        <MudSwitch Label="@Tr("[CharacterMenuTabCharacterRankUp]")" @bind-Value="AutoJob__AutoRankUpCharacter" Color="Color.Primary"></MudSwitch>
-        <MudSwitch Label="@Tr("[GuildRaidReleaseConfirmTitle]")" @bind-Value="AutoJob__AutoOpenGuildRaid" Color="Color.Primary"></MudSwitch>
-        <MudSwitch Label="@Tr("[CommonHeaderLocalRaidLabel]")" @bind-Value="AutoJob__AutoLocalRaid" Color="Color.Primary"></MudSwitch>
-        @* <MudSwitch Label="@ResourceStrings.Deploy_defense" @bind-Value="AutoJob__AutoDeployGuildDefense" Color="Color.Primary"></MudSwitch> *@
-        <MudSwitch Label="@Tr("[GachaRelicChangeTitle]")" @bind-Value="AutoJob__AutoChangeGachaRelic" Color="Color.Primary"></MudSwitch>
-        <MudSwitch Label="@ResourceStrings.Auto_draw_10_times__up_to_3_draws_" @bind-Value="AutoJob__AutoDrawGachaRelic" Color="Color.Primary"></MudSwitch>
+        <div class="settings-toggle-list">
+            <MudSwitch Class="settings-toggle master-toggle" LabelPosition="LabelPosition.Start" Label="@ResourceStrings.DisableAllJobs" @bind-Value="AutoJob__DisableAll" @bind-Value:after="RegisterAllJobs" Color="Color.Primary"></MudSwitch>
+            <MudDivider Class="settings-toggle-divider" />
+            <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@ResourceStrings.ReinforceEquipmentOnce" @bind-Value="AutoJob__AutoReinforcementEquipmentOneTime" Color="Color.Primary"></MudSwitch>
+            <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@Tr("[CommonHeaderLocalPvpLabel]")" @bind-Value="AutoJob__AutoPvp" Color="Color.Primary"></MudSwitch>
+            <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@Tr("[CommonHeaderGlobalPvpLabel]")" @bind-Value="AutoJob__AutoLegendLeague" Color="Color.Primary"></MudSwitch>
+            <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@Tr("[CommonHeaderDungeonBattleLabel]")" @bind-Value="AutoJob__AutoDungeonBattle" Color="Color.Primary"></MudSwitch>
+            <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@ResourceStrings.UseNormalItems" @bind-Value="AutoJob__AutoUseItems" Color="Color.Primary"></MudSwitch>
+            <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@Tr("[CommonFooterGachaButtonLabel]")" @bind-Value="AutoJob__AutoFreeGacha" Color="Color.Primary"></MudSwitch>
+            <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@Tr("[CharacterMenuTabCharacterRankUp]")" @bind-Value="AutoJob__AutoRankUpCharacter" Color="Color.Primary"></MudSwitch>
+            <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@Tr("[GuildRaidReleaseConfirmTitle]")" @bind-Value="AutoJob__AutoOpenGuildRaid" Color="Color.Primary"></MudSwitch>
+            <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@Tr("[CommonHeaderLocalRaidLabel]")" @bind-Value="AutoJob__AutoLocalRaid" Color="Color.Primary"></MudSwitch>
+            @* <MudSwitch Label="@ResourceStrings.Deploy_defense" @bind-Value="AutoJob__AutoDeployGuildDefense" Color="Color.Primary"></MudSwitch> *@
+            <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@Tr("[GachaRelicChangeTitle]")" @bind-Value="AutoJob__AutoChangeGachaRelic" Color="Color.Primary"></MudSwitch>
+            <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@ResourceStrings.Auto_draw_10_times__up_to_3_draws_" @bind-Value="AutoJob__AutoDrawGachaRelic" Color="Color.Primary"></MudSwitch>
+        </div>
     </MudCardContent>
 </MudCard>
 

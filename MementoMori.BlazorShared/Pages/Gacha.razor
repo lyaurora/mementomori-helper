@@ -13,6 +13,7 @@
 @page "/Gacha"
 <PageTitle>@Masters.TextResourceTable.Get("[CommonFooterGachaButtonLabel]")</PageTitle>
 
+<section class="gacha-page">
 @if (!string.IsNullOrEmpty(alertMessage))
 {
     <MudAlert Severity="Severity.Warning">@alertMessage</MudAlert>
@@ -26,36 +27,43 @@
         {
             var gachaCaseMb = Masters.GachaCaseTable.GetById(gachaCaseInfo.GachaCaseId);
             var gachaCaseUiMb = Masters.GachaCaseUiTable.GetById(gachaCaseInfo.GachaCaseUiId);
+            var explanation = gachaCaseUiMb?.PickUpCharacterId > 0
+                ? Masters.TextResourceTable.Get(gachaCaseUiMb.ExplanationKey,
+                    Masters.TextResourceTable.Get(Masters.CharacterTable.GetById(gachaCaseUiMb.PickUpCharacterId).NameKey))
+                : Masters.TextResourceTable.Get(gachaCaseUiMb?.ExplanationKey);
 
             <MudItem xs="12" sm="6" md="4" lg="3" xl="2" xxl="2">
-                <MudCard>
-                    <MudCardHeader>
+                <MudCard Class="gacha-card">
+                    <MudCardHeader Class="gacha-card-header">
                         <CardHeaderContent>
-                            <MudText Typo="Typo.body1">@(Masters.TextResourceTable.Get(gachaCaseUiMb?.NameKey))</MudText>
-                            <MudText Typo="Typo.body2">@(Masters.TextResourceTable.Get(gachaCaseUiMb?.ExplanationKey))</MudText>
+                            <MudText Typo="Typo.body1" Class="gacha-card-title">@(Masters.TextResourceTable.Get(gachaCaseUiMb?.NameKey))</MudText>
+                            <MudText Typo="Typo.body2" Class="gacha-card-description">@explanation</MudText>
                         </CardHeaderContent>
                         <CardHeaderActions>
                             <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="() => ShowDetail(gachaCaseInfo)">@Masters.TextResourceTable.Get("[CommonDetailLabel]")</MudButton>
                         </CardHeaderActions>
                     </MudCardHeader>
-                    <MudCardContent>
-                        <MudField Label="@Masters.TextResourceTable.Get("[CommonPossessionLabel]")" Variant="Variant.Outlined">
+                    <MudCardContent Class="gacha-card-content">
+                        <div class="gacha-possession">
+                            <span class="gacha-possession-label">@Masters.TextResourceTable.Get("[CommonPossessionLabel]")</span>
                             @foreach (var userItem in gachaCaseInfo.GachaButtonInfoList.Select(d => d.ConsumeUserItem).DistinctBy(d => new {d.ItemType, d.ItemId}))
                             {
-                                var label = $"{userItem.GetItemName()} × {ViewModel.UserSyncData.GetUserItemCount(userItem.ItemType, userItem.ItemId, true)}";
-                                <MudChip T="string">@label</MudChip>
+                                <div class="gacha-balance-row">
+                                    <span>@userItem.GetItemName()</span>
+                                    <span class="gacha-balance-count">× @ViewModel.UserSyncData.GetUserItemCount(userItem.ItemType, userItem.ItemId, true).ToString("N0")</span>
+                                </div>
                             }
-                        </MudField>
+                        </div>
 
                     </MudCardContent>
-                    <MudCardActions>
+                    <MudCardActions Class="gacha-card-actions">
                         @foreach (var button in gachaCaseInfo.GachaButtonInfoList)
                         {
                             var itemMb = Masters.ItemTable.GetByItemTypeAndItemId(button.ConsumeUserItem.ItemType, button.ConsumeUserItem.ItemId);
                             var count = ViewModel.UserSyncData.GetUserItemCount(button.ConsumeUserItem.ItemType, button.ConsumeUserItem.ItemId, true);
                             var disabled = count < button.ConsumeUserItem.ItemCount;
 
-                            <MudButton Disabled="disabled" Variant="Variant.Filled" Class="mr-2" Color="Color.Secondary" OnClick="() => DoGacha(button.GachaButtonId)">@(Masters.TextResourceTable.Get(itemMb.NameKey)) × @button.ConsumeUserItem.ItemCount</MudButton>
+                            <MudButton Disabled="disabled" Variant="Variant.Filled" Class="gacha-draw-button" Color="Color.Primary" OnClick="() => DoGacha(button.GachaButtonId)"><span class="gacha-cost-name">@(Masters.TextResourceTable.Get(itemMb.NameKey))</span><span class="gacha-cost-count">× @button.ConsumeUserItem.ItemCount</span></MudButton>
                         }
 
                     </MudCardActions>
@@ -64,6 +72,7 @@
         }
     </MudGrid>
 }
+</section>
 
 @code {
     private List<GachaCaseInfo> gachaCaseInfos = new();
@@ -110,30 +119,44 @@
 
     private async Task DoGacha(long buttonGachaButtonId)
     {
-        var showMessageBox = await DialogService.ShowMessageBox(Masters.TextResourceTable.Get("[GachaPurchaseConfirmationTitle]"), "", Masters.TextResourceTable.Get("[GachaPurchaseConfirmationOK]"), Masters.TextResourceTable.Get("[CommonCancelLabel]"));
-        if (showMessageBox != true)
+        var token = CreateAccountCancellation();
+        var funcs = ViewModel;
+        alertMessage = string.Empty;
+        try
         {
-            return;
+            var showMessageBox = await DialogService.ShowMessageBox(Masters.TextResourceTable.Get("[GachaPurchaseConfirmationTitle]"), "", Masters.TextResourceTable.Get("[GachaPurchaseConfirmationOK]"), Masters.TextResourceTable.Get("[CommonCancelLabel]"));
+            if (showMessageBox != true) return;
+            var drawResponse = await funcs.GetResponse<DrawRequest, DrawResponse>(new DrawRequest {GachaButtonId = buttonGachaButtonId}, token);
+            token.ThrowIfCancellationRequested();
+            var msg = new StringBuilder();
+            gachaCaseInfos = drawResponse.GachaCaseInfoList;
+            drawResponse.GachaRewardItemList.PrintUserItems(s => msg.AppendLine(s).AppendLine("<br />"));
+            drawResponse.GachaRewardAddItemList.PrintUserItems(s => msg.AppendLine(s).AppendLine("<br />"));
+            drawResponse.BonusRewardItemList.PrintUserItems(s => msg.AppendLine(s).AppendLine("<br />"));
+            drawResponse.CharacterReleaseItemList.PrintUserItems(s => msg.AppendLine(s).AppendLine("<br />"));
+
+            await DialogService.ShowMessageBox(ResourceStrings.GachaResult, (MarkupString) msg.ToString());
         }
-
-        var drawResponse = await ViewModel.GetResponse<DrawRequest, DrawResponse>(new DrawRequest {GachaButtonId = buttonGachaButtonId});
-        var msg = new StringBuilder();
-        gachaCaseInfos = drawResponse.GachaCaseInfoList;
-        drawResponse.GachaRewardItemList.PrintUserItems(s => msg.AppendLine(s).AppendLine("<br />"));
-        drawResponse.GachaRewardAddItemList.PrintUserItems(s => msg.AppendLine(s).AppendLine("<br />"));
-        drawResponse.BonusRewardItemList.PrintUserItems(s => msg.AppendLine(s).AppendLine("<br />"));
-        drawResponse.CharacterReleaseItemList.PrintUserItems(s => msg.AppendLine(s).AppendLine("<br />"));
-
-        await DialogService.ShowMessageBox(ResourceStrings.GachaResult, (MarkupString) msg.ToString());
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception e) { if (!token.IsCancellationRequested) alertMessage = e.Message; }
     }
 
     private async Task ShowDetail(GachaCaseInfo gachaCaseInfo)
     {
-        var lotteryItemListResponse = await ViewModel.GetResponse<GetLotteryItemListRequest, GetLotteryItemListResponse>(new GetLotteryItemListRequest {GachaButtonId = gachaCaseInfo.GachaButtonInfoList.First().GachaButtonId});
-        var parameters = new DialogParameters<GachaDetail>();
-        parameters.Add(d => d.GachaCaseInfo, gachaCaseInfo);
-        parameters.Add(d => d.LotteryItemList, lotteryItemListResponse);
-        await DialogService.ShowAsync<GachaDetail>(Masters.TextResourceTable.Get("[CommonDetailLabel]"), parameters, new DialogOptions {CloseButton = true, CloseOnEscapeKey = true});
+        var token = CreateAccountCancellation();
+        var funcs = ViewModel;
+        alertMessage = string.Empty;
+        try
+        {
+            var lotteryItemListResponse = await funcs.GetResponse<GetLotteryItemListRequest, GetLotteryItemListResponse>(new GetLotteryItemListRequest {GachaButtonId = gachaCaseInfo.GachaButtonInfoList.First().GachaButtonId}, token);
+            token.ThrowIfCancellationRequested();
+            var parameters = new DialogParameters<GachaDetail>();
+            parameters.Add(d => d.GachaCaseInfo, gachaCaseInfo);
+            parameters.Add(d => d.LotteryItemList, lotteryItemListResponse);
+            await DialogService.ShowAsync<GachaDetail>(Masters.TextResourceTable.Get("[CommonDetailLabel]"), parameters, new DialogOptions {CloseButton = true, CloseOnEscapeKey = true});
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception e) { if (!token.IsCancellationRequested) alertMessage = e.Message; }
     }
 
 }

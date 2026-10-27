@@ -182,6 +182,20 @@ const assert = require('node:assert/strict');
         assert(desktopDialog.width >= 800 && desktopDialog.height >= 650, 'Guild dialog is too small for reading');
         result.announcements = await page.locator('.chat-announcement').count();
         result.surveys = await page.locator('.chat-survey').count();
+        const announcementMenu = page.getByRole('button', { name: '公告管理', exact: true }).first();
+        if (await announcementMenu.count()) {
+            for (const fromMenu of [false, true]) {
+                await announcementMenu.click();
+                const action = page.getByText('撤销公告', { exact: true }).filter({ visible: true });
+                await action.waitFor();
+                await (fromMenu ? action : announcementMenu).focus();
+                await page.keyboard.press('Escape');
+                await action.waitFor({ state: 'hidden' });
+                assert(await guildDialog.isVisible(), 'Closing announcement actions closes the guild dialog');
+                assert(await announcementMenu.evaluate(e => e === document.activeElement), 'Closing announcement actions loses keyboard focus');
+            }
+            result.announcementKeyboardClose = true;
+        }
         if (result.announcements) {
             assert((await page.locator('.chat-announcement .chat-muted').first().innerText()).includes('公告发布：'));
             assert.equal(await page.locator('.chat-announcement .chat-reactions').count(), result.announcements, 'Announcements lack reaction controls');
@@ -195,6 +209,7 @@ const assert = require('node:assert/strict');
         if (await newNote.count() && !(await newNote.isDisabled())) {
             await newNote.click();
             await page.waitForSelector('.chat-note-editor');
+            await page.waitForFunction(() => document.activeElement?.id === 'chat-note-title');
             assert.equal(await page.locator('#chat-note-title').getAttribute('maxlength'), '20');
             assert.equal(await page.locator('#chat-note-content').getAttribute('maxlength'), '2000');
             assert(await page.getByRole('button', { name: '保存笔记', exact: true }).isDisabled(), 'An empty guild note can be saved');

@@ -1,0 +1,22 @@
+.gacha-detail { min-width: 0; max-width: 100%; }
+.gacha-detail ::deep .gacha-detail-surface { padding: 1.25rem; }
+.gacha-detail-heading, .gacha-detail-description, .gacha-detail-notes { line-height: 1.8; overflow-wrap: anywhere; }
+.gacha-detail-heading { font-weight: 500; }
+.gacha-detail-notes { color: var(--mud-palette-text-secondary); font-size: .8125rem; }
+.gacha-detail ::deep .gacha-detail-section { margin: .5rem 0; }
+.gacha-detail ::deep .gacha-detail-section .mud-input-slot { min-width: 0; }
+.gacha-detail ::deep .gacha-detail-table { max-width: 100%; border-radius: .4rem; }
+.gacha-detail ::deep .gacha-detail-table table { width: 100%; table-layout: fixed; }
+.gacha-detail ::deep .gacha-detail-table.mud-table-dense td { padding: .5rem .45rem; vertical-align: top; font-size: .8125rem; line-height: 1.6; overflow-wrap: anywhere; }
+.gacha-bonus-count-column { width: 22%; }
+.gacha-rarity-rate-column { width: 38%; }
+.gacha-item-rarity-column { width: 18%; }
+.gacha-item-rate-column { width: 30%; }
+.gacha-detail-rate { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.gacha-detail-rarity { text-align: center; color: var(--mud-palette-text-secondary); }
+.gacha-bonus-item { display: grid; grid-template-columns: minmax(0, 1fr) max-content; align-items: start; gap: .6rem; }
+.gacha-bonus-item + .gacha-bonus-item { margin-top: .5rem; padding-top: .5rem; border-top: 1px solid var(--mud-palette-lines-default); }
+@media (max-width: 600px) {
+    .gacha-detail ::deep .gacha-detail-surface { padding: .7rem; }
+    .gacha-detail ::deep .gacha-detail-table.mud-table-dense td { padding: .45rem .25rem; }
+}

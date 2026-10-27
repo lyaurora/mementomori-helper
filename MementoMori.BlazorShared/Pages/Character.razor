@@ -24,55 +24,59 @@
         var cmb = Masters.CharacterTable.GetById(_selectedCharactor.CharacterId);
         var name = Masters.TextResourceTable.Get(cmb.NameKey);
 
-        <MudItem sm="12" md="4">
+        <MudItem xs="12" sm="12" md="4">
+            <div class="character-selected-name">@name</div>
             <MudTabs MinimumTabWidth="20px" HeaderPosition="TabHeaderPosition.Before">
-                <Header>
-                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center">
-                        <MudText Style="min-width: 100px">@name</MudText>
-                    </MudStack>
-                </Header>
                 <ChildContent>
                     <MudTabPanel Text="@Masters.TextResourceTable.Get("[CommonHeaderCharacterDetailLabel]")">
-                        <MudField Label="@(Masters.TextResourceTable.Get("[CommonBattlePowerLabel]"))" Variant="Variant.Outlined">
-                            @{
-                                var battlePower = BattlePowerCalculatorUtil.GetUserCharacterBattlePower(ViewModel.UserId, _selectedCharactor);
-                            }
-                            <MudText>@battlePower</MudText>
-                        </MudField>
-                        <MudField Label="@(Masters.TextResourceTable.Get("[CommonPotentialParameterLabel]"))" Variant="Variant.Outlined">
-                            <MudStack Class="d-flex gap-1 flex-wrap" Row="true">
-                                @foreach (var type in EnumUtil.GetValueList<BaseParameterType>())
-                                {
-                                    var name = Masters.TextResourceTable.Get(type);
-                                    var value = _baseParameter.GetValue(type);
-                                    <MudField Label="@name" Style="min-width: 60px">
-                                        @(value.ToString("N0"))
-                                    </MudField>
+                        <div class="character-detail">
+                            <section class="character-stat-group character-power">
+                                <h2 class="character-group-title">@Masters.TextResourceTable.Get("[CommonBattlePowerLabel]")</h2>
+                                @{
+                                    var battlePower = BattlePowerCalculatorUtil.GetUserCharacterBattlePower(ViewModel.UserId, _selectedCharactor);
                                 }
-                            </MudStack>
-                        </MudField>
-                        <MudField Label="@(Masters.TextResourceTable.Get("[CommonStatusLabel]"))" Variant="Variant.Outlined">
-                            <MudStack Class="d-flex gap-1 flex-wrap" Row="true">
-                                @foreach (var type in EnumUtil.GetValueList<BattleParameterType>())
-                                {
-                                    var name = Masters.TextResourceTable.Get(type);
-                                    var value = _battleParameter.GetParameter(type);
-                                    <MudField Label="@name" Style="min-width: 90px">
-                                        @(value.ToString("N0"))
-                                    </MudField>
-                                }
-                            </MudStack>
-                        </MudField>
+                                <p class="character-power-value">@battlePower.ToString("N0")</p>
+                            </section>
+                            <section class="character-stat-group">
+                                <h2 class="character-group-title">@Masters.TextResourceTable.Get("[CommonPotentialParameterLabel]")</h2>
+                                <dl class="character-stat-grid">
+                                    @foreach (var type in EnumUtil.GetValueList<BaseParameterType>())
+                                    {
+                                        var name = Masters.TextResourceTable.Get(type);
+                                        var value = _baseParameter.GetValue(type);
+                                        <div class="character-stat">
+                                            <dt>@name</dt>
+                                            <dd>@(value.ToString("N0"))</dd>
+                                        </div>
+                                    }
+                                </dl>
+                            </section>
+                            <section class="character-stat-group">
+                                <h2 class="character-group-title">@Masters.TextResourceTable.Get("[CommonStatusLabel]")</h2>
+                                <dl class="character-stat-grid character-battle-stats">
+                                    @foreach (var type in EnumUtil.GetValueList<BattleParameterType>())
+                                    {
+                                        var name = Masters.TextResourceTable.Get(type);
+                                        var value = _battleParameter.GetParameter(type);
+                                        <div class="character-stat">
+                                            <dt>@name</dt>
+                                            <dd>@(value.ToString("N0"))</dd>
+                                        </div>
+                                    }
+                                </dl>
+                            </section>
+                        </div>
                     </MudTabPanel>
                     <MudTabPanel Text="@Masters.TextResourceTable.Get("[CommonEquipmentLabel]")">
-                        <MudTabs MinimumTabWidth="20" Style="max-width: 100%">
+                        <div class="character-equipment">
+                        <MudTabs Class="character-equipment-tabs" MinimumTabWidth="20px">
                             @foreach (var (slotType, equipmentDtoInfo) in ViewModel.UserSyncData.GetUserEquipmentDtoInfoSlotTypeDictionaryByCharacterGuid(_selectedCharactor.Guid))
                             {
                                 var slotName = Masters.TextResourceTable.Get(slotType);
                                 if (equipmentDtoInfo == null)
                                 {
                                     <MudTabPanel Text="@slotName">
-                                        <MudText>@Masters.TextResourceTable.Get("[CommonNotEquippingLabel]")</MudText>
+                                        <div class="character-empty-equipment">@Masters.TextResourceTable.Get("[CommonNotEquippingLabel]")</div>
                                     </MudTabPanel>
                                     continue;
                                 }
@@ -85,19 +89,20 @@
                                 </MudTabPanel>
                             }
                         </MudTabs>
+                        </div>
                     </MudTabPanel>
                     @* <MudTabPanel Text="详细"></MudTabPanel> *@
                 </ChildContent>
             </MudTabs>
         </MudItem>
     }
-    <MudItem sm="12" md="8">
+    <MudItem xs="12" sm="12" md="8">
         <MudPaper Class="d-flex gap-2 flex-wrap" Elevation="0">
             @foreach (var character in (_userSyncData?.UserCharacterDtoInfos ?? new List<UserCharacterDtoInfo>()).OrderByDescending(d => d.RarityFlags))
             {
-                <MudPaper Elevation="0" Width="72px" Height="72px" @onclick="() => SelectCharacter(character)" Style="cursor: pointer">
+                <button type="button" class="character-choice" aria-pressed="@((_selectedCharactor?.Guid == character.Guid) ? "true" : "false")" aria-label="@Masters.CharacterTable.GetCharacterName(character.CharacterId)" @onclick="() => SelectCharacter(character)">
                     <CharacterIcon Size="72" UserCharacterInfo="@Funcs.UserSyncData.GetUserCharacterInfoByUserCharacterDtoInfo(character)"/>
-                </MudPaper>
+                </button>
             }
         </MudPaper>
     </MudItem>

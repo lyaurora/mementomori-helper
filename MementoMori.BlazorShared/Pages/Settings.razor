@@ -57,15 +57,13 @@
         <MudCard>
             <MudCardHeader>
                 <CardHeaderContent>
-                    <MudText>@ResourceStrings.Others (Global)</MudText>
+                    <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.Tune" aria-hidden="true" /><span>@ResourceStrings.Others <span class="panel-scope">(Global)</span></span></MudText>
                 </CardHeaderContent>
             </MudCardHeader>
-            <MudCardContent>
-                <MudField Label="@ResourceStrings.AutoRequestDelay" Variant="Variant.Outlined">
-                    <MudNumericField @bind-Value="AutoRequestDelay" Min="0"></MudNumericField>
-                </MudField>
-                <MudTextField T="string" @bind-Value="AssetsUrl" Label="@ResourceStrings.ResourceManager.GetString("ResourceServer")" Validation="@(new Func<string, string?>(ValidateHttpUrl))" />
-                <MudTextField T="string" @bind-Value="BattleLogViewerUrl" Label="@ResourceStrings.ResourceManager.GetString("BattleLogViewer")" Validation="@(new Func<string, string?>(ValidateHttpUrl))" />
+            <MudCardContent Class="settings-form">
+                <MudNumericField Label="@ResourceStrings.AutoRequestDelay" @bind-Value="AutoRequestDelay" Min="0" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                <MudTextField T="string" @bind-Value="AssetsUrl" Label="@ResourceStrings.ResourceManager.GetString("ResourceServer")" Validation="@(new Func<string, string?>(ValidateHttpUrl))" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                <MudTextField T="string" @bind-Value="BattleLogViewerUrl" Label="@ResourceStrings.ResourceManager.GetString("BattleLogViewer")" Validation="@(new Func<string, string?>(ValidateHttpUrl))" Variant="Variant.Outlined" Margin="Margin.Dense" />
             </MudCardContent>
         </MudCard>
     </MudItem>

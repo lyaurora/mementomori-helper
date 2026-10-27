@@ -40,6 +40,7 @@ public partial class Chat
     private MudButton? _emoticonButton;
     private ElementReference _messageElement;
     private ElementReference _inputElement;
+    private ElementReference _noteTitleElement;
     private ChatType _channel = ChatType.World;
     private ChatType? _savedChannel;
     private bool _restoreChannel;
@@ -58,6 +59,10 @@ public partial class Chat
     private List<GuildSurveyInfo> _surveys = new();
     private List<GuildNoteInfo> _guildNotes = new();
     private long? _editingGuildNoteId;
+    private bool _focusGuildNoteTitle;
+    private bool _announcementMenuOpen;
+    private readonly Dictionary<(long, long), MudMenu> _announcementMenus = new();
+    private readonly Dictionary<(long, long), MudIconButton> _announcementMenuButtons = new();
     private string _noteTitle = "", _noteContent = "";
     private GuildNoteCategoryType _noteCategory = GuildNoteCategoryType.Normal;
     private readonly Dictionary<string, GuildSurveyChoiceType> _surveyChoices = new();
@@ -223,6 +228,11 @@ public partial class Chat
                 var mode = _scrollMode;
                 _scrollMode = "follow";
                 await _module.InvokeVoidAsync("followMessages", _messageElement, mode);
+                if (_focusGuildNoteTitle && _showGuildInfo && _editingGuildNoteId != null && !_disposed && revision == _revision)
+                {
+                    _focusGuildNoteTitle = false;
+                    await _noteTitleElement.FocusAsync();
+                }
             }
         }
         catch (JSDisconnectedException) { }
@@ -440,9 +450,10 @@ public partial class Chat
         _noteTitle = note?.Title ?? "";
         _noteContent = note?.Content ?? "";
         _noteCategory = note?.GuildNoteCategoryType ?? GuildNoteCategoryType.Normal;
+        _focusGuildNoteTitle = true;
     }
 
-    private void CancelGuildNoteEdit() { _editingGuildNoteId = null; _noteTitle = _noteContent = ""; }
+    private void CancelGuildNoteEdit() { _editingGuildNoteId = null; _focusGuildNoteTitle = false; _noteTitle = _noteContent = ""; }
 
     private Task SaveGuildNote()
     {
@@ -545,6 +556,9 @@ public partial class Chat
     private async Task OpenGuildInfo()
     {
         if (_busy || _disposed) return;
+        _announcementMenuOpen = false;
+        _announcementMenus.Clear();
+        _announcementMenuButtons.Clear();
         _showGuildInfo = true;
         var loading = LoadGuildInfo();
         StateHasChanged();
@@ -553,6 +567,13 @@ public partial class Chat
     }
 
     private void GuildInfoKeyDown(KeyboardEventArgs args) { if (args.Key == "Escape") _showGuildInfo = false; }
+
+    private async Task AnnouncementMenuKeyDown(KeyboardEventArgs args, (long, long) key)
+    {
+        if (args.Key != "Escape" || !_announcementMenus.TryGetValue(key, out var menu) || !menu.Open) return;
+        await menu.CloseMenuAsync();
+        if (_announcementMenuButtons.TryGetValue(key, out var button)) await button.FocusAsync();
+    }
 
     private Task SetAnnouncement(ChatInfo message, bool announced) => Run(async (chat, token) =>
     {

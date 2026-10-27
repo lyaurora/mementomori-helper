@@ -1,0 +1,160 @@
+.items-page {
+    min-width: 0;
+}
+
+.items-page ::deep .items-table {
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: .65rem;
+    box-shadow: none;
+}
+
+.items-page ::deep .items-table .mud-table-container {
+    overflow-x: auto;
+}
+
+.items-page ::deep .items-table .mud-table-cell {
+    padding: .55rem 1rem;
+    font-size: .875rem;
+    line-height: 1.55;
+    vertical-align: middle;
+}
+
+.items-page ::deep .items-table .mud-table-head .mud-table-cell {
+    padding-top: .85rem;
+    padding-bottom: .85rem;
+    font-size: .8125rem;
+    white-space: nowrap;
+    word-break: keep-all;
+}
+
+.items-page ::deep .items-table .mud-table-sort-label {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.items-page ::deep .items-table .mud-table-sort-label-icon {
+    width: 1rem;
+    height: 1rem;
+    margin: 0 .25rem;
+}
+
+.items-page ::deep .items-table .item-number-column .mud-table-sort-label {
+    flex-direction: row-reverse;
+}
+
+.items-page ::deep .items-table .item-name-column {
+    min-width: 12rem;
+}
+
+.items-page ::deep .items-table .item-name-value {
+    display: block;
+    min-width: 0;
+    max-width: 28rem;
+    overflow-wrap: anywhere;
+    font-weight: 500;
+}
+
+.items-page ::deep .items-table .item-number-column {
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+    white-space: nowrap;
+}
+
+.items-page ::deep .items-table .item-action-column {
+    white-space: nowrap;
+}
+
+.items-page ::deep .items-table .mud-table-smalldevices-sortselect {
+    padding: .75rem;
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+}
+
+.items-page ::deep .items-table .mud-table-smalldevices-sortselect .mud-input {
+    min-height: 42px;
+    border: 1px solid var(--mud-palette-lines-inputs);
+    border-radius: .5rem;
+    background: var(--mud-palette-surface);
+}
+
+.items-page ::deep .items-table .mud-table-smalldevices-sortselect .mud-input::before,
+.items-page ::deep .items-table .mud-table-smalldevices-sortselect .mud-input::after {
+    display: none;
+}
+
+.items-page ::deep .items-table .mud-table-smalldevices-sortselect .mud-input:focus-within {
+    border-color: var(--mud-palette-primary);
+    box-shadow: 0 0 0 2px rgba(var(--mud-palette-primary-rgb), .12);
+}
+
+.items-page ::deep .items-table .mud-table-smalldevices-sortselect .mud-input-root {
+    padding: .6rem .75rem;
+}
+
+.items-page ::deep .items-table .mud-table-smalldevices-sortselect .mud-input-adornment {
+    margin-right: .5rem;
+}
+
+@media (min-width: 600px) {
+    .items-page ::deep .items-equipment-table .mud-table-root,
+    .items-page ::deep .items-sphere-table .mud-table-root {
+        min-width: 1040px;
+    }
+
+    .items-page ::deep .items-consumable-table .mud-table-root {
+        min-width: 680px;
+    }
+
+    .items-page ::deep .items-material-table .mud-table-root,
+    .items-page ::deep .items-fragment-table .mud-table-root {
+        min-width: 560px;
+    }
+
+    .items-page ::deep .items-table .item-text-column {
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 599.98px) {
+    .items-page ::deep .items-table .mud-table-cell {
+        gap: 1rem;
+        padding: .45rem 1rem;
+        text-align: end;
+        overflow-wrap: anywhere;
+    }
+
+    .items-page ::deep .items-table .mud-table-cell::before {
+        flex: 0 0 43%;
+        min-width: 0;
+        max-width: 43%;
+        padding: 0;
+        color: var(--mud-palette-text-secondary);
+        font-size: .8125rem;
+        font-weight: 400;
+        line-height: 1.6;
+        text-align: start;
+        white-space: normal;
+        word-break: keep-all;
+    }
+
+    .items-page ::deep .items-table .item-name-column {
+        min-width: 0;
+        padding-top: .85rem;
+        padding-bottom: .65rem;
+    }
+
+    .items-page ::deep .items-table .item-name-column::before,
+    .items-page ::deep .items-table .mud-table-cell:empty {
+        display: none;
+    }
+
+    .items-page ::deep .items-table .item-name-value {
+        flex: 1;
+        font-weight: 600;
+        text-align: start;
+    }
+
+    .items-page ::deep .items-table .mud-table-cell:last-child {
+        padding-bottom: .85rem;
+    }
+}

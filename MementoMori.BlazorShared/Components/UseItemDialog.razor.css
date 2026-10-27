@@ -1,0 +1,68 @@
+.use-item-dialog {
+    min-width: 0;
+}
+
+.use-item-dialog ::deep .use-item-card {
+    padding: 1.25rem;
+    border: 0;
+    box-shadow: none;
+}
+
+.use-item-dialog ::deep .use-item-name {
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+}
+
+.use-item-owned {
+    color: var(--mud-palette-text-secondary);
+    font-size: .875rem;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.use-item-dialog ::deep .use-item-count input,
+.use-item-dialog ::deep .mud-slider-container {
+    font-variant-numeric: tabular-nums;
+}
+
+.use-item-result {
+    max-height: 18rem;
+    margin: 0;
+    overflow: auto;
+    color: var(--mud-palette-text-primary);
+    font: inherit;
+    font-size: .875rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.use-item-result:not(:empty) {
+    padding: .85rem 1rem;
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: .5rem;
+    background: var(--mud-palette-background-gray);
+}
+
+.use-item-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: .65rem;
+    padding-top: .85rem;
+    border-top: 1px solid var(--mud-palette-lines-default);
+}
+
+.use-item-actions ::deep .mud-button {
+    min-width: 5rem;
+}
+
+@media (max-width: 599.98px) {
+    .use-item-dialog ::deep .use-item-card {
+        padding: 1rem;
+    }
+}

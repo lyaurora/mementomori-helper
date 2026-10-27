@@ -8,7 +8,7 @@
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText>@ResourceStrings.AutoJobCrons (Global)</MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Schedule" aria-hidden="true" /><span>@ResourceStrings.AutoJobCrons <span class="panel-scope">(Global)</span></span></MudText>
         </CardHeaderContent>
         <CardHeaderActions>
             <MudButton Href="https://www.freeformatter.com/cron-expression-generator-quartz.html"
@@ -20,26 +20,26 @@
                        Color="Color.Primary">@ResourceStrings.CronExpression</MudButton>
         </CardHeaderActions>
     </MudCardHeader>
-    <MudCardContent>
-        <MudTextField Margin="Margin.Dense" Label="@($"{ResourceStrings.DailyJob}")" @bind-Value="AutoJob__DailyJobCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined"
+    <MudCardContent Class="settings-form cron-fields">
+        <MudTextField Class="cron-field" Margin="Margin.Dense" Label="@($"{ResourceStrings.DailyJob}")" @bind-Value="AutoJob__DailyJobCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined"
                       Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Restore" OnAdornmentClick="() => ResetCron(() => AutoJob__DailyJobCron = defaultValue.DailyJobCron)"></MudTextField>
-            <MudTextField Margin="Margin.Dense" Label="@($"{ResourceStrings.RewardClaimJob}")" @bind-Value="AutoJob__HourlyJobCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined"
+            <MudTextField Class="cron-field" Margin="Margin.Dense" Label="@($"{ResourceStrings.RewardClaimJob}")" @bind-Value="AutoJob__HourlyJobCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined"
                           Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Restore" OnAdornmentClick="() => ResetCron(() => AutoJob__HourlyJobCron = defaultValue.HourlyJobCron)"></MudTextField>
-            <MudTextField Margin="Margin.Dense" Label="@($"{Masters.TextResourceTable.Get("[CommonHeaderLocalPvpLabel]")}")" @bind-Value="AutoJob__PvpJobCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined"
+            <MudTextField Class="cron-field" Margin="Margin.Dense" Label="@($"{Masters.TextResourceTable.Get("[CommonHeaderLocalPvpLabel]")}")" @bind-Value="AutoJob__PvpJobCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined"
                           Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Restore" OnAdornmentClick="() => ResetCron(() => AutoJob__PvpJobCron = defaultValue.PvpJobCron)"></MudTextField>
-            <MudTextField Margin="Margin.Dense" Label="@($"{Masters.TextResourceTable.Get("[CommonHeaderGlobalPvpLabel]")}")" @bind-Value="AutoJob__LegendLeagueJobCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined"
+            <MudTextField Class="cron-field" Margin="Margin.Dense" Label="@($"{Masters.TextResourceTable.Get("[CommonHeaderGlobalPvpLabel]")}")" @bind-Value="AutoJob__LegendLeagueJobCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined"
                           Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Restore" OnAdornmentClick="() => ResetCron(() => AutoJob__LegendLeagueJobCron = defaultValue.LegendLeagueJobCron)"></MudTextField>
-            <MudTextField Margin="Margin.Dense" Label="@($"{Masters.TextResourceTable.Get("[GuildRaidReleaseConfirmTitle]")}")" @bind-Value="AutoJob__GuildRaidBossReleaseCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined"
+            <MudTextField Class="cron-field" Margin="Margin.Dense" Label="@($"{Masters.TextResourceTable.Get("[GuildRaidReleaseConfirmTitle]")}")" @bind-Value="AutoJob__GuildRaidBossReleaseCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined"
                           Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Restore" OnAdornmentClick="() => ResetCron(() => AutoJob__GuildRaidBossReleaseCron = defaultValue.GuildRaidBossReleaseCron)"></MudTextField>
-            <MudTextField Margin="Margin.Dense" Label="@($"{ResourceStrings.ShopAutoBuyItems}")" @bind-Value="AutoJob__AutoBuyShopItemJobCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined"
+            <MudTextField Class="cron-field" Margin="Margin.Dense" Label="@($"{ResourceStrings.ShopAutoBuyItems}")" @bind-Value="AutoJob__AutoBuyShopItemJobCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined"
                           Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Restore" OnAdornmentClick="() => ResetCron(() => AutoJob__AutoBuyShopItemJobCron = defaultValue.AutoBuyShopItemJobCron)"></MudTextField>
-            <MudTextField Margin="Margin.Dense" Label="@($"{Masters.TextResourceTable.Get("[CommonHeaderLocalRaidLabel]")}")" @bind-Value="AutoJob__AutoLocalRaidJobCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined"
+            <MudTextField Class="cron-field" Margin="Margin.Dense" Label="@($"{Masters.TextResourceTable.Get("[CommonHeaderLocalRaidLabel]")}")" @bind-Value="AutoJob__AutoLocalRaidJobCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined"
                           Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Restore" OnAdornmentClick="() => ResetCron(() => AutoJob__AutoLocalRaidJobCron = defaultValue.AutoLocalRaidJobCron)"></MudTextField>
             @* <MudTextField Margin="Margin.Dense" Label="@($"{ResourceStrings.Deploy_defense}")" @bind-Value="AutoJob__AutoDeployGuildDefenseJobCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined" *@
             @*               Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Restore" OnAdornmentClick="() => ResetCron(() => AutoJob__AutoDeployGuildDefenseJobCron = defaultValue.AutoDeployGuildDefenseJobCron)"></MudTextField> *@
-            <MudTextField Margin="Margin.Dense" Label="@($"{Tr("[GachaRelicChangeTitle]")}")" @bind-Value="AutoJob__AutoChangeGachaRelicJobCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined"
+            <MudTextField Class="cron-field" Margin="Margin.Dense" Label="@($"{Tr("[GachaRelicChangeTitle]")}")" @bind-Value="AutoJob__AutoChangeGachaRelicJobCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined"
                           Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Restore" OnAdornmentClick="() => ResetCron(() => AutoJob__AutoChangeGachaRelicJobCron = defaultValue.AutoChangeGachaRelicJobCron)"></MudTextField>
-            <MudTextField Margin="Margin.Dense" Label="@($"{ResourceStrings.Auto_draw_10_times__up_to_3_draws_}")" @bind-Value="AutoJob__AutoDrawGachaRelicJobCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined"
+            <MudTextField Class="cron-field" Margin="Margin.Dense" Label="@($"{ResourceStrings.Auto_draw_10_times__up_to_3_draws_}")" @bind-Value="AutoJob__AutoDrawGachaRelicJobCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined"
                           Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Restore" OnAdornmentClick="() => ResetCron(() => AutoJob__AutoDrawGachaRelicJobCron = defaultValue.AutoDrawGachaRelicJobCron)"></MudTextField>
     </MudCardContent>
 </MudCard>

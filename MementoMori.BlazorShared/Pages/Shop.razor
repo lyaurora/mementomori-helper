@@ -21,6 +21,7 @@
 
 <PageTitle>@Masters.TextResourceTable.Get("[CommonHeaderExchangeLabel]")</PageTitle>
 
+<section class="shop-page">
 @if (!string.IsNullOrEmpty(_alertMessage))
 {
     <MudAlert Severity="Severity.Warning">@_alertMessage</MudAlert>
@@ -39,12 +40,12 @@
                     tabName = tradeShopTabMb.Memo;
                 }
                 <MudTabPanel Text="@(tabName)">
-                    <MudPaper Elevation="0" Class="mb-4">
+                    <MudPaper Elevation="0" Class="shop-balance-bar mb-4">
                         @foreach (var item in tradeShopTabMb.ConsumeItemInfos ?? [])
                         {
                             var itemMb = Masters.ItemTable.GetByItemTypeAndItemId(item.ItemType, item.ItemId);
                             var count = Funcs.UserSyncData.GetUserItemCount(item.ItemType, item.ItemId, true);
-                            var text = $"{Masters.TextResourceTable.Get(itemMb.NameKey)} × {count}";
+                            var text = $"{Masters.TextResourceTable.Get(itemMb.NameKey)} × {count:N0}";
                             <MudChip T="string" Text="@text"></MudChip>
                         }
 
@@ -61,61 +62,55 @@
                     </MudPaper>
                     @if (tradeShopTabMb.TradeShopType != TradeShopType.Sphere)
                     {
-                        <MudGrid Spacing="1">
+                        <MudGrid Spacing="1" Class="shop-products">
                             @foreach (var item in tab.TradeShopItems?.OrderBy(d => d.SortOrder).ToArray() ?? Array.Empty<TradeShopItem>())
                             {
                                 var (itemName, subName) = GetItemName(item.GiveItem);
                                 string consumeText = "";
-                                long buyMaxCount = 0;
+                                var buyMaxCount = GetBuyMaxCount(item);
 
                                 if (item.ConsumeItem1 == null)
                                 {
                                     consumeText = "FREE";
-                                    buyMaxCount = item.LimitTradeCount - item.TradeCount;
                                 }
                                 else
                                 {
                                     var consumeItemName1 = item.ConsumeItem1.GetItemName();
-                                    consumeText = $"{consumeItemName1} × {item.ConsumeItem1.ItemCount}";
+                                    consumeText = $"{consumeItemName1} × {item.ConsumeItem1.ItemCount:N0}";
                                     if (item.ConsumeItem2 != null)
                                     {
                                         var consumeItemName2 = item.ConsumeItem2.GetItemName();
-                                        consumeText += $" {consumeItemName2} × {item.ConsumeItem2.ItemCount}";
+                                        consumeText += $" {consumeItemName2} × {item.ConsumeItem2.ItemCount:N0}";
                                     }
 
-                                    var itemCount = Funcs.UserSyncData.GetUserItemCount(item.ConsumeItem1.ItemType, item.ConsumeItem1.ItemId, true);
-                                    buyMaxCount = itemCount / item.ConsumeItem1.ItemCount;
-                                    if (item.ConsumeItem2 != null)
-                                    {
-                                        itemCount = Funcs.UserSyncData.GetUserItemCount(item.ConsumeItem2.ItemType, item.ConsumeItem2.ItemId, true);
-                                        buyMaxCount = Math.Min(buyMaxCount, itemCount / item.ConsumeItem2.ItemCount);
-                                    }
                                 }
 
                                 var buyBtnDisabled = (item.LimitTradeCount > 0 && item.IsSoldOut()) || buyMaxCount == 0;
 
-                                <MudItem Class="pa-1">
-                                    <MudCard Elevation="2">
-                                        <MudCardHeader>
+                                <MudItem Class="shop-product-item">
+                                    <MudCard Elevation="2" Class="shop-product-card">
+                                        <MudCardHeader Class="shop-product-header">
                                             <CardHeaderContent>
-                                                <MudText>@itemName</MudText>
+                                                <MudText Class="shop-product-title">@itemName</MudText>
 
                                             </CardHeaderContent>
                                         </MudCardHeader>
-                                        <MudCardContent>
-                                            <MudText>@subName</MudText>
-                                            @if (item.SalePercent > 0)
-                                            {
-                                                <MudText Inline="true">@($"{item.SalePercent}{Masters.TextResourceTable.Get("[ShopDiscountLabel]")} ")</MudText>
-                                            }
-                                            @if (item.LimitTradeCount > 0)
-                                            {
-                                                <MudText Inline="true">@Masters.TextResourceTable.Get("[ExchangeCommonLimitLabelFormat]", item.TradeCount, item.LimitTradeCount)</MudText>
-                                            }
+                                        <MudCardContent Class="shop-product-content">
+                                            <MudText Class="shop-product-subtitle">@subName</MudText>
+                                            <div class="shop-product-meta">
+                                                @if (item.SalePercent > 0)
+                                                {
+                                                    <MudText Inline="true" Class="shop-product-discount">@($"{item.SalePercent}{Masters.TextResourceTable.Get("[ShopDiscountLabel]")} ")</MudText>
+                                                }
+                                                @if (item.LimitTradeCount > 0)
+                                                {
+                                                    <MudText Inline="true" Class="shop-product-limit">@Masters.TextResourceTable.Get("[ExchangeCommonLimitLabelFormat]", item.TradeCount, item.LimitTradeCount)</MudText>
+                                                }
+                                            </div>
                                         </MudCardContent>
-                                        <MudCardActions>
-                                            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Disabled="buyBtnDisabled" OnClick="() => BuyItem(tab, item)">@consumeText</MudButton>
-                                            <MudIconButton Class="ml-2" Icon="@Icons.Material.Filled.AlarmAdd" Variant="Variant.Outlined" Color="Color.Secondary" OnClick="() => ShowAutoBuyDialog(tradeShopTabMb, item)"></MudIconButton>
+                                        <MudCardActions Class="shop-product-actions">
+                                            <MudButton Class="shop-buy-button" Variant="Variant.Filled" Color="Color.Primary" Disabled="buyBtnDisabled" OnClick="() => BuyItem(tab, item)">@consumeText</MudButton>
+                                            <MudIconButton Class="shop-auto-buy-button" Icon="@Icons.Material.Filled.AlarmAdd" Variant="Variant.Outlined" Color="Color.Primary" title="@ResourceStrings.AutoBuy" aria-label="@ResourceStrings.AutoBuy" OnClick="() => ShowAutoBuyDialog(tradeShopTabMb, item)"></MudIconButton>
                                         </MudCardActions>
                                     </MudCard>
                                 </MudItem>
@@ -126,7 +121,7 @@
                     {
                         var listByLevel = Masters.SphereTable.GetListByLevel(1);
 
-                        <MudGrid>
+                        <MudGrid Class="shop-sphere-products">
                             @foreach (var sphere in listByLevel)
                             {
                                 <MudItem>
@@ -142,33 +137,38 @@
     </MudTabs>
 }
 
-<MudDialog @bind-Visible="_autoBuyDialogVisible" Options="new DialogOptions {CloseButton = true}">
-    <DialogContent>
+<MudDialog Class="app-form-dialog" @bind-Visible="_autoBuyDialogVisible" Options="new DialogOptions {CloseButton = true, FullWidth = true, MaxWidth = MaxWidth.Small}">
+    <TitleContent>
         @{
-            var tab = _tradeShopTabInfoList[_selectedTabIndex];
             var tradeShopTabMb = Masters.TradeShopTabTable.GetById(_tradeShopTabInfoList[_selectedTabIndex].TradeShopTabId);
             var tabName = Masters.TextResourceTable.Get(tradeShopTabMb.TabNameKey);
         }
-        <MudText Typo="Typo.h5">@tabName @ResourceStrings.AutoBuy</MudText>
-        <MudSelect Label="@ResourceStrings.ShopAutoBuyItems" T="UserItem" @bind-Value="_selectedAutoBuyItem" Comparer="@(new UserItemComparer())" Clearable="true" HelperText="@ResourceStrings.No_setting_means_buying_any_item">
+        <MudText Typo="Typo.h6"><span class="shop-auto-buy-title">@tabName @ResourceStrings.AutoBuy</span></MudText>
+    </TitleContent>
+    <DialogContent>
+        @{ var tab = _tradeShopTabInfoList[_selectedTabIndex]; }
+        <div class="shop-auto-buy-fields">
+        <MudSelect Label="@ResourceStrings.ShopAutoBuyItems" T="UserItem" @bind-Value="_selectedAutoBuyItem" Comparer="@(new UserItemComparer())" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="@ResourceStrings.No_setting_means_buying_any_item">
             @foreach (var item in tab.TradeShopItems?.OrderBy(d => d.SortOrder).ToArray() ?? Array.Empty<TradeShopItem>())
             {
                 <MudSelectItem T="UserItem" Value="item.GiveItem">@($"{ItemUtil.GetItemName(item.GiveItem)}×{item.GiveItem.ItemCount}")</MudSelectItem>
             }
         </MudSelect>
         <MudSlider Min="0" Max="100" Step="10" @bind-Value="_selectedAutoBuyDiscount">@($"{ResourceStrings.DiscountPercentageforProducts} {_selectedAutoBuyDiscount}{Masters.TextResourceTable.Get("[ShopDiscountLabel]")}")</MudSlider>
-        <MudSelect Label="@ResourceStrings.ConsumeItem" T="UserItem" @bind-Value="_selectedConsumeItem" Comparer="@(new UserItemComparer())" Clearable="true" HelperText="@ResourceStrings.No_setting_means_using_any_item_for_purchase">
+        <MudSelect Label="@ResourceStrings.ConsumeItem" T="UserItem" @bind-Value="_selectedConsumeItem" Comparer="@(new UserItemComparer())" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="@ResourceStrings.No_setting_means_using_any_item_for_purchase">
             @foreach (var item in _consumableItems)
             {
                 <MudSelectItem T="UserItem" Value="item">@($"{ItemUtil.GetItemName(item)}")</MudSelectItem>
             }
         </MudSelect>
-        <MudTextField Label="@ResourceStrings.Amount_consumed" Variant="Variant.Text" T="long" @bind-Value="_selectedConsumeCount" AutoFocus="true" HelperText="@ResourceStrings.Set_to_0_for_any_amount"></MudTextField>
+        <MudTextField Label="@ResourceStrings.Amount_consumed" Variant="Variant.Outlined" Margin="Margin.Dense" T="long" @bind-Value="_selectedConsumeCount" AutoFocus="true" HelperText="@ResourceStrings.Set_to_0_for_any_amount"></MudTextField>
+        </div>
     </DialogContent>
     <DialogActions>
         <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="ConfirmAutoBuy">@ResourceStrings.AutoBuy</MudButton>
     </DialogActions>
 </MudDialog>
+</section>
 
 @code {
 
@@ -232,32 +232,28 @@
         }
     }
 
+    private long GetBuyMaxCount(TradeShopItem item)
+    {
+        long count = item.LimitTradeCount == 0 ? int.MaxValue : Math.Max(0, item.LimitTradeCount - item.TradeCount);
+        if (item.ConsumeItem1 != null)
+            count = Math.Min(count, Funcs.UserSyncData.GetUserItemCount(item.ConsumeItem1.ItemType, item.ConsumeItem1.ItemId, true) / item.ConsumeItem1.ItemCount);
+        if (item.ConsumeItem2 != null)
+            count = Math.Min(count, Funcs.UserSyncData.GetUserItemCount(item.ConsumeItem2.ItemType, item.ConsumeItem2.ItemId, true) / item.ConsumeItem2.ItemCount);
+        return count;
+    }
+
     private void BuyItem(TradeShopTabInfo tab, TradeShopItem tradeShopItem)
     {
-        var itemCount = 0L;
-        var buyMaxCount = 0L;
-        if (tradeShopItem.ConsumeItem1 != null)
-        {
-            itemCount = Funcs!.UserSyncData.GetUserItemCount(tradeShopItem.ConsumeItem1.ItemType, tradeShopItem.ConsumeItem1.ItemId, true);
-            buyMaxCount = itemCount / tradeShopItem.ConsumeItem1.ItemCount;
-        }
-        if (tradeShopItem.ConsumeItem2 != null)
-        {
-            itemCount = Funcs.UserSyncData.GetUserItemCount(tradeShopItem.ConsumeItem2.ItemType, tradeShopItem.ConsumeItem2.ItemId, true);
-            buyMaxCount = Math.Min(buyMaxCount, itemCount / tradeShopItem.ConsumeItem2.ItemCount);
-        }
-
-        var availableCount = tradeShopItem.LimitTradeCount == 0 ? int.MaxValue : tradeShopItem.LimitTradeCount - tradeShopItem.TradeCount;
-        buyMaxCount = Math.Min(buyMaxCount, availableCount);
-
+        var funcs = Funcs;
+        var token = CreateAccountCancellation();
         var dialogParameters = new DialogParameters<UseItemDialog>();
-        dialogParameters.Add(d => d.Count, buyMaxCount);
+        dialogParameters.Add(d => d.Count, GetBuyMaxCount(tradeShopItem));
         dialogParameters.Add(d => d.Name, GetItemName(tradeShopItem.GiveItem).name);
         dialogParameters.Add(d => d.ButtonText, Masters.TextResourceTable.Get("[ExchangeCommonPurchaseButtonLabel]"));
         dialogParameters.Add(d => d.UseItemFunc, async count =>
         {
-            var response = await Funcs.GetResponse<BuyItemRequest, BuyItemResponse>(
-                new BuyItemRequest {TradeShopTabId = tab.TradeShopTabId, TradeShopItemInfos = new List<TradeShopItemInfo> {new() {TradeShopItemId = tradeShopItem.TradeShopItemId, TradeCount = (int) count}}});
+            var response = await funcs.GetResponse<BuyItemRequest, BuyItemResponse>(
+                new BuyItemRequest {TradeShopTabId = tab.TradeShopTabId, TradeShopItemInfos = new List<TradeShopItemInfo> {new() {TradeShopItemId = tradeShopItem.TradeShopItemId, TradeCount = (int) count}}}, token);
             return response.TradeShopItems.Select(d => d.GiveItem).Cast<IUserItem>().ToList();
         });
 

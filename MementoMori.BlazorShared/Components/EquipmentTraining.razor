@@ -8,50 +8,58 @@
 
 @inherits AccountComponent
 
-<MudPaper Elevation="0" Class="pa-2">
-    <MudSelect Dense="true" Variant="Variant.Outlined" Label="@Tr("[CommonFooterCharacterButtonLabel]")" T="CharacterInfo" Value="_selectedCharacterGuid" ValueChanged="SelectedCharacterChanged">
-        @foreach (var info in _characterGuids)
-        {
-            <MudSelectItem T="CharacterInfo" Value="info">
-                @info.Name lv @info.Lv
-            </MudSelectItem>
-        }
-    </MudSelect>
-    <MudSelect T="string" Label="@TextResourceTable.Get("[CommonEquipmentLabel]")" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" @bind-Value="@Funcs.TrainingEquipmentGuid" Dense="true">
-        @foreach (var e in _characterEquipments)
-        {
-            <MudSelectItem T="string" Value="e.EquipmentGuid">
-                <MudStack Spacing="0">
-                    <MudText Typo="Typo.subtitle2">@($"{e.CharacterName} {e.EquipmentName}/{e.UserEquipmentDtoInfo.ReinforcementLv}")</MudText>
-                    <div>
-                        @foreach (var item in Enum.GetValues<BaseParameterType>())
-                        {
-                            <MudText Inline="true" Typo="Typo.caption">
-                                @($"{TextResourceTable.Get(item)}{e.UserEquipmentDtoInfo.GetAdditionalParameter(item)}")
-                            </MudText>
-                        }
-                    </div>
-                </MudStack>
-            </MudSelectItem>
-        }
-    </MudSelect>
-    <MudSelect Dense="true" T="BaseParameterType" @bind-Value="@Funcs.EquipmentTrainingTargetType" Label="@TextResourceTable.Get("[CommonBaseParameterLabel]")" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
-        @foreach (var item in Enum.GetValues<BaseParameterType>())
-        {
-            <MudSelectItem T="BaseParameterType" Value="@item">
-                @TextResourceTable.Get(item)
-            </MudSelectItem>
-        }
-    </MudSelect>
-    @{
-        var characterEquipment = _characterEquipments.FirstOrDefault(d => d.EquipmentGuid == Funcs.TrainingEquipmentGuid);
-        var equipmentMb = EquipmentTable.GetById(characterEquipment?.UserEquipmentDtoInfo.EquipmentId ?? 0);
-    }
-    <MudSlider T="double" Min="0d" Max="0.6d" @bind-Value="@Funcs.EquipmentTrainingTargetPercent" Step="0.01">
-        @(((equipmentMb?.AdditionalParameterTotal ?? 0) * Funcs.EquipmentTrainingTargetPercent).ToString("F0")) (@Funcs.EquipmentTrainingTargetPercent.ToString("P0"))
-    </MudSlider>
-    <MudButton Variant="Variant.Filled" Disabled="@(Funcs.IsQuickActionExecuting || string.IsNullOrEmpty(Funcs.TrainingEquipmentGuid))" @onclick="@Funcs.AutoEquipmentTraning">@TextResourceTable.Get("[CommonForgedLabel]")</MudButton>
-</MudPaper>
+<div class="equipment-training">
+    <div class="training-fields">
+        <div class="training-selection">
+            <MudSelect Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined" Label="@Tr("[CommonFooterCharacterButtonLabel]")" T="CharacterInfo" Value="_selectedCharacterGuid" ValueChanged="SelectedCharacterChanged" PopoverClass="training-equipment-popover">
+                @foreach (var info in _characterGuids)
+                {
+                    <MudSelectItem T="CharacterInfo" Value="info">
+                        @info.Name lv @info.Lv
+                    </MudSelectItem>
+                }
+            </MudSelect>
+            <MudSelect T="string" Label="@TextResourceTable.Get("[CommonEquipmentLabel]")" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" @bind-Value="@Funcs.TrainingEquipmentGuid" Dense="true" Margin="Margin.Dense" PopoverClass="training-equipment-popover">
+                @foreach (var e in _characterEquipments)
+                {
+                    <MudSelectItem T="string" Value="e.EquipmentGuid">
+                        <div class="training-equipment-option">
+                            <span class="training-equipment-name" title="@($"{e.CharacterName} {e.EquipmentName}/{e.UserEquipmentDtoInfo.ReinforcementLv}")"><span class="training-equipment-character">@e.CharacterName </span>@($"{e.EquipmentName}/{e.UserEquipmentDtoInfo.ReinforcementLv}")</span>
+                            <div class="training-equipment-stats">
+                                @foreach (var item in Enum.GetValues<BaseParameterType>())
+                                {
+                                    <span class="training-equipment-stat">
+                                        <span>@TextResourceTable.Get(item)</span><strong>@e.UserEquipmentDtoInfo.GetAdditionalParameter(item)</strong>
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    </MudSelectItem>
+                }
+            </MudSelect>
+        </div>
+        <div class="training-target">
+            <MudSelect Dense="true" Margin="Margin.Dense" T="BaseParameterType" @bind-Value="@Funcs.EquipmentTrainingTargetType" Label="@TextResourceTable.Get("[CommonBaseParameterLabel]")" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
+                @foreach (var item in Enum.GetValues<BaseParameterType>())
+                {
+                    <MudSelectItem T="BaseParameterType" Value="@item">
+                        @TextResourceTable.Get(item)
+                    </MudSelectItem>
+                }
+            </MudSelect>
+            @{
+                var characterEquipment = _characterEquipments.FirstOrDefault(d => d.EquipmentGuid == Funcs.TrainingEquipmentGuid);
+                var equipmentMb = EquipmentTable.GetById(characterEquipment?.UserEquipmentDtoInfo.EquipmentId ?? 0);
+            }
+            <MudSlider T="double" Min="0d" Max="0.6d" @bind-Value="@Funcs.EquipmentTrainingTargetPercent" Step="0.01">
+                <span class="training-target-value">@(((equipmentMb?.AdditionalParameterTotal ?? 0) * Funcs.EquipmentTrainingTargetPercent).ToString("F0")) (@Funcs.EquipmentTrainingTargetPercent.ToString("P0"))</span>
+            </MudSlider>
+        </div>
+    </div>
+    <div class="training-actions">
+        <MudButton Variant="Variant.Filled" Disabled="@(Funcs.IsQuickActionExecuting || string.IsNullOrEmpty(Funcs.TrainingEquipmentGuid))" @onclick="@Funcs.AutoEquipmentTraning">@TextResourceTable.Get("[CommonForgedLabel]")</MudButton>
+    </div>
+</div>
 
 @code {
     private List<CharacterEquipment> _characterEquipments = new();

@@ -13,15 +13,15 @@
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText>@Masters.TextResourceTable.Get("[FriendTabFriend]") (@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name))</MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Group" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[FriendTabFriend]") <span class="panel-scope">(@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name))</span></span></MudText>
         </CardHeaderContent>
         <CardHeaderActions>
-            <MudIconButton Icon="@Icons.Material.Filled.Save" Variant="Variant.Outlined" OnClick="SaveFriendManageConfig"></MudIconButton>
+            <MudButton Class="setting-save-button" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Save" OnClick="SaveFriendManageConfig">@Masters.TextResourceTable.Get("[CommonSaveLabel]")</MudButton>
         </CardHeaderActions>
     </MudCardHeader>
-    <MudCardContent>
-        <MudSwitch T="bool" Label="@ResourceStrings.Remove_friends_inactive_for_7_days" Value="_autoRemoveFriend" ValueChanged="autoDeleteChanged" Color="Color.Primary"></MudSwitch>
-        <MudSelect Label="@ResourceStrings.Auto_remove_whitelist" MultiSelection="true" T="FriendInfo" @bind-SelectedValues="_friendWhiteList" MultiSelectionTextFunc="list => string.Format(ResourceStrings.SelectedXItems, list.Count)">
+    <MudCardContent Class="settings-form">
+        <MudSwitch T="bool" Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@ResourceStrings.Remove_friends_inactive_for_7_days" Value="_autoRemoveFriend" ValueChanged="autoDeleteChanged" Color="Color.Primary"></MudSwitch>
+        <MudSelect Label="@ResourceStrings.Auto_remove_whitelist" MultiSelection="true" T="FriendInfo" Disabled="@(!_autoRemoveFriend || _friendList.Count == 0)" @bind-SelectedValues="_friendWhiteList" MultiSelectionTextFunc="list => string.Format(ResourceStrings.SelectedXItems, list.Count)" Variant="Variant.Outlined" Margin="Margin.Dense">
             @foreach (var friend in _friendList)
             {
                 <MudSelectItem Value="friend">
@@ -29,8 +29,8 @@
                 </MudSelectItem>
             }
         </MudSelect>
-        <MudSwitch T="bool" Label="@ResourceStrings.Auto_accept_friend_requests" @bind-Value="_autoAcceptNewFriend" Color="Color.Primary"></MudSwitch>
-        <MudSwitch T="bool" Label="@ResourceStrings.Auto_send_friend_requests" @bind-Value="_autoApplyFriend" Color="Color.Primary"></MudSwitch>
+        <MudSwitch T="bool" Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@ResourceStrings.Auto_accept_friend_requests" @bind-Value="_autoAcceptNewFriend" Color="Color.Primary"></MudSwitch>
+        <MudSwitch T="bool" Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@ResourceStrings.Auto_send_friend_requests" @bind-Value="_autoApplyFriend" Color="Color.Primary"></MudSwitch>
     </MudCardContent>
 </MudCard>
 

@@ -19,21 +19,21 @@ const assert = require('node:assert/strict');
         assert(await page.locator('.app-content .mud-card').count(), 'Home data is missing');
         const go = async (path, selector) => {
             const start = Date.now();
-            const previous = await page.locator('.app-content > :first-child').elementHandle();
             await page.locator(`.app-nav a[href$="${path}" i]`).click();
-            await page.waitForFunction(element => !element.isConnected, previous);
-            await previous.dispose();
+            await page.waitForURL(`**/${path}`);
             await page.waitForSelector(selector);
-            assert.equal(await page.locator('.app-content .mud-alert-error').count(), 0, `${path} failed to load`);
+            assert.equal(await page.locator('.app-content .mud-alert-text-error').count(), 0, `${path} failed to load`);
             result[path] = { readyMs: Date.now() - start };
         };
-        await go('Character', '.app-content .character-icon');
-        const icons = page.locator('.app-content .character-icon');
+        await go('Character', '.app-content .character-choice');
+        const icons = page.locator('.app-content .character-choice');
         result.Character.characters = await icons.count();
         for (let index = 0; index < Math.min(3, await icons.count()); index++) {
+            const name = await icons.nth(index).getAttribute('aria-label');
             await icons.nth(index).click();
-            await page.waitForTimeout(60);
-            assert(await page.locator('.app-content .mud-field').count(), 'Character details disappeared');
+            await page.waitForFunction(i => document.querySelectorAll('.character-choice')[i]?.getAttribute('aria-pressed') === 'true', index);
+            assert.equal(await page.locator('.character-selected-name').innerText(), name, 'Character selection did not update the details');
+            assert(await page.locator('.character-stat dd').count(), 'Character values disappeared');
         }
 
         for (const path of ['Items', 'Shop']) {
@@ -44,6 +44,36 @@ const assert = require('node:assert/strict');
             for (let index = 0; index < result[path].tabs; index++) {
                 await tabs.nth(index).click();
                 await page.waitForFunction(i => document.querySelectorAll('.app-content .mud-tab')[i]?.classList.contains('mud-tab-active'), index);
+                if (path === 'Shop' && !result.Shop.quantityDialog) {
+                    const free = page.locator('.shop-buy-button:not(:disabled)').filter({ hasText: /^FREE$/ }).first();
+                    const buy = await free.count() ? free : page.locator('.shop-buy-button:not(:disabled)').first();
+                    if (await buy.count()) {
+                        await buy.click();
+                        const input = page.locator('.use-item-count input');
+                        await input.waitFor();
+                        const maximum = Number(await input.getAttribute('max'));
+                        const submit = page.locator('.use-item-actions .mud-button-filled');
+                        assert(maximum >= 1 && !(await submit.isDisabled()), 'A purchasable item has no valid quantity');
+                        for (const value of ['0', String(maximum + 1), '']) {
+                            await input.fill(value);
+                            await input.press('Tab');
+                            await page.waitForFunction(max => {
+                                const field = document.querySelector('.use-item-count input');
+                                const button = document.querySelector('.use-item-actions .mud-button-filled');
+                                const count = Number(field?.value.replaceAll(',', ''));
+                                return button?.disabled || (count >= 1 && count <= max);
+                            }, maximum);
+                            const parsed = Number((await input.inputValue()).replaceAll(',', ''));
+                            assert(await submit.isDisabled() || (parsed >= 1 && parsed <= maximum), 'Invalid quantity can be submitted');
+                        }
+                        await input.fill('1');
+                        await input.press('Tab');
+                        await page.locator('.use-item-actions .mud-button-outlined').click();
+                        await page.waitForSelector('.use-item-dialog', { state: 'detached' });
+                        result.Shop.quantityDialog = true;
+                        result.Shop.freeQuantityChecked = await free.count() > 0;
+                    }
+                }
             }
             if (path === 'Items') {
                 await tabs.first().click();
@@ -55,20 +85,29 @@ const assert = require('node:assert/strict');
             }
         }
 
-        await go('Gacha', '.app-content .mud-card');
+        await go('Gacha', '.gacha-page .gacha-card');
         result.Gacha.cases = await page.locator('.app-content .mud-card').count();
         await page.locator('.app-content .mud-card-header button').first().click();
-        await page.waitForSelector('.mud-dialog');
-        assert(await page.locator('.mud-dialog tbody tr').count(), 'Draw details are empty');
-        await page.locator('.mud-dialog .mud-button-close').click();
-        await page.waitForSelector('.mud-dialog', { state: 'detached' });
+        await page.waitForSelector('.mud-dialog, .gacha-page .mud-alert-text-warning');
+        if (await page.locator('.mud-dialog').count()) {
+            assert(await page.locator('.mud-dialog tbody tr').count(), 'Draw details are empty');
+            await page.locator('.mud-dialog .mud-button-close').click();
+            await page.waitForSelector('.mud-dialog', { state: 'detached' });
+            result.Gacha.detailsCached = true;
+        } else {
+            const preview = await page.request.get(`${base}/__preview`);
+            assert(preview.ok() && (await preview.json()).mode === 'account-snapshot', 'Draw details failed to open');
+            assert((await page.locator('.gacha-page .mud-alert-text-warning').innerText()).includes('预览'), 'Unexpected draw-details error');
+            assert.equal(await page.locator('.gacha-page .gacha-card').count(), result.Gacha.cases, 'Failed details removed the draw cards');
+            result.Gacha.detailsCached = false;
+        }
 
         await go('Battlelog', '#log_viewer');
         await go('Chat', '.chat-channels');
-        await go('Settings', '.app-content .mud-card');
+        await go('Settings', '.app-content .account-row');
         result.Settings.cards = await page.locator('.app-content .mud-card').count();
         await page.setViewportSize({ width: 390, height: 844 });
-        await page.waitForFunction(() => document.documentElement.scrollWidth <= innerWidth);
+        await page.waitForFunction(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) <= innerWidth);
         assert.deepEqual(errors, []);
         assert.deepEqual(failed, []);
         console.log(JSON.stringify({ pages: result, errors, failed }, null, 2));

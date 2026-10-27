@@ -13,25 +13,24 @@
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText>@Masters.TextResourceTable.Get("[CommonHeaderBountyQuestLabel]") (Global)</MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Explore" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[CommonHeaderBountyQuestLabel]") <span class="panel-scope">(Global)</span></span></MudText>
         </CardHeaderContent>
         <CardHeaderActions>
-            <MudIconButton Variant="Variant.Outlined" Size="Size.Small" Icon="@Icons.Material.Filled.Save" OnClick="() => SavePlayerSetting()"></MudIconButton>
+            <MudButton Class="setting-save-button" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Save" OnClick="() => SavePlayerSetting()">@Masters.TextResourceTable.Get("[CommonSaveLabel]")</MudButton>
         </CardHeaderActions>
     </MudCardHeader>
-    <MudCardContent>
-        <MudField Label="@ResourceStrings.BountyQuestTargetItems" Variant="Variant.Outlined">
-            <MudSelect T="UserItem" Label="" MultiSelection="true" Dense="true" Comparer="@(new UserItemComparer())"
-                       @bind-SelectedValues="BountyQuestAutoTargetItems" MultiSelectionTextFunc="list => string.Format(ResourceStrings.SelectedXItems, list.Count)">
-                @foreach (var item in _bountyQuestRewardItems)
-                {
-                    <MudSelectItem T="UserItem" Value="@item">@ItemUtil.GetItemName(item)</MudSelectItem>
-                }
-            </MudSelect>
-        </MudField>
-        <MudField Label="@($"{ResourceStrings.Auto_refresh_diamonds} ({Funcs?.UserSyncData?.UserStatusDtoInfo?.Name})")" Variant="Variant.Outlined">
-            <MudNumericField T="int" Label="@ResourceStrings.Max_refresh_count" HelperText="@ResourceStrings.Enter_0_to_disable_auto_refresh_" @bind-Value="_autoRefreshMaxCount"></MudNumericField>
-        </MudField>
+    <MudCardContent Class="settings-form">
+        <MudSelect T="UserItem" Label="@ResourceStrings.BountyQuestTargetItems" MultiSelection="true" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense" Comparer="@(new UserItemComparer())"
+                   @bind-SelectedValues="BountyQuestAutoTargetItems" MultiSelectionTextFunc="list => string.Format(ResourceStrings.SelectedXItems, list.Count)">
+            @foreach (var item in _bountyQuestRewardItems)
+            {
+                <MudSelectItem T="UserItem" Value="@item">@ItemUtil.GetItemName(item)</MudSelectItem>
+            }
+        </MudSelect>
+        <div class="setting-section">
+            <MudText Class="setting-field-label">@($"{ResourceStrings.Auto_refresh_diamonds} ({Funcs?.UserSyncData?.UserStatusDtoInfo?.Name})")</MudText>
+            <MudNumericField T="int" Label="@ResourceStrings.Max_refresh_count" HelperText="@ResourceStrings.Enter_0_to_disable_auto_refresh_" @bind-Value="_autoRefreshMaxCount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+        </div>
     </MudCardContent>
 </MudCard>
 

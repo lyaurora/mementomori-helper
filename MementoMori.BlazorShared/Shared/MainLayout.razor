@@ -28,14 +28,14 @@
             aria-label="展开或收起导航"
             @onclick="e => DrawerToggle()">
         </MudIconButton>
-        <MudSelect T="long" Label="@ResourceStrings.SwitchAccount" Variant="Variant.Text" Dense="true" Class="app-account-select" @bind-Value="AccountSelection.CurrentUserId">
+        <MudSelect T="long" Label="@ResourceStrings.SwitchAccount" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" Class="app-account-select" @bind-Value="AccountSelection.CurrentUserId">
             @foreach (var account in AuthOption.Value.Accounts)
             {
                 <MudSelectItem T="long" Value="account.UserId">@account.Name</MudSelectItem>
             }
         </MudSelect>
         <MudSpacer />
-        <MudSelect T="CultureInfo" Label="Select Language" Variant="Variant.Text" Dense="true" Class="app-language-select" @bind-Value="SelectedLanguage">
+        <MudSelect T="CultureInfo" Label="Select Language" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" Class="app-language-select" @bind-Value="SelectedLanguage">
             <MudSelectItem Value="@(new CultureInfo("en-US"))"></MudSelectItem>
             <MudSelectItem Value="@(new CultureInfo("zh-CN"))"></MudSelectItem>
             <MudSelectItem Value="@(new CultureInfo("ja-JP"))"></MudSelectItem>
@@ -75,53 +75,87 @@
     string ThemeIcon => _themeMode switch { "light" => Icons.Material.Filled.LightMode, "dark" => Icons.Material.Filled.DarkMode, _ => Icons.Material.Filled.BrightnessAuto };
     static readonly MudTheme _theme = new()
     {
-        LayoutProperties = new() { DefaultBorderRadius = "10px" },
+        LayoutProperties = new() { DefaultBorderRadius = "12px" },
+        Typography = new()
+        {
+            Default = new() { FontFamily = ["system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "PingFang SC", "Microsoft YaHei UI", "Microsoft JhengHei", "Noto Sans CJK SC", "Noto Sans CJK TC", "WenQuanYi Zen Hei", "sans-serif"], FontSize = ".875rem", LineHeight = 1.6, LetterSpacing = "0" },
+            Body1 = new() { FontSize = ".875rem", LineHeight = 1.6, LetterSpacing = "0" },
+            Body2 = new() { FontSize = ".8125rem", LineHeight = 1.6, LetterSpacing = "0" },
+            Subtitle1 = new() { FontSize = ".875rem", LineHeight = 1.6, LetterSpacing = "0" },
+            Subtitle2 = new() { FontSize = ".8125rem", FontWeight = 600, LineHeight = 1.6, LetterSpacing = "0" },
+            H5 = new() { FontSize = "1.25rem", FontWeight = 600, LineHeight = 1.5, LetterSpacing = "0" },
+            H6 = new() { FontSize = "1.125rem", FontWeight = 600, LineHeight = 1.5, LetterSpacing = "0" },
+            Button = new() { FontSize = ".875rem", FontWeight = 500, LineHeight = 1.5, LetterSpacing = "0", TextTransform = "none" },
+            Input = new() { FontSize = ".875rem", LineHeight = 1.5, LetterSpacing = "0" },
+            Caption = new() { FontSize = ".75rem", LineHeight = 1.6, LetterSpacing = "0" }
+        },
         PaletteLight = new()
         {
-            Primary = "#6754A6",
-            Background = "#F5F6FA",
-            BackgroundGray = "#F0F2F7",
+            Primary = "#363636",
+            PrimaryContrastText = "#FFFFFF",
+            Secondary = "#616161",
+            Info = "#526874",
+            Success = "#397257",
+            Warning = "#8A641F",
+            Error = "#AD4B43",
+            Background = "#F5F5F5",
+            BackgroundGray = "#F7F7F7",
+            Surface = "#FFFFFF",
             AppbarBackground = "#FFFFFF",
-            AppbarText = "#303643",
-            LinesDefault = "#E0E4EC",
-            TableLines = "#E0E4EC",
-            Divider = "#E0E4EC"
+            AppbarText = "#242424",
+            DrawerBackground = "#FFFFFF",
+            DrawerText = "#454545",
+            DrawerIcon = "#777777",
+            TextPrimary = "#242424",
+            TextSecondary = "#686868",
+            TextDisabled = "#929292",
+            ActionDefault = "#696969",
+            ActionDisabled = "#A0A0A0",
+            ActionDisabledBackground = "#EFEFEF",
+            LinesDefault = "#E4E4E4",
+            LinesInputs = "#919191",
+            TableLines = "#EAEAEA",
+            TableStriped = "#FAFAFA",
+            TableHover = "#F1F1F1",
+            Divider = "#E4E4E4",
+            DividerLight = "#EFEFEF",
+            HoverOpacity = .07
         },
         PaletteDark = new()
         {
-            Primary = "#B9ADF3",
-            PrimaryContrastText = "#201A38",
-            Secondary = "#E9ADC1",
-            SecondaryContrastText = "#2E1925",
-            Info = "#91C9F4",
-            InfoContrastText = "#152736",
-            Success = "#93CFAC",
-            SuccessContrastText = "#182B20",
-            Warning = "#EAC18A",
-            WarningContrastText = "#332619",
-            Error = "#E6A0A7",
-            ErrorContrastText = "#331C23",
-            Background = "#15171C",
-            BackgroundGray = "#1C2028",
-            Surface = "#22262F",
-            AppbarBackground = "#191C23",
-            AppbarText = "#E6EAF2",
-            DrawerBackground = "#191C23",
-            DrawerText = "#D4D8E3",
-            DrawerIcon = "#A4ADBF",
-            TextPrimary = "#E6EAF2",
-            TextSecondary = "#B1BACB",
-            TextDisabled = "#788294",
-            ActionDefault = "#C4CBD8",
-            ActionDisabled = "#788294",
-            ActionDisabledBackground = "#2C313C",
-            LinesDefault = "#343B48",
-            LinesInputs = "#697489",
-            TableLines = "#343B48",
-            TableStriped = "#262B36",
-            TableHover = "#303747",
-            Divider = "#343B48",
-            DividerLight = "#2C313C",
+            Primary = "#E3E3E3",
+            PrimaryContrastText = "#1A1A1A",
+            Secondary = "#B8B8B8",
+            SecondaryContrastText = "#1A1A1A",
+            Info = "#B0C4CC",
+            InfoContrastText = "#192629",
+            Success = "#99C8AC",
+            SuccessContrastText = "#1C2A21",
+            Warning = "#D6BC87",
+            WarningContrastText = "#2E271A",
+            Error = "#E2A39C",
+            ErrorContrastText = "#301C1A",
+            Background = "#161616",
+            BackgroundGray = "#252525",
+            Surface = "#212121",
+            AppbarBackground = "#1C1C1C",
+            AppbarText = "#ECECEC",
+            DrawerBackground = "#1C1C1C",
+            DrawerText = "#D4D4D4",
+            DrawerIcon = "#A4A4A4",
+            TextPrimary = "#ECECEC",
+            TextSecondary = "#B6B6B6",
+            TextDisabled = "#838383",
+            ActionDefault = "#C4C4C4",
+            ActionDisabled = "#838383",
+            ActionDisabledBackground = "#333333",
+            LinesDefault = "#3D3D3D",
+            LinesInputs = "#7F7F7F",
+            TableLines = "#373737",
+            TableStriped = "#272727",
+            TableHover = "#333333",
+            Divider = "#3D3D3D",
+            DividerLight = "#303030",
             HoverOpacity = .1
         }
     };
@@ -130,6 +164,7 @@
     {
         PaletteDark = _theme.PaletteDark,
         LayoutProperties = _theme.LayoutProperties,
+        Typography = _theme.Typography,
         PseudoCss = new() { Scope = ":root[data-theme=\"dark\"]" }
     };
 

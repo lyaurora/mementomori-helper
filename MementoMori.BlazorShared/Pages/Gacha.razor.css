@@ -1,0 +1,20 @@
+.gacha-page { min-width: 0; }
+.gacha-page ::deep .mud-grid-item { min-width: 0; }
+.gacha-page ::deep .gacha-card { display: flex; flex-direction: column; height: 100%; }
+.gacha-page ::deep .gacha-card-header { align-items: flex-start; gap: .5rem; border-bottom: 0; padding-bottom: .55rem; }
+.gacha-page ::deep .gacha-card-header .mud-card-header-content { min-width: 0; }
+.gacha-page ::deep .gacha-card-header .mud-card-header-actions { margin: 0; flex-shrink: 0; }
+.gacha-page ::deep .gacha-card-header .gacha-card-title { font-size: 1.0625rem; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
+.gacha-page ::deep .gacha-card-header .gacha-card-description { margin-top: .35rem; color: var(--mud-palette-text-secondary); font-size: .8125rem; font-weight: 400; line-height: 1.65; white-space: pre-line; overflow-wrap: anywhere; }
+.gacha-page ::deep .gacha-card-content { flex: 1; padding: .35rem 1rem .85rem; }
+.gacha-possession { min-width: 0; }
+.gacha-possession-label { display: block; margin-bottom: .3rem; color: var(--mud-palette-text-secondary); font-size: .75rem; line-height: 1.5; }
+.gacha-balance-row { display: flex; align-items: baseline; justify-content: space-between; gap: .65rem; font-size: .8125rem; line-height: 1.65; }
+.gacha-balance-row > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.gacha-balance-count { flex-shrink: 0; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.gacha-page ::deep .gacha-card-actions { align-items: stretch; gap: .5rem; padding: .75rem 1rem 1rem; border-top: 1px solid var(--mud-palette-lines-default); }
+.gacha-page ::deep .gacha-draw-button { flex: 1; min-width: 0; max-width: 100%; padding: .55rem .5rem; }
+.gacha-page ::deep .gacha-draw-button .mud-button-label { display: flex; flex-direction: column; gap: .1rem; }
+.gacha-page ::deep .gacha-card-actions .gacha-draw-button:disabled { color: var(--mud-palette-text-secondary) !important; background: var(--mud-palette-background-gray); }
+.gacha-cost-name { font-size: .75rem; line-height: 1.45; white-space: normal; overflow-wrap: anywhere; }
+.gacha-cost-count { font-size: 1rem; font-weight: 600; line-height: 1.5; font-variant-numeric: tabular-nums; white-space: nowrap; }

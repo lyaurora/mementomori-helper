@@ -1,0 +1,129 @@
+.equipment-info {
+    display: grid;
+    gap: .75rem;
+    min-width: 0;
+    padding-top: .75rem;
+}
+
+.equipment-section {
+    min-width: 0;
+    padding: .8rem .9rem;
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: .7rem;
+    background: var(--mud-palette-surface);
+}
+
+.equipment-section-title {
+    margin: 0 0 .6rem;
+    color: var(--mud-palette-text-secondary);
+    font-size: .78rem;
+    font-weight: 600;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.equipment-name {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .35rem .75rem;
+    font-size: .9rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.equipment-name strong {
+    flex-basis: 100%;
+    font-size: 1rem;
+}
+
+.equipment-number,
+.equipment-stat dd,
+.equipment-effect strong {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.equipment-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .65rem 1rem;
+    margin: 0;
+}
+
+.equipment-stat {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-width: 0;
+}
+
+.equipment-stat dt,
+.equipment-effect dt {
+    margin-bottom: .25rem;
+    color: var(--mud-palette-text-secondary);
+    font-size: .76rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.equipment-stat dd,
+.equipment-effect dd {
+    margin: 0;
+    font-size: .88rem;
+    line-height: 1.6;
+}
+
+.equipment-stat dd {
+    font-weight: 550;
+}
+
+.equipment-effect-list {
+    display: grid;
+    gap: .6rem;
+    margin: 0;
+}
+
+.equipment-effect + .equipment-effect {
+    padding-top: .6rem;
+    border-top: 1px solid var(--mud-palette-lines-default);
+}
+
+.equipment-effect dd {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: .2rem .65rem;
+    overflow-wrap: anywhere;
+}
+
+.equipment-effect strong {
+    font-weight: 600;
+}
+
+.equipment-effect[aria-disabled="true"],
+.equipment-effect[aria-disabled="true"] dt {
+    color: var(--mud-palette-text-disabled);
+}
+
+.equipment-effect .equipment-description {
+    display: block;
+    line-height: 1.7;
+    white-space: pre-line;
+}
+
+.equipment-spheres {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+    overflow: hidden;
+}
+
+.equipment-info-compact {
+    gap: .4rem;
+    padding-top: 0;
+}
+
+.equipment-info-compact .equipment-section {
+    padding: .55rem .65rem;
+}

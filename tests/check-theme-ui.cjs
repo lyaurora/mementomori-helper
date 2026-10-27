@@ -108,7 +108,7 @@ const assert = require('node:assert/strict');
         await page.waitForTimeout(200);
         const header = await page.locator('.app-header').boundingBox();
         assert(header.x >= 0 && header.x + header.width <= 391, 'Theme controls overflow on mobile');
-        assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'Settings overflow on mobile');
+        assert(await page.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) <= innerWidth), 'Settings overflow on mobile');
         await choose(page, '深色');
         await checkScheme(page, 'dark');
 

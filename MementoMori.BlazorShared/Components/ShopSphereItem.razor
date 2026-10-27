@@ -1,4 +1,4 @@
-﻿@inject AccountSelection AccountSelection
+﻿@inherits AccountComponent
 @using MementoMori.Funcs
 @using MementoMori.Ortega.Common.Utils
 @using MementoMori.Ortega.Custom
@@ -7,7 +7,6 @@
 @using MementoMori.Ortega.Share.Data.TradeShop
 @using MementoMori.Ortega.Share.Master.Data
 @inject IDialogService DialogService
-@inject AccountManager AccountManager
 <MudCard Elevation="2">
     <MudCardHeader>
         <CardHeaderContent>
@@ -19,7 +18,7 @@
             @Masters.TextResourceTable.Get("[EquipmentSphereSynthesisSphereLv]") @_buyLv
         </MudSlider>
         <MudSlider Min="1" Max="MaxBuyCount" ValueLabel="true" @bind-Value="_buyCount">
-            @_buyCount
+            @Masters.TextResourceTable.Get("[BulkBuyProductCartItemCountFormat]", _buyCount)
         </MudSlider>
     </MudCardContent>
     <MudCardActions>
@@ -108,26 +107,33 @@
         }
     }
 
-    protected override Task OnInitializedAsync()
+    protected override Task AccountChanged()
     {
-        ViewModel = AccountSelection.Current.Funcs;
+        ViewModel = Funcs;
         _itemName = Masters.TextResourceTable.Get(SphereMb.NameKey);
         return Task.CompletedTask;
     }
 
     private async Task BuySphere()
     {
-        if (await DialogService.ShowMessageBox(Masters.TextResourceTable.Get("[PurchaseConfirmationMessage]"), $"{Masters.TextResourceTable.Get("[ItemBoxTabConsumption]")} {ConsumeText}") == true)
+        var token = CreateAccountCancellation();
+        var funcs = ViewModel;
+        try
         {
-            var response = await ViewModel.GetResponse<BuyItemRequest, BuyItemResponse>(new BuyItemRequest
+            var request = new BuyItemRequest
             {
                 TradeShopTabId = Tab.TradeShopTabId,
                 TradeShopSphereId = Masters.SphereTable.GetByCategoryIdAndLevel(SphereMb.CategoryId, _buyLv).Id,
                 TradeSphereCount = _buyCount
-            });
+            };
+            if (await DialogService.ShowMessageBox(Masters.TextResourceTable.Get("[PurchaseConfirmationMessage]"), $"{Masters.TextResourceTable.Get("[ItemBoxTabConsumption]")} {ConsumeText}") != true) return;
+            await funcs.GetResponse<BuyItemRequest, BuyItemResponse>(request, token);
+            token.ThrowIfCancellationRequested();
             await DialogService.ShowMessageBox(Masters.TextResourceTable.Get("[PurchaseConfirmationTitle]"), Masters.TextResourceTable.Get("[ShopDialogResultSucceed]"));
             StateHasChanged();
         }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception e) { if (!token.IsCancellationRequested) await DialogService.ShowMessageBox("错误", e.Message); }
     }
 
 }

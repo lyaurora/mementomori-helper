@@ -9,33 +9,44 @@
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText>@Masters.TextResourceTable.Get("[CommonHeaderDungeonBattleLabel]") (Global)</MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Map" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[CommonHeaderDungeonBattleLabel]") <span class="panel-scope">(Global)</span></span></MudText>
         </CardHeaderContent>
     </MudCardHeader>
-    <MudCardContent>
-        <MudSwitch Label="@ResourceStrings.PreferTreasureChest" @bind-Value="DungeonBattlePreferTreasureChest" Color="Color.Primary"/>
-        <MudSwitch Label="@ResourceStrings.Auto_unequip_gear_during_events" @bind-Value="AutoRemoveEquipment" Color="Color.Primary"/>
-        <MudNumericField Label="@ResourceStrings.MaxUseRecoveryItem" @bind-Value="DungeonBattleMaxUseFruitOfHealing" Min="0" Max="99"/>
-        <MudField Label="@ResourceStrings.DungeonBattleTargetItems" Variant="Variant.Outlined">
-            @foreach (var item in DungeonBattleShopTargetItems)
-            {
-                var text = $"{ItemUtil.GetItemName(item.ItemType, item.ItemId)} {item.MinDiscountPercent}{Masters.TextResourceTable.Get("[ShopDiscountLabel]")}";
-                <MudChip T="string" OnClose="() => DungeonBattleRemoveItem(item)">@text</MudChip>
-            }
-        </MudField>
+    <MudCardContent Class="settings-form">
+        <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@ResourceStrings.PreferTreasureChest" @bind-Value="DungeonBattlePreferTreasureChest" Color="Color.Primary"/>
+        <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@ResourceStrings.Auto_unequip_gear_during_events" @bind-Value="AutoRemoveEquipment" Color="Color.Primary"/>
+        <MudNumericField Label="@ResourceStrings.MaxUseRecoveryItem" @bind-Value="DungeonBattleMaxUseFruitOfHealing" Min="0" Max="99" Variant="Variant.Outlined" Margin="Margin.Dense"/>
+        <div class="setting-section">
+            <MudText Class="setting-field-label">@ResourceStrings.DungeonBattleTargetItems</MudText>
+            <div class="setting-item-list">
+                @foreach (var item in DungeonBattleShopTargetItems)
+                {
+                    var text = $"{ItemUtil.GetItemName(item.ItemType, item.ItemId)} {item.MinDiscountPercent}{Masters.TextResourceTable.Get("[ShopDiscountLabel]")}";
+                    <div class="setting-item-row">
+                        <span class="setting-item-text">@text</span>
+                        <MudIconButton Class="setting-item-remove" Icon="@Icons.Material.Filled.Close" Size="Size.Small" aria-label="@($"{Masters.TextResourceTable.Get("[CommonCloseLabel]")}: {text}")" OnClick="() => DungeonBattleRemoveItem(item)" />
+                    </div>
+                }
+            </div>
+        </div>
         <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="ShowDungeonBattleSelectItemDialog">@ResourceStrings.Add</MudButton>
     </MudCardContent>
 </MudCard>
 
-<MudDialog @bind-Visible="_dungeonBattleSelectItemDialog" Options="@(new DialogOptions {CloseButton = true})">
+<MudDialog Class="app-form-dialog" @bind-Visible="_dungeonBattleSelectItemDialog" Options="@(new DialogOptions {CloseButton = true, FullWidth = true, MaxWidth = MaxWidth.Small})">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@ResourceStrings.DungeonBattleTargetItems</MudText>
+    </TitleContent>
     <DialogContent>
-        <MudSelect T="UserItem" @bind-Value="_dungeonBattleSelectedItem">
+        <div class="setting-dialog-fields">
+        <MudSelect T="UserItem" Label="@ResourceStrings.DungeonBattleTargetItems" @bind-Value="_dungeonBattleSelectedItem" Variant="Variant.Outlined" Margin="Margin.Dense">
             @foreach (var item in _dungeonBattleShopItems)
             {
                 <MudSelectItem T="UserItem" Value="item">@(ItemUtil.GetItemName(item))</MudSelectItem>
             }
         </MudSelect>
         <MudSlider Min="0" Max="100" Step="10" @bind-Value="_dungeonBattleSelectedDiscount">@($"{ResourceStrings.DiscountPercentageforProducts} {_dungeonBattleSelectedDiscount}{Masters.TextResourceTable.Get("[ShopDiscountLabel]")}")</MudSlider>
+        </div>
     </DialogContent>
     <DialogActions>
         <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="ConfirmDungeonBattleSelectItem">@Masters.TextResourceTable.Get("[CommonDecisionLabel]")</MudButton>

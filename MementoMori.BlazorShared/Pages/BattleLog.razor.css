@@ -1,0 +1,125 @@
+.battle-log-page {
+    min-width: 0;
+}
+
+.battle-log-page ::deep .battle-log-intro {
+    max-width: 65rem;
+    margin-bottom: 1rem;
+    line-height: 1.8;
+    overflow-wrap: anywhere;
+}
+
+.battle-log-controls {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: .75rem;
+    background: var(--mud-palette-surface);
+}
+
+.battle-log-cleanup {
+    display: grid;
+    grid-template-columns: minmax(0, 15rem) 2.5rem;
+    align-items: end;
+    gap: .65rem;
+    padding-bottom: 1rem;
+    margin-bottom: .75rem;
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+}
+
+.battle-log-page ::deep .battle-log-clean-range,
+.battle-log-page ::deep .battle-log-cleanup > .mud-select {
+    min-width: 0;
+}
+
+.battle-log-toolbar {
+    display: grid;
+    grid-template-columns: 2.5rem 2.5rem minmax(9rem, .4fr) minmax(15rem, 1fr);
+    align-items: end;
+    gap: .65rem;
+}
+
+.battle-log-page ::deep .battle-log-cleanup > .mud-icon-button,
+.battle-log-page ::deep .battle-log-toolbar > .mud-icon-button {
+    align-self: end;
+}
+
+.battle-log-page ::deep .battle-log-type,
+.battle-log-page ::deep .battle-log-file {
+    min-width: 0;
+}
+
+.battle-log-page ::deep .mud-input-control {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.battle-log-page ::deep .mud-input-control-input-container > .mud-popover-cascading-value {
+    display: none;
+}
+
+.battle-log-page ::deep .mud-input {
+    min-height: 2.5rem;
+}
+
+.battle-log-page ::deep .mud-input > .mud-input-root-outlined {
+    padding-top: .5rem;
+    padding-bottom: .5rem;
+    font-size: .875rem;
+    line-height: 1.5;
+}
+
+.battle-log-page ::deep .mud-input {
+    font-variant-numeric: tabular-nums;
+}
+
+.battle-log-page ::deep .battle-log-file .mud-input-root {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.55;
+}
+
+.battle-log-option { display: flex; flex-direction: column; gap: .2rem; min-width: 0; width: 100%; padding: .15rem 0; }
+.battle-log-option-heading { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; min-width: 0; line-height: 1.5; }
+.battle-log-option-name { min-width: 0; font-size: .875rem; font-weight: 500; overflow-wrap: anywhere; }
+.battle-log-option-result { flex-shrink: 0; font-size: .75rem; color: var(--mud-palette-text-secondary); }
+.battle-log-option-time { color: var(--mud-palette-text-secondary); font-size: .75rem; font-variant-numeric: tabular-nums; line-height: 1.5; }
+.battle-log-option-filename { font-size: .8125rem; line-height: 1.55; overflow-wrap: anywhere; }
+
+.battle-log-page ::deep .mud-icon-button {
+    width: 2.5rem;
+    height: 2.5rem;
+    flex-shrink: 0;
+}
+
+.battle-log-viewer {
+    display: block;
+    width: 100%;
+    height: 800px;
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: .75rem;
+    background: var(--mud-palette-surface);
+}
+
+@media (max-width: 799.98px) {
+    .battle-log-toolbar {
+        grid-template-columns: 2.5rem 2.5rem minmax(0, 1fr);
+    }
+
+    .battle-log-page ::deep .battle-log-toolbar > .mud-select:has(.battle-log-type) {
+        grid-column: 3;
+    }
+
+    .battle-log-page ::deep .battle-log-file {
+        grid-column: 1 / -1;
+    }
+
+    .battle-log-page ::deep .battle-log-toolbar > .mud-select:has(.battle-log-file) { grid-column: 1 / -1; min-width: 0; }
+}
+
+@media (max-width: 599.98px) {
+    .battle-log-controls {
+        padding: .85rem;
+    }
+
+}
