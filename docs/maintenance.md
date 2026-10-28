@@ -22,7 +22,7 @@ GitHub Actions runs these checks on pushes and pull requests. Successful default
 There are three separate versions:
 
 - `AuthOption.AppVersion` is refreshed from the official download page. A request rejected for requiring an update is retried once with that version.
-- Master files are refreshed on startup and hourly. Changed files are staged, hash-checked and deserialized before replacement. Existing text data remains available if a replacement fails.
+- Master files are refreshed on startup and hourly. Changed files are staged, hash-checked and deserialized before replacement. Tables without a local file read as empty; failed reloads retain the previous data and ID index. Existing text data remains available if a replacement fails.
 - C# protocol definitions and business rules require a reviewed source update. Downloading Master files does not update these definitions.
 
 For a client update, compare the official client's properties, MessagePack keys and enum numeric values with `MementoMori.Ortega`, then trace affected calls in `MementoMori/Funcs`. Preserve explicit numeric keys and update serialization constructors and copy methods. Do not import unused client UI code or assume a new enum implements a new game feature.
@@ -89,6 +89,8 @@ Home notices, shop lists and gacha lists load after the page becomes interactive
 With a logged-in account, `node tests/check-pages-ui.cjs http://127.0.0.1:5290` checks all eight navigation entries, character selection, inventory/shop tabs and draw details. It does not purchase, summon, spend inventory, start jobs or delete logs. Run the chat and theme checks alongside it after deployment. Browser timing and server CPU/GC measurements should be compared using the same account, network latency and cache state; a master-lookup microbenchmark is not a whole-page speedup.
 
 ## Runtime behavior
+
+Daily and hourly jobs claim unlocked character-memory rewards. Fountain rewards fall back to individual claims when the account has not unlocked Claim All, and manual refresh fetches the current task list first. Each Temple matching round falls back to hosting after two minutes without rooms; hosting stops after three consecutive losses. Pending joins stop when a room is found or the connection closes.
 
 Failed automatic login retries after 1, 2, 4, 8, then 15 minutes, capped at 15 minutes. The scheduler checks once per minute; manual login bypasses this delay. Explicit logout stops automatic login for that process lifetime. Re-login does not rewrite the selected automatic-login world.
 

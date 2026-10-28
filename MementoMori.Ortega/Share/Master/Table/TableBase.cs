@@ -7,7 +7,7 @@ public abstract class TableBase<TM> : ITable where TM : MasterBookBase
 {
     private sealed record Contents(TM[] Items, Dictionary<long, TM> ById);
     private Contents? _contents;
-    protected TM[] _datas => Volatile.Read(ref _contents)?.Items;
+    protected TM[] _datas => Volatile.Read(ref _contents)?.Items ?? Array.Empty<TM>();
 
     public TM GetById(long id) => Volatile.Read(ref _contents)?.ById.GetValueOrDefault(id);
     public string GetMasterBookName() => typeof(TM).Name;

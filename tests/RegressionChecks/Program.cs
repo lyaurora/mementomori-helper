@@ -24,6 +24,8 @@ using Grpc.Net.Client;
 using MementoMori.Ortega.Network.MagicOnion.Client;
 using MementoMori.Ortega.Network.MagicOnion.Interface;
 using MementoMori.Ortega.Share.Data.ApiInterface.Chat;
+using BountyQuest = MementoMori.Ortega.Share.Data.ApiInterface.BountyQuest;
+using MementoMori.MagicOnion;
 using MementoMori.Ortega.Share.MagicOnionShare.Interfaces.Receiver;
 using MementoMori.Ortega.Share.MagicOnionShare.Interfaces.Sender;
 using MementoMori.Ortega.Share.MagicOnionShare.Request;
@@ -65,6 +67,9 @@ var checks = new (string Name, Func<Task> Run)[]
     ("login preferences, retry backoff and deletion", CheckAccountLifecycle),
     ("HTTP cancellation and bounded version negotiation", CheckTransport),
     ("manual quick-action batch stops after cancellation", CheckBatchCancellation),
+    ("fountain reward fallback, fresh refresh data and cancellation", CheckBountyQuest),
+    ("temple matching times out without treating attempts as exhausted", CheckLocalRaidTimeout),
+    ("temple retries stop after connection cancellation or joining a room", CheckLocalRaidRetries),
     ("chat routing, history, reactions, delivery confirmation and cancellation", CheckChat),
     ("4.22/5.0 wire data, incremental sync and master rollback", CheckProtocol),
     ("master ID index preserves order and survives reload failure", CheckMasterIndex),
@@ -454,6 +459,136 @@ static async Task CheckBatchCancellation()
     finally { funcs.CancelQuickAction(); }
 }
 
+static async Task CheckBountyQuest()
+{
+    var auth = new Writable<AuthOption>(new() { AuthUrl = "https://offline.invalid/api/" });
+    var config = new Writable<GameConfig>(new() { AutoRequestDelay = 0 });
+    using var network = Construct<MementoNetworkManager>(auth, config, NullLogger<MementoNetworkManager>.Instance);
+    network.TimeManager.SetTimeServerMb(MessagePackSerializer.Deserialize<TimeServerMB>(
+        MessagePackSerializer.ConvertFromJson("""{"DifferenceDateTimeFromUtc":"00:00:00"}""")));
+    Field(network, "_apiHost").SetValue(network, new Uri("https://offline.invalid/api/"));
+    using var funcs = Construct<MementoMoriFuncs>(auth, config, NullLogger<MementoMoriFuncs>.Instance);
+    funcs.NetworkManager = network;
+    funcs.UserSyncData.UserBattleBossDtoInfo = new() { BossClearMaxQuestId = 1 };
+    Masters.OpenContentTable.Load(MessagePackSerializer.ConvertFromJson(
+        $"[{{\"OpenCommandType\":{(int)OpenCommandType.BountyQuest},\"OpenContentValue\":1}}]"));
+    var paths = new List<string>();
+    var claims = new List<List<long>>();
+    var completed = false;
+    var error = ErrorCode.BountyQuestUnavailableRewardsBountyQuest;
+    var cancelSingleClaim = false;
+    ReplaceClient(network, "_httpClient", new HttpClient(new Handler(async (request, token) =>
+    {
+        var path = request.RequestUri!.AbsolutePath;
+        paths.Add(path);
+        if (path.EndsWith("/getList")) return Reply(new BountyQuest.GetListResponse
+        {
+            UserBountyQuestDtoInfos = [
+                new() { BountyQuestId = 1, BountyQuestEndTime = completed ? 1 : 0 },
+                new() { BountyQuestId = 2, BountyQuestEndTime = completed ? 1 : 0 }]
+        });
+        if (path.EndsWith("/remake")) return Reply(new BountyQuest.RemakeResponse());
+        Require(path.EndsWith("/reward"), "Unexpected fountain request");
+        var reward = MessagePackSerializer.Deserialize<BountyQuest.RewardRequest>(await request.Content!.ReadAsByteArrayAsync(token));
+        Require(reward.ConsumeCurrency == 0 && !reward.IsQuick, "Reward collection spends diamonds");
+        claims.Add(reward.BountyQuestIds);
+        if (reward.BountyQuestIds.Count > 1)
+        {
+            var response = Reply(new ApiErrorResponse { ErrorCode = error });
+            response.Headers.Add("ortegastatuscode", "1");
+            return response;
+        }
+        if (cancelSingleClaim) funcs.CancelQuickAction();
+        return Reply(new BountyQuest.RewardResponse { RewardItems = [], UserSyncData = new() });
+    })));
+
+    Require(funcs.BountyQuestResponseInfo == null, "Refresh check did not start without cached data");
+    await funcs.RemakeBountyRequest();
+    Require(paths.SequenceEqual(["/api/bountyQuest/getList", "/api/bountyQuest/remake", "/api/bountyQuest/getList"]),
+        "Fountain refresh does not fetch current tasks before refreshing");
+    completed = true;
+    paths.Clear();
+    await funcs.RemakeBountyRequest();
+    Require(paths.SequenceEqual(["/api/bountyQuest/getList"]), "Refresh used a stale list of undispatched tasks");
+
+    await funcs.BountyQuestRewardAuto();
+    Require(claims.Count == 3 && claims[0].SequenceEqual([1L, 2L]) && claims[1].SequenceEqual([1L]) && claims[2].SequenceEqual([2L]),
+        "Rank-locked bulk rewards do not fall back to individual claims");
+    claims.Clear();
+    error = ErrorCode.CommonNoSession;
+    await funcs.BountyQuestRewardAuto();
+    Require(claims.Count == 1, "An unrelated API error replayed reward claims");
+    claims.Clear();
+    error = ErrorCode.BountyQuestUnavailableRewardsBountyQuest;
+    cancelSingleClaim = true;
+    await funcs.BountyQuestRewardAuto();
+    Require(claims.Count == 2 && claims[1].SequenceEqual([1L]) && !funcs.IsQuickActionExecuting,
+        "Cancellation allowed later individual claims or left the action busy");
+    funcs.UserSyncData.UserBattleBossDtoInfo.BossClearMaxQuestId = 0;
+    paths.Clear();
+    await funcs.RemakeBountyRequest();
+    Require(paths.Count == 0, "A locked fountain sent a refresh request");
+
+    static HttpResponseMessage Reply<T>(T response) => new(HttpStatusCode.OK)
+    {
+        Content = new ByteArrayContent(MessagePackSerializer.Serialize(response))
+    };
+}
+
+static Task CheckLocalRaidTimeout()
+{
+    var receiver = new LocalRaidJoinRoomReceiver(null!, _ => { }, default);
+    var clock = (Stopwatch)Field(receiver, "_startSw").GetValue(receiver)!;
+    clock.Stop();
+    // Advance the receiver's timer without waiting two minutes.
+    Field(clock, "_elapsed").SetValue(clock, Stopwatch.Frequency * 121);
+    clock.Start();
+    receiver.OnError(ErrorCode.MagicOnionLocalRaidJoinRandomRoomNotExistRoom);
+    Require(receiver.IsMaxTimeExceeded && !receiver.IsNoRemainingChallenges,
+        "Two minutes without rooms did not end matching or incorrectly exhausted attempts");
+    receiver.QuestId = 2;
+    Require(clock.IsRunning && clock.Elapsed < TimeSpan.FromSeconds(1) && !receiver.IsMaxTimeExceeded,
+        "A new matching round inherited the previous round's timeout");
+    var exhausted = new LocalRaidJoinRoomReceiver(null!, _ => { }, default);
+    exhausted.OnError(ErrorCode.MagicOnionLocalRaidJoinRandomRoomNoRemainingChallenges);
+    Require(exhausted.IsNoRemainingChallenges && !exhausted.IsMaxTimeExceeded,
+        "Exhausted attempts were treated as a matching timeout");
+    return Task.CompletedTask;
+}
+
+static async Task CheckLocalRaidRetries()
+{
+    using var channel = GrpcChannel.ForAddress("http://offline.invalid");
+    var client = new OrtegaMagicOnionClient(channel, 1, "offline", null!);
+    var sender = DispatchProxy.Create<IOrtegaSender, ChatHubProxy>();
+    var calls = 0;
+    ((ChatHubProxy)(object)sender).JoinRandomRoom = () => { Interlocked.Increment(ref calls); return Task.CompletedTask; };
+    Field(client, "_sender").SetValue(client, sender);
+    Field(client, "_state").SetValue(client, MementoMori.Ortega.Common.Enums.HubClientState.Ready);
+    using var connection = new CancellationTokenSource();
+    try
+    {
+        var receiver = new LocalRaidJoinRoomReceiver(client, _ => { }, connection.Token) { QuestId = 1 };
+        receiver.OnError(ErrorCode.MagicOnionLocalRaidJoinRandomRoomNotExistRoom);
+        receiver.OnDisbandRoom();
+        receiver.OnLeaveRoom();
+        receiver.OnRefuse();
+        connection.Cancel();
+        await Task.Delay(3200);
+        Require(calls == 0, "A closed temple connection sent delayed join requests");
+        var joined = new LocalRaidJoinRoomReceiver(client, _ => { }, default) { QuestId = 1 };
+        joined.OnError(ErrorCode.MagicOnionLocalRaidJoinRandomRoomNotExistRoom);
+        joined.OnJoinRoom(new());
+        var joinedClock = (Stopwatch)Field(joined, "_startSw").GetValue(joined)!;
+        Field(joinedClock, "_elapsed").SetValue(joinedClock, Stopwatch.Frequency * 121);
+        joined.OnError(ErrorCode.MagicOnionLocalRaidJoinRandomRoomNotExistRoom);
+        Require(!joined.IsMaxTimeExceeded, "A late no-room notification timed out an already joined room");
+        await Task.Delay(3200);
+        Require(calls == 0, "A pending retry sent another join after finding a room");
+    }
+    finally { connection.Cancel(); await client.DisposeAsync(); }
+}
+
 static Task CheckProtocol()
 {
     // Fixed 4.22.0/5.0.0 wire payloads, independent of the serializer's output.
@@ -568,6 +703,8 @@ static Task CheckMasterIndex()
 {
     var table = new EquipmentTable();
     Require(table.GetById(1) == null, "An unloaded master table returned an item");
+    Require(table.Count() == 0 && table.GetArray().Length == 0, "A missing master table is not empty");
+    Require(new BountyQuestEventTable().GetByInTime(_ => true) == null, "A removed fountain event table does not mean no event");
     table.Load(MessagePackSerializer.ConvertFromJson("""[{"Id":2,"Memo":"first"},{"Id":1,"Memo":"other"},{"Id":2,"Memo":"duplicate"}]"""));
     Require(table.GetById(2).Memo == "first" && table.GetById(99) == null, "ID index changed lookup semantics");
     Require(table.GetArray().Select(row => row.Id).SequenceEqual([2L, 1L, 2L]), "ID indexing reordered master data");
@@ -942,9 +1079,12 @@ static FieldInfo Field(object value, string name)
 public class ChatHubProxy : DispatchProxy
 {
     public Func<SendMessageRequest, Task> Send { get; set; } = _ => Task.CompletedTask;
+    public Func<Task> JoinRandomRoom { get; set; } = () => Task.CompletedTask;
     protected override object? Invoke(MethodInfo? method, object?[]? args) => method?.Name switch
     {
         "SendMessageAsync" => Send((SendMessageRequest)args![0]!),
+        "JoinRandomRoomAsync" => JoinRandomRoom(),
+        "ReadyAsync" => Task.CompletedTask,
         "DisposeAsync" => Task.CompletedTask,
         _ => throw new NotSupportedException(method?.Name)
     };

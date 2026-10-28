@@ -31,92 +31,103 @@ public partial class MementoMoriFuncs
 
             var createRoom = _playersOption.Value.TryGetValue(NetworkManager.PlayerId, out var c) && c.LocalRaid.SelfCreateRoom;
 
-            OrtegaMagicOnionClient client = null;
-            LocalRaidBaseReceiver localRaidReceiver = null;
-            using var keepaliveCts = CancellationTokenSource.CreateLinkedTokenSource(token);
-            var keepaliveTask = Task.CompletedTask;
-            try
+            while (!token.IsCancellationRequested)
             {
-                for (var attempt = 0; ; attempt++)
+                var soloLosses = 0;
+                OrtegaMagicOnionClient client = null;
+                LocalRaidBaseReceiver localRaidReceiver = null;
+                using var connectionCts = CancellationTokenSource.CreateLinkedTokenSource(token);
+                var keepaliveTask = Task.CompletedTask;
+                try
                 {
-                    token.ThrowIfCancellationRequested();
-                    client = NetworkManager.GetOnionClient();
-                    localRaidReceiver = createRoom ? new LocalRaidCreateRoomReceiver(client, log, PlayerOption.LocalRaid.WaitSeconds, token) : new LocalRaidJoinRoomReceiver(client, log, token);
-                    client.SetupLocalRaid(localRaidReceiver, localRaidReceiver);
-                    try
+                    for (var attempt = 0; ; attempt++)
                     {
-                        await client.Connect(token);
-                        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
-                        timeout.CancelAfter(TimeSpan.FromMinutes(1));
-                        while (client.GetState() != HubClientState.Ready) await Task.Delay(1000, timeout.Token);
-                        break;
+                        token.ThrowIfCancellationRequested();
+                        client = NetworkManager.GetOnionClient();
+                        localRaidReceiver = createRoom ? new LocalRaidCreateRoomReceiver(client, log, PlayerOption.LocalRaid.WaitSeconds, connectionCts.Token) : new LocalRaidJoinRoomReceiver(client, log, connectionCts.Token);
+                        client.SetupLocalRaid(localRaidReceiver, localRaidReceiver);
+                        try
+                        {
+                            await client.Connect(token);
+                            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
+                            timeout.CancelAfter(TimeSpan.FromMinutes(1));
+                            while (client.GetState() != HubClientState.Ready) await Task.Delay(1000, timeout.Token);
+                            break;
+                        }
+                        catch (Exception) when (!token.IsCancellationRequested && attempt < 2)
+                        {
+                            await client.DisposeAsync();
+                            client = null;
+                            await Task.Delay(2000, token);
+                        }
                     }
-                    catch (Exception) when (!token.IsCancellationRequested && attempt < 2)
-                    {
-                        await client.DisposeAsync();
-                        client = null;
-                        await Task.Delay(2000, token);
-                    }
-                }
-                keepaliveTask = client.KeepAlive(keepaliveCts.Token);
-                while (!token.IsCancellationRequested)
-                {
-                    var localRaidInfoResponse = await GetResponse<GetLocalRaidInfoRequest, GetLocalRaidInfoResponse>(new GetLocalRaidInfoRequest());
-                    var questId = GetQuestId(localRaidInfoResponse);
-                    localRaidReceiver.QuestId = questId;
-                    localRaidReceiver.IsBattleStarted = false;
-
-                    if (createRoom)
-                    {
-                        log(TextResourceTable.Get("[LocalRaidRoomSearchButtonCreateRoom]"));
-                        client.SendLocalRaidOpenRoom(LocalRaidRoomConditionsType.None, questId, 0, 0);
-                    }
-                    else
-                    {
-                        log(TextResourceTable.Get("[LocalRaidRoomSearchButtonJoinRandomRoom]"));
-                        client.SendLocalRaidJoinRandomRoom(questId);
-                    }
-
+                    keepaliveTask = client.KeepAlive(connectionCts.Token);
                     while (!token.IsCancellationRequested)
                     {
-                        await Task.Delay(1000, token);
-                        if (keepaliveTask.IsFaulted) await keepaliveTask;
-                        if (localRaidReceiver.IsNoRemainingChallenges || localRaidReceiver.IsMaxTimeExceeded) return;
+                        var localRaidInfoResponse = await GetResponse<GetLocalRaidInfoRequest, GetLocalRaidInfoResponse>(new GetLocalRaidInfoRequest());
+                        var questId = GetQuestId(localRaidInfoResponse);
+                        localRaidReceiver.QuestId = questId;
+                        localRaidReceiver.IsBattleStarted = false;
 
-                        if (localRaidReceiver.IsBattleStarted)
+                        if (createRoom)
                         {
-                            await Task.Delay(2000, token);
-                            try
-                            {
-                                var battleResultResponse = await GetResponse<GetLocalRaidBattleResultRequest, GetLocalRaidBattleResultResponse>(new GetLocalRaidBattleResultRequest());
-                                var isWinAttacker = battleResultResponse.BattleResult.SimulationResult.BattleEndInfo.IsWinAttacker();
-                                log(isWinAttacker ? TextResourceTable.Get("[LocalRaidBattleWinMessage]") : TextResourceTable.Get("[LocalRaidBattleLoseMessage]"));
-                                battleResultResponse.BattleRewardResult?.FixedItemList?.PrintUserItems(log);
-                                battleResultResponse.BattleRewardResult?.DropItemList?.PrintUserItems(log);
-                            }
-                            catch (Exception e)
-                            {
-                                log(e.Message);
-                            }
+                            log(TextResourceTable.Get("[LocalRaidRoomSearchButtonCreateRoom]"));
+                            client.SendLocalRaidOpenRoom(LocalRaidRoomConditionsType.None, questId, 0, 0);
+                        }
+                        else
+                        {
+                            log(TextResourceTable.Get("[LocalRaidRoomSearchButtonJoinRandomRoom]"));
+                            client.SendLocalRaidJoinRandomRoom(questId);
+                        }
 
-                            break;
+                        while (!token.IsCancellationRequested)
+                        {
+                            await Task.Delay(1000, token);
+                            if (keepaliveTask.IsFaulted) await keepaliveTask;
+                            if (localRaidReceiver.IsNoRemainingChallenges) return;
+                            if (localRaidReceiver.IsMaxTimeExceeded) goto Done;
+
+                            if (localRaidReceiver.IsBattleStarted)
+                            {
+                                await Task.Delay(2000, token);
+                                try
+                                {
+                                    var battleResultResponse = await GetResponse<GetLocalRaidBattleResultRequest, GetLocalRaidBattleResultResponse>(new GetLocalRaidBattleResultRequest());
+                                    var isWinAttacker = battleResultResponse.BattleResult.SimulationResult.BattleEndInfo.IsWinAttacker();
+                                    log(isWinAttacker ? TextResourceTable.Get("[LocalRaidBattleWinMessage]") : TextResourceTable.Get("[LocalRaidBattleLoseMessage]"));
+                                    battleResultResponse.BattleRewardResult?.FixedItemList?.PrintUserItems(log);
+                                    battleResultResponse.BattleRewardResult?.DropItemList?.PrintUserItems(log);
+                                    soloLosses = isWinAttacker ? 0 : soloLosses + 1;
+                                    if (createRoom && soloLosses >= 3) return;
+                                }
+                                catch (Exception e)
+                                {
+                                    log(e.Message);
+                                }
+
+                                break;
+                            }
                         }
                     }
                 }
-            }
-            finally
-            {
-                keepaliveCts.Cancel();
-                try { await keepaliveTask; }
-                catch (OperationCanceledException) when (keepaliveCts.IsCancellationRequested) { }
                 finally
                 {
-                    if (client != null)
+                    connectionCts.Cancel();
+                    try { await keepaliveTask; }
+                    catch (OperationCanceledException) when (connectionCts.IsCancellationRequested) { }
+                    finally
                     {
-                        client.ClearLocalRaidReceiver();
-                        await client.DisposeAsync();
+                        if (client != null)
+                        {
+                            client.ClearLocalRaidReceiver();
+                            await client.DisposeAsync();
+                        }
                     }
                 }
+                Done:
+                if (createRoom || !localRaidReceiver.IsMaxTimeExceeded || token.IsCancellationRequested) return;
+                log("No rooms to join, hosting our own room");
+                createRoom = true;
             }
 
             long GetQuestId(GetLocalRaidInfoResponse response)

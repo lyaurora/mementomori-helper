@@ -23,7 +23,18 @@ public abstract class LocalRaidBaseReceiver : IMagicOnionLocalRaidReceiver, IMag
         _startSw = Stopwatch.StartNew();
     }
 
-    public long QuestId { get; set; }
+    private long _questId;
+    public long QuestId
+    {
+        get => _questId;
+        set
+        {
+            _questId = value;
+            // A new search can use the same quest as the previous battle.
+            _startSw.Restart();
+            IsMaxTimeExceeded = false;
+        }
+    }
     public bool IsNoRemainingChallenges { get; protected set; }
     public bool IsMaxTimeExceeded { get; protected set; }
 
@@ -101,40 +112,32 @@ public class LocalRaidJoinRoomReceiver : LocalRaidBaseReceiver
     public override async void OnDisbandRoom()
     {
         _log(TextResourceTable.GetErrorCodeMessage(ClientErrorCode.LocalRaidDismissedRoom));
-        await Task.Delay(3000);
-        _log(TextResourceTable.Get("[LocalRaidRoomSearchButtonJoinRandomRoom]"));
-        try
-        {
-            _ortegaMagicOnionClient.SendLocalRaidJoinRandomRoom(QuestId);
-        }
-        catch (Exception e)
-        {
-            _log(e.Message);
-        }
+        _startSw.Restart();
+        await RetryJoin();
     }
 
     public override async void OnLeaveRoom()
     {
-        await Task.Delay(3000);
-        _log(TextResourceTable.Get("[LocalRaidRoomSearchButtonJoinRandomRoom]"));
-        try
-        {
-            _ortegaMagicOnionClient.SendLocalRaidJoinRandomRoom(QuestId);
-        }
-        catch (Exception e)
-        {
-            _log(e.Message);
-        }
+        _startSw.Restart();
+        await RetryJoin();
     }
 
     public override async void OnRefuse()
     {
         _log(TextResourceTable.Get("[LocalRaidRoomRefuseReceiveDialogMessage]"));
-        await Task.Delay(3000);
+        await RetryJoin();
+    }
+
+    private async Task RetryJoin()
+    {
         try
         {
+            await Task.Delay(3000, CancellationToken);
+            if (IsNoRemainingChallenges || IsMaxTimeExceeded || !_startSw.IsRunning) return;
+            _log(TextResourceTable.Get("[LocalRaidRoomSearchButtonJoinRandomRoom]"));
             _ortegaMagicOnionClient.SendLocalRaidJoinRandomRoom(QuestId);
         }
+        catch (OperationCanceledException) when (CancellationToken.IsCancellationRequested) { }
         catch (Exception e)
         {
             _log(e.Message);
@@ -143,28 +146,31 @@ public class LocalRaidJoinRoomReceiver : LocalRaidBaseReceiver
 
     public override void OnJoinRoom(OnJoinRoomResponse response)
     {
+        if (CancellationToken.IsCancellationRequested) return;
         _log("OnJoinRoom");
+        _startSw.Stop();
+        IsMaxTimeExceeded = false;
         _ortegaMagicOnionClient.SendLocalRaidReady(true);
     }
 
     public override async void OnError(ErrorCode errorCode)
     {
+        if (CancellationToken.IsCancellationRequested) return;
         _log($"OnError: {TextResourceTable.GetErrorCodeMessage(errorCode)}");
         try
         {
             switch (errorCode)
             {
                 case ErrorCode.MagicOnionLocalRaidJoinRandomRoomNotExistRoom:
-                    if (_startSw.Elapsed > TimeSpan.FromMinutes(10))
+                    if (!_startSw.IsRunning) break;
+                    if (_startSw.Elapsed > TimeSpan.FromMinutes(2))
                     {
                         IsMaxTimeExceeded = true;
                         _startSw.Stop();
                         break;
                     }
 
-                    await Task.Delay(3000);
-                    _log(TextResourceTable.Get("[LocalRaidRoomSearchButtonJoinRandomRoom]"));
-                    _ortegaMagicOnionClient.SendLocalRaidJoinRandomRoom(QuestId);
+                    await RetryJoin();
                     break;
                 case ErrorCode.MagicOnionLocalRaidInviteNoRemainingChallenges:
                 case ErrorCode.MagicOnionLocalRaidJoinRoomNoRemainingChallenges:
@@ -203,7 +209,7 @@ public class LocalRaidCreateRoomReceiver : LocalRaidBaseReceiver
     private void StartBattle(LocalRaidPartyInfo partyInfo)
     {
         _lastRoomId = partyInfo.RoomId;
-        Task.Delay(TimeSpan.FromSeconds(_waitSeconds)).ContinueWith(async _ =>
+        Task.Delay(TimeSpan.FromSeconds(_waitSeconds), CancellationToken).ContinueWith(async _ =>
         {
             while (!IsBattleStarted && !CancellationToken.IsCancellationRequested)
             {
