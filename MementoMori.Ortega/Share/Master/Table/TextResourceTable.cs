@@ -16,7 +16,7 @@ public class TextResourceTable : ITable
 
     public bool Load(byte[] binaryData)
     {
-        var languageType = _languageType == LanguageType.None ? LanguageType.zhTW : _languageType;
+        var languageType = LanguageType;
         using var stream = new MemoryStream(binaryData);
         var resources = Deserialize(languageType, stream);
         var next = new Dictionary<string, string>();
@@ -29,6 +29,8 @@ public class TextResourceTable : ITable
     {
         return GetMbName(_languageType);
     }
+
+    public LanguageType LanguageType => _languageType == LanguageType.None ? LanguageType.zhTW : _languageType;
 
     public void SetLanguageType(LanguageType languageType)
     {

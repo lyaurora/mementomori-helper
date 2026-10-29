@@ -9,7 +9,7 @@ const assert = require('node:assert/strict');
     const checkScheme = (page, expected) => page.waitForFunction(value =>
         getComputedStyle(document.documentElement).getPropertyValue('--mud-native-html-color-scheme').trim() === value, expected);
     const choose = async (page, name) => {
-        await page.getByRole('button', { name: '外观模式', exact: true }).click();
+        await page.getByTestId('theme-toggle').click();
         await page.locator('.mud-popover-open').getByText(name, { exact: true }).click();
     };
     try {
@@ -27,7 +27,7 @@ const assert = require('node:assert/strict');
         try {
             await navigating.goto(`${url}/Settings`, { waitUntil: 'domcontentloaded' });
             await navigating.waitForFunction(() => window.Blazor !== undefined);
-            assert(await navigating.getByRole('button', { name: '外观模式', exact: true }).isDisabled());
+            assert(await navigating.getByTestId('theme-toggle').isDisabled());
             for (const path of ['Chat', 'Settings']) {
                 await navigating.locator(`.app-nav a[href$="${path}" i]`).click();
                 await navigating.waitForURL(`**/${path}`);
@@ -48,7 +48,7 @@ const assert = require('node:assert/strict');
             await initial.route(/\/_framework\/blazor\.web[^/]*\.js$/, route => route.abort());
             await initial.goto(`${url}/Chat`, { waitUntil: 'domcontentloaded' });
             await checkScheme(initial, expected);
-            assert(await initial.getByRole('button', { name: '外观模式', exact: true }).isDisabled(), 'Theme test unexpectedly started Blazor');
+            assert(await initial.getByTestId('theme-toggle').isDisabled(), 'Theme test unexpectedly started Blazor');
             if (!saved) {
                 await initial.emulateMedia({ colorScheme: 'light' });
                 await checkScheme(initial, 'light');

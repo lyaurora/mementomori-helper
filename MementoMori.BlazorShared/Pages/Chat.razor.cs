@@ -2,7 +2,9 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Text.RegularExpressions;
 using MementoMori.Chat;
+using MementoMori.BlazorShared.Components;
 using MementoMori.BlazorShared.Models;
+using MementoMori.Common.Localization;
 using MementoMori.Ortega.Share;
 using MementoMori.Ortega.Share.Data.ApiInterface.Chat;
 using MementoMori.Ortega.Share.Data.ApiInterface.GuildNote;
@@ -18,6 +20,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using MudBlazor;
 using Newtonsoft.Json;
+using static MementoMori.BlazorShared.Extensions.MasterResourceExtension;
 using ReactiveUI;
 
 namespace MementoMori.BlazorShared.Pages;
@@ -32,7 +35,7 @@ public partial class Chat
     private static readonly DialogOptions GuildDialogOptions = new() { FullWidth = true, MaxWidth = MaxWidth.Medium, BackdropClick = false, CloseOnEscapeKey = false };
     private readonly Dictionary<(ChatType, long), string> _drafts = new();
     private ChatSession _chat = null!;
-    private ChatSession.Snapshot _snapshot = new(false, "未连接", null, 0, [], []);
+    private ChatSession.Snapshot _snapshot = new(false, ResourceStrings.ChatNotConnected, null, 0, [], []);
     private CancellationTokenSource _accountCancellation = new();
     private IDisposable? _privateLease;
     private IJSObjectReference? _module;
@@ -83,7 +86,7 @@ public partial class Chat
     private bool CanSortGuildNotes => ChatSession.CanSortGuildNotes(NetworkManager.GuildPositionType);
     private bool CanEditGuildNote(GuildNoteInfo note) => _snapshot.PlayerId > 0 && note.PlayerId == _snapshot.PlayerId;
     private bool CanDeleteGuildNote(GuildNoteInfo note) => ChatSession.CanDeleteGuildNote(NetworkManager.GuildPositionType, note.PlayerId, _snapshot.PlayerId);
-    private string ConversationName => _channel != ChatType.Private ? ChannelName(_channel) : _target == 0 ? "私聊" :
+    private string ConversationName => _channel != ChatType.Private ? ChannelName(_channel) : _target == 0 ? ChannelName(ChatType.Private) :
         $"{PlayerName(_snapshot.Contacts.FirstOrDefault(c => c.PlayerInfo.PlayerId == _target)?.PlayerInfo.PlayerName, _target)} · {_target}";
 
     protected override Task AccountChanged()
@@ -223,7 +226,7 @@ public partial class Chat
                     _savedChannel = _channel;
                     var saved = await _module.InvokeAsync<bool>("saveChannel", account, _channel.ToString());
                     if (_disposed || revision != _revision) return;
-                    if (!saved) { _error = "频道已切换，但浏览器未能保存设置。"; StateHasChanged(); }
+                    if (!saved) { _error = ResourceStrings.ChatBrowserSaveFailed; StateHasChanged(); }
                 }
                 var mode = _scrollMode;
                 _scrollMode = "follow";
@@ -334,7 +337,7 @@ public partial class Chat
 
     private Task StartPrivate(long target) => Run(async (chat, token) =>
     {
-        if (target <= 0 || target == chat.Read(_channel).PlayerId) throw new ArgumentException("请输入其他玩家的有效 ID。");
+        if (target <= 0 || target == chat.Read(_channel).PlayerId) throw new ArgumentException(ResourceStrings.EnterOtherPlayerId);
         await chat.RequestAsync<AddPrivateChatLogPlayerRequest, AddPrivateChatLogPlayerResponse>(new() { TargetPlayerId = target }, token);
         await chat.RefreshContactsAsync(token);
         await chat.LoadPrivateMessagesAsync(target, cancellationToken: token);
@@ -344,7 +347,7 @@ public partial class Chat
     private Task AddPrivate()
     {
         if (long.TryParse(_targetInput, out var target)) return StartPrivate(target);
-        _error = "请输入有效的玩家 ID。";
+        _error = Tr("[ClientErrorMessage300009]");
         return Task.CompletedTask;
     }
 
@@ -364,7 +367,7 @@ public partial class Chat
         var response = await chat.RequestAsync<GetPlayerRequest, GetPlayerResponse>(new() { WorldPlayerIdList = ids }, token);
         return (response.FriendPlayerInfoList ?? []).Concat(response.GuildPlayerInfoList ?? []).Concat(response.WorldPlayerInfoList ?? [])
             .DistinctBy(p => p.PlayerId).Where(p => p.PlayerId != chat.Read(ChatType.World).PlayerId && !p.IsBlock).ToList();
-    }, players => { _players = players; if (players.Count == 0) _result = "暂无可选择的玩家，可直接输入玩家 ID。"; });
+    }, players => { _players = players; if (players.Count == 0) _result = Tr("[ChatNotExistsSelectablePlayerMessage]"); });
 
     private Task LoadOlder()
     {
@@ -378,7 +381,7 @@ public partial class Chat
         var name = ConversationName;
         return Run(async (chat, token) =>
         {
-            if (await DialogService.ShowMessageBox("移除会话", $"从私聊列表移除 {name}？", yesText: "移除", cancelText: "取消") != true) return false;
+            if (await DialogService.ShowMessageBox(Tr("[ChatPlayerListRemoveDialogTitle]"), Tr("[ChatPlayerListRemoveDialogMessage]", name), yesText: Tr("[DialogCommonFormationRemoveButton]"), cancelText: Tr("[CommonCancelLabel]")) != true) return false;
             token.ThrowIfCancellationRequested();
             await chat.RequestAsync<DeletePrivateChatLogPlayerRequest, DeletePrivateChatLogPlayerResponse>(new() { TargetPlayerId = target }, token);
             await chat.RefreshContactsAsync(token);
@@ -400,7 +403,7 @@ public partial class Chat
         return Run((chat, token) => chat.SendAsync(channel, text, target, token), () =>
         {
             if (_drafts.GetValueOrDefault((channel, target)) == text) _drafts.Remove((channel, target));
-            _result = "已发送";
+            _result = ResourceStrings.Sent;
             _showEmoticons = false;
             _scrollMode = "end";
         });
@@ -412,7 +415,7 @@ public partial class Chat
     {
         if (_busy || !_chat.IsEmoticonUnlocked(id)) return;
         var token = $"#{id}#";
-        if (Draft.Length + token.Length > 80) { _error = "插入后将超过 80 字符限制。"; return; }
+        if (Draft.Length + token.Length > 80) { _error = string.Format(ResourceStrings.StickerLimitExceeded, 80); return; }
         Draft += token;
         await _inputElement.FocusAsync();
     }
@@ -421,8 +424,8 @@ public partial class Chat
     private Task ReactionDetails(ChatInfo message) => Run(async (chat, token) =>
     {
         var response = await chat.RequestAsync<GetChatReactionDetailInfoRequest, GetChatReactionDetailInfoResponse>(new() { ChatIdentityInfo = ChatSession.Identity(message) }, token);
-        return string.Join("\n", (response.PlayerInfoListByReactionType ?? []).Select(pair => $"{ReactionName(pair.Key)}：{string.Join("、", pair.Value.Select(p => p.PlayerName))}"));
-    }, details => _details = string.IsNullOrWhiteSpace(details) ? "这条消息暂无回应。" : details);
+        return string.Join("\n", (response.PlayerInfoListByReactionType ?? []).Select(pair => DetailLine(ChatReactions.Name(pair.Key), pair.Value.Select(p => p.PlayerName))));
+    }, details => _details = string.IsNullOrWhiteSpace(details) ? ResourceStrings.NoReactions : details);
 
     private Task LoadGuildInfo() => Run(async (chat, token) =>
     {
@@ -445,7 +448,7 @@ public partial class Chat
     {
         if (_busy || !_snapshot.Connected) return;
         if (note == null ? !CanManageGuildNotes || _guildNotes.Count >= OrtegaConst.GuildNote.MaxGuildNoteCount : !CanEditGuildNote(note))
-        { _error = "当前没有编辑此笔记的权限，或笔记数量已达上限。"; return; }
+        { _error = ResourceStrings.GuildNoteNoPermissionOrLimit; return; }
         _editingGuildNoteId = note?.GuildNoteId ?? 0;
         _noteTitle = note?.Title ?? "";
         _noteContent = note?.Content ?? "";
@@ -467,13 +470,13 @@ public partial class Chat
             if (id == 0)
             {
                 if (!CanManageGuildNotes || _guildNotes.Count >= OrtegaConst.GuildNote.MaxGuildNoteCount)
-                    throw new InvalidOperationException("当前没有创建笔记的权限，或笔记数量已达上限。");
+                    throw new InvalidOperationException(ResourceStrings.GuildNoteNoPermissionOrLimit);
                 var response = await chat.RequestAsync<CreateGuildNoteRequest, CreateGuildNoteResponse>(new()
                 { Title = title, Content = content, GuildNoteCategoryType = category }, token);
                 return (response.GuildNoteInfoList, response.IsNgWordReplaced);
             }
             var note = _guildNotes.Find(n => n.GuildNoteId == id);
-            if (note == null || !CanEditGuildNote(note)) throw new InvalidOperationException("笔记已更新或当前没有编辑权限，请刷新后再试。");
+            if (note == null || !CanEditGuildNote(note)) throw new InvalidOperationException(ResourceStrings.GuildNoteChangedOrNoPermission);
             var updated = await chat.RequestAsync<UpdateGuildNoteRequest, UpdateGuildNoteResponse>(new()
             { GuildNoteId = id, Title = title, Content = content, GuildNoteCategoryType = category }, token);
             return (updated.GuildNoteInfoList, updated.IsNgWordReplaced);
@@ -481,7 +484,7 @@ public partial class Chat
         {
             _guildNotes = response.GuildNoteInfoList?.OrderBy(n => n.Order).ThenBy(n => n.GuildNoteId).ToList() ?? [];
             CancelGuildNoteEdit();
-            _result = response.IsNgWordReplaced ? "笔记已保存，部分文字已由游戏替换。" : "笔记已保存";
+            _result = response.IsNgWordReplaced ? ResourceStrings.GuildNoteSavedReplaced : ResourceStrings.Save_successful;
         });
     }
 
@@ -490,8 +493,8 @@ public partial class Chat
         var before = _guildNotes.Select(n => n.GuildNoteId).ToList();
         return Run(async (chat, token) =>
         {
-            if (!before.Contains(note.GuildNoteId) || !CanDeleteGuildNote(note)) throw new InvalidOperationException("笔记已更新或当前没有删除权限，请刷新后再试。");
-            if (await DialogService.ShowMessageBox("删除公会笔记", $"删除笔记「{note.Title}」？", yesText: "删除", cancelText: "取消") != true) return null;
+            if (!before.Contains(note.GuildNoteId) || !CanDeleteGuildNote(note)) throw new InvalidOperationException(ResourceStrings.GuildNoteChangedOrNoPermission);
+            if (await DialogService.ShowMessageBox(Tr("[GuildNoteConfirmationTitle]"), string.Format(ResourceStrings.DeleteGuildNoteConfirm, note.Title), yesText: Tr("[DialogCommonFormationRemoveButton]"), cancelText: Tr("[CommonCancelLabel]")) != true) return null;
             token.ThrowIfCancellationRequested();
             return await chat.RequestAsync<UpdateGuildNoteListRequest, UpdateGuildNoteListResponse>(new()
             { BeforeUpdateGuildNoteIdList = before, AfterUpdateGuildNoteIdList = before.Where(id => id != note.GuildNoteId).ToList() }, token);
@@ -500,7 +503,7 @@ public partial class Chat
             if (response == null) return;
             _guildNotes = response.GuildNoteInfoList?.OrderBy(n => n.Order).ThenBy(n => n.GuildNoteId).ToList() ?? [];
             if (_editingGuildNoteId == note.GuildNoteId) CancelGuildNoteEdit();
-            _result = "笔记已删除";
+            _result = ResourceStrings.GuildNoteDeleted;
         });
     }
 
@@ -509,10 +512,10 @@ public partial class Chat
         var before = _guildNotes.Select(n => n.GuildNoteId).ToList();
         return Run((chat, token) =>
         {
-            if (!CanSortGuildNotes) throw new InvalidOperationException("当前没有笔记排序权限。");
+            if (!CanSortGuildNotes) throw new InvalidOperationException(ResourceStrings.GuildPermissionDenied);
             var index = before.IndexOf(note.GuildNoteId);
             if (direction is not (-1 or 1) || index < 0 || index + direction < 0 || index + direction >= before.Count)
-                throw new InvalidOperationException("无法移动此笔记，请刷新后再试。");
+                throw new InvalidOperationException(ResourceStrings.GuildNoteMoveFailed);
             var after = new List<long>(before);
             (after[index], after[index + direction]) = (after[index + direction], after[index]);
             return chat.RequestAsync<UpdateGuildNoteListRequest, UpdateGuildNoteListResponse>(new()
@@ -520,15 +523,15 @@ public partial class Chat
         }, response =>
         {
             _guildNotes = response.GuildNoteInfoList?.OrderBy(n => n.Order).ThenBy(n => n.GuildNoteId).ToList() ?? [];
-            _result = "笔记顺序已保存";
+            _result = Tr("[ChatAnnounceArrangementCompleteMessage]");
         });
     }
 
     private Task ShareGuildNote(GuildNoteInfo note) => Run((chat, token) =>
     {
-        if (!CanManageGuildNotes) throw new InvalidOperationException("当前没有分享笔记的权限。");
+        if (!CanManageGuildNotes) throw new InvalidOperationException(ResourceStrings.GuildPermissionDenied);
         return chat.RequestAsync<ShareGuildNoteRequest, ShareGuildNoteResponse>(new() { GuildNoteId = note.GuildNoteId }, token);
-    }, _ => _result = "笔记已分享至公会聊天");
+    }, _ => _result = ResourceStrings.GuildNoteShared);
 
     private Task ReactGuildNote(GuildNoteInfo note, ChatReactionType reaction)
     {
@@ -550,8 +553,8 @@ public partial class Chat
     private Task GuildNoteReactionDetails(GuildNoteInfo note) => Run(async (chat, token) =>
     {
         var response = await chat.RequestAsync<GetReactionDetailInfoRequest, GetReactionDetailInfoResponse>(new() { GuildNoteId = note.GuildNoteId }, token);
-        return string.Join("\n", (response.PlayerInfoListByReactionType ?? []).Select(pair => $"{ReactionName(pair.Key)}：{string.Join("、", pair.Value.Select(p => p.PlayerName))}"));
-    }, details => _details = string.IsNullOrWhiteSpace(details) ? "这篇笔记暂无回应。" : details);
+        return string.Join("\n", (response.PlayerInfoListByReactionType ?? []).Select(pair => DetailLine(ChatReactions.Name(pair.Key), pair.Value.Select(p => p.PlayerName))));
+    }, details => _details = string.IsNullOrWhiteSpace(details) ? ResourceStrings.NoReactions : details);
 
     private async Task OpenGuildInfo()
     {
@@ -577,7 +580,7 @@ public partial class Chat
 
     private Task SetAnnouncement(ChatInfo message, bool announced) => Run(async (chat, token) =>
     {
-        if (announced ? !CanAnnounce(message) : !CanDeleteAnnouncement(message)) throw new InvalidOperationException("当前公会职位没有此消息的公告管理权限。");
+        if (announced ? !CanAnnounce(message) : !CanDeleteAnnouncement(message)) throw new InvalidOperationException(ResourceStrings.GuildPermissionDenied);
         if (announced)
             await chat.RequestAsync<RegisterAnnounceChatRequest, RegisterAnnounceChatResponse>(new() { ChatIdentityInfo = ChatSession.Identity(message) }, token);
         else
@@ -599,7 +602,7 @@ public partial class Chat
         return Run((chat, token) => chat.RequestAsync<VoteGuildSurveyRequest, VoteGuildSurveyResponse>(new()
         {
             SurveyGuid = survey.SurveyGuid, SelectedChoiceType = choice
-        }, token), response => { _surveys = response.SurveyList?.OrderByDescending(s => s.CreateLocalTimestamp).ToList() ?? []; _result = "投票已提交"; });
+        }, token), response => { _surveys = response.SurveyList?.OrderByDescending(s => s.CreateLocalTimestamp).ToList() ?? []; _result = ResourceStrings.VoteSubmitted; });
     }
 
     private Task SurveyDetails(GuildSurveyInfo survey)
@@ -608,16 +611,16 @@ public partial class Chat
         return Run(async (chat, token) =>
         {
             var response = await chat.RequestAsync<GetGuildSurveyDetailInfoRequest, GetGuildSurveyDetailInfoResponse>(new() { SurveyGuid = survey.SurveyGuid }, token);
-            return string.Join("\n", (response.VotedPlayerInfoListByChoiceType ?? []).Select(pair => $"{survey.ChoiceMap?.GetValueOrDefault(pair.Key)}：{string.Join("、", pair.Value.Select(p => p.PlayerName))}"));
-        }, details => _surveyDetails[survey.SurveyGuid] = string.IsNullOrWhiteSpace(details) ? "暂无投票记录" : details);
+            return string.Join("\n", (response.VotedPlayerInfoListByChoiceType ?? []).Select(pair => DetailLine(survey.ChoiceMap?.GetValueOrDefault(pair.Key), pair.Value.Select(p => p.PlayerName))));
+        }, details => _surveyDetails[survey.SurveyGuid] = string.IsNullOrWhiteSpace(details) ? ResourceStrings.NoVotes : details);
     }
 
     private Task SaveSettings()
     {
         var settings = Funcs.UserSyncData.ChatSettingData?.DeepCopy();
-        if (settings == null) { _error = "尚未取得聊天设置，请重新登录后再试。"; return Task.CompletedTask; }
+        if (settings == null) { _error = ResourceStrings.ChatSettingsUnavailable; return Task.CompletedTask; }
         settings.FontSize = _fontSize;
-        return Run((chat, token) => chat.RequestAsync<UpdateSettingsRequest, UpdateSettingsResponse>(new() { ChatSettingData = settings }, token), _ => _result = "文字大小已保存");
+        return Run((chat, token) => chat.RequestAsync<UpdateSettingsRequest, UpdateSettingsResponse>(new() { ChatSettingData = settings }, token), _ => _result = ResourceStrings.Save_successful);
     }
 
     private sealed record Appearance(int TextSize, int StickerSize);
@@ -630,7 +633,7 @@ public partial class Chat
         try
         {
             if (!await _module.InvokeAsync<bool>("saveAppearance", new Appearance(_textSize, _stickerSize)))
-                _error = "本次显示调整已生效，但浏览器未能保存设置。";
+                _error = ResourceStrings.ChatBrowserSaveFailed;
         }
         catch (JSDisconnectedException) { }
     }
@@ -655,22 +658,35 @@ public partial class Chat
         var channel = _shareChannel;
         var target = 0L;
         if (channel == ChatType.Private && (!long.TryParse(_shareTarget, out target) || target <= 0 || target == _snapshot.PlayerId))
-        { _error = "请输入其他玩家的有效 ID。"; return Task.CompletedTask; }
+        { _error = ResourceStrings.EnterOtherPlayerId; return Task.CompletedTask; }
         return Run((chat, token) => chat.RequestAsync<SendChatBattleLogRequest, SendChatBattleLogResponse>(new()
         {
             ChatType = channel, TargetPlayerId = target, ChatBattlePropertyInfo = property
-        }, token), _ => { _shareBattle = null; _result = "战报已转发"; });
+        }, token), _ => { _shareBattle = null; _result = ResourceStrings.BattleReportShared; });
     }
 
     private static string ChannelName(ChatType type) => type switch
     {
-        ChatType.World => "世界", ChatType.Guild => "公会", ChatType.SvS => "战区", ChatType.Block => "跨服公会战", ChatType.Private => "私聊", _ => type.ToString()
+        ChatType.World => Tr("[ChatTabAll]"), ChatType.Guild => Tr("[ChatTabGuild]"), ChatType.SvS => Tr("[ChatTabSvS]"), ChatType.Block => Tr("[ChatTabBlock]"),
+        ChatType.Private => Tr("[ChatTabPrivate]"), _ => type.ToString()
     };
-    private static string PlayerName(string? name, long id) => !string.IsNullOrEmpty(name) ? name : id > 0 ? $"玩家 {id}" : "系统";
-    private static string ReactionName(ChatReactionType reaction) => reaction switch
+    private string GuildInfoTabs => $"{Tr("[ChatAnnounceListTabLabel]")} / {Tr("[ChatSurveyListTabLabel]")} / {Tr("[ChatGuildNoteTabLabel]")}";
+    private static string DetailLine(string? label, IEnumerable<string> names) =>
+        $"{Tr("[GuildSurveyChoiceLabelFormat]", label ?? "").TrimEnd()} {string.Join(ResourceStrings.ListSeparator, names)}";
+    private static string BattleTypeName(BattleType? type) => type switch
     {
-        ChatReactionType.Wink => "眨眼", ChatReactionType.Cheers => "干杯", ChatReactionType.Heart => "爱心", ChatReactionType.Sad => "难过", _ => "回应"
+        null => "",
+        BattleType t and (BattleType.Auto or BattleType.Boss or BattleType.BattleLeague or BattleType.LegendLeague or BattleType.FriendBattle) => Tr(t),
+        BattleType.GuildBattle => Tr("[CommonHeaderGvgLabel]"),
+        BattleType.GrandBattle => Tr("[CommonHeaderGlobalGvgLabel]"),
+        BattleType.LocalRaid => Tr("[CommonHeaderLocalRaidLabel]"),
+        BattleType.TowerBattle => Tr("[CommonHeaderTowerBattleLabel]"),
+        BattleType.DungeonBattle => Tr("[CommonHeaderDungeonBattleLabel]"),
+        BattleType.GuildRaid => Tr("[CommonHeaderGuildRaidLabel]"),
+        BattleType.GuildTower => Tr("[GuildTowerTitle]"),
+        _ => type.Value.ToString()
     };
+    private static string PlayerName(string? name, long id) => !string.IsNullOrEmpty(name) ? name : id > 0 ? string.Format(ResourceStrings.PlayerIdFormat, id) : Tr("[GameSettingTypeSystem]");
     private static string FormatTime(long timestamp, string format = "MM-dd HH:mm")
     {
         if (timestamp <= 0) return "—";

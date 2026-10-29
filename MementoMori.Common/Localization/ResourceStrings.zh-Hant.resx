@@ -1,0 +1,720 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+      Microsoft ResX Schema 
+      
+      Version 2.0
+      
+      The primary goals of this format is to allow a simple XML format 
+      that is mostly human readable. The generation and parsing of the 
+      various data types are done through the TypeConverter classes 
+      associated with the data types.
+      
+      Example:
+      
+      ... ado.net/XML headers & schema ...
+      <resheader name="resmimetype">text/microsoft-resx</resheader>
+      <resheader name="version">2.0</resheader>
+      <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+      <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+      <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+      <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+      <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+          <value>[base64 mime encoded serialized .NET Framework object]</value>
+      </data>
+      <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+          <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+          <comment>This is a comment</comment>
+      </data>
+                  
+      There are any number of "resheader" rows that contain simple 
+      name/value pairs.
+      
+      Each data row contains a name, and value. The row also contains a 
+      type or mimetype. Type corresponds to a .NET class that support 
+      text/value conversion through the TypeConverter architecture. 
+      Classes that don't support this are serialized and stored with the 
+      mimetype set.
+      
+      The mimetype is used for serialized objects, and tells the 
+      ResXResourceReader how to depersist the object. This is currently not 
+      extensible. For a given mimetype the value must be set accordingly:
+      
+      Note - application/x-microsoft.net.object.binary.base64 is the format 
+      that the ResXResourceWriter will generate, however the reader can 
+      read any of the formats listed below.
+      
+      mimetype: application/x-microsoft.net.object.binary.base64
+      value   : The object must be serialized with 
+              : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+              : and then encoded with base64 encoding.
+      
+      mimetype: application/x-microsoft.net.object.soap.base64
+      value   : The object must be serialized with 
+              : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+              : and then encoded with base64 encoding.
+  
+      mimetype: application/x-microsoft.net.object.bytearray.base64
+      value   : The object must be serialized into a byte array 
+              : using a System.ComponentModel.TypeConverter
+              : and then encoded with base64 encoding.
+      -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="SyncUserInfo" xml:space="preserve">
+    <value>同步玩家資訊</value>
+  </data>
+  <data name="Login" xml:space="preserve">
+    <value>登入</value>
+  </data>
+  <data name="CharacterInfo" xml:space="preserve">
+    <value>角色資訊</value>
+  </data>
+  <data name="Sync" xml:space="preserve">
+    <value>同步</value>
+  </data>
+  <data name="ForceDispatch" xml:space="preserve">
+    <value>強制派遣</value>
+  </data>
+  <data name="NotStarted" xml:space="preserve">
+    <value>未開始</value>
+  </data>
+  <data name="OnGoing" xml:space="preserve">
+    <value>進行中</value>
+  </data>
+  <data name="NotReceived" xml:space="preserve">
+    <value>待領取</value>
+  </data>
+  <data name="Received" xml:space="preserve">
+    <value>已領取</value>
+  </data>
+  <data name="RewardMissonActivity" xml:space="preserve">
+      <value>獎章獎勵</value>
+  </data>
+  <data name="QuickActions" xml:space="preserve">
+      <value>快捷操作</value>
+  </data>
+  <data name="ExecuteAllQuick" xml:space="preserve">
+      <value>一鍵執行操作</value>
+  </data>
+  <data name="ReinforceEquipmentOnce" xml:space="preserve">
+      <value>強化一次裝備</value>
+  </data>
+  <data name="UseNormalItems" xml:space="preserve">
+      <value>使用固定物品</value>
+  </data>
+  <data name="AutoMatchlessInheritance" xml:space="preserve">
+      <value>自動精煉SABC、繼承魔裝到D裝</value>
+  </data>
+  <data name="AutoLegendInheritance" xml:space="preserve">
+      <value>自動繼承聖裝到D裝</value>
+  </data>
+  <data name="TowerType" xml:space="preserve">
+      <value>塔類型</value>
+  </data>
+  <data name="TargetValue" xml:space="preserve">
+      <value>目標數值</value>
+  </data>
+  <data name="PleaseLogin" xml:space="preserve">
+      <value>請先登入後再使用助手</value>
+  </data>
+  <data name="NotUnlocked" xml:space="preserve">
+      <value>未解鎖</value>
+  </data>
+  <data name="Finished" xml:space="preserve">
+      <value>已完成</value>
+  </data>
+  <data name="ExecutionOutput" xml:space="preserve">
+      <value>執行輸出</value>
+  </data>
+  <data name="SelectPlayer" xml:space="preserve">
+      <value>選擇角色</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+      <value>名稱</value>
+  </data>
+  <data name="Slot" xml:space="preserve">
+      <value>欄位</value>
+  </data>
+  <data name="ItemLimitCount" xml:space="preserve">
+      <value>持有上限</value>
+  </data>
+  <data name="GachaResult" xml:space="preserve">
+      <value>召喚結果</value>
+  </data>
+  <data name="GameAssistant" xml:space="preserve">
+      <value>遊戲助手</value>
+  </data>
+  <data name="RemoveEquipmentOfCharacter" xml:space="preserve">
+      <value>卸下 {0} Lv{1} 的裝備</value>
+  </data>
+  <data name="Enter" xml:space="preserve">
+      <value>進入</value>
+  </data>
+  <data name="PutOnEquipmentOfCharacter" xml:space="preserve">
+      <value>穿上 {0} Lv{1} 的裝備</value>
+  </data>
+  <data name="CaveCurrentState" xml:space="preserve">
+      <value>目前第 {0} 層，座標 {1},{2}，狀態 {3}，{4}，敵人戰力 {5}</value>
+  </data>
+  <data name="CaveErrorSelectSupport" xml:space="preserve">
+      <value>選擇支援時出錯：{0}，繼續選擇下一個支援</value>
+  </data>
+  <data name="CaveBuyItemSuccess" xml:space="preserve">
+      <value>購買 {0}×{1} 成功</value>
+  </data>
+  <data name="CaveErrorRelicExist" xml:space="preserve">
+      <value>選擇下一個</value>
+  </data>
+  <data name="UseOverLimitItem" xml:space="preserve">
+      <value>使用達到上限的物品</value>
+  </data>
+  <data name="NothingToReceive" xml:space="preserve">
+      <value>沒有可以領取的</value>
+  </data>
+  <data name="DesignatedTargetProp" xml:space="preserve">
+      <value>已指定目標道具</value>
+  </data>
+  <data name="DispatchingTargetPropMission" xml:space="preserve">
+      <value>正在派遣目標道具任務</value>
+  </data>
+  <data name="Dispatched" xml:space="preserve">
+      <value>已派遣</value>
+  </data>
+  <data name="DispatchingAll" xml:space="preserve">
+      <value>未指定目標道具或設定了強制派遣，派遣所有任務</value>
+  </data>
+  <data name="NothingToSmelt" xml:space="preserve">
+      <value>沒有可以精煉的裝備了</value>
+  </data>
+  <data name="FindEquipmentCharacter" xml:space="preserve">
+      <value>為裝備尋找可穿戴的角色，然後卸下再穿上一次</value>
+  </data>
+  <data name="NoLegendEquip" xml:space="preserve">
+      <value>沒有聖裝了</value>
+  </data>
+  <data name="NoInheritableDRarityEquip" xml:space="preserve">
+      <value>沒有找到可被繼承的D裝了</value>
+  </data>
+  <data name="NoAvailableGacha" xml:space="preserve">
+      <value>沒有可以執行的召喚了</value>
+  </data>
+  <data name="GachaExecInfo" xml:space="preserve">
+      <value>召喚 {0} {1} 次，消耗 {2}×{3}</value>
+  </data>
+  <data name="BattleResult" xml:space="preserve">
+      <value>戰鬥結果</value>
+  </data>
+  <data name="AutoBossExecMessage" xml:space="preserve">
+      <value>挑戰 {0} 首領一次：{1}，總次數：{2}，勝利次數：{3}，錯誤：{4}</value>
+  </data>
+  <data name="AutoBossErrorMessage" xml:space="preserve">
+      <value>錯誤達到了 {0} 次，中斷</value>
+  </data>
+  <data name="AutoTowerInfiniteExecMsg" xml:space="preserve">
+      <value>挑戰 {0} {1} 層一次：{2}，總次數：{3}，勝利次數：{4}，錯誤：{5}</value>
+  </data>
+  <data name="AutoTowerElementExecMsg" xml:space="preserve">
+      <value>挑戰 {0} {1} 層一次：{2}，{6}/10，總次數：{3}，勝利次數：{4}，錯誤：{5}</value>
+  </data>
+  <data name="NoAvailable" xml:space="preserve">
+      <value>沒有可用的 {0}</value>
+  </data>
+  <data name="RewardMissionMsg" xml:space="preserve">
+      <value>領取 {0} 的 {1} 獎勵</value>
+  </data>
+  <data name="Selected" xml:space="preserve">
+      <value>已選擇</value>
+  </data>
+  <data name="NotSelected" xml:space="preserve">
+      <value>未選擇</value>
+  </data>
+  <data name="Success" xml:space="preserve">
+      <value>成功</value>
+  </data>
+  <data name="Unknown" xml:space="preserve">
+      <value>未知</value>
+  </data>
+  <data name="AutoJobSwitchs" xml:space="preserve">
+    <value>自動任務開關</value>
+    </data>
+  <data name="AutoJobCrons" xml:space="preserve">
+        <value>自動任務排程設定</value>
+    </data>
+  <data name="DisableAllJobs" xml:space="preserve">
+        <value>停用所有任務</value>
+    </data>
+  <data name="AutoGacha" xml:space="preserve">
+        <value>自動召喚</value>
+    </data>
+  <data name="DailyJobCronExpression" xml:space="preserve">
+        <value>每日任務 Cron 運算式</value>
+    </data>
+  <data name="RewardClaimJobCronExpression" xml:space="preserve">
+        <value>獎勵領取任務 Cron 運算式</value>
+    </data>
+  <data name="CronExpression" xml:space="preserve">
+        <value>Cron 運算式</value>
+    </data>
+  <data name="AutoGachaConsumeItems" xml:space="preserve">
+        <value>自動召喚消耗物品</value>
+    </data>
+  <data name="BountyQuestTargetItems" xml:space="preserve">
+        <value>有下列報酬時自動派遣任務</value>
+    </data>
+  <data name="DungeonBattleTargetItems" xml:space="preserve">
+        <value>需要自動購買的商店物品</value>
+    </data>
+  <data name="Others" xml:space="preserve">
+        <value>其他</value>
+    </data>
+  <data name="SelectedXItems" xml:space="preserve">
+        <value>已選擇 {0} 個項目</value>
+    </data>
+  <data name="AutoRequestDelay" xml:space="preserve">
+        <value>自動請求延遲</value>
+    </data>
+  <data name="PreferTreasureChest" xml:space="preserve">
+        <value>優先選擇寶箱節點</value>
+    </data>
+  <data name="MaxUseRecoveryItem" xml:space="preserve">
+        <value>恢復道具最大使用數量（0為不使用）</value>
+    </data>
+  <data name="DiscountPercentageforProducts" xml:space="preserve">
+        <value>商品折扣幅度</value>
+    </data>
+  <data name="DailyJob" xml:space="preserve">
+        <value>每日任務</value>
+    </data>
+  <data name="RewardClaimJob" xml:space="preserve">
+        <value>獎勵領取任務</value>
+    </data>
+  <data name="NextExecutionTime" xml:space="preserve">
+        <value>下次執行時間</value>
+    </data>
+  <data name="Add" xml:space="preserve">
+      <value>新增</value>
+  </data>
+  <data name="ShopAutoBuyItems" xml:space="preserve">
+      <value>自動購買商城物品</value>
+  </data>
+  <data name="AutoBuy" xml:space="preserve">
+      <value>自動購買</value>
+  </data>
+  <data name="ConsumeItem" xml:space="preserve">
+      <value>消耗的物品</value>
+  </data>
+  <data name="ShopAutoBuyPleaseSelectOne" xml:space="preserve">
+      <value>商城物品和消耗物品請至少指定一個</value>
+  </data>
+  <data name="AnyItems" xml:space="preserve">
+      <value>任意物品</value>
+  </data>
+  <data name="BuyWith" xml:space="preserve">
+      <value>用 {0} 購買 {1}</value>
+  </data>
+  <data name="ResettoDefault" xml:space="preserve">
+      <value>恢復預設</value>
+  </data>
+  <data name="AutoLoginonStartup" xml:space="preserve">
+      <value>啟動時自動登入</value>
+  </data>
+  <data name="StopAfterSpecifiedStage" xml:space="preserve">
+      <value>通過指定關卡後停止</value>
+  </data>
+  <data name="NoStop" xml:space="preserve">
+      <value>不停止</value>
+  </data>
+  <data name="MainAccount" xml:space="preserve">
+      <value>主帳號</value>
+  </data>
+  <data name="SwitchAccount" xml:space="preserve">
+      <value>切換帳號</value>
+  </data>
+  <data name="AccountManagement" xml:space="preserve">
+      <value>帳號管理</value>
+  </data>
+  <data name="NotLoggedIn" xml:space="preserve">
+      <value>未登入</value>
+  </data>
+  <data name="LoggedIn" xml:space="preserve">
+      <value>已登入</value>
+  </data>
+  <data name="AutoLogin" xml:space="preserve">
+      <value>自動登入</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+      <value>設定</value>
+  </data>
+  <data name="Exit" xml:space="preserve">
+      <value>登出</value>
+  </data>
+  <data name="Account" xml:space="preserve">
+      <value>帳號</value>
+  </data>
+  <data name="Password" xml:space="preserve">
+      <value>密碼</value>
+  </data>
+  <data name="Failed to retrieve account information" xml:space="preserve">
+      <value>取得帳號資訊失敗</value>
+  </data>
+  <data name="Login successful" xml:space="preserve">
+      <value>登入成功</value>
+  </data>
+  <data name="Logout successful" xml:space="preserve">
+      <value>登出成功</value>
+  </data>
+  <data name="Save successful" xml:space="preserve">
+      <value>儲存成功</value>
+  </data>
+  <data name="Downloading master directory..." xml:space="preserve">
+      <value>下載 master 目錄中...</value>
+  </data>
+  <data name="Download master directory completed" xml:space="preserve">
+      <value>下載 master 目錄完成</value>
+  </data>
+  <data name="Login expired, please log in again" xml:space="preserve">
+      <value>登入已失效，請重新登入</value>
+  </data>
+  <data name="Login failed, please check your account configuration" xml:space="preserve">
+      <value>登入失敗，請檢查帳號設定</value>
+  </data>
+  <data name="Operation" xml:space="preserve">
+      <value>操作</value>
+  </data>
+  <data name="Request timed out, check your network" xml:space="preserve">
+      <value>請求逾時，請檢查網路連線</value>
+  </data>
+  <data name="No available support characters found." xml:space="preserve">
+      <value>找不到可用的支援角色</value>
+  </data>
+  <data name="Select tasks based on reward quantity and weight" xml:space="preserve">
+      <value>依報酬數量和權重選擇任務</value>
+  </data>
+  <data name="You can download the battle log and parse it here" xml:space="preserve">
+      <value>你可以下載戰鬥紀錄然後在這裡解析</value>
+  </data>
+  <data name="No deployable castles available" xml:space="preserve">
+      <value>沒有可部署的據點</value>
+  </data>
+  <data name="Successfully deployed" xml:space="preserve">
+      <value>已成功在 {0} 部署了 {1}</value>
+  </data>
+  <data name="Deploy defense" xml:space="preserve">
+      <value>部署防守</value>
+  </data>
+  <data name="Account Creation Time" xml:space="preserve">
+      <value>帳號建立時間</value>
+  </data>
+  <data name="Opponent Selection Strategy" xml:space="preserve">
+      <value>對手選擇策略</value>
+  </data>
+  <data name="Random" xml:space="preserve">
+      <value>隨機</value>
+  </data>
+  <data name="Min Battle Power" xml:space="preserve">
+      <value>最低戰力</value>
+  </data>
+  <data name="Max Battle Power" xml:space="preserve">
+      <value>最高戰力</value>
+  </data>
+  <data name="Character Filter" xml:space="preserve">
+      <value>角色篩選</value>
+  </data>
+  <data name="Exclude {0}" xml:space="preserve">
+      <value>排除 {0}</value>
+  </data>
+  <data name="Exclude {battleParameterName} higher than {characterName}" xml:space="preserve">
+      <value>排除 {0} 高於我方的 {1}</value>
+  </data>
+  <data name="Exclude character" xml:space="preserve">
+      <value>排除角色</value>
+  </data>
+  <data name="Exclude enemy character with higher stats in the same attribute as ours" xml:space="preserve">
+      <value>排除高於我方同屬性的敵方角色</value>
+  </data>
+  <data name="Filtering strategy" xml:space="preserve">
+      <value>篩選策略</value>
+  </data>
+  <data name="Confirm removal of this account?" xml:space="preserve">
+      <value>確定移除此帳號嗎？</value>
+  </data>
+  <data name="AutoUseItemTypeOthers" xml:space="preserve"><value>其他</value></data>
+  <data name="AutoUseItemTypeDiamondBag" xml:space="preserve"><value>一袋鑽石</value></data>
+  <data name="AutoUseItemTypeMysteryRune" xml:space="preserve"><value>未鑑定符石</value></data>
+  <data name="BattleLogCleanRange" xml:space="preserve"><value>清理範圍</value></data>
+  <data name="BattleLogCleanConfirm" xml:space="preserve"><value>確定要清理{0}個紀錄檔案（共{1}）嗎？</value></data>
+  <data name="BattleLogNoFilesToClean" xml:space="preserve"><value>沒有可清理的紀錄檔案</value></data>
+  <data name="BattleLogCleanComplete" xml:space="preserve"><value>已清理{0}個紀錄檔案</value></data>
+  <data name="BattleLogCleanError" xml:space="preserve"><value>刪除檔案{0}失敗：{1}</value></data>
+  <data name="BattleLogCleanOption1Day" xml:space="preserve"><value>1天前</value></data>
+  <data name="BattleLogCleanOption1Week" xml:space="preserve"><value>1週前</value></data>
+  <data name="BattleLogCleanOption1Month" xml:space="preserve"><value>1個月前</value></data>
+  <data name="BattleLogCleanOptionAll" xml:space="preserve"><value>全部</value></data>
+  <data name="AutoUseItemTypeWitchLetterR" xml:space="preserve"><value>魔女的來信(R)</value></data>
+  <data name="AutoUseItemTypeWitchLetterSr" xml:space="preserve"><value>魔女的來信(SR)</value></data>
+  <data name="AutoUseItemTypeWitchShard" xml:space="preserve"><value>魔女的心片</value></data>
+  <data name="AutoUseItemTypePot" xml:space="preserve"><value>陶壺</value></data>
+  <data name="AutoUseItemTypeAmphora" xml:space="preserve"><value>瓷壺</value></data>
+  <data name="AutoUseItemTypeSealedChest" xml:space="preserve"><value>封印寶箱</value></data>
+  <data name="AutoUseItemTypeWitchLetterGift" xml:space="preserve"><value>魔女的來信禮袋</value></data>
+  <data name="AutoUseItemTypeChestOfChance" xml:space="preserve"><value>命運盒</value></data>
+  <data name="The current version ({0}) is not the latest version ({1}). Click to download the latest version." xml:space="preserve">
+      <value>目前版本（{0}）不是最新版本（{1}），點擊下載最新版本。</value>
+  </data>
+  <data name="Exclude player IDs (comma-separated)" xml:space="preserve">
+      <value>排除玩家ID（英文逗號分隔）</value>
+  </data>
+  <data name="Seconds of pre-battle wait time" xml:space="preserve">
+      <value>開始戰鬥前等待的秒數</value>
+  </data>
+  <data name="Auto draw 10 times (up to 3 draws)" xml:space="preserve">
+      <value>自動抽滿10次（最多抽3次）</value>
+  </data>
+  <data name="Automatically select this world when auto logging in" xml:space="preserve">
+      <value>自動登入時自動選擇此世界</value>
+  </data>
+  <data name="Remove friends inactive for 7 days" xml:space="preserve">
+      <value>自動移除7天未登入好友</value>
+  </data>
+  <data name="Auto accept friend requests" xml:space="preserve">
+      <value>自動同意好友申請</value>
+  </data>
+  <data name="Auto send friend requests" xml:space="preserve">
+      <value>自動發送好友申請</value>
+  </data>
+  <data name="Auto remove whitelist" xml:space="preserve">
+      <value>自動移除的白名單</value>
+  </data>
+  <data name="Auto challenge retry count" xml:space="preserve">
+      <value>自動挑戰重試次數</value>
+  </data>
+  <data name="Auto unequip gear during events" xml:space="preserve">
+      <value>有活動時自動卸下並重新穿上裝備</value>
+  </data>
+  <data name="Set to 0 for any amount" xml:space="preserve">
+      <value>設定為 0 表示任意數量</value>
+  </data>
+  <data name="Amount consumed" xml:space="preserve">
+      <value>消耗數量</value>
+  </data>
+  <data name="Any amount" xml:space="preserve">
+      <value>任意數量</value>
+  </data>
+  <data name="No setting means buying any item" xml:space="preserve">
+      <value>不設定表示購買任意物品</value>
+  </data>
+  <data name="No setting means using any item for purchase" xml:space="preserve">
+      <value>不設定表示使用任意物品進行購買</value>
+  </data>
+  <data name="The expected diamond value of the current task is now below 20, do not refresh, dispatch directly." xml:space="preserve">
+      <value>目前任務的鑽石期望值已低於20，不再刷新，直接派遣</value>
+  </data>
+  <data name="Refresh limit reached, dispatch directly" xml:space="preserve">
+      <value>刷新次數已達上限，直接派遣</value>
+  </data>
+  <data name="Auto refresh diamonds" xml:space="preserve">
+      <value>自動刷新鑽石</value>
+  </data>
+  <data name="Max refresh count" xml:space="preserve">
+      <value>最大刷新次數</value>
+  </data>
+  <data name="Enter 0 to disable auto-refresh." xml:space="preserve">
+      <value>輸入0表示不進行自動刷新；每次刷新消耗20鑽石，期望值大於20才刷新；對於單個任務，8級的期望值為13，7級11.6，6級9.8，5級7.9，4級5.7，低於4級不能自動刷新；期望值會自動計算雙倍報酬活動。</value>
+  </data>
+  <data name="Current expected value: {0}. Today, {1}/{2} auto-refreshes completed. Refreshing now." xml:space="preserve">
+      <value>目前期望值：{0}，今日已自動刷新 {1}/{2} 次，現在刷新。</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+      <value>取消</value>
+  </data>
+  <data name="Confirm" xml:space="preserve">
+      <value>確認</value>
+  </data>
+  <data name="LastRun" xml:space="preserve"><value>上次執行結果</value></data>
+  <data name="TaskRunning" xml:space="preserve"><value>執行中</value></data>
+  <data name="TaskFailed" xml:space="preserve"><value>失敗／部分完成</value></data>
+  <data name="TaskStarted" xml:space="preserve"><value>開始時間</value></data>
+  <data name="TaskFinished" xml:space="preserve"><value>結束時間</value></data>
+  <data name="RetryAt" xml:space="preserve"><value>下次登入重試</value></data>
+  <data name="ResourceServer" xml:space="preserve"><value>資源伺服器網址</value></data>
+  <data name="BattleLogViewer" xml:space="preserve"><value>戰鬥紀錄檢視器網址</value></data>
+  <data name="HttpUrlRequired" xml:space="preserve"><value>請輸入 HTTP 或 HTTPS 網址。</value></data>
+  <data name="Appearance" xml:space="preserve"><value>外觀</value></data>
+  <data name="ThemeSystem" xml:space="preserve"><value>跟隨系統</value></data>
+  <data name="ThemeLight" xml:space="preserve"><value>淺色</value></data>
+  <data name="ThemeDark" xml:space="preserve"><value>深色</value></data>
+  <data name="ThemeSaveFailed" xml:space="preserve"><value>主題已切換，但瀏覽器未能儲存設定。</value></data>
+  <data name="AllAccounts" xml:space="preserve"><value>全部帳號</value></data>
+  <data name="AutoUseTargetItems" xml:space="preserve"><value>自動使用的道具</value></data>
+  <data name="AutoJobStatus" xml:space="preserve"><value>任務執行狀態</value></data>
+  <data name="TaskCancelled" xml:space="preserve"><value>已取消</value></data>
+  <data name="NoCharacterInSelectedWorld" xml:space="preserve"><value>所選世界中找不到角色。</value></data>
+  <data name="AuthTokenLoadFailed" xml:space="preserve"><value>無法載入公共 AuthToken，請檢查資源伺服器網址或稍後再試。</value></data>
+  <data name="AccountAlreadyExists" xml:space="preserve"><value>帳號已存在。</value></data>
+  <data name="BattleLogViewerTitle" xml:space="preserve"><value>戰鬥紀錄檢視器</value></data>
+  <data name="BattleLogType" xml:space="preserve"><value>戰鬥類型</value></data>
+  <data name="BattleLogFile" xml:space="preserve"><value>紀錄檔案</value></data>
+  <data name="Loading" xml:space="preserve"><value>載入中…</value></data>
+  <data name="ActionSucceeded" xml:space="preserve"><value>{0}成功</value></data>
+  <data name="MasterUpdatingFile" xml:space="preserve"><value>正在更新 {0}...</value></data>
+  <data name="LocalRaidNoTeamCreateOwn" xml:space="preserve"><value>沒有可加入的隊伍，自行組建隊伍</value></data>
+  <data name="DungeonBattleAllCharactersDown" xml:space="preserve"><value>所有角色皆已陣亡</value></data>
+  <data name="GvgWaitingCastleInfo" xml:space="preserve"><value>等待據點資訊...</value></data>
+  <data name="GvgWaitingDeployDialog" xml:space="preserve"><value>等待部署介面開啟...</value></data>
+  <data name="GvgWaitingDeploy" xml:space="preserve"><value>等待部署...</value></data>
+  <data name="FriendCreatingAccount" xml:space="preserve"><value>正在建立新帳號...</value></data>
+  <data name="FriendUsingInviteCode" xml:space="preserve"><value>正在使用邀請碼 {0}...</value></data>
+  <data name="ChatNotConnected" xml:space="preserve"><value>未連線</value></data>
+  <data name="ChatConnecting" xml:space="preserve"><value>連線中</value></data>
+  <data name="ChatConnected" xml:space="preserve"><value>即時連線已建立</value></data>
+  <data name="ChatAuthFailed" xml:space="preserve"><value>驗證失敗，請重新登入帳號</value></data>
+  <data name="ChatReconnecting" xml:space="preserve"><value>連線中斷，等待重新連線</value></data>
+  <data name="ChatSendResultUnknown" xml:space="preserve"><value>聊天連線已中斷，發送結果未知，請核對訊息紀錄後再試。</value></data>
+  <data name="ChatSyncFailedFormat" xml:space="preserve"><value>同步聊天紀錄失敗：{0}</value></data>
+  <data name="ChatDisconnected" xml:space="preserve"><value>聊天連線已中斷。</value></data>
+  <data name="ChatTimeout" xml:space="preserve"><value>聊天連線逾時。</value></data>
+  <data name="ChatLoginFirst" xml:space="preserve"><value>請先登入帳號並等待聊天連線建立。</value></data>
+  <data name="ChatPrivateUpdateFailedFormat" xml:space="preserve"><value>更新私訊失敗：{0}</value></data>
+  <data name="ChatMessageLengthFormat" xml:space="preserve"><value>訊息長度應為 1–{0} 個字元。</value></data>
+  <data name="ChatSelectOtherPlayer" xml:space="preserve"><value>請選擇其他玩家作為私訊對象。</value></data>
+  <data name="ChatPlayerBlocked" xml:space="preserve"><value>該玩家已在封鎖名單中。</value></data>
+  <data name="ChatStickerLocked" xml:space="preserve"><value>訊息中包含尚未解鎖的貼圖。</value></data>
+  <data name="ChatNotConnectedYet" xml:space="preserve"><value>聊天尚未連線。</value></data>
+  <data name="ChatSentRefreshFailedFormat" xml:space="preserve"><value>訊息已發送，但更新紀錄失敗：{0}</value></data>
+  <data name="ChatSendUnconfirmed" xml:space="preserve"><value>尚未收到伺服器的發送確認，請核對聊天紀錄後再試，以免重複發送。</value></data>
+  <data name="ChatMessageChanged" xml:space="preserve"><value>訊息紀錄已更新，請重新選擇要回應的訊息。</value></data>
+  <data name="GuildNoteTitleLengthFormat" xml:space="preserve"><value>貼文標題應為 1–{0} 個字元。</value></data>
+  <data name="GuildNoteContentLengthFormat" xml:space="preserve"><value>貼文正文應為 1–{0} 個字元。</value></data>
+  <data name="ChatLeftGuild" xml:space="preserve"><value>已離開公會。</value></data>
+  <data name="Reconnect" xml:space="preserve"><value>重新連線</value></data>
+  <data name="ChatStickerSize" xml:space="preserve"><value>貼圖大小</value></data>
+  <data name="ChatAppearanceHint" xml:space="preserve"><value>每次調整 1px，自動儲存至目前瀏覽器。</value></data>
+  <data name="ChatGameFontSize" xml:space="preserve"><value>遊戲內字級（遊戲提供四檔）</value></data>
+  <data name="SyncToGame" xml:space="preserve"><value>同步至遊戲</value></data>
+  <data name="ChatRestoringChannel" xml:space="preserve"><value>正在恢復聊天頻道…</value></data>
+  <data name="ChatChannels" xml:space="preserve"><value>聊天頻道</value></data>
+  <data name="UnreadPrivateMessages" xml:space="preserve"><value>有未讀私訊</value></data>
+  <data name="PrivateConversations" xml:space="preserve"><value>私訊對話</value></data>
+  <data name="StartPrivateChat" xml:space="preserve"><value>開始私訊</value></data>
+  <data name="Unread" xml:space="preserve"><value>未讀</value></data>
+  <data name="NoPrivateConversations" xml:space="preserve"><value>暫無私訊對話</value></data>
+  <data name="CurrentConversation" xml:space="preserve"><value>目前對話</value></data>
+  <data name="ChatMessageCountFormat" xml:space="preserve"><value>{0} 則 · 伺服器時間</value></data>
+  <data name="LoadOlderMessages" xml:space="preserve"><value>載入更早的訊息</value></data>
+  <data name="NoOlderMessages" xml:space="preserve"><value>沒有更早的訊息</value></data>
+  <data name="HistoryLimitReached" xml:space="preserve"><value>已達快取上限</value></data>
+  <data name="ChatLoadsAfterConnect" xml:space="preserve"><value>連線建立後會自動載入訊息。</value></data>
+  <data name="Me" xml:space="preserve"><value>（我）</value></data>
+  <data name="GuildNoteFormat" xml:space="preserve"><value>貼文：{0}</value></data>
+  <data name="UntitledNote" xml:space="preserve"><value>未命名貼文</value></data>
+  <data name="DownloadBattleReport" xml:space="preserve"><value>下載戰鬥紀錄</value></data>
+  <data name="MessageActions" xml:space="preserve"><value>訊息操作</value></data>
+  <data name="SetAsAnnouncement" xml:space="preserve"><value>登錄至廣播</value></data>
+  <data name="RemoveAnnouncement" xml:space="preserve"><value>從廣播刪除</value></data>
+  <data name="SendToFormat" xml:space="preserve"><value>發送至 {0}</value></data>
+  <data name="Preview" xml:space="preserve"><value>預覽</value></data>
+  <data name="Processing" xml:space="preserve"><value>處理中…</value></data>
+  <data name="StickerTabCat" xml:space="preserve"><value>貓貓</value></data>
+  <data name="StickerPickerHint" xml:space="preserve"><value>點擊可連續新增，灰色為未解鎖</value></data>
+  <data name="InsertStickerFormat" xml:space="preserve"><value>插入貼圖 {0}</value></data>
+  <data name="StickerFormat" xml:space="preserve"><value>貼圖 {0}</value></data>
+  <data name="ChatHistoryFootnote" xml:space="preserve"><value>每個對話保留最近 {0} 則訊息；關閉聊天頁面後停止接收，重新開啟會載入伺服器紀錄。</value></data>
+  <data name="GuildActivity" xml:space="preserve"><value>公會動態</value></data>
+  <data name="OriginalMessageTimeFormat" xml:space="preserve"><value>原訊息：{0}</value></data>
+  <data name="AnnouncedAtFormat" xml:space="preserve"><value>廣播發佈：{0}</value></data>
+  <data name="NoGuildAnnouncements" xml:space="preserve"><value>暫無公會廣播</value></data>
+  <data name="CreatedAtFormat" xml:space="preserve"><value>發起於 {0}</value></data>
+  <data name="ParticipantsFormat" xml:space="preserve"><value>{0} 人參與</value></data>
+  <data name="DeletedPlayer" xml:space="preserve"><value>已註銷玩家</value></data>
+  <data name="UpdatedAtFormat" xml:space="preserve"><value>更新於 {0}</value></data>
+  <data name="MoveNoteUp" xml:space="preserve"><value>貼文上移</value></data>
+  <data name="MoveNoteDown" xml:space="preserve"><value>貼文下移</value></data>
+  <data name="ChatBrowserSaveFailed" xml:space="preserve"><value>已生效，但瀏覽器未能儲存設定。</value></data>
+  <data name="EnterOtherPlayerId" xml:space="preserve"><value>請輸入其他玩家的有效 ID。</value></data>
+  <data name="Sent" xml:space="preserve"><value>已發送</value></data>
+  <data name="StickerLimitExceeded" xml:space="preserve"><value>插入後將超過 {0} 字元限制。</value></data>
+  <data name="ListSeparator" xml:space="preserve"><value>、</value></data>
+  <data name="NoReactions" xml:space="preserve"><value>暫無回應。</value></data>
+  <data name="GuildNoteNoPermissionOrLimit" xml:space="preserve"><value>沒有權限，或貼文數量已達上限。</value></data>
+  <data name="GuildNoteChangedOrNoPermission" xml:space="preserve"><value>貼文已更新或目前沒有權限，請重新整理後再試。</value></data>
+  <data name="GuildNoteSavedReplaced" xml:space="preserve"><value>貼文已儲存，部分文字已被遊戲替換。</value></data>
+  <data name="DeleteGuildNoteConfirm" xml:space="preserve"><value>刪除貼文「{0}」？</value></data>
+  <data name="GuildNoteDeleted" xml:space="preserve"><value>貼文已刪除</value></data>
+  <data name="GuildPermissionDenied" xml:space="preserve"><value>目前公會職位沒有此操作權限。</value></data>
+  <data name="GuildNoteMoveFailed" xml:space="preserve"><value>無法移動此貼文，請重新整理後再試。</value></data>
+  <data name="GuildNoteShared" xml:space="preserve"><value>貼文已分享至公會聊天室</value></data>
+  <data name="VoteSubmitted" xml:space="preserve"><value>投票已提交</value></data>
+  <data name="NoVotes" xml:space="preserve"><value>暫無投票紀錄</value></data>
+  <data name="ChatSettingsUnavailable" xml:space="preserve"><value>尚未取得聊天設定，請重新登入後再試。</value></data>
+  <data name="BattleReportShared" xml:space="preserve"><value>戰鬥紀錄已分享</value></data>
+  <data name="PlayerIdFormat" xml:space="preserve"><value>玩家 {0}</value></data>
+  <data name="ReactionWink" xml:space="preserve"><value>眨眼</value></data>
+  <data name="ReactionCheers" xml:space="preserve"><value>乾杯</value></data>
+  <data name="ReactionHeart" xml:space="preserve"><value>愛心</value></data>
+  <data name="ReactionSad" xml:space="preserve"><value>難過</value></data>
+  <data name="Reaction" xml:space="preserve"><value>回應</value></data>
+  <data name="ReactionCountFormat" xml:space="preserve"><value>{0}，{1} 人回應</value></data>
+  <data name="AddReaction" xml:space="preserve"><value>新增回應</value></data>
+  <data name="SelectAgainToRemove" xml:space="preserve"><value>（再次選擇以取消）</value></data>
+  <data name="ReactionDetails" xml:space="preserve"><value>回應詳情</value></data>
+  <data name="AvatarFormat" xml:space="preserve"><value>{0}的頭像</value></data>
+  <data name="AppearanceTitleFormat" xml:space="preserve"><value>{0}：{1}</value></data>
+  <data name="FreeGachaFormat" xml:space="preserve"><value>免費{0}</value></data>
+</root>

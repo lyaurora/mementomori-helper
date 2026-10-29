@@ -38,7 +38,7 @@ public partial class MementoMoriFuncs
                         {
                             var response3 = await GetResponse<QuickStartGuildRaidRequest, QuickStartGuildRaidResponse>(new QuickStartGuildRaidRequest
                                 {BelongGuildId = response1.GuildId, GuildRaidBossType = info.GuildRaidDtoInfo.BossType});
-                            log($"{ResourceStrings.BattleResult}: {response3.BattleSimulationResult.BattleEndInfo.IsWinAttacker()}");
+                            log($"{ResourceStrings.BattleResult}: {TextResourceTable.Get(response3.BattleSimulationResult.BattleEndInfo.IsWinAttacker() ? "[CommonWinLabel]" : "[CommonLoseLabel]")}");
                             response3.BattleRewardResult.FixedItemList.PrintUserItems(log);
                             response3.BattleRewardResult.DropItemList.PrintUserItems(log);
                         }
@@ -46,7 +46,7 @@ public partial class MementoMoriFuncs
                         {
                             var response3 = await GetResponse<StartGuildRaidRequest, StartGuildRaidResponse>(new StartGuildRaidRequest
                                 {BelongGuildId = response1.GuildId, GuildRaidBossType = info.GuildRaidDtoInfo.BossType});
-                            log($"{ResourceStrings.BattleResult}: {response3.BattleResult.SimulationResult.BattleEndInfo.IsWinAttacker()}");
+                            log($"{ResourceStrings.BattleResult}: {TextResourceTable.Get(response3.BattleResult.SimulationResult.BattleEndInfo.IsWinAttacker() ? "[CommonWinLabel]" : "[CommonLoseLabel]")}");
                             response3.BattleRewardResult.FixedItemList.PrintUserItems(log);
                             response3.BattleRewardResult.DropItemList.PrintUserItems(log);
                         }

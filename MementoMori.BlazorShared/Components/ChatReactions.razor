@@ -7,22 +7,22 @@
         var count = Entry.ChatReactionCountMap?.GetValueOrDefault(reaction) ?? 0;
         if (count <= 0) continue;
         <button type="button" class="@(Entry.MyChatReactionType == reaction ? "selected" : "")"
-                aria-label="@($"{Name(reaction)}，{count} 人回应")" aria-pressed="@(Entry.MyChatReactionType == reaction ? "true" : "false")"
+                aria-label="@string.Format(ResourceStrings.ReactionCountFormat, Name(reaction), count)" aria-pressed="@(Entry.MyChatReactionType == reaction ? "true" : "false")"
                 disabled="@Disabled" @onclick="() => OnReact.InvokeAsync(reaction)">
             <img class="chat-reaction-icon" src="@ChatEmoticons.ReactionUrl(reaction)" alt="@Name(reaction)" /> @count
         </button>
     }
     <div class="chat-reaction-picker" @onkeydown="CloseOnEscape" @onkeydown:stopPropagation="_showChoices">
-        <MudIconButton @ref="_reactionButton" Icon="@Icons.Material.Filled.AddReaction" Size="Size.Small" aria-label="添加回应" title="添加回应" aria-expanded="@_showChoices.ToString().ToLowerInvariant()" Disabled="Disabled" OnClick="() => _showChoices = !_showChoices" />
+        <MudIconButton @ref="_reactionButton" Icon="@Icons.Material.Filled.AddReaction" Size="Size.Small" aria-label="@ResourceStrings.AddReaction" title="@ResourceStrings.AddReaction" aria-expanded="@_showChoices.ToString().ToLowerInvariant()" Disabled="Disabled" OnClick="() => _showChoices = !_showChoices" />
         @if (_showChoices)
         {
             <MudPopover Open="true" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
-                <div class="chat-reaction-options" role="group" aria-label="选择回应" @onkeydown="CloseOnEscape">
+                <div class="chat-reaction-options" role="group" aria-label="@ResourceStrings.AddReaction" @onkeydown="CloseOnEscape">
                     @foreach (var reaction in Reactions)
                     {
                         <button type="button" disabled="@Disabled" @onclick="() => ChooseReaction(reaction)">
                             <img class="chat-reaction-choice" src="@ChatEmoticons.ReactionUrl(reaction)" alt="" />
-                            @Name(reaction)@(Entry.MyChatReactionType == reaction ? "（再次选择取消）" : "")
+                            @Name(reaction)@(Entry.MyChatReactionType == reaction ? ResourceStrings.SelectAgainToRemove : "")
                         </button>
                     }
                 </div>
@@ -32,7 +32,7 @@
     </div>
     @if (Entry.ChatReactionCountMap?.Values.Any(count => count > 0) == true)
     {
-        <MudIconButton Icon="@Icons.Material.Filled.PeopleOutline" Size="Size.Small" aria-label="回应详情" title="回应详情" OnClick="() => OnDetails.InvokeAsync()" Disabled="Disabled" />
+        <MudIconButton Icon="@Icons.Material.Filled.PeopleOutline" Size="Size.Small" aria-label="@ResourceStrings.ReactionDetails" title="@ResourceStrings.ReactionDetails" OnClick="() => OnDetails.InvokeAsync()" Disabled="Disabled" />
     }
 </div>
 
@@ -51,8 +51,9 @@
         _showChoices = false;
         if (_reactionButton != null) await _reactionButton.FocusAsync();
     }
-    private static string Name(ChatReactionType type) => type switch
+    internal static string Name(ChatReactionType type) => type switch
     {
-        ChatReactionType.Wink => "眨眼", ChatReactionType.Cheers => "干杯", ChatReactionType.Heart => "爱心", ChatReactionType.Sad => "难过", _ => "回应"
+        ChatReactionType.Wink => ResourceStrings.ReactionWink, ChatReactionType.Cheers => ResourceStrings.ReactionCheers,
+        ChatReactionType.Heart => ResourceStrings.ReactionHeart, ChatReactionType.Sad => ResourceStrings.ReactionSad, _ => ResourceStrings.Reaction
     };
 }

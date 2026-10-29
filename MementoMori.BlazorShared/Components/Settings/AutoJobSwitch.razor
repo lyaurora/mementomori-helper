@@ -8,7 +8,7 @@
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Tune" aria-hidden="true" /><span>@ResourceStrings.AutoJobSwitchs <span class="panel-scope">(Global)</span></span></MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Tune" aria-hidden="true" /><span>@ResourceStrings.AutoJobSwitchs <span class="panel-scope">(@ResourceStrings.AllAccounts)</span></span></MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent>
@@ -20,7 +20,7 @@
             <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@Tr("[CommonHeaderGlobalPvpLabel]")" @bind-Value="AutoJob__AutoLegendLeague" Color="Color.Primary"></MudSwitch>
             <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@Tr("[CommonHeaderDungeonBattleLabel]")" @bind-Value="AutoJob__AutoDungeonBattle" Color="Color.Primary"></MudSwitch>
             <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@ResourceStrings.UseNormalItems" @bind-Value="AutoJob__AutoUseItems" Color="Color.Primary"></MudSwitch>
-            <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@Tr("[CommonFooterGachaButtonLabel]")" @bind-Value="AutoJob__AutoFreeGacha" Color="Color.Primary"></MudSwitch>
+            <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@string.Format(ResourceStrings.FreeGachaFormat, Tr("[CommonFooterGachaButtonLabel]"))" @bind-Value="AutoJob__AutoFreeGacha" Color="Color.Primary"></MudSwitch>
             <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@Tr("[CharacterMenuTabCharacterRankUp]")" @bind-Value="AutoJob__AutoRankUpCharacter" Color="Color.Primary"></MudSwitch>
             <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@Tr("[GuildRaidReleaseConfirmTitle]")" @bind-Value="AutoJob__AutoOpenGuildRaid" Color="Color.Primary"></MudSwitch>
             <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@Tr("[CommonHeaderLocalRaidLabel]")" @bind-Value="AutoJob__AutoLocalRaid" Color="Color.Primary"></MudSwitch>

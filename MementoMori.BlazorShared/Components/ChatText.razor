@@ -2,7 +2,7 @@
 {
     @if (ChatEmoticons.TryGetId(part, out var id))
     {
-        <span class="chat-sticker" style="@ChatEmoticons.Style(id, StickerSize)" role="img" aria-label="@($"贴图 {id}")" title="@($"贴图 {id}")"></span>
+        <span class="chat-sticker" style="@ChatEmoticons.Style(id, StickerSize)" role="img" aria-label="@string.Format(ResourceStrings.StickerFormat, id)" title="@string.Format(ResourceStrings.StickerFormat, id)"></span>
     }
     else
     {

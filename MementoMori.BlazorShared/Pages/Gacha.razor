@@ -18,7 +18,7 @@
 {
     <MudAlert Severity="Severity.Warning">@alertMessage</MudAlert>
 }
-@if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="正在加载召唤信息" /> }
+@if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="@ResourceStrings.Loading" /> }
 
 @if (ViewModel?.UserSyncData?.UserItemDtoInfo != null)
 {
@@ -135,7 +135,7 @@
             drawResponse.BonusRewardItemList.PrintUserItems(s => msg.AppendLine(s).AppendLine("<br />"));
             drawResponse.CharacterReleaseItemList.PrintUserItems(s => msg.AppendLine(s).AppendLine("<br />"));
 
-            await DialogService.ShowMessageBox(ResourceStrings.GachaResult, (MarkupString) msg.ToString());
+            await DialogService.ShowMessageBox(ResourceStrings.GachaResult, (MarkupString) msg.ToString(), Masters.TextResourceTable.Get("[CommonOkLabel]"));
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
         catch (Exception e) { if (!token.IsCancellationRequested) alertMessage = e.Message; }

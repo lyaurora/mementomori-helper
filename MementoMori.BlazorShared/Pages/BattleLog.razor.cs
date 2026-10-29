@@ -2,6 +2,7 @@
 using MementoMori.Common.Localization;
 using Microsoft.JSInterop;
 using Newtonsoft.Json;
+using static MementoMori.BlazorShared.Extensions.MasterResourceExtension;
 
 namespace MementoMori.BlazorShared.Pages;
 
@@ -70,7 +71,7 @@ public partial class BattleLog
         }
         catch (Exception e)
         {
-            await DialogService.ShowMessageBox("错误", e.ToString());
+            await DialogService.ShowMessageBox(Tr("[CommonErrorLabel]"), e.ToString(), yesText: Tr("[CommonOkLabel]"));
         }
     }
 
@@ -97,7 +98,7 @@ public partial class BattleLog
         }
         catch (Exception e)
         {
-            DialogService.ShowMessageBox("错误", e.ToString());
+            DialogService.ShowMessageBox(Tr("[CommonErrorLabel]"), e.ToString(), yesText: Tr("[CommonOkLabel]"));
             json = null;
             return false;
         }
@@ -121,6 +122,19 @@ public partial class BattleLog
         BattleLeague,
         LegendLeague
     }
+
+    private static string BattleLogTypeName(BattleLogType type) => type switch
+    {
+        BattleLogType.Main => Tr("[CommonHeaderAutoBattleLabel]"),
+        BattleLogType.TowerInfinite => Tr("[TowerTypeInfinite]"),
+        BattleLogType.TowerBlue => Tr("[TowerTypeBlue]"),
+        BattleLogType.TowerRed => Tr("[TowerTypeRed]"),
+        BattleLogType.TowerGreen => Tr("[TowerTypeGreen]"),
+        BattleLogType.TowerYellow => Tr("[TowerTypeYellow]"),
+        BattleLogType.BattleLeague => Tr("[BattleTypeBattleLeague]"),
+        BattleLogType.LegendLeague => Tr("[BattleTypeLegendLeague]"),
+        _ => type.ToString()
+    };
 
     private Dictionary<BattleLogType, string> logTypePrefixes = new()
     {
@@ -157,7 +171,7 @@ public partial class BattleLog
 
         if (!filesToDelete.Any())
         {
-            await DialogService.ShowMessageBox(ResourceStrings.BattleLogNoFilesToClean, ResourceStrings.BattleLogNoFilesToClean);
+            await DialogService.ShowMessageBox(ResourceStrings.BattleLogCleanRange, ResourceStrings.BattleLogNoFilesToClean, yesText: Tr("[CommonOkLabel]"));
             return;
         }
 
@@ -191,13 +205,13 @@ public partial class BattleLog
             }
             catch (Exception ex)
             {
-                await DialogService.ShowMessageBox(ResourceStrings.BattleLogCleanError,
-                    string.Format(ResourceStrings.BattleLogCleanError, file, ex.Message));
+                await DialogService.ShowMessageBox(Tr("[CommonErrorLabel]"),
+                    string.Format(ResourceStrings.BattleLogCleanError, file, ex.Message), yesText: Tr("[CommonOkLabel]"));
             }
         }
 
         GetLogs();
         await DialogService.ShowMessageBox(ResourceStrings.Finished,
-            string.Format(ResourceStrings.BattleLogCleanComplete, filesToDelete.Count));
+            string.Format(ResourceStrings.BattleLogCleanComplete, filesToDelete.Count), yesText: Tr("[CommonOkLabel]"));
     }
 }

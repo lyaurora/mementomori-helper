@@ -826,7 +826,7 @@ namespace MementoMori.Common.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Exit.
+        ///   Looks up a localized string similar to Log out.
         /// </summary>
         public static string Exit {
             get {
@@ -1557,7 +1557,7 @@ namespace MementoMori.Common.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Unkonow.
+        ///   Looks up a localized string similar to Unknown.
         /// </summary>
         public static string Unknown {
             get {
@@ -1589,6 +1589,1095 @@ namespace MementoMori.Common.Localization {
         public static string You_can_download_the_battle_log_and_parse_it_here {
             get {
                 return ResourceManager.GetString("You can download the battle log and parse it here", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Appearance.
+        /// </summary>
+        public static string Appearance {
+            get {
+                return ResourceManager.GetString("Appearance", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to System.
+        /// </summary>
+        public static string ThemeSystem {
+            get {
+                return ResourceManager.GetString("ThemeSystem", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Light.
+        /// </summary>
+        public static string ThemeLight {
+            get {
+                return ResourceManager.GetString("ThemeLight", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Dark.
+        /// </summary>
+        public static string ThemeDark {
+            get {
+                return ResourceManager.GetString("ThemeDark", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Theme changed, but the browser could not save the setting..
+        /// </summary>
+        public static string ThemeSaveFailed {
+            get {
+                return ResourceManager.GetString("ThemeSaveFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to All accounts.
+        /// </summary>
+        public static string AllAccounts {
+            get {
+                return ResourceManager.GetString("AllAccounts", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Items to use automatically.
+        /// </summary>
+        public static string AutoUseTargetItems {
+            get {
+                return ResourceManager.GetString("AutoUseTargetItems", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Job Status.
+        /// </summary>
+        public static string AutoJobStatus {
+            get {
+                return ResourceManager.GetString("AutoJobStatus", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cancelled.
+        /// </summary>
+        public static string TaskCancelled {
+            get {
+                return ResourceManager.GetString("TaskCancelled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No character found in the selected world..
+        /// </summary>
+        public static string NoCharacterInSelectedWorld {
+            get {
+                return ResourceManager.GetString("NoCharacterInSelectedWorld", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unable to load the public AuthToken. Check the asset server URL or try again later..
+        /// </summary>
+        public static string AuthTokenLoadFailed {
+            get {
+                return ResourceManager.GetString("AuthTokenLoadFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Account already exists..
+        /// </summary>
+        public static string AccountAlreadyExists {
+            get {
+                return ResourceManager.GetString("AccountAlreadyExists", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Battle Log Viewer.
+        /// </summary>
+        public static string BattleLogViewerTitle {
+            get {
+                return ResourceManager.GetString("BattleLogViewerTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Battle type.
+        /// </summary>
+        public static string BattleLogType {
+            get {
+                return ResourceManager.GetString("BattleLogType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Log file.
+        /// </summary>
+        public static string BattleLogFile {
+            get {
+                return ResourceManager.GetString("BattleLogFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Loading….
+        /// </summary>
+        public static string Loading {
+            get {
+                return ResourceManager.GetString("Loading", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} succeeded.
+        /// </summary>
+        public static string ActionSucceeded {
+            get {
+                return ResourceManager.GetString("ActionSucceeded", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Updating {0}....
+        /// </summary>
+        public static string MasterUpdatingFile {
+            get {
+                return ResourceManager.GetString("MasterUpdatingFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No team to join, creating our own team.
+        /// </summary>
+        public static string LocalRaidNoTeamCreateOwn {
+            get {
+                return ResourceManager.GetString("LocalRaidNoTeamCreateOwn", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to All characters are down.
+        /// </summary>
+        public static string DungeonBattleAllCharactersDown {
+            get {
+                return ResourceManager.GetString("DungeonBattleAllCharactersDown", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Waiting for base info....
+        /// </summary>
+        public static string GvgWaitingCastleInfo {
+            get {
+                return ResourceManager.GetString("GvgWaitingCastleInfo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Waiting for the deploy screen....
+        /// </summary>
+        public static string GvgWaitingDeployDialog {
+            get {
+                return ResourceManager.GetString("GvgWaitingDeployDialog", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Waiting for deployment....
+        /// </summary>
+        public static string GvgWaitingDeploy {
+            get {
+                return ResourceManager.GetString("GvgWaitingDeploy", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Creating new account....
+        /// </summary>
+        public static string FriendCreatingAccount {
+            get {
+                return ResourceManager.GetString("FriendCreatingAccount", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Using invite code {0}....
+        /// </summary>
+        public static string FriendUsingInviteCode {
+            get {
+                return ResourceManager.GetString("FriendUsingInviteCode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Not connected.
+        /// </summary>
+        public static string ChatNotConnected {
+            get {
+                return ResourceManager.GetString("ChatNotConnected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Connecting….
+        /// </summary>
+        public static string ChatConnecting {
+            get {
+                return ResourceManager.GetString("ChatConnecting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Connected.
+        /// </summary>
+        public static string ChatConnected {
+            get {
+                return ResourceManager.GetString("ChatConnected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Authentication failed. Please log in again..
+        /// </summary>
+        public static string ChatAuthFailed {
+            get {
+                return ResourceManager.GetString("ChatAuthFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Disconnected, waiting to reconnect.
+        /// </summary>
+        public static string ChatReconnecting {
+            get {
+                return ResourceManager.GetString("ChatReconnecting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Chat disconnected; the send result is unknown. Check the message history before retrying..
+        /// </summary>
+        public static string ChatSendResultUnknown {
+            get {
+                return ResourceManager.GetString("ChatSendResultUnknown", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to sync chat history: {0}.
+        /// </summary>
+        public static string ChatSyncFailedFormat {
+            get {
+                return ResourceManager.GetString("ChatSyncFailedFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Chat disconnected..
+        /// </summary>
+        public static string ChatDisconnected {
+            get {
+                return ResourceManager.GetString("ChatDisconnected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Chat connection timed out..
+        /// </summary>
+        public static string ChatTimeout {
+            get {
+                return ResourceManager.GetString("ChatTimeout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Log in and wait for the chat connection first..
+        /// </summary>
+        public static string ChatLoginFirst {
+            get {
+                return ResourceManager.GetString("ChatLoginFirst", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to update private chats: {0}.
+        /// </summary>
+        public static string ChatPrivateUpdateFailedFormat {
+            get {
+                return ResourceManager.GetString("ChatPrivateUpdateFailedFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Messages must be 1–{0} characters..
+        /// </summary>
+        public static string ChatMessageLengthFormat {
+            get {
+                return ResourceManager.GetString("ChatMessageLengthFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Choose another player for private chat..
+        /// </summary>
+        public static string ChatSelectOtherPlayer {
+            get {
+                return ResourceManager.GetString("ChatSelectOtherPlayer", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This player is on your block list..
+        /// </summary>
+        public static string ChatPlayerBlocked {
+            get {
+                return ResourceManager.GetString("ChatPlayerBlocked", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The message contains locked stickers..
+        /// </summary>
+        public static string ChatStickerLocked {
+            get {
+                return ResourceManager.GetString("ChatStickerLocked", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Chat is not connected yet..
+        /// </summary>
+        public static string ChatNotConnectedYet {
+            get {
+                return ResourceManager.GetString("ChatNotConnectedYet", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Message sent, but refreshing the history failed: {0}.
+        /// </summary>
+        public static string ChatSentRefreshFailedFormat {
+            get {
+                return ResourceManager.GetString("ChatSentRefreshFailedFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The server hasn't confirmed the message yet. Check the chat history before retrying to avoid sending it twice..
+        /// </summary>
+        public static string ChatSendUnconfirmed {
+            get {
+                return ResourceManager.GetString("ChatSendUnconfirmed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The message list has changed. Select the message to react to again..
+        /// </summary>
+        public static string ChatMessageChanged {
+            get {
+                return ResourceManager.GetString("ChatMessageChanged", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Note titles must be 1–{0} characters..
+        /// </summary>
+        public static string GuildNoteTitleLengthFormat {
+            get {
+                return ResourceManager.GetString("GuildNoteTitleLengthFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Note contents must be 1–{0} characters..
+        /// </summary>
+        public static string GuildNoteContentLengthFormat {
+            get {
+                return ResourceManager.GetString("GuildNoteContentLengthFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to You have left the guild..
+        /// </summary>
+        public static string ChatLeftGuild {
+            get {
+                return ResourceManager.GetString("ChatLeftGuild", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reconnect.
+        /// </summary>
+        public static string Reconnect {
+            get {
+                return ResourceManager.GetString("Reconnect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sticker size.
+        /// </summary>
+        public static string ChatStickerSize {
+            get {
+                return ResourceManager.GetString("ChatStickerSize", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Adjusts in 1px steps and is saved in this browser..
+        /// </summary>
+        public static string ChatAppearanceHint {
+            get {
+                return ResourceManager.GetString("ChatAppearanceHint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to In-game font size (4 levels).
+        /// </summary>
+        public static string ChatGameFontSize {
+            get {
+                return ResourceManager.GetString("ChatGameFontSize", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sync to game.
+        /// </summary>
+        public static string SyncToGame {
+            get {
+                return ResourceManager.GetString("SyncToGame", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Restoring chat channel….
+        /// </summary>
+        public static string ChatRestoringChannel {
+            get {
+                return ResourceManager.GetString("ChatRestoringChannel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Chat channels.
+        /// </summary>
+        public static string ChatChannels {
+            get {
+                return ResourceManager.GetString("ChatChannels", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unread private messages.
+        /// </summary>
+        public static string UnreadPrivateMessages {
+            get {
+                return ResourceManager.GetString("UnreadPrivateMessages", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Private conversations.
+        /// </summary>
+        public static string PrivateConversations {
+            get {
+                return ResourceManager.GetString("PrivateConversations", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Start chat.
+        /// </summary>
+        public static string StartPrivateChat {
+            get {
+                return ResourceManager.GetString("StartPrivateChat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unread.
+        /// </summary>
+        public static string Unread {
+            get {
+                return ResourceManager.GetString("Unread", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No private conversations.
+        /// </summary>
+        public static string NoPrivateConversations {
+            get {
+                return ResourceManager.GetString("NoPrivateConversations", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Current conversation.
+        /// </summary>
+        public static string CurrentConversation {
+            get {
+                return ResourceManager.GetString("CurrentConversation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} messages · server time.
+        /// </summary>
+        public static string ChatMessageCountFormat {
+            get {
+                return ResourceManager.GetString("ChatMessageCountFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Load older messages.
+        /// </summary>
+        public static string LoadOlderMessages {
+            get {
+                return ResourceManager.GetString("LoadOlderMessages", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No older messages.
+        /// </summary>
+        public static string NoOlderMessages {
+            get {
+                return ResourceManager.GetString("NoOlderMessages", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to History limit reached.
+        /// </summary>
+        public static string HistoryLimitReached {
+            get {
+                return ResourceManager.GetString("HistoryLimitReached", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Messages will load once connected..
+        /// </summary>
+        public static string ChatLoadsAfterConnect {
+            get {
+                return ResourceManager.GetString("ChatLoadsAfterConnect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to (me).
+        /// </summary>
+        public static string Me {
+            get {
+                return ResourceManager.GetString("Me", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Guild Note: {0}.
+        /// </summary>
+        public static string GuildNoteFormat {
+            get {
+                return ResourceManager.GetString("GuildNoteFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Untitled note.
+        /// </summary>
+        public static string UntitledNote {
+            get {
+                return ResourceManager.GetString("UntitledNote", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Download report.
+        /// </summary>
+        public static string DownloadBattleReport {
+            get {
+                return ResourceManager.GetString("DownloadBattleReport", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Message actions.
+        /// </summary>
+        public static string MessageActions {
+            get {
+                return ResourceManager.GetString("MessageActions", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Add to announcements.
+        /// </summary>
+        public static string SetAsAnnouncement {
+            get {
+                return ResourceManager.GetString("SetAsAnnouncement", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Remove from announcements.
+        /// </summary>
+        public static string RemoveAnnouncement {
+            get {
+                return ResourceManager.GetString("RemoveAnnouncement", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Send to {0}.
+        /// </summary>
+        public static string SendToFormat {
+            get {
+                return ResourceManager.GetString("SendToFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Preview.
+        /// </summary>
+        public static string Preview {
+            get {
+                return ResourceManager.GetString("Preview", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Processing….
+        /// </summary>
+        public static string Processing {
+            get {
+                return ResourceManager.GetString("Processing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cats.
+        /// </summary>
+        public static string StickerTabCat {
+            get {
+                return ResourceManager.GetString("StickerTabCat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Click to add more; grey stickers are locked..
+        /// </summary>
+        public static string StickerPickerHint {
+            get {
+                return ResourceManager.GetString("StickerPickerHint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Insert sticker {0}.
+        /// </summary>
+        public static string InsertStickerFormat {
+            get {
+                return ResourceManager.GetString("InsertStickerFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sticker {0}.
+        /// </summary>
+        public static string StickerFormat {
+            get {
+                return ResourceManager.GetString("StickerFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Each conversation keeps the latest {0} messages. Receiving stops when you leave this page; reopening it reloads the server history..
+        /// </summary>
+        public static string ChatHistoryFootnote {
+            get {
+                return ResourceManager.GetString("ChatHistoryFootnote", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Guild activity.
+        /// </summary>
+        public static string GuildActivity {
+            get {
+                return ResourceManager.GetString("GuildActivity", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Original message: {0}.
+        /// </summary>
+        public static string OriginalMessageTimeFormat {
+            get {
+                return ResourceManager.GetString("OriginalMessageTimeFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Announced: {0}.
+        /// </summary>
+        public static string AnnouncedAtFormat {
+            get {
+                return ResourceManager.GetString("AnnouncedAtFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No guild announcements.
+        /// </summary>
+        public static string NoGuildAnnouncements {
+            get {
+                return ResourceManager.GetString("NoGuildAnnouncements", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Created {0}.
+        /// </summary>
+        public static string CreatedAtFormat {
+            get {
+                return ResourceManager.GetString("CreatedAtFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} voted.
+        /// </summary>
+        public static string ParticipantsFormat {
+            get {
+                return ResourceManager.GetString("ParticipantsFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Deleted player.
+        /// </summary>
+        public static string DeletedPlayer {
+            get {
+                return ResourceManager.GetString("DeletedPlayer", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Updated {0}.
+        /// </summary>
+        public static string UpdatedAtFormat {
+            get {
+                return ResourceManager.GetString("UpdatedAtFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Move note up.
+        /// </summary>
+        public static string MoveNoteUp {
+            get {
+                return ResourceManager.GetString("MoveNoteUp", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Move note down.
+        /// </summary>
+        public static string MoveNoteDown {
+            get {
+                return ResourceManager.GetString("MoveNoteDown", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Applied, but the browser could not save this setting..
+        /// </summary>
+        public static string ChatBrowserSaveFailed {
+            get {
+                return ResourceManager.GetString("ChatBrowserSaveFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enter a valid ID of another player..
+        /// </summary>
+        public static string EnterOtherPlayerId {
+            get {
+                return ResourceManager.GetString("EnterOtherPlayerId", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sent.
+        /// </summary>
+        public static string Sent {
+            get {
+                return ResourceManager.GetString("Sent", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Inserting this would exceed the {0}-character limit..
+        /// </summary>
+        public static string StickerLimitExceeded {
+            get {
+                return ResourceManager.GetString("StickerLimitExceeded", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to ,.
+        /// </summary>
+        public static string ListSeparator {
+            get {
+                return ResourceManager.GetString("ListSeparator", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No reactions yet..
+        /// </summary>
+        public static string NoReactions {
+            get {
+                return ResourceManager.GetString("NoReactions", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to You don't have permission, or the note limit has been reached..
+        /// </summary>
+        public static string GuildNoteNoPermissionOrLimit {
+            get {
+                return ResourceManager.GetString("GuildNoteNoPermissionOrLimit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The note has changed or you lack permission. Refresh and try again..
+        /// </summary>
+        public static string GuildNoteChangedOrNoPermission {
+            get {
+                return ResourceManager.GetString("GuildNoteChangedOrNoPermission", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Note saved; some words were replaced by the game..
+        /// </summary>
+        public static string GuildNoteSavedReplaced {
+            get {
+                return ResourceManager.GetString("GuildNoteSavedReplaced", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Delete note “{0}”?.
+        /// </summary>
+        public static string DeleteGuildNoteConfirm {
+            get {
+                return ResourceManager.GetString("DeleteGuildNoteConfirm", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Note deleted.
+        /// </summary>
+        public static string GuildNoteDeleted {
+            get {
+                return ResourceManager.GetString("GuildNoteDeleted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Your guild position doesn't allow this..
+        /// </summary>
+        public static string GuildPermissionDenied {
+            get {
+                return ResourceManager.GetString("GuildPermissionDenied", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This note can't be moved. Refresh and try again..
+        /// </summary>
+        public static string GuildNoteMoveFailed {
+            get {
+                return ResourceManager.GetString("GuildNoteMoveFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Note shared to guild chat.
+        /// </summary>
+        public static string GuildNoteShared {
+            get {
+                return ResourceManager.GetString("GuildNoteShared", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Vote submitted.
+        /// </summary>
+        public static string VoteSubmitted {
+            get {
+                return ResourceManager.GetString("VoteSubmitted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No votes yet.
+        /// </summary>
+        public static string NoVotes {
+            get {
+                return ResourceManager.GetString("NoVotes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Chat settings aren't loaded yet. Log in again and retry..
+        /// </summary>
+        public static string ChatSettingsUnavailable {
+            get {
+                return ResourceManager.GetString("ChatSettingsUnavailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Battle report shared.
+        /// </summary>
+        public static string BattleReportShared {
+            get {
+                return ResourceManager.GetString("BattleReportShared", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Player {0}.
+        /// </summary>
+        public static string PlayerIdFormat {
+            get {
+                return ResourceManager.GetString("PlayerIdFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Wink.
+        /// </summary>
+        public static string ReactionWink {
+            get {
+                return ResourceManager.GetString("ReactionWink", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cheers.
+        /// </summary>
+        public static string ReactionCheers {
+            get {
+                return ResourceManager.GetString("ReactionCheers", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Heart.
+        /// </summary>
+        public static string ReactionHeart {
+            get {
+                return ResourceManager.GetString("ReactionHeart", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sad.
+        /// </summary>
+        public static string ReactionSad {
+            get {
+                return ResourceManager.GetString("ReactionSad", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reaction.
+        /// </summary>
+        public static string Reaction {
+            get {
+                return ResourceManager.GetString("Reaction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0}, {1} reactions.
+        /// </summary>
+        public static string ReactionCountFormat {
+            get {
+                return ResourceManager.GetString("ReactionCountFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Add reaction.
+        /// </summary>
+        public static string AddReaction {
+            get {
+                return ResourceManager.GetString("AddReaction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to (select again to remove).
+        /// </summary>
+        public static string SelectAgainToRemove {
+            get {
+                return ResourceManager.GetString("SelectAgainToRemove", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reaction details.
+        /// </summary>
+        public static string ReactionDetails {
+            get {
+                return ResourceManager.GetString("ReactionDetails", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0}'s avatar.
+        /// </summary>
+        public static string AvatarFormat {
+            get {
+                return ResourceManager.GetString("AvatarFormat", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to {0}: {1}.
+        /// </summary>
+        public static string AppearanceTitleFormat {
+            get {
+                return ResourceManager.GetString("AppearanceTitleFormat", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Free {0}.
+        /// </summary>
+        public static string FreeGachaFormat {
+            get {
+                return ResourceManager.GetString("FreeGachaFormat", resourceCulture);
             }
         }
     }

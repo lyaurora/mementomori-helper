@@ -10,7 +10,7 @@
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.ManageAccounts" aria-hidden="true" /><span>@ResourceStrings.AccountManagement <span class="panel-scope">(Global)</span></span></MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.ManageAccounts" aria-hidden="true" /><span>@ResourceStrings.AccountManagement <span class="panel-scope">(@ResourceStrings.AllAccounts)</span></span></MudText>
         </CardHeaderContent>
         <CardHeaderActions>
             <MudButton Variant="Variant.Outlined" Disabled="_accountDoingAction" OnClick="AddAccountClick">@ResourceStrings.Add</MudButton>
@@ -40,7 +40,7 @@
                         <MudIconButton title="@ResourceStrings.Login" aria-label="@ResourceStrings.Login" Icon="@Icons.Material.Filled.Login" Disabled="_accountDoingAction" OnClick="() => LoginAccount(accountInfo.UserId)" Size="Size.Small"></MudIconButton>
                         <MudIconButton title="@ResourceStrings.Exit" aria-label="@ResourceStrings.Exit" Icon="@Icons.Material.Filled.Logout" Disabled="_accountDoingAction" OnClick="() => LogoutAccount(accountInfo.UserId)" Size="Size.Small"></MudIconButton>
                         <MudIconButton title="@ResourceStrings.Settings" aria-label="@ResourceStrings.Settings" Icon="@Icons.Material.Filled.Settings" Disabled="_accountDoingAction" OnClick="() => ShowAccountSetting(accountInfo.UserId)" Size="Size.Small"></MudIconButton>
-                        <MudIconButton title="@ResourceStrings.Confirm_removal_of_this_account_" aria-label="@ResourceStrings.Confirm_removal_of_this_account_" Icon="@Icons.Material.Filled.Delete" Disabled="_accountDoingAction" OnClick="() => DeleteAccount(accountInfo.UserId)" Size="Size.Small"></MudIconButton>
+                        <MudIconButton title="@Tr("[MyPagePresentDetailDeleteButton]")" aria-label="@Tr("[MyPagePresentDetailDeleteButton]")" Icon="@Icons.Material.Filled.Delete" Disabled="_accountDoingAction" OnClick="() => DeleteAccount(accountInfo.UserId)" Size="Size.Small"></MudIconButton>
                     </MudStack>
                 </MudListItem>
             }
@@ -142,7 +142,7 @@
         }
         catch (Exception e)
         {
-            await DialogService.ShowMessageBox(ResourceStrings.Failed_to_retrieve_account_information, e.Message);
+            await DialogService.ShowMessageBox(ResourceStrings.Failed_to_retrieve_account_information, e.Message, Tr("[CommonOkLabel]"));
         }
         finally
         {
@@ -191,7 +191,7 @@
 
     private async Task DeleteAccount(long userId)
     {
-        if (await DialogService.ShowMessageBox(ResourceStrings.Confirm_removal_of_this_account_, "", options: new DialogOptions {CloseButton = true}) != true)
+        if (await DialogService.ShowMessageBox(ResourceStrings.Confirm_removal_of_this_account_, "", Tr("[CommonOkLabel]"), cancelText: Tr("[CommonCancelLabel]"), options: new DialogOptions {CloseButton = true}) != true)
         {
             return;
         }

@@ -3,6 +3,7 @@ using MementoMori.Ortega.Share.Data.ApiInterface.Equipment;
 using MementoMori.Ortega.Share.Data.DtoInfo;
 using MementoMori.Ortega.Share.Data.Equipment;
 using MementoMori.Ortega.Share.Master.Data;
+using Microsoft.Extensions.Logging;
 
 // ReSharper disable PossibleMultipleEnumeration
 
@@ -109,7 +110,7 @@ public partial class MementoMoriFuncs
             {
                 if (needMoreCount <= 0) break;
                 var equipmentMb = EquipmentTable.GetById(equipItem.ItemId);
-                log($"{ResourceStrings.FindEquipmentCharacter} {equipmentMb.Memo}");
+                log($"{ResourceStrings.FindEquipmentCharacter} {TextResourceTable.Get(equipmentMb.NameKey)}");
                 // 找到可以装备的一个角色
                 var userCharacterDtoInfo = UserSyncData.UserCharacterDtoInfos.Where(d =>
                 {
@@ -194,7 +195,8 @@ public partial class MementoMoriFuncs
                     }
                     catch (Exception e) when (changeException != null)
                     {
-                        log(e.ToString());
+                        _logger.LogError(e, "Failed to restore equipment");
+                        log(e.Message);
                     }
                 }
 
@@ -288,7 +290,7 @@ public partial class MementoMoriFuncs
                     InheritanceEquipmentGuid = userEquipmentDtoInfo.Guid,
                     SourceEquipmentGuid = info.Guid
                 });
-            log($"{TextResourceTable.Get("[EquipmentInheritanceButton]")}{ResourceStrings.Finished} {mb.Memo}=>{EquipmentTable.GetById(userEquipmentDtoInfo.EquipmentId).Memo}");
+            log($"{TextResourceTable.Get("[EquipmentInheritanceButton]")}{ResourceStrings.Finished} {TextResourceTable.Get(mb.NameKey)}=>{TextResourceTable.Get(EquipmentTable.GetById(userEquipmentDtoInfo.EquipmentId).NameKey)}");
         }
         else
             log(ResourceStrings.NoInheritableDRarityEquip);

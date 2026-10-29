@@ -8,11 +8,11 @@
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Inventory2" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[CommonFooterItemBoxButtonLabel]") <span class="panel-scope">(Global)</span></span></MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Inventory2" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[CommonFooterItemBoxButtonLabel]") <span class="panel-scope">(@ResourceStrings.AllAccounts)</span></span></MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="settings-form">
-        <MudSelect Label="自动使用的物品" MultiSelection="true" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+        <MudSelect Label="@ResourceStrings.AutoUseTargetItems" MultiSelection="true" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                    @bind-SelectedValues="AutoUseItemTypes" 
                    MultiSelectionTextFunc="list => string.Format(ResourceStrings.SelectedXItems, list.Count)">
             @foreach (var item in Enum.GetValues<GameConfig.AutoUseItemType>())

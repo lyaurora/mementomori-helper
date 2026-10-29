@@ -385,10 +385,10 @@
       <value>主账号</value>
   </data>
   <data name="SwitchAccount" xml:space="preserve">
-      <value>切换帐号</value>
+      <value>切换账号</value>
   </data>
   <data name="AccountManagement" xml:space="preserve">
-      <value>帐号管理</value>
+      <value>账号管理</value>
   </data>
   <data name="NotLoggedIn" xml:space="preserve">
       <value>未登录</value>
@@ -403,16 +403,16 @@
       <value>设置</value>
   </data>
   <data name="Exit" xml:space="preserve">
-      <value>退出</value>
+      <value>退出登录</value>
   </data>
   <data name="Account" xml:space="preserve">
-      <value>帐号</value>
+      <value>账号</value>
   </data>
   <data name="Password" xml:space="preserve">
       <value>密码</value>
   </data>
   <data name="Failed to retrieve account information" xml:space="preserve">
-      <value>获取帐号信息失败</value>
+      <value>获取账号信息失败</value>
   </data>
   <data name="Login successful" xml:space="preserve">
       <value>登录成功</value>
@@ -433,7 +433,7 @@
       <value>登录失效, 请重新登录</value>
   </data>
   <data name="Login failed, please check your account configuration" xml:space="preserve">
-      <value>登录失败, 请检查帐号配置</value>
+      <value>登录失败, 请检查账号配置</value>
   </data>
   <data name="Operation" xml:space="preserve">
       <value>操作</value>
@@ -448,7 +448,7 @@
       <value>按照报酬数量和权重选择任务</value>
   </data>
   <data name="You can download the battle log and parse it here" xml:space="preserve">
-      <value>你可以下载战斗日志然后在这里解析</value>
+      <value>你可以下载战斗记录然后在这里解析</value>
   </data>
   <data name="No deployable castles available" xml:space="preserve">
       <value>没有可部署的据点</value>
@@ -460,7 +460,7 @@
       <value>部署防御</value>
   </data>
   <data name="Account Creation Time" xml:space="preserve">
-      <value>帐号创建时间</value>
+      <value>账号创建时间</value>
   </data>
   <data name="Opponent Selection Strategy" xml:space="preserve">
       <value>对手选择策略</value>
@@ -496,8 +496,8 @@
       <value>确认移除此账号吗？</value>
   </data>
   <data name="AutoUseItemTypeOthers" xml:space="preserve"><value>其他</value></data>
-  <data name="AutoUseItemTypeDiamondBag" xml:space="preserve"><value>一袋鑽石</value></data>
-  <data name="AutoUseItemTypeMysteryRune" xml:space="preserve"><value>未鑑定符石</value></data>
+  <data name="AutoUseItemTypeDiamondBag" xml:space="preserve"><value>一袋钻石</value></data>
+  <data name="AutoUseItemTypeMysteryRune" xml:space="preserve"><value>未鉴定符石</value></data>
   <data name="BattleLogCleanRange" xml:space="preserve"><value>清理范围</value></data>
   <data name="BattleLogCleanConfirm" xml:space="preserve"><value>确定要清理{0}个日志文件(共{1})吗？</value></data>
   <data name="BattleLogNoFilesToClean" xml:space="preserve"><value>没有可清理的日志文件</value></data>
@@ -505,21 +505,21 @@
   <data name="BattleLogCleanError" xml:space="preserve"><value>删除文件{0}失败: {1}</value></data>
   <data name="BattleLogCleanOption1Day" xml:space="preserve"><value>1天前</value></data>
   <data name="BattleLogCleanOption1Week" xml:space="preserve"><value>1周前</value></data>
-  <data name="BattleLogCleanOption1Month" xml:space="preserve"><value>1月前</value></data>
+  <data name="BattleLogCleanOption1Month" xml:space="preserve"><value>1个月前</value></data>
   <data name="BattleLogCleanOptionAll" xml:space="preserve"><value>全部</value></data>
-  <data name="AutoUseItemTypeWitchLetterR" xml:space="preserve"><value>魔女的來信(R)</value></data>
-  <data name="AutoUseItemTypeWitchLetterSr" xml:space="preserve"><value>魔女的來信(SR)</value></data>
+  <data name="AutoUseItemTypeWitchLetterR" xml:space="preserve"><value>魔女的来信(R)</value></data>
+  <data name="AutoUseItemTypeWitchLetterSr" xml:space="preserve"><value>魔女的来信(SR)</value></data>
   <data name="AutoUseItemTypeWitchShard" xml:space="preserve"><value>魔女的心片</value></data>
-  <data name="AutoUseItemTypePot" xml:space="preserve"><value>陶壺</value></data>
-  <data name="AutoUseItemTypeAmphora" xml:space="preserve"><value>瓷壺</value></data>
-  <data name="AutoUseItemTypeSealedChest" xml:space="preserve"><value>封印寶箱</value></data>
-  <data name="AutoUseItemTypeWitchLetterGift" xml:space="preserve"><value>魔女的來信禮袋</value></data>
-  <data name="AutoUseItemTypeChestOfChance" xml:space="preserve"><value>命運盒</value></data>
+  <data name="AutoUseItemTypePot" xml:space="preserve"><value>陶壶</value></data>
+  <data name="AutoUseItemTypeAmphora" xml:space="preserve"><value>瓷壶</value></data>
+  <data name="AutoUseItemTypeSealedChest" xml:space="preserve"><value>封印宝箱</value></data>
+  <data name="AutoUseItemTypeWitchLetterGift" xml:space="preserve"><value>魔女的来信礼袋</value></data>
+  <data name="AutoUseItemTypeChestOfChance" xml:space="preserve"><value>命运盒</value></data>
   <data name="The current version ({0}) is not the latest version ({1}). Click to download the latest version." xml:space="preserve">
       <value>当前版本({0})不是最新版本({1})，点击下载最新版本。</value>
   </data>
   <data name="Exclude player IDs (comma-separated)" xml:space="preserve">
-      <value>排除玩家ID(英语逗号分隔) </value>
+      <value>排除玩家ID(英语逗号分隔)</value>
   </data>
   <data name="Seconds of pre-battle wait time" xml:space="preserve">
       <value>开启战斗前等待的秒数</value>
@@ -561,8 +561,7 @@
       <value>不设置表示购买任意物品</value>
   </data>
   <data name="No setting means using any item for purchase" xml:space="preserve">
-      <value>不设置表示使用任意物品进行购买
-</value>
+      <value>不设置表示使用任意物品进行购买</value>
   </data>
   <data name="The expected diamond value of the current task is now below 20, do not refresh, dispatch directly." xml:space="preserve">
       <value>当前任务的钻石数量期望值已低于20, 不再刷新,直接派遣</value>
@@ -597,4 +596,125 @@
   <data name="ResourceServer" xml:space="preserve"><value>资源服务器地址</value></data>
   <data name="BattleLogViewer" xml:space="preserve"><value>战斗记录查看器地址</value></data>
   <data name="HttpUrlRequired" xml:space="preserve"><value>请输入 HTTP 或 HTTPS 地址。</value></data>
+  <data name="Appearance" xml:space="preserve"><value>外观</value></data>
+  <data name="ThemeSystem" xml:space="preserve"><value>跟随系统</value></data>
+  <data name="ThemeLight" xml:space="preserve"><value>浅色</value></data>
+  <data name="ThemeDark" xml:space="preserve"><value>深色</value></data>
+  <data name="ThemeSaveFailed" xml:space="preserve"><value>主题已切换，但浏览器未能保存设置。</value></data>
+  <data name="AllAccounts" xml:space="preserve"><value>全部账号</value></data>
+  <data name="AutoUseTargetItems" xml:space="preserve"><value>自动使用的物品</value></data>
+  <data name="AutoJobStatus" xml:space="preserve"><value>任务执行状态</value></data>
+  <data name="TaskCancelled" xml:space="preserve"><value>已取消</value></data>
+  <data name="NoCharacterInSelectedWorld" xml:space="preserve"><value>所选世界中没有找到角色。</value></data>
+  <data name="AuthTokenLoadFailed" xml:space="preserve"><value>无法加载公共 AuthToken，请检查资源服务器地址或稍后重试。</value></data>
+  <data name="AccountAlreadyExists" xml:space="preserve"><value>账号已存在。</value></data>
+  <data name="BattleLogViewerTitle" xml:space="preserve"><value>战斗记录查看器</value></data>
+  <data name="BattleLogType" xml:space="preserve"><value>战斗类型</value></data>
+  <data name="BattleLogFile" xml:space="preserve"><value>日志文件</value></data>
+  <data name="Loading" xml:space="preserve"><value>正在加载…</value></data>
+  <data name="ActionSucceeded" xml:space="preserve"><value>{0}成功</value></data>
+  <data name="MasterUpdatingFile" xml:space="preserve"><value>正在更新 {0}...</value></data>
+  <data name="LocalRaidNoTeamCreateOwn" xml:space="preserve"><value>没有可加入的队伍，自行组建队伍</value></data>
+  <data name="DungeonBattleAllCharactersDown" xml:space="preserve"><value>所有角色均已阵亡</value></data>
+  <data name="GvgWaitingCastleInfo" xml:space="preserve"><value>等待据点信息...</value></data>
+  <data name="GvgWaitingDeployDialog" xml:space="preserve"><value>等待部署界面打开...</value></data>
+  <data name="GvgWaitingDeploy" xml:space="preserve"><value>等待部署...</value></data>
+  <data name="FriendCreatingAccount" xml:space="preserve"><value>正在创建新账号...</value></data>
+  <data name="FriendUsingInviteCode" xml:space="preserve"><value>正在使用邀请码 {0}...</value></data>
+  <data name="ChatNotConnected" xml:space="preserve"><value>未连接</value></data>
+  <data name="ChatConnecting" xml:space="preserve"><value>连接中</value></data>
+  <data name="ChatConnected" xml:space="preserve"><value>实时连接已建立</value></data>
+  <data name="ChatAuthFailed" xml:space="preserve"><value>认证失败，请重新登录账号</value></data>
+  <data name="ChatReconnecting" xml:space="preserve"><value>连接中断，等待重连</value></data>
+  <data name="ChatSendResultUnknown" xml:space="preserve"><value>聊天连接已断开，发送结果未知，请核对消息记录后再试。</value></data>
+  <data name="ChatSyncFailedFormat" xml:space="preserve"><value>同步聊天记录失败：{0}</value></data>
+  <data name="ChatDisconnected" xml:space="preserve"><value>聊天连接已断开。</value></data>
+  <data name="ChatTimeout" xml:space="preserve"><value>聊天连接超时。</value></data>
+  <data name="ChatLoginFirst" xml:space="preserve"><value>请先登录账号并等待聊天连接建立。</value></data>
+  <data name="ChatPrivateUpdateFailedFormat" xml:space="preserve"><value>更新私聊失败：{0}</value></data>
+  <data name="ChatMessageLengthFormat" xml:space="preserve"><value>消息长度应为 1–{0} 个字符。</value></data>
+  <data name="ChatSelectOtherPlayer" xml:space="preserve"><value>请选择其他玩家作为私聊对象。</value></data>
+  <data name="ChatPlayerBlocked" xml:space="preserve"><value>该玩家已在屏蔽名单中。</value></data>
+  <data name="ChatStickerLocked" xml:space="preserve"><value>消息中包含尚未解锁的贴图。</value></data>
+  <data name="ChatNotConnectedYet" xml:space="preserve"><value>聊天尚未连接。</value></data>
+  <data name="ChatSentRefreshFailedFormat" xml:space="preserve"><value>消息已发送，但更新记录失败：{0}</value></data>
+  <data name="ChatSendUnconfirmed" xml:space="preserve"><value>尚未收到服务器的发送确认，请核对聊天记录后再试，以免重复发送。</value></data>
+  <data name="ChatMessageChanged" xml:space="preserve"><value>消息记录已更新，请重新选择要回应的消息。</value></data>
+  <data name="GuildNoteTitleLengthFormat" xml:space="preserve"><value>笔记标题应为 1–{0} 个字符。</value></data>
+  <data name="GuildNoteContentLengthFormat" xml:space="preserve"><value>笔记正文应为 1–{0} 个字符。</value></data>
+  <data name="ChatLeftGuild" xml:space="preserve"><value>已离开公会。</value></data>
+  <data name="Reconnect" xml:space="preserve"><value>重新连接</value></data>
+  <data name="ChatStickerSize" xml:space="preserve"><value>贴图大小</value></data>
+  <data name="ChatAppearanceHint" xml:space="preserve"><value>每次调整 1px，自动保存到当前浏览器。</value></data>
+  <data name="ChatGameFontSize" xml:space="preserve"><value>游戏内字号（游戏提供四档）</value></data>
+  <data name="SyncToGame" xml:space="preserve"><value>同步至游戏</value></data>
+  <data name="ChatRestoringChannel" xml:space="preserve"><value>正在恢复聊天频道…</value></data>
+  <data name="ChatChannels" xml:space="preserve"><value>聊天频道</value></data>
+  <data name="UnreadPrivateMessages" xml:space="preserve"><value>有未读私聊</value></data>
+  <data name="PrivateConversations" xml:space="preserve"><value>私聊会话</value></data>
+  <data name="StartPrivateChat" xml:space="preserve"><value>开始私聊</value></data>
+  <data name="Unread" xml:space="preserve"><value>未读</value></data>
+  <data name="NoPrivateConversations" xml:space="preserve"><value>暂无私聊会话</value></data>
+  <data name="CurrentConversation" xml:space="preserve"><value>当前会话</value></data>
+  <data name="ChatMessageCountFormat" xml:space="preserve"><value>{0} 条 · 服务器时间</value></data>
+  <data name="LoadOlderMessages" xml:space="preserve"><value>加载更早消息</value></data>
+  <data name="NoOlderMessages" xml:space="preserve"><value>没有更早的消息</value></data>
+  <data name="HistoryLimitReached" xml:space="preserve"><value>已达缓存上限</value></data>
+  <data name="ChatLoadsAfterConnect" xml:space="preserve"><value>连接建立后会自动加载消息。</value></data>
+  <data name="Me" xml:space="preserve"><value>（我）</value></data>
+  <data name="GuildNoteFormat" xml:space="preserve"><value>公会笔记：{0}</value></data>
+  <data name="UntitledNote" xml:space="preserve"><value>未命名笔记</value></data>
+  <data name="DownloadBattleReport" xml:space="preserve"><value>下载战报</value></data>
+  <data name="MessageActions" xml:space="preserve"><value>消息操作</value></data>
+  <data name="SetAsAnnouncement" xml:space="preserve"><value>设为公告</value></data>
+  <data name="RemoveAnnouncement" xml:space="preserve"><value>撤销公告</value></data>
+  <data name="SendToFormat" xml:space="preserve"><value>发送至 {0}</value></data>
+  <data name="Preview" xml:space="preserve"><value>预览</value></data>
+  <data name="Processing" xml:space="preserve"><value>处理中…</value></data>
+  <data name="StickerTabCat" xml:space="preserve"><value>猫猫</value></data>
+  <data name="StickerPickerHint" xml:space="preserve"><value>点击可连续添加，灰色为未解锁</value></data>
+  <data name="InsertStickerFormat" xml:space="preserve"><value>插入贴图 {0}</value></data>
+  <data name="StickerFormat" xml:space="preserve"><value>贴图 {0}</value></data>
+  <data name="ChatHistoryFootnote" xml:space="preserve"><value>每个会话保留最近 {0} 条消息；关闭聊天页面后停止接收，重新打开会加载服务器记录。</value></data>
+  <data name="GuildActivity" xml:space="preserve"><value>公会动态</value></data>
+  <data name="OriginalMessageTimeFormat" xml:space="preserve"><value>原消息：{0}</value></data>
+  <data name="AnnouncedAtFormat" xml:space="preserve"><value>公告发布：{0}</value></data>
+  <data name="NoGuildAnnouncements" xml:space="preserve"><value>暂无公会公告</value></data>
+  <data name="CreatedAtFormat" xml:space="preserve"><value>发起于 {0}</value></data>
+  <data name="ParticipantsFormat" xml:space="preserve"><value>{0} 人参与</value></data>
+  <data name="DeletedPlayer" xml:space="preserve"><value>已注销玩家</value></data>
+  <data name="UpdatedAtFormat" xml:space="preserve"><value>更新于 {0}</value></data>
+  <data name="MoveNoteUp" xml:space="preserve"><value>笔记上移</value></data>
+  <data name="MoveNoteDown" xml:space="preserve"><value>笔记下移</value></data>
+  <data name="ChatBrowserSaveFailed" xml:space="preserve"><value>已生效，但浏览器未能保存设置。</value></data>
+  <data name="EnterOtherPlayerId" xml:space="preserve"><value>请输入其他玩家的有效 ID。</value></data>
+  <data name="Sent" xml:space="preserve"><value>已发送</value></data>
+  <data name="StickerLimitExceeded" xml:space="preserve"><value>插入后将超过 {0} 字符限制。</value></data>
+  <data name="ListSeparator" xml:space="preserve"><value>、</value></data>
+  <data name="NoReactions" xml:space="preserve"><value>暂无回应。</value></data>
+  <data name="GuildNoteNoPermissionOrLimit" xml:space="preserve"><value>没有权限，或笔记数量已达上限。</value></data>
+  <data name="GuildNoteChangedOrNoPermission" xml:space="preserve"><value>笔记已更新或当前没有权限，请刷新后再试。</value></data>
+  <data name="GuildNoteSavedReplaced" xml:space="preserve"><value>笔记已保存，部分文字已由游戏替换。</value></data>
+  <data name="DeleteGuildNoteConfirm" xml:space="preserve"><value>删除笔记「{0}」？</value></data>
+  <data name="GuildNoteDeleted" xml:space="preserve"><value>笔记已删除</value></data>
+  <data name="GuildPermissionDenied" xml:space="preserve"><value>当前公会职位没有此操作权限。</value></data>
+  <data name="GuildNoteMoveFailed" xml:space="preserve"><value>无法移动此笔记，请刷新后再试。</value></data>
+  <data name="GuildNoteShared" xml:space="preserve"><value>笔记已分享至公会聊天</value></data>
+  <data name="VoteSubmitted" xml:space="preserve"><value>投票已提交</value></data>
+  <data name="NoVotes" xml:space="preserve"><value>暂无投票记录</value></data>
+  <data name="ChatSettingsUnavailable" xml:space="preserve"><value>尚未取得聊天设置，请重新登录后再试。</value></data>
+  <data name="BattleReportShared" xml:space="preserve"><value>战报已转发</value></data>
+  <data name="PlayerIdFormat" xml:space="preserve"><value>玩家 {0}</value></data>
+  <data name="ReactionWink" xml:space="preserve"><value>眨眼</value></data>
+  <data name="ReactionCheers" xml:space="preserve"><value>干杯</value></data>
+  <data name="ReactionHeart" xml:space="preserve"><value>爱心</value></data>
+  <data name="ReactionSad" xml:space="preserve"><value>难过</value></data>
+  <data name="Reaction" xml:space="preserve"><value>回应</value></data>
+  <data name="ReactionCountFormat" xml:space="preserve"><value>{0}，{1} 人回应</value></data>
+  <data name="AddReaction" xml:space="preserve"><value>添加回应</value></data>
+  <data name="SelectAgainToRemove" xml:space="preserve"><value>（再次选择取消）</value></data>
+  <data name="ReactionDetails" xml:space="preserve"><value>回应详情</value></data>
+  <data name="AvatarFormat" xml:space="preserve"><value>{0}的头像</value></data>
+  <data name="AppearanceTitleFormat" xml:space="preserve"><value>{0}：{1}</value></data>
+  <data name="FreeGachaFormat" xml:space="preserve"><value>免费{0}</value></data>
 </root>

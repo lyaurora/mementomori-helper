@@ -177,7 +177,7 @@
         <value>タワータイプ</value>
     </data>
     <data name="Unknown" xml:space="preserve">
-        <value>未知</value>
+        <value>不明</value>
     </data>
     <data name="UseNormalItems" xml:space="preserve">
         <value>固定アイテムを使用</value>
@@ -204,7 +204,7 @@
     <value>報酬クレームジョブクロン式</value>
 </data>
     <data name="CronExpression" xml:space="preserve">
-    <value>クロン式</value>
+    <value>Cron式</value>
 </data>
     <data name="AutoGachaConsumeItems" xml:space="preserve">
     <value>オートガチャ消費アイテム</value>
@@ -297,7 +297,7 @@
         <value>設定</value>
     </data>
     <data name="Exit" xml:space="preserve">
-        <value>退出</value>
+        <value>ログアウト</value>
     </data>
     <data name="Account" xml:space="preserve">
         <value>アカウント</value>
@@ -389,7 +389,7 @@
     <data name="Confirm removal of this account?" xml:space="preserve">
         <value>このアカウントを削除しますか？</value>
     </data>
-    <data name="AutoUseItemTypeOthers" xml:space="preserve"><value>Others</value></data>
+    <data name="AutoUseItemTypeOthers" xml:space="preserve"><value>その他</value></data>
     <data name="AutoUseItemTypeDiamondBag" xml:space="preserve"><value>ダイヤの袋</value></data>
     <data name="AutoUseItemTypeMysteryRune" xml:space="preserve"><value>未鑑定ルーン</value></data>
     <data name="AutoUseItemTypeWitchLetterR" xml:space="preserve"><value>魔女の手紙(R)</value></data>
@@ -464,10 +464,10 @@
         <value>リフレッシュ回数が上限に達したため、直接派遣します。</value>
     </data>
     <data name="Auto refresh diamonds" xml:space="preserve">
-        <value>ダイヤを自動でリフレッシュ。</value>
+        <value>ダイヤで自動リフレッシュ</value>
     </data>
     <data name="Max refresh count" xml:space="preserve">
-        <value>最大リフレッシュ回数。</value>
+        <value>最大リフレッシュ回数</value>
     </data>
     <data name="Enter 0 to disable auto-refresh." xml:space="preserve">
         <value>0を入力すると自動リフレッシュを無効にします。リフレッシュごとに20ダイヤを消費し、期待値が20を超える場合にのみリフレッシュします。単一タスクの場合、8級の期待値は13、7級は11.6、6級は9.8、5級は7.9、4級は5.7です。4級未満では自動リフレッシュが無効になります。期待値は自動的に2倍報酬イベントを考慮します。</value>
@@ -490,4 +490,125 @@
   <data name="ResourceServer" xml:space="preserve"><value>アセットサーバーURL</value></data>
   <data name="BattleLogViewer" xml:space="preserve"><value>戦闘ログビューアーURL</value></data>
   <data name="HttpUrlRequired" xml:space="preserve"><value>HTTPまたはHTTPSのURLを入力してください。</value></data>
+  <data name="Appearance" xml:space="preserve"><value>外観</value></data>
+  <data name="ThemeSystem" xml:space="preserve"><value>システム設定に従う</value></data>
+  <data name="ThemeLight" xml:space="preserve"><value>ライト</value></data>
+  <data name="ThemeDark" xml:space="preserve"><value>ダーク</value></data>
+  <data name="ThemeSaveFailed" xml:space="preserve"><value>テーマを切り替えましたが、ブラウザに設定を保存できませんでした。</value></data>
+  <data name="AllAccounts" xml:space="preserve"><value>全アカウント共通</value></data>
+  <data name="AutoUseTargetItems" xml:space="preserve"><value>自動使用するアイテム</value></data>
+  <data name="AutoJobStatus" xml:space="preserve"><value>ジョブ実行状況</value></data>
+  <data name="TaskCancelled" xml:space="preserve"><value>キャンセル済み</value></data>
+  <data name="NoCharacterInSelectedWorld" xml:space="preserve"><value>選択したワールドにキャラクターが見つかりません。</value></data>
+  <data name="AuthTokenLoadFailed" xml:space="preserve"><value>公開 AuthToken を読み込めません。アセットサーバーの URL を確認するか、しばらくしてから再試行してください。</value></data>
+  <data name="AccountAlreadyExists" xml:space="preserve"><value>アカウントは既に存在します。</value></data>
+  <data name="BattleLogViewerTitle" xml:space="preserve"><value>戦闘ログビューアー</value></data>
+  <data name="BattleLogType" xml:space="preserve"><value>バトル種別</value></data>
+  <data name="BattleLogFile" xml:space="preserve"><value>ログファイル</value></data>
+  <data name="Loading" xml:space="preserve"><value>読み込み中…</value></data>
+  <data name="ActionSucceeded" xml:space="preserve"><value>{0}に成功しました</value></data>
+  <data name="MasterUpdatingFile" xml:space="preserve"><value>{0} を更新中...</value></data>
+  <data name="LocalRaidNoTeamCreateOwn" xml:space="preserve"><value>参加できるチームがないため、チームを作成します</value></data>
+  <data name="DungeonBattleAllCharactersDown" xml:space="preserve"><value>全キャラクターが戦闘不能です</value></data>
+  <data name="GvgWaitingCastleInfo" xml:space="preserve"><value>拠点情報を待機中...</value></data>
+  <data name="GvgWaitingDeployDialog" xml:space="preserve"><value>配置画面を待機中...</value></data>
+  <data name="GvgWaitingDeploy" xml:space="preserve"><value>配置を待機中...</value></data>
+  <data name="FriendCreatingAccount" xml:space="preserve"><value>新規アカウントを作成中...</value></data>
+  <data name="FriendUsingInviteCode" xml:space="preserve"><value>招待コード {0} を使用中...</value></data>
+  <data name="ChatNotConnected" xml:space="preserve"><value>未接続</value></data>
+  <data name="ChatConnecting" xml:space="preserve"><value>接続中</value></data>
+  <data name="ChatConnected" xml:space="preserve"><value>接続済み</value></data>
+  <data name="ChatAuthFailed" xml:space="preserve"><value>認証に失敗しました。再ログインしてください</value></data>
+  <data name="ChatReconnecting" xml:space="preserve"><value>切断されました。再接続を待っています</value></data>
+  <data name="ChatSendResultUnknown" xml:space="preserve"><value>チャット接続が切断されたため、送信結果が不明です。メッセージ履歴を確認してから再試行してください。</value></data>
+  <data name="ChatSyncFailedFormat" xml:space="preserve"><value>チャット履歴の同期に失敗しました：{0}</value></data>
+  <data name="ChatDisconnected" xml:space="preserve"><value>チャット接続が切断されました。</value></data>
+  <data name="ChatTimeout" xml:space="preserve"><value>チャット接続がタイムアウトしました。</value></data>
+  <data name="ChatLoginFirst" xml:space="preserve"><value>アカウントにログインし、チャット接続が確立されるまでお待ちください。</value></data>
+  <data name="ChatPrivateUpdateFailedFormat" xml:space="preserve"><value>個人チャットの更新に失敗しました：{0}</value></data>
+  <data name="ChatMessageLengthFormat" xml:space="preserve"><value>メッセージは 1～{0} 文字で入力してください。</value></data>
+  <data name="ChatSelectOtherPlayer" xml:space="preserve"><value>個人チャットの相手には他のプレイヤーを選んでください。</value></data>
+  <data name="ChatPlayerBlocked" xml:space="preserve"><value>このプレイヤーはブロックリストに入っています。</value></data>
+  <data name="ChatStickerLocked" xml:space="preserve"><value>メッセージに未解放のスタンプが含まれています。</value></data>
+  <data name="ChatNotConnectedYet" xml:space="preserve"><value>チャットはまだ接続されていません。</value></data>
+  <data name="ChatSentRefreshFailedFormat" xml:space="preserve"><value>メッセージは送信されましたが、履歴の更新に失敗しました：{0}</value></data>
+  <data name="ChatSendUnconfirmed" xml:space="preserve"><value>サーバーから送信確認を受け取っていません。二重送信を避けるため、チャット履歴を確認してから再試行してください。</value></data>
+  <data name="ChatMessageChanged" xml:space="preserve"><value>メッセージ履歴が更新されました。リアクションするメッセージを選び直してください。</value></data>
+  <data name="GuildNoteTitleLengthFormat" xml:space="preserve"><value>ノートのタイトルは 1～{0} 文字で入力してください。</value></data>
+  <data name="GuildNoteContentLengthFormat" xml:space="preserve"><value>ノートの本文は 1～{0} 文字で入力してください。</value></data>
+  <data name="ChatLeftGuild" xml:space="preserve"><value>ギルドを脱退しました。</value></data>
+  <data name="Reconnect" xml:space="preserve"><value>再接続</value></data>
+  <data name="ChatStickerSize" xml:space="preserve"><value>スタンプサイズ</value></data>
+  <data name="ChatAppearanceHint" xml:space="preserve"><value>1px 単位で調整し、このブラウザに自動保存します。</value></data>
+  <data name="ChatGameFontSize" xml:space="preserve"><value>ゲーム内文字サイズ（4段階）</value></data>
+  <data name="SyncToGame" xml:space="preserve"><value>ゲームに反映</value></data>
+  <data name="ChatRestoringChannel" xml:space="preserve"><value>チャットチャンネルを復元中…</value></data>
+  <data name="ChatChannels" xml:space="preserve"><value>チャットチャンネル</value></data>
+  <data name="UnreadPrivateMessages" xml:space="preserve"><value>未読の個人チャットがあります</value></data>
+  <data name="PrivateConversations" xml:space="preserve"><value>個人チャット一覧</value></data>
+  <data name="StartPrivateChat" xml:space="preserve"><value>チャット開始</value></data>
+  <data name="Unread" xml:space="preserve"><value>未読</value></data>
+  <data name="NoPrivateConversations" xml:space="preserve"><value>個人チャットはありません</value></data>
+  <data name="CurrentConversation" xml:space="preserve"><value>現在の会話</value></data>
+  <data name="ChatMessageCountFormat" xml:space="preserve"><value>{0} 件 · サーバー時間</value></data>
+  <data name="LoadOlderMessages" xml:space="preserve"><value>以前のメッセージを読み込む</value></data>
+  <data name="NoOlderMessages" xml:space="preserve"><value>これ以前のメッセージはありません</value></data>
+  <data name="HistoryLimitReached" xml:space="preserve"><value>保存上限に達しました</value></data>
+  <data name="ChatLoadsAfterConnect" xml:space="preserve"><value>接続後にメッセージを読み込みます。</value></data>
+  <data name="Me" xml:space="preserve"><value>（自分）</value></data>
+  <data name="GuildNoteFormat" xml:space="preserve"><value>ギルドノート：{0}</value></data>
+  <data name="UntitledNote" xml:space="preserve"><value>無題のノート</value></data>
+  <data name="DownloadBattleReport" xml:space="preserve"><value>バトルレポートをダウンロード</value></data>
+  <data name="MessageActions" xml:space="preserve"><value>メッセージ操作</value></data>
+  <data name="SetAsAnnouncement" xml:space="preserve"><value>アナウンスに登録</value></data>
+  <data name="RemoveAnnouncement" xml:space="preserve"><value>アナウンスから削除</value></data>
+  <data name="SendToFormat" xml:space="preserve"><value>{0} に送信</value></data>
+  <data name="Preview" xml:space="preserve"><value>プレビュー</value></data>
+  <data name="Processing" xml:space="preserve"><value>処理中…</value></data>
+  <data name="StickerTabCat" xml:space="preserve"><value>ネコ</value></data>
+  <data name="StickerPickerHint" xml:space="preserve"><value>クリックで続けて追加できます。グレーは未解放です</value></data>
+  <data name="InsertStickerFormat" xml:space="preserve"><value>スタンプ {0} を挿入</value></data>
+  <data name="StickerFormat" xml:space="preserve"><value>スタンプ {0}</value></data>
+  <data name="ChatHistoryFootnote" xml:space="preserve"><value>各会話は最新 {0} 件を保持します。このページを閉じると受信を停止し、再度開くとサーバーの履歴を読み込みます。</value></data>
+  <data name="GuildActivity" xml:space="preserve"><value>ギルドの動き</value></data>
+  <data name="OriginalMessageTimeFormat" xml:space="preserve"><value>元のメッセージ：{0}</value></data>
+  <data name="AnnouncedAtFormat" xml:space="preserve"><value>アナウンス登録：{0}</value></data>
+  <data name="NoGuildAnnouncements" xml:space="preserve"><value>ギルドのアナウンスはありません</value></data>
+  <data name="CreatedAtFormat" xml:space="preserve"><value>{0} 作成</value></data>
+  <data name="ParticipantsFormat" xml:space="preserve"><value>{0}人が参加</value></data>
+  <data name="DeletedPlayer" xml:space="preserve"><value>削除済みプレイヤー</value></data>
+  <data name="UpdatedAtFormat" xml:space="preserve"><value>{0} 更新</value></data>
+  <data name="MoveNoteUp" xml:space="preserve"><value>ノートを上へ移動</value></data>
+  <data name="MoveNoteDown" xml:space="preserve"><value>ノートを下へ移動</value></data>
+  <data name="ChatBrowserSaveFailed" xml:space="preserve"><value>反映されましたが、ブラウザに保存できませんでした。</value></data>
+  <data name="EnterOtherPlayerId" xml:space="preserve"><value>他のプレイヤーの有効なIDを入力してください。</value></data>
+  <data name="Sent" xml:space="preserve"><value>送信しました</value></data>
+  <data name="StickerLimitExceeded" xml:space="preserve"><value>挿入すると {0} 文字の上限を超えます。</value></data>
+  <data name="ListSeparator" xml:space="preserve"><value>、</value></data>
+  <data name="NoReactions" xml:space="preserve"><value>リアクションはまだありません。</value></data>
+  <data name="GuildNoteNoPermissionOrLimit" xml:space="preserve"><value>権限がないか、ノート数が上限に達しています。</value></data>
+  <data name="GuildNoteChangedOrNoPermission" xml:space="preserve"><value>ノートが更新されたか、権限がありません。更新してから再試行してください。</value></data>
+  <data name="GuildNoteSavedReplaced" xml:space="preserve"><value>ノートを保存しました。一部の文字はゲームにより置換されました。</value></data>
+  <data name="DeleteGuildNoteConfirm" xml:space="preserve"><value>ノート「{0}」を削除しますか？</value></data>
+  <data name="GuildNoteDeleted" xml:space="preserve"><value>ノートを削除しました</value></data>
+  <data name="GuildPermissionDenied" xml:space="preserve"><value>現在のギルド役職ではこの操作はできません。</value></data>
+  <data name="GuildNoteMoveFailed" xml:space="preserve"><value>このノートは移動できません。更新してから再試行してください。</value></data>
+  <data name="GuildNoteShared" xml:space="preserve"><value>ギルドチャットにノートを共有しました</value></data>
+  <data name="VoteSubmitted" xml:space="preserve"><value>投票しました</value></data>
+  <data name="NoVotes" xml:space="preserve"><value>まだ投票がありません</value></data>
+  <data name="ChatSettingsUnavailable" xml:space="preserve"><value>チャット設定を取得できていません。再ログインしてからお試しください。</value></data>
+  <data name="BattleReportShared" xml:space="preserve"><value>バトルレポートを共有しました</value></data>
+  <data name="PlayerIdFormat" xml:space="preserve"><value>プレイヤー {0}</value></data>
+  <data name="ReactionWink" xml:space="preserve"><value>ウインク</value></data>
+  <data name="ReactionCheers" xml:space="preserve"><value>乾杯</value></data>
+  <data name="ReactionHeart" xml:space="preserve"><value>ハート</value></data>
+  <data name="ReactionSad" xml:space="preserve"><value>悲しい</value></data>
+  <data name="Reaction" xml:space="preserve"><value>リアクション</value></data>
+  <data name="ReactionCountFormat" xml:space="preserve"><value>{0}、{1}人がリアクション</value></data>
+  <data name="AddReaction" xml:space="preserve"><value>リアクションを追加</value></data>
+  <data name="SelectAgainToRemove" xml:space="preserve"><value>（もう一度選ぶと取り消し）</value></data>
+  <data name="ReactionDetails" xml:space="preserve"><value>リアクション詳細</value></data>
+  <data name="AvatarFormat" xml:space="preserve"><value>{0}のアイコン</value></data>
+  <data name="AppearanceTitleFormat" xml:space="preserve"><value>{0}：{1}</value></data>
+  <data name="FreeGachaFormat" xml:space="preserve"><value>無料{0}</value></data>
 </root>

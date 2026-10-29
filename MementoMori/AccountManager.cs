@@ -71,7 +71,7 @@ public partial class AccountManager : ReactiveObject
     {
         _authOption.Update(opt =>
         {
-            if (opt.Accounts.Any(a => a.UserId == userId)) throw new InvalidOperationException("Account already exists.");
+            if (opt.Accounts.Any(a => a.UserId == userId)) throw new InvalidOperationException(ResourceStrings.AccountAlreadyExists);
             opt.Accounts.Add(new AccountInfo
             {
                 UserId = userId,

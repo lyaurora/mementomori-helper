@@ -79,7 +79,7 @@
             var items = await UseItemFunc(_useCount);
             _buyed = true;
             var msg = new StringBuilder();
-            msg.AppendLine($"{ButtonText}{ResourceStrings.Success}");
+            msg.AppendLine(string.Format(ResourceStrings.ActionSucceeded, ButtonText));
             items.PrintUserItems(s => msg.AppendLine(s));
             message = msg.ToString();
         }

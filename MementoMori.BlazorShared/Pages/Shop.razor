@@ -26,7 +26,7 @@
 {
     <MudAlert Severity="Severity.Warning">@_alertMessage</MudAlert>
 }
-@if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="正在加载商店信息" /> }
+@if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="@ResourceStrings.Loading" /> }
 @if (Funcs?.UserSyncData?.UserItemDtoInfo != null)
 {
     <MudTabs MinimumTabWidth="20px" @bind-ActivePanelIndex="_selectedTabIndex">
@@ -37,7 +37,13 @@
                 var tabName = Masters.TextResourceTable.Get(tradeShopTabMb.TabNameKey);
                 if (tabName.IsNullOrEmpty())
                 {
-                    tabName = tradeShopTabMb.Memo;
+                    // Weekly topics tabs (36 free, 37 paid) have no TabNameKey; Memo is a Japanese developer note.
+                    tabName = tradeShopTabMb.Id switch
+                    {
+                        36 => $"{Masters.TextResourceTable.Get("[WeeklyTopicsShopHeadline]")} ({Masters.TextResourceTable.Get("[ShopProductFreeLabel]")})",
+                        37 => Masters.TextResourceTable.Get("[WeeklyTopicsShopHeadline]"),
+                        _ => tradeShopTabMb.Memo
+                    };
                 }
                 <MudTabPanel Text="@(tabName)">
                     <MudPaper Elevation="0" Class="shop-balance-bar mb-4">
@@ -71,7 +77,7 @@
 
                                 if (item.ConsumeItem1 == null)
                                 {
-                                    consumeText = "FREE";
+                                    consumeText = Masters.TextResourceTable.Get("[ShopProductFreeLabel]");
                                 }
                                 else
                                 {
@@ -109,7 +115,7 @@
                                             </div>
                                         </MudCardContent>
                                         <MudCardActions Class="shop-product-actions">
-                                            <MudButton Class="shop-buy-button" Variant="Variant.Filled" Color="Color.Primary" Disabled="buyBtnDisabled" OnClick="() => BuyItem(tab, item)">@consumeText</MudButton>
+                                            <MudButton Class="shop-buy-button" data-free="@(item.ConsumeItem1 == null)" Variant="Variant.Filled" Color="Color.Primary" Disabled="buyBtnDisabled" OnClick="() => BuyItem(tab, item)">@consumeText</MudButton>
                                             <MudIconButton Class="shop-auto-buy-button" Icon="@Icons.Material.Filled.AlarmAdd" Variant="Variant.Outlined" Color="Color.Primary" title="@ResourceStrings.AutoBuy" aria-label="@ResourceStrings.AutoBuy" OnClick="() => ShowAutoBuyDialog(tradeShopTabMb, item)"></MudIconButton>
                                         </MudCardActions>
                                     </MudCard>

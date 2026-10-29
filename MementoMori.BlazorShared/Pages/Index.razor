@@ -177,7 +177,7 @@
                         }
                         else if (!info.IsReward)
                         {
-                            status = ResourceStrings.NotReceived + TimeSpan.FromMilliseconds(info.RewardEndTime - nowMilli).ToString(@"hh\:mm\:ss");
+                            status = ResourceStrings.NotReceived + " " + TimeSpan.FromMilliseconds(info.RewardEndTime - nowMilli).ToString(@"hh\:mm\:ss");
                         }
                         else
                         {
@@ -213,7 +213,7 @@
                             var info = $"{missionInfo.ProgressCount}/{missionMb.RequireValue}";
 
                             <tr>
-                                <td>@missionInfo.MissionType</td>
+                                <td>@MissionTypeName(missionInfo.MissionType)</td>
                                 <td>@name</td>
                                 <td>@info</td>
                             </tr>
@@ -225,7 +225,7 @@
                             var name = Tr(missionMb.NameKey);
 
                             <tr>
-                                <td>@missionInfo.MissionType</td>
+                                <td>@MissionTypeName(missionInfo.MissionType)</td>
                                 <td>@name</td>
                                 <td>@ResourceStrings.NotReceived</td>
                             </tr>
@@ -237,7 +237,7 @@
                             var name = Tr(missionMb.NameKey);
 
                             <tr>
-                                <td>@missionInfo.MissionType</td>
+                                <td>@MissionTypeName(missionInfo.MissionType)</td>
                                 <td>@name</td>
                                 <td>@ResourceStrings.NotUnlocked</td>
                             </tr>
@@ -248,7 +248,7 @@
                             var missionMb = MissionTable.GetById(missionId);
                             var name = Tr(missionMb.NameKey);
                             <tr>
-                                <td>@missionInfo.MissionType</td>
+                                <td>@MissionTypeName(missionInfo.MissionType)</td>
                                 <td>@name</td>
                                 <td>@ResourceStrings.Finished</td>
                             </tr>
@@ -469,7 +469,7 @@
         {
             CloseOnEscapeKey = true
         };
-        DialogService.ShowMessageBox(context.Title, (MarkupString) context.MainText);
+        DialogService.ShowMessageBox(context.Title, (MarkupString) context.MainText, Tr("[CommonOkLabel]"));
     }
 
     private async Task ShowPlayerList()
@@ -485,5 +485,16 @@
             await Funcs.Login(playerDataInfo, playerDataInfoEx.AutoLoginThisWorld);
         }
     }
+
+    private static string MissionTypeName(MissionType type) => type switch
+    {
+        MissionType.Main => Tr("[MissionTabName1]"),
+        MissionType.Daily => Tr("[MissionTabName2]"),
+        MissionType.Weekly => Tr("[MissionTabName3]"),
+        MissionType.Guild => Tr("[GuildMissionTitle]"),
+        MissionType.GuildTower => Tr("[GuildTowerMissionTitle]"),
+        MissionType.PanelSheet1 or MissionType.PanelSheet2 or MissionType.PanelSheet3 => Tr("[EventPortalBannerInsidePanelMission]"),
+        _ => type.ToString()
+    };
 
 }

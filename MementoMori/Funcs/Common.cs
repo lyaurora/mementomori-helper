@@ -200,7 +200,8 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
                 catch (Exception e)
                 {
                     _operationError = e.Message;
-                    AddLog(e.ToString());
+                    _logger.LogError(e, "Quick action failed");
+                    AddLog(e.Message);
                 }
             }, cancellationToken);
         }

@@ -21,7 +21,7 @@ public partial class MementoMoriFuncs
                     var towerBattleDtoInfo = UserSyncData.UserTowerBattleDtoInfos.First(d => d.TowerType == SelectedAutoTowerType);
                     if (SelectedAutoTowerType != TowerType.Infinite && towerBattleDtoInfo.TodayClearNewFloorCount >= 10)
                     {
-                        log($"{SelectedAutoTowerType} {TextResourceTable.Get("[ClientErrorMessage1700007]")}");
+                        log($"{TextResourceTable.Get(SelectedAutoTowerType)} {TextResourceTable.Get("[ClientErrorMessage1700007]")}");
                         break;
                     }
 

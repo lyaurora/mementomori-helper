@@ -20,8 +20,8 @@
                 <MudListItem Value="info">
                     <MudStack Row="true">
                         <MudText Typo="Typo.h6">@info.Name</MudText>
-                        <MudText Typo="Typo.subtitle1">Lv @info.PlayerRank</MudText>
-                        <MudText Typo="Typo.body1">World: @info.WorldId</MudText>
+                        <MudText Typo="Typo.subtitle1">@Tr("[CommonPlayerRankFormat]", info.PlayerRank)</MudText>
+                        <MudText Typo="Typo.body1">@Tr("[CommonWorldFormat]", info.WorldId)</MudText>
                     </MudStack>
                 </MudListItem>
             }

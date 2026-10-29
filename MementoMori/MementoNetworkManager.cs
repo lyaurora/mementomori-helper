@@ -61,7 +61,8 @@ public partial class MementoNetworkManager : IDisposable
     public long PlayerId { get; set; }
     public PlayerGuildPositionType GuildPositionType { get; internal set; }
     public CultureInfo CultureInfo { get; private set; } = new("zh-CN");
-    public LanguageType LanguageType => parseLanguageType(CultureInfo);
+    // Follow the process-wide game text so requests always match it, including per-account instances and master auto-updates.
+    public LanguageType LanguageType => TextResourceTable.LanguageType;
 
     public static string AssetCatalogUriFormat { get; private set; }
     public static string AssetCatalogFixedUriFormat { get; private set; }
@@ -152,7 +153,7 @@ public partial class MementoNetworkManager : IDisposable
             var catalogBytes = await _unityHttpClient.GetByteArrayAsync(string.Format(response.MasterUriFormat, version, "master-catalog"), cancellationToken);
             var catalog = MessagePackSerializer.Deserialize<MasterBookCatalog>(catalogBytes);
             Directory.CreateDirectory("Master");
-            HashSet<string> languages = ["TextResourceJaJpMB", "TextResourceZhTwMB", "TextResourceEnUsMB", "TextResourceKoKrMB"];
+            HashSet<string> languages = ["TextResourceJaJpMB", "TextResourceZhTwMB", "TextResourceZhCnMB", "TextResourceEnUsMB", "TextResourceKoKrMB"];
             foreach (var (name, info) in catalog.MasterBookInfoMap)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -160,7 +161,7 @@ public partial class MementoNetworkManager : IDisposable
                 if (name.StartsWith("TextResource") && !languages.Contains(name)) continue;
                 var path = Path.Combine("Master", name);
                 if (File.Exists(path) && string.Equals(await CalcFileMd5(path, cancellationToken), info.Hash, StringComparison.OrdinalIgnoreCase)) continue;
-                log($"Updating {name}...");
+                log(string.Format(ResourceStrings.MasterUpdatingFile, name));
                 var bytes = await _unityHttpClient.GetByteArrayAsync(string.Format(response.MasterUriFormat, version, name), cancellationToken);
                 if (!Convert.ToHexString(MD5.HashData(bytes)).Equals(info.Hash, StringComparison.OrdinalIgnoreCase))
                     throw new InvalidDataException($"Master hash mismatch: {name}");
@@ -211,7 +212,10 @@ public partial class MementoNetworkManager : IDisposable
     {
         return cultureInfo.TwoLetterISOLanguageName switch
         {
-            "zh" => LanguageType.zhTW,
+            // Simplified text is a newer download; keep Traditional until it exists on disk.
+            "zh" => cultureInfo.Name is "zh-TW" or "zh-HK" or "zh-MO" || cultureInfo.Name.StartsWith("zh-Hant") || !File.Exists(Path.Combine("Master", "TextResourceZhCnMB"))
+                ? LanguageType.zhTW
+                : LanguageType.zhCN,
             "en" => LanguageType.enUS,
             "ja" => LanguageType.jaJP,
             "ko" => LanguageType.koKR,

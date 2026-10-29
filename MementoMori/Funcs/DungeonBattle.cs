@@ -5,6 +5,7 @@ using MementoMori.Ortega.Share.Data.ApiInterface.DungeonBattle;
 using MementoMori.Ortega.Share.Data.ApiInterface.Equipment;
 using MementoMori.Ortega.Share.Data.DungeonBattle;
 using MementoMori.Ortega.Share.Data.Equipment;
+using Microsoft.Extensions.Logging;
 
 namespace MementoMori.Funcs;
 
@@ -75,7 +76,8 @@ public partial class MementoMoriFuncs
                     catch (Exception e)
                     {
                         restoreException ??= e;
-                        log(e.ToString());
+                        _logger.LogError(e, "Failed to restore equipment");
+                        log(e.Message);
                     }
                 }
 
@@ -168,7 +170,7 @@ public partial class MementoMoriFuncs
 
                 if (battleCharacterGuids.Count == 0)
                 {
-                    log("All character died");
+                    log(ResourceStrings.DungeonBattleAllCharactersDown);
                     shouldStop = true;
                     return;
                 }
@@ -599,7 +601,8 @@ public partial class MementoMoriFuncs
             }
             catch (Exception e)
             {
-                log(e.ToString());
+                _logger.LogError(e, "Dungeon battle failed");
+                log(e.Message);
             }
         });
     }

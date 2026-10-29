@@ -55,7 +55,7 @@ public partial class MementoMoriFuncs
                 while (!localGvgReceiver.IsCastleInfoUpdated)
                 {
                     if (token.IsCancellationRequested) return;
-                    log("waiting for castle info...");
+                    log(ResourceStrings.GvgWaitingCastleInfo);
                     await Task.Delay(1000, token);
                             if (keepaliveTask.IsFaulted) await keepaliveTask;
                 }
@@ -85,7 +85,7 @@ public partial class MementoMoriFuncs
                         while (!localGvgReceiver.IsDeployCharacterUpdated)
                         {
                             if (token.IsCancellationRequested) return;
-                            log("waiting for deploy dialog to open...");
+                            log(ResourceStrings.GvgWaitingDeployDialog);
                             await Task.Delay(1000, token);
                             if (keepaliveTask.IsFaulted) await keepaliveTask;
                         }
@@ -109,7 +109,7 @@ public partial class MementoMoriFuncs
                         while (!localGvgReceiver.IsDeployCharacterUpdated)
                         {
                             if (token.IsCancellationRequested) return;
-                            log("waiting for deploy...");
+                            log(ResourceStrings.GvgWaitingDeploy);
                             await Task.Delay(1000, token);
                             if (keepaliveTask.IsFaulted) await keepaliveTask;
                         }
@@ -165,7 +165,7 @@ public partial class MementoMoriFuncs
 
             if (guildBaseInfoResponse.GlobalGuildGvgInfo.CanGetCastleRewardInfoList.IsNotNullOrEmpty())
             {
-                log($"{TextResourceTable.Get("[CommonHeaderGlobalGvgLabel]")} {{TextResourceTable.Get(\"[GuildRewardTitle]\")}}");
+                log($"{TextResourceTable.Get("[CommonHeaderGlobalGvgLabel]")} {TextResourceTable.Get("[GuildRewardTitle]")}");
                 var receiveGlobalGvgRewardResponse = await GetResponse<ReceiveGlobalGvgRewardRequest, ReceiveGlobalGvgRewardResponse>(new ReceiveGlobalGvgRewardRequest
                 {
                     CastleIdList = guildBaseInfoResponse.GlobalGuildGvgInfo.CanGetCastleRewardInfoList.Select(d => d.CastleId).ToList()

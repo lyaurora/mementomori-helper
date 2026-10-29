@@ -126,14 +126,15 @@
                 TradeShopSphereId = Masters.SphereTable.GetByCategoryIdAndLevel(SphereMb.CategoryId, _buyLv).Id,
                 TradeSphereCount = _buyCount
             };
-            if (await DialogService.ShowMessageBox(Masters.TextResourceTable.Get("[PurchaseConfirmationMessage]"), $"{Masters.TextResourceTable.Get("[ItemBoxTabConsumption]")} {ConsumeText}") != true) return;
+            if (await DialogService.ShowMessageBox(Masters.TextResourceTable.Get("[PurchaseConfirmationTitle]"), $"{Masters.TextResourceTable.Get("[PurchaseConfirmationMessage]")} {ResourceStrings.ConsumeItem}: {ConsumeText}",
+                    Masters.TextResourceTable.Get("[CommonOkLabel]"), cancelText: Masters.TextResourceTable.Get("[CommonCancelLabel]")) != true) return;
             await funcs.GetResponse<BuyItemRequest, BuyItemResponse>(request, token);
             token.ThrowIfCancellationRequested();
-            await DialogService.ShowMessageBox(Masters.TextResourceTable.Get("[PurchaseConfirmationTitle]"), Masters.TextResourceTable.Get("[ShopDialogResultSucceed]"));
+            await DialogService.ShowMessageBox(Masters.TextResourceTable.Get("[PurchaseConfirmationTitle]"), Masters.TextResourceTable.Get("[ShopDialogResultSucceed]"), Masters.TextResourceTable.Get("[CommonOkLabel]"));
             StateHasChanged();
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-        catch (Exception e) { if (!token.IsCancellationRequested) await DialogService.ShowMessageBox("错误", e.Message); }
+        catch (Exception e) { if (!token.IsCancellationRequested) await DialogService.ShowMessageBox(Masters.TextResourceTable.Get("[CommonErrorLabel]"), e.Message, Masters.TextResourceTable.Get("[CommonOkLabel]")); }
     }
 
 }

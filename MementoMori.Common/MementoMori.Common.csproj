@@ -46,6 +46,9 @@
       <EmbeddedResource Update="Localization\ResourceStrings.zh.resx">
           <DependentUpon>ResourceStrings.resx</DependentUpon>
       </EmbeddedResource>
+      <EmbeddedResource Update="Localization\ResourceStrings.zh-Hant.resx">
+          <DependentUpon>ResourceStrings.resx</DependentUpon>
+      </EmbeddedResource>
       <EmbeddedResource Update="Localization\ResourceStrings.resx">
         <SubType>Designer</SubType>
         <LastGenOutput>ResourceStrings.Designer.cs</LastGenOutput>

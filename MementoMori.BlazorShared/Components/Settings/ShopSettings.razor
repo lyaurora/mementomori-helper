@@ -13,7 +13,7 @@
     <MudCardHeader>
         <CardHeaderContent>
             <!--商城-->
-            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Storefront" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[CommonHeaderExchangeLabel]") <span class="panel-scope">(Global)</span></span></MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Storefront" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[CommonHeaderExchangeLabel]") <span class="panel-scope">(@ResourceStrings.AllAccounts)</span></span></MudText>
         </CardHeaderContent>
         <CardHeaderActions>
             <MudButton OnClick="ShopAutoBuyRestoreDefault">@ResourceStrings.ResettoDefault</MudButton>
@@ -30,7 +30,7 @@
                 var text = string.Format(ResourceStrings.BuyWith, consume, buy);
                 <div class="setting-item-row">
                     <span class="setting-item-text shop-rule-text"><span class="shop-rule-sentence">@text.Replace("×", "\u2060×\u2060")</span> <span class="shop-rule-discount">@($"{item.MinDiscountPercent}{Masters.TextResourceTable.Get("[ShopDiscountLabel]")}")</span></span>
-                    <MudIconButton Class="setting-item-remove" Icon="@Icons.Material.Filled.Close" Size="Size.Small" aria-label="@($"{Masters.TextResourceTable.Get("[CommonCloseLabel]")}: {text}")" OnClick="() => RemoveShopAutoBuyItem(item)" />
+                    <MudIconButton Class="setting-item-remove" Icon="@Icons.Material.Filled.Close" Size="Size.Small" aria-label="@($"{Masters.TextResourceTable.Get("[BulkBuyProductRemoveCartItemButtonLabel]")}: {text}")" OnClick="() => RemoveShopAutoBuyItem(item)" />
                 </div>
             }
         </div>

@@ -126,7 +126,7 @@ public partial class MementoMoriFuncs
                 }
                 Done:
                 if (createRoom || !localRaidReceiver.IsMaxTimeExceeded || token.IsCancellationRequested) return;
-                log("No rooms to join, hosting our own room");
+                log(ResourceStrings.LocalRaidNoTeamCreateOwn);
                 createRoom = true;
             }
 

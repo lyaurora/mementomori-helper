@@ -43,7 +43,7 @@ public sealed class ChatSession(MementoMoriFuncs funcs) : IDisposable
     private int _privateGeneration;
     private long _playerId;
     private long _sendAfterTimestamp;
-    private string _status = "未连接";
+    private string _status = ResourceStrings.ChatNotConnected;
     private string? _error;
 
     public IObservable<Unit> Changed => _changed;
@@ -124,8 +124,8 @@ public sealed class ChatSession(MementoMoriFuncs funcs) : IDisposable
         _lifetime = null;
         _connected = false;
         _client = null;
-        _status = "未连接";
-        _sent?.TrySetException(new IOException("聊天连接已断开，发送结果未知，请核对消息记录后再试。"));
+        _status = ResourceStrings.ChatNotConnected;
+        _sent?.TrySetException(new IOException(ResourceStrings.ChatSendResultUnknown));
     }
 
     public void Reconnect()
@@ -177,7 +177,7 @@ public sealed class ChatSession(MementoMoriFuncs funcs) : IDisposable
             var connectedAt = DateTimeOffset.UtcNow;
             try
             {
-                lock (_sync) { _status = "连接中"; _error = null; }
+                lock (_sync) { _status = ResourceStrings.ChatConnecting; _error = null; }
                 Notify();
                 client = funcs.NetworkManager.GetOnionClient();
                 var receiver = new Receiver(this, connection.Token);
@@ -187,7 +187,7 @@ public sealed class ChatSession(MementoMoriFuncs funcs) : IDisposable
                 await receiver.Authenticated.Task.WaitAsync(TimeSpan.FromSeconds(30), token);
                 authenticated = true;
                 connectedAt = DateTimeOffset.UtcNow;
-                lock (_sync) { token.ThrowIfCancellationRequested(); _connected = true; _status = "实时连接已建立"; }
+                lock (_sync) { token.ThrowIfCancellationRequested(); _connected = true; _status = ResourceStrings.ChatConnected; }
                 Notify();
                 keepAlive = client.KeepAlive(connection.Token);
                 privateUpdates = ReceivePrivateNotices(connection.Token);
@@ -201,10 +201,10 @@ public sealed class ChatSession(MementoMoriFuncs funcs) : IDisposable
                     if (refreshAnnouncements) await RequestAsync<GetAnnounceChatRequest, GetAnnounceChatResponse>(new(), connection.Token);
                 }
                 catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
-                catch (Exception e) { lock (_sync) _error = "同步聊天记录失败：" + e.Message; Notify(); }
+                catch (Exception e) { lock (_sync) _error = string.Format(ResourceStrings.ChatSyncFailedFormat, e.Message); Notify(); }
                 var completed = await Task.WhenAny(keepAlive, privateUpdates, client.WaitForDisconnectAsync());
                 await completed;
-                throw new IOException("聊天连接已断开。");
+                throw new IOException(ResourceStrings.ChatDisconnected);
             }
             catch (OperationCanceledException) when (token.IsCancellationRequested) { break; }
             catch (Exception e)
@@ -212,8 +212,8 @@ public sealed class ChatSession(MementoMoriFuncs funcs) : IDisposable
                 lock (_sync)
                 {
                     _connected = false;
-                    _error = e is TimeoutException ? "聊天连接超时。" : e.Message;
-                    _status = !authenticated && e is ApiErrorException ? "认证失败，请重新登录账号" : "连接中断，等待重连";
+                    _error = e is TimeoutException ? ResourceStrings.ChatTimeout : e.Message;
+                    _status = !authenticated && e is ApiErrorException ? ResourceStrings.ChatAuthFailed : ResourceStrings.ChatReconnecting;
                 }
                 Notify();
                 if (!authenticated && e is ApiErrorException) break;
@@ -224,7 +224,7 @@ public sealed class ChatSession(MementoMoriFuncs funcs) : IDisposable
                 lock (_sync)
                 {
                     if (_client == client) { _client = null; _connected = false; }
-                    _sent?.TrySetException(new IOException("聊天连接已断开，发送结果未知，请核对消息记录后再试。"));
+                    _sent?.TrySetException(new IOException(ResourceStrings.ChatSendResultUnknown));
                 }
                 try { await Task.WhenAll(keepAlive, privateUpdates); }
                 catch (Exception) { /* Both tasks are observed; the connection error is already displayed. */ }
@@ -248,7 +248,7 @@ public sealed class ChatSession(MementoMoriFuncs funcs) : IDisposable
         lock (_sync)
         {
             if (_disposed || !_connected || _lifetime == null || !funcs.LoginOk || funcs.NetworkManager.PlayerId != _playerId)
-                throw new InvalidOperationException("请先登录账号并等待聊天连接建立。");
+                throw new InvalidOperationException(ResourceStrings.ChatLoginFirst);
             token = _lifetime.Token;
         }
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, cancellationToken);
@@ -356,7 +356,7 @@ public sealed class ChatSession(MementoMoriFuncs funcs) : IDisposable
                 }
             }
             catch (OperationCanceledException) when (token.IsCancellationRequested) { break; }
-            catch (Exception e) { lock (_sync) _error = "更新私聊失败：" + e.Message; Notify(); }
+            catch (Exception e) { lock (_sync) _error = string.Format(ResourceStrings.ChatPrivateUpdateFailedFormat, e.Message); Notify(); }
         }
     }
 
@@ -366,26 +366,26 @@ public sealed class ChatSession(MementoMoriFuncs funcs) : IDisposable
             throw new ArgumentOutOfRangeException(nameof(type));
         text = text?.Trim() ?? "";
         if (text.Length == 0 || text.Length > ClientConst.Chat.MaxLetter)
-            throw new ArgumentException($"消息长度应为 1–{ClientConst.Chat.MaxLetter} 个字符。");
+            throw new ArgumentException(string.Format(ResourceStrings.ChatMessageLengthFormat, ClientConst.Chat.MaxLetter));
         return text;
     }
 
     private void ValidateTarget(long target)
     {
-        if (target <= 0 || target == funcs.NetworkManager.PlayerId) throw new ArgumentException("请选择其他玩家作为私聊对象。");
-        if (Blocked(target)) throw new InvalidOperationException("该玩家已在屏蔽名单中。");
+        if (target <= 0 || target == funcs.NetworkManager.PlayerId) throw new ArgumentException(ResourceStrings.ChatSelectOtherPlayer);
+        if (Blocked(target)) throw new InvalidOperationException(ResourceStrings.ChatPlayerBlocked);
     }
 
     public async Task SendAsync(ChatType type, string text, long target = 0, CancellationToken cancellationToken = default)
     {
         text = ValidateMessage(type, text);
         foreach (Match match in Regex.Matches(text, @"#([0-9]{1,9})#"))
-            if (!IsEmoticonUnlocked(long.Parse(match.Groups[1].Value))) throw new InvalidOperationException("消息中包含尚未解锁的表情包。");
+            if (!IsEmoticonUnlocked(long.Parse(match.Groups[1].Value))) throw new InvalidOperationException(ResourceStrings.ChatStickerLocked);
         if (type == ChatType.Private) ValidateTarget(target);
         CancellationToken sessionToken;
         lock (_sync)
         {
-            if (_disposed || !_connected || _lifetime == null) throw new InvalidOperationException("聊天尚未连接。");
+            if (_disposed || !_connected || _lifetime == null) throw new InvalidOperationException(ResourceStrings.ChatNotConnectedYet);
             sessionToken = _lifetime.Token;
             _error = null;
         }
@@ -400,7 +400,7 @@ public sealed class ChatSession(MementoMoriFuncs funcs) : IDisposable
                 await RequestAsync<SendPrivateMessageRequest, SendPrivateMessageResponse>(new() { TargetPlayerId = target, Message = text }, cancellationToken);
                 // The HTTP response confirms delivery. A history-refresh failure must not invite a duplicate send.
                 try { await LoadPrivateMessagesAsync(target, cancellationToken: cancellationToken); }
-                catch (Exception e) { lock (_sync) _error = "消息已发送，但更新记录失败：" + e.Message; Notify(); }
+                catch (Exception e) { lock (_sync) _error = string.Format(ResourceStrings.ChatSentRefreshFailedFormat, e.Message); Notify(); }
                 return;
             }
             OrtegaMagicOnionClient client;
@@ -409,7 +409,7 @@ public sealed class ChatSession(MementoMoriFuncs funcs) : IDisposable
             lock (_sync)
             {
                 if (!_connected || _client == null || _lifetime == null || !funcs.LoginOk || funcs.NetworkManager.PlayerId != _playerId)
-                    throw new InvalidOperationException("聊天尚未连接。");
+                    throw new InvalidOperationException(ResourceStrings.ChatNotConnectedYet);
                 client = _client;
                 token = _lifetime.Token;
                 _sending = (type, text);
@@ -425,7 +425,7 @@ public sealed class ChatSession(MementoMoriFuncs funcs) : IDisposable
         }
         catch (TimeoutException)
         {
-            throw new TimeoutException("尚未收到服务器的发送确认，请核对聊天记录后再试，以免重复发送。");
+            throw new TimeoutException(ResourceStrings.ChatSendUnconfirmed);
         }
         finally
         {
@@ -447,7 +447,7 @@ public sealed class ChatSession(MementoMoriFuncs funcs) : IDisposable
         GuildChatInfo? entry;
         lock (_sync) entry = FindGuildMessage(Identity(message));
         // CanReact is a retained legacy field. Client 4.22.0's ChatOptionData no longer uses it.
-        if (entry == null) throw new InvalidOperationException("消息记录已更新，请重新选择要回应的消息。");
+        if (entry == null) throw new InvalidOperationException(ResourceStrings.ChatMessageChanged);
         // The game sends None (0), not the existing type, to cancel a reaction.
         return RequestAsync<ReactChatRequest, ReactChatResponse>(new()
         {
@@ -468,9 +468,9 @@ public sealed class ChatSession(MementoMoriFuncs funcs) : IDisposable
     public static void ValidateGuildNote(string title, string content, GuildNoteCategoryType category)
     {
         if (string.IsNullOrWhiteSpace(title) || title.Length > OrtegaConst.GuildNote.MaxTitleLength)
-            throw new ArgumentException($"笔记标题应为 1–{OrtegaConst.GuildNote.MaxTitleLength} 个字符。");
+            throw new ArgumentException(string.Format(ResourceStrings.GuildNoteTitleLengthFormat, OrtegaConst.GuildNote.MaxTitleLength));
         if (string.IsNullOrWhiteSpace(content) || content.Length > OrtegaConst.GuildNote.MaxContentLength)
-            throw new ArgumentException($"笔记正文应为 1–{OrtegaConst.GuildNote.MaxContentLength} 个字符。");
+            throw new ArgumentException(string.Format(ResourceStrings.GuildNoteContentLengthFormat, OrtegaConst.GuildNote.MaxContentLength));
         if (category is not (GuildNoteCategoryType.Normal or GuildNoteCategoryType.Priority)) throw new ArgumentOutOfRangeException(nameof(category));
     }
     private bool Blocked(long id) => funcs.UserSyncData?.BlockPlayerIdList?.Contains(id) == true;
@@ -481,7 +481,7 @@ public sealed class ChatSession(MementoMoriFuncs funcs) : IDisposable
         _announcements.Clear();
         _loadedAnnouncements = false;
         _reactions.Clear();
-        _error = "已离开公会。";
+        _error = ResourceStrings.ChatLeftGuild;
     }
     private static GuildChatInfo Plain(ChatInfo info) => new() { ChatInfo = info, CanReact = info != null && info.SystemChatType == SystemChatType.None, ChatReactionCountMap = new() };
 

@@ -2,7 +2,7 @@
 @inject MementoMori.WebUI.UI.AtlasManager Atlas
 
 @{ var url = Atlas.GetPlayerIcon(IconId); }
-<span class="player-avatar" style="width: @(Size)px; height: @(Size)px" role="img" aria-label="@($"{Name}的头像")" data-icon-id="@IconId" data-load-failed="@_failed">
+<span class="player-avatar" style="width: @(Size)px; height: @(Size)px" role="img" aria-label="@string.Format(ResourceStrings.AvatarFormat, Name)" data-icon-id="@IconId" data-load-failed="@_failed">
     @if (url != null && !_failed)
     {
         <img src="@url" alt="" loading="lazy" decoding="async" @onerror="() => _failed = true" />

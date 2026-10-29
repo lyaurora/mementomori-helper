@@ -8,7 +8,7 @@
 
 <MudCard>
     <MudCardHeader>
-        <CardHeaderContent><MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.EventRepeat" aria-hidden="true" /><span>@ResourceStrings.AutoJobCrons</span></MudText></CardHeaderContent>
+        <CardHeaderContent><MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.EventRepeat" aria-hidden="true" /><span>@ResourceStrings.AutoJobStatus</span></MudText></CardHeaderContent>
         <CardHeaderActions><MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="Refresh" title="@ResourceStrings.Sync" aria-label="@ResourceStrings.Sync" /></CardHeaderActions>
     </MudCardHeader>
     <MudCardContent Class="settings-form">
@@ -32,14 +32,14 @@
                 {
                     var run = Funcs.JobRuns.GetValueOrDefault(job.Key);
                     <tr>
-                        <td class="job-name">@job.Description</td>
+                        <td class="job-name">@JobName(job)</td>
                         <td class="job-next-fire">@job.NextFireTime</td>
                         <td class="job-last-run">
                             @if (run == null) { <span>—</span> }
                             else
                             {
                                 <div class="job-run-status @(run.FinishedAt == null ? "is-running" : run.Cancelled ? "is-cancelled" : run.Error == null ? "is-success" : "is-error")">@(run.FinishedAt == null ? ResourceStrings.ResourceManager.GetString("TaskRunning")
-                                    : run.Cancelled ? ResourceStrings.Cancel
+                                    : run.Cancelled ? ResourceStrings.TaskCancelled
                                     : run.Error == null ? ResourceStrings.Success : ResourceStrings.ResourceManager.GetString("TaskFailed"))</div>
                                 <details class="job-run-details">
                                     <summary>@run.StartedAt.LocalDateTime.ToString("HH:mm:ss")</summary>
@@ -62,6 +62,21 @@
 @code {
     private List<JobInfo> JobInfos = new();
     private record JobInfo(string Key, string Description, string? NextFireTime);
+
+    // Resolve at render time: the stored description keeps the language active when the job was registered.
+    private static string JobName(JobInfo job) => job.Key[(job.Key.LastIndexOf('.') + 1)..] switch
+    {
+        "DailyJob" => ResourceStrings.DailyJob,
+        "HourlyJob" => ResourceStrings.RewardClaimJob,
+        "PvpJob" => Tr("[CommonHeaderLocalPvpLabel]"),
+        "LegendLeagueJob" => Tr("[CommonHeaderGlobalPvpLabel]"),
+        "GuildRaidBossReleaseJob" => Tr("[GuildRaidReleaseConfirmTitle]"),
+        "AutoBuyShopItemJob" => ResourceStrings.ShopAutoBuyItems,
+        "LocalRaidJob" => Tr("[CommonHeaderLocalRaidLabel]"),
+        "AutoChangeGachaRelicJob" => Tr("[GachaRelicChangeTitle]"),
+        "AutoDrawGachaRelicJob" => ResourceStrings.Auto_draw_10_times__up_to_3_draws_,
+        _ => job.Description
+    };
 
     protected override async Task AccountChanged()
     {

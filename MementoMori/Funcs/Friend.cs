@@ -79,7 +79,7 @@ public partial class MementoMoriFuncs
                         var timeServerMb = TimeServerTable.GetById(timeserverId);
                         var countryCode = timeServerMb.CountryCodeList.FirstOrDefault() ?? "BR";
 
-                        log("Creating new account...");
+                        log(ResourceStrings.FriendCreatingAccount);
                         var createUserResponse = await networkManager.GetResponse<CreateUserRequest, CreateUserResponse>(new CreateUserRequest
                         {
                             AdverisementId = Guid.NewGuid().ToString("D"),
@@ -113,7 +113,7 @@ public partial class MementoMoriFuncs
                             PlayerId = createWorldPlayerResponse.PlayerId, Password = createWorldPlayerResponse.Password
                         }, log);
 
-                        log($"Using friend code {friendCode}...");
+                        log(string.Format(ResourceStrings.FriendUsingInviteCode, friendCode));
                         await networkManager.GetResponse<UseFriendCodeRequest, UseFriendCodeResponse>(new UseFriendCodeRequest {FriendCode = friendCode});
                     }
 

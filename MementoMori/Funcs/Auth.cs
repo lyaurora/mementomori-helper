@@ -47,7 +47,7 @@ public partial class MementoMoriFuncs
                 var playerDataInfo = accountInfo.AutoLoginWorldId > 0
                     ? playerDataInfos.Find(d => d.WorldId == accountInfo.AutoLoginWorldId)
                     : playerDataInfos.MaxBy(d => d.LastLoginTime);
-                if (playerDataInfo == null) throw new InvalidOperationException("No character found in the selected world.");
+                if (playerDataInfo == null) throw new InvalidOperationException(ResourceStrings.NoCharacterInSelectedWorld);
                 await LoginCore(playerDataInfo, null);
             }
             catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
@@ -56,7 +56,8 @@ public partial class MementoMoriFuncs
                 LoginOk = false;
                 if (_chat != null) await _chat.ResetAsync();
                 LastLoginError = e.Message;
-                AddLog(e.ToString());
+                _logger.LogError(e, "Auto login failed");
+                AddLog(e.Message);
             }
             finally
             {
@@ -126,7 +127,8 @@ public partial class MementoMoriFuncs
             if (_chat != null) await _chat.ResetAsync();
             LastLoginError = e.Message;
             _operationError = e.Message;
-            AddLog(e.ToString());
+            _logger.LogError(e, "Login failed");
+            AddLog(e.Message);
             return;
         }
         finally
@@ -192,7 +194,7 @@ public partial class MementoMoriFuncs
                 _logger.LogWarning(e, "Using cached public AuthToken for game version {Version}", AuthOption.AppVersion);
                 return AuthOption.CachedAuthToken.Value;
             }
-            throw new InvalidOperationException("Unable to load the public AuthToken. Check the asset server URL or try again later.", e);
+            throw new InvalidOperationException(ResourceStrings.AuthTokenLoadFailed, e);
         }
     }
 }

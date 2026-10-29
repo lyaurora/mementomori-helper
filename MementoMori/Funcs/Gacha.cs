@@ -30,10 +30,9 @@ public partial class MementoMoriFuncs
                     if (buttonInfo == null) continue;
                     if (ignoredButtonId.Contains(buttonInfo.GachaButtonId)) continue;
 
-                    var gachaCaseMb = GachaCaseTable.GetById(gachaCaseInfo.GachaCaseId);
                     var itemMb = ItemTable.GetByItemTypeAndItemId(buttonInfo.ConsumeUserItem.ItemType, buttonInfo.ConsumeUserItem.ItemId);
                     var name = TextResourceTable.Get(itemMb.NameKey);
-                    log(string.Format(ResourceStrings.GachaExecInfo, gachaCaseMb.Memo, buttonInfo.LotteryCount, name, buttonInfo.ConsumeUserItem.ItemCount));
+                    log(string.Format(ResourceStrings.GachaExecInfo, TextResourceTable.Get(GachaCaseUiTable.GetById(gachaCaseInfo.GachaCaseUiId)?.NameKey), buttonInfo.LotteryCount, name, buttonInfo.ConsumeUserItem.ItemCount));
                     try
                     {
                         var response = await GetResponse<DrawRequest, DrawResponse>(new DrawRequest {GachaButtonId = buttonInfo.GachaButtonId});

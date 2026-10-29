@@ -15,7 +15,7 @@ const assert = require('node:assert/strict');
                 failed.push({ path: new URL(response.url()).pathname, status: response.status() });
         });
         await page.goto(`${base}/`);
-        await page.waitForFunction(() => !document.querySelector('[aria-label="外观模式"]')?.disabled);
+        await page.waitForFunction(() => !document.querySelector('[data-testid="theme-toggle"]')?.disabled);
         assert(await page.locator('.app-content .mud-card').count(), 'Home data is missing');
         const go = async (path, selector) => {
             const start = Date.now();
@@ -45,7 +45,7 @@ const assert = require('node:assert/strict');
                 await tabs.nth(index).click();
                 await page.waitForFunction(i => document.querySelectorAll('.app-content .mud-tab')[i]?.classList.contains('mud-tab-active'), index);
                 if (path === 'Shop' && !result.Shop.quantityDialog) {
-                    const free = page.locator('.shop-buy-button:not(:disabled)').filter({ hasText: /^FREE$/ }).first();
+                    const free = page.locator('.shop-buy-button[data-free]:not(:disabled)').first();
                     const buy = await free.count() ? free : page.locator('.shop-buy-button:not(:disabled)').first();
                     if (await buy.count()) {
                         await buy.click();
