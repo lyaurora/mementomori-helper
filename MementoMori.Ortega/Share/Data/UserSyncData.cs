@@ -178,27 +178,31 @@ public class UserSyncData
     public void UserItemEditorMergeUserSyncData(UserSyncData userSyncData)
     {
         if (userSyncData == null) return;
+        // 后台任务线程在这里合并，UI 可能正在枚举这些列表：一律复制后再改，再替换引用（写时复制）
         if (userSyncData.ChatSettingData != null) ChatSettingData = userSyncData.ChatSettingData;
-        if (userSyncData.BlockPlayerIdList.IsNotNullOrEmpty()) BlockPlayerIdList = BlockPlayerIdList.Merge(userSyncData.BlockPlayerIdList);
+        if (userSyncData.BlockPlayerIdList.IsNotNullOrEmpty()) BlockPlayerIdList = (BlockPlayerIdList?.ToList()).Merge(userSyncData.BlockPlayerIdList);
         if (userSyncData.CanJoinTodayLegendLeague != null) CanJoinTodayLegendLeague = userSyncData.CanJoinTodayLegendLeague;
-        if (userSyncData.ClearedTutorialIdList.IsNotNullOrEmpty()) ClearedTutorialIdList = ClearedTutorialIdList.Merge(userSyncData.ClearedTutorialIdList);
+        if (userSyncData.ClearedTutorialIdList.IsNotNullOrEmpty()) ClearedTutorialIdList = (ClearedTutorialIdList?.ToList()).Merge(userSyncData.ClearedTutorialIdList);
         if (userSyncData.CreateUserIdTimestamp != null) CreateUserIdTimestamp = userSyncData.CreateUserIdTimestamp;
         if (userSyncData.CreateWorldLocalTimeStamp != null) CreateWorldLocalTimeStamp = userSyncData.CreateWorldLocalTimeStamp;
-        if (userSyncData.DataLinkageMap.IsNotNullOrEmpty()) DataLinkageMap = DataLinkageMap.Merge(userSyncData.DataLinkageMap);
-        if (userSyncData.DeletedCharacterGuidList.IsNotNullOrEmpty()) UserCharacterDtoInfos.RemoveAll(d => userSyncData.DeletedCharacterGuidList.Contains(d.Guid));
-        if (userSyncData.DeletedEquipmentGuidList.IsNotNullOrEmpty()) UserEquipmentDtoInfos.RemoveAll(d => userSyncData.DeletedEquipmentGuidList.Contains(d.Guid));
+        if (userSyncData.DataLinkageMap.IsNotNullOrEmpty()) DataLinkageMap = (DataLinkageMap?.ToDictionary()).Merge(userSyncData.DataLinkageMap);
+        if (userSyncData.DeletedCharacterGuidList.IsNotNullOrEmpty())
+            UserCharacterDtoInfos = UserCharacterDtoInfos?.Where(d => !userSyncData.DeletedCharacterGuidList.Contains(d.Guid)).ToList();
+        if (userSyncData.DeletedEquipmentGuidList.IsNotNullOrEmpty())
+            UserEquipmentDtoInfos = UserEquipmentDtoInfos?.Where(d => !userSyncData.DeletedEquipmentGuidList.Contains(d.Guid)).ToList();
         if (userSyncData.UserEquipmentStatusDtoInfo != null) UserEquipmentStatusDtoInfo = userSyncData.UserEquipmentStatusDtoInfo;
         if (userSyncData.ExistVipDailyGift != null) ExistVipDailyGift = userSyncData.ExistVipDailyGift;
         if (userSyncData.GivenItemCountInfoList.IsNotNullOrEmpty())
         {
+            var userItemDtoInfos = UserItemDtoInfo.ToList();
             foreach (var userItem in userSyncData.GivenItemCountInfoList)
             {
-                var userItemDtoInfo = UserItemDtoInfo.FirstOrDefault(d => d.ItemId == userItem.ItemId && d.ItemType == userItem.ItemType);
+                var userItemDtoInfo = userItemDtoInfos.FirstOrDefault(d => d.ItemId == userItem.ItemId && d.ItemType == userItem.ItemType);
                 if (userItemDtoInfo != null)
                     userItemDtoInfo.ItemCount += userItem.ItemCount;
                 else
                 {
-                    UserItemDtoInfo.Add(new UserItemDtoInfo
+                    userItemDtoInfos.Add(new UserItemDtoInfo
                     {
                         ItemId = userItem.ItemId,
                         ItemType = userItem.ItemType,
@@ -207,56 +211,60 @@ public class UserSyncData
                     });
                 }
             }
+
+            UserItemDtoInfo = userItemDtoInfos;
         }
 
         if (userSyncData.GuildJoinLimitCount != null) GuildJoinLimitCount = userSyncData.GuildJoinLimitCount;
-        if (userSyncData.GuildNoteShareLocalTimestampMap != null) GuildNoteShareLocalTimestampMap = GuildNoteShareLocalTimestampMap.Merge(userSyncData.GuildNoteShareLocalTimestampMap);
+        if (userSyncData.GuildNoteShareLocalTimestampMap != null) GuildNoteShareLocalTimestampMap = (GuildNoteShareLocalTimestampMap?.ToDictionary()).Merge(userSyncData.GuildNoteShareLocalTimestampMap);
         if (userSyncData.IsDataLinkage != null) IsDataLinkage = userSyncData.IsDataLinkage;
         if (userSyncData.IsJoinedGlobalGvg != null) IsJoinedGlobalGvg = userSyncData.IsJoinedGlobalGvg;
         if (userSyncData.IsJoinedLocalGvg != null) IsJoinedLocalGvg = userSyncData.IsJoinedLocalGvg;
         if (userSyncData.IsReceivedSnsShareReward != null) IsReceivedSnsShareReward = userSyncData.IsReceivedSnsShareReward;
         if (userSyncData.IsValidContractPrivilege != null) IsValidContractPrivilege = userSyncData.IsValidContractPrivilege;
-        if (userSyncData.LeadLockEquipmentDialogInfoMap != null) LeadLockEquipmentDialogInfoMap = LeadLockEquipmentDialogInfoMap.Merge(userSyncData.LeadLockEquipmentDialogInfoMap);
+        if (userSyncData.LeadLockEquipmentDialogInfoMap != null) LeadLockEquipmentDialogInfoMap = (LeadLockEquipmentDialogInfoMap?.ToDictionary()).Merge(userSyncData.LeadLockEquipmentDialogInfoMap);
         if (userSyncData.LegendLeagueClassType != null) LegendLeagueClassType = userSyncData.LegendLeagueClassType;
         if (userSyncData.LocalRaidChallengeCount != null) LocalRaidChallengeCount = userSyncData.LocalRaidChallengeCount;
         if (userSyncData.LockedEquipmentCharacterGuidListMap.IsNotNullOrEmpty())
-            LockedEquipmentCharacterGuidListMap = LockedEquipmentCharacterGuidListMap.Merge(userSyncData.LockedEquipmentCharacterGuidListMap);
+            LockedEquipmentCharacterGuidListMap = (LockedEquipmentCharacterGuidListMap?.ToDictionary()).Merge(userSyncData.LockedEquipmentCharacterGuidListMap);
         if (userSyncData.LockedUserEquipmentDtoInfoListMap.IsNotNullOrEmpty())
-            LockedUserEquipmentDtoInfoListMap = LockedUserEquipmentDtoInfoListMap.Merge(userSyncData.LockedUserEquipmentDtoInfoListMap);
+            LockedUserEquipmentDtoInfoListMap = (LockedUserEquipmentDtoInfoListMap?.ToDictionary()).Merge(userSyncData.LockedUserEquipmentDtoInfoListMap);
         if (userSyncData.PresentCount != null) PresentCount = userSyncData.PresentCount;
         if (userSyncData.PrivacySettingsType != null) PrivacySettingsType = userSyncData.PrivacySettingsType;
         if (userSyncData.ReceivableAchieveRankingRewardIdMap.IsNotNullOrEmpty())
             ReceivableAchieveRankingRewardIdMap = userSyncData.ReceivableAchieveRankingRewardIdMap;
         if (userSyncData.ReceivedAchieveRankingRewardIdList.IsNotNullOrEmpty())
-            ReceivedAchieveRankingRewardIdList = ReceivedAchieveRankingRewardIdList.Merge(userSyncData.ReceivedAchieveRankingRewardIdList);
+            ReceivedAchieveRankingRewardIdList = (ReceivedAchieveRankingRewardIdList?.ToList()).Merge(userSyncData.ReceivedAchieveRankingRewardIdList);
         if (userSyncData.ReceivedAutoBattleRewardLastTime != null) ReceivedAutoBattleRewardLastTime = userSyncData.ReceivedAutoBattleRewardLastTime;
         if (userSyncData.ReleaseLockEquipmentCooldownTimeStampMap.IsNotNullOrEmpty())
-            ReleaseLockEquipmentCooldownTimeStampMap = ReleaseLockEquipmentCooldownTimeStampMap.Merge(userSyncData.ReleaseLockEquipmentCooldownTimeStampMap);
-        if (userSyncData.ShopCurrencyMissionProgressMap.IsNotNullOrEmpty()) ShopCurrencyMissionProgressMap = ShopCurrencyMissionProgressMap.Merge(userSyncData.ShopCurrencyMissionProgressMap);
+            ReleaseLockEquipmentCooldownTimeStampMap = (ReleaseLockEquipmentCooldownTimeStampMap?.ToDictionary()).Merge(userSyncData.ReleaseLockEquipmentCooldownTimeStampMap);
+        if (userSyncData.ShopCurrencyMissionProgressMap.IsNotNullOrEmpty()) ShopCurrencyMissionProgressMap = (ShopCurrencyMissionProgressMap?.ToDictionary()).Merge(userSyncData.ShopCurrencyMissionProgressMap);
         if (userSyncData.ShopProductGuerrillaPackList.IsNotNullOrEmpty())
-            ShopProductGuerrillaPackList = ShopProductGuerrillaPackList.Merge(userSyncData.ShopProductGuerrillaPackList, (x, y) => x.ShopGuerrillaPackId == y.ShopGuerrillaPackId);
+            ShopProductGuerrillaPackList = (ShopProductGuerrillaPackList?.ToList()).Merge(userSyncData.ShopProductGuerrillaPackList, (x, y) => x.ShopGuerrillaPackId == y.ShopGuerrillaPackId);
         if (userSyncData.TotalPoint != null) TotalPoint = userSyncData.TotalPoint;
         if (userSyncData.TimeServerId != null) TimeServerId = userSyncData.TimeServerId;
-        if (userSyncData.TreasureChestCeilingCountMap.IsNotNullOrEmpty()) TreasureChestCeilingCountMap = TreasureChestCeilingCountMap.Merge(userSyncData.TreasureChestCeilingCountMap);
+        if (userSyncData.TreasureChestCeilingCountMap.IsNotNullOrEmpty()) TreasureChestCeilingCountMap = (TreasureChestCeilingCountMap?.ToDictionary()).Merge(userSyncData.TreasureChestCeilingCountMap);
         if (userSyncData.UserBattleBossDtoInfo != null) UserBattleBossDtoInfo = userSyncData.UserBattleBossDtoInfo;
         if (userSyncData.UserBattleLegendLeagueDtoInfo != null) UserBattleLegendLeagueDtoInfo = userSyncData.UserBattleLegendLeagueDtoInfo;
         if (userSyncData.UserBattlePvpDtoInfo != null) UserBattlePvpDtoInfo = userSyncData.UserBattlePvpDtoInfo;
         if (userSyncData.UserBoxSizeDtoInfo != null) UserBoxSizeDtoInfo = userSyncData.UserBoxSizeDtoInfo;
         if (userSyncData.UserCharacterBookDtoInfos.IsNotNullOrEmpty()) UserCharacterBookDtoInfos = userSyncData.UserCharacterBookDtoInfos;
         if (userSyncData.UserCharacterCollectionDtoInfos.IsNotNullOrEmpty()) UserCharacterCollectionDtoInfos = userSyncData.UserCharacterCollectionDtoInfos;
-        if (userSyncData.UserCharacterDtoInfos.IsNotNullOrEmpty()) UserCharacterDtoInfos = UserCharacterDtoInfos.Merge(userSyncData.UserCharacterDtoInfos, (a, b) => a.Guid == b.Guid);
+        if (userSyncData.UserCharacterDtoInfos.IsNotNullOrEmpty()) UserCharacterDtoInfos = (UserCharacterDtoInfos?.ToList()).Merge(userSyncData.UserCharacterDtoInfos, (a, b) => a.Guid == b.Guid);
         if (userSyncData.UserCharacterRankReleaseDtoInfos.IsNotNullOrEmpty())
-            UserCharacterRankReleaseDtoInfos = UserCharacterRankReleaseDtoInfos.Merge(userSyncData.UserCharacterRankReleaseDtoInfos, (a, b) => a.CharacterId == b.CharacterId);
-        if (userSyncData.UserDeckDtoInfos.IsNotNullOrEmpty()) UserDeckDtoInfos = userSyncData.UserDeckDtoInfos;
-        if (userSyncData.UserEquipmentDtoInfos.IsNotNullOrEmpty()) UserEquipmentDtoInfos = UserEquipmentDtoInfos.Merge(userSyncData.UserEquipmentDtoInfos, (a, b) => a.Guid == b.Guid);
-        if (userSyncData.UserItemDtoInfo.IsNotNullOrEmpty()) UserItemDtoInfo = UserItemDtoInfo.Merge(userSyncData.UserItemDtoInfo, (a, b) => a.ItemType == b.ItemType && a.ItemId == b.ItemId);
+            UserCharacterRankReleaseDtoInfos = (UserCharacterRankReleaseDtoInfos?.ToList()).Merge(userSyncData.UserCharacterRankReleaseDtoInfos, (a, b) => a.CharacterId == b.CharacterId);
+        // 服务器只回传改动的队伍，按类型和编号合并而不是整体替换
+        if (userSyncData.UserDeckDtoInfos.IsNotNullOrEmpty())
+            UserDeckDtoInfos = (UserDeckDtoInfos?.ToList()).Merge(userSyncData.UserDeckDtoInfos, (a, b) => a.DeckUseContentType == b.DeckUseContentType && a.DeckNo == b.DeckNo);
+        if (userSyncData.UserEquipmentDtoInfos.IsNotNullOrEmpty()) UserEquipmentDtoInfos = (UserEquipmentDtoInfos?.ToList()).Merge(userSyncData.UserEquipmentDtoInfos, (a, b) => a.Guid == b.Guid);
+        if (userSyncData.UserItemDtoInfo.IsNotNullOrEmpty()) UserItemDtoInfo = (UserItemDtoInfo?.ToList()).Merge(userSyncData.UserItemDtoInfo, (a, b) => a.ItemType == b.ItemType && a.ItemId == b.ItemId);
         if (userSyncData.UserLevelLinkDtoInfo != null) UserLevelLinkDtoInfo = userSyncData.UserLevelLinkDtoInfo;
         if (userSyncData.UserLevelLinkMemberDtoInfos.IsNotNullOrEmpty()) UserLevelLinkMemberDtoInfos = userSyncData.UserLevelLinkMemberDtoInfos;
         if (userSyncData.UserMissionActivityDtoInfos.IsNotNullOrEmpty()) UserMissionActivityDtoInfos = userSyncData.UserMissionActivityDtoInfos;
         if (userSyncData.UserMissionDtoInfos.IsNotNullOrEmpty()) UserMissionDtoInfos = userSyncData.UserMissionDtoInfos;
         if (userSyncData.UserMissionOccurrenceHistoryDtoInfo != null) UserMissionOccurrenceHistoryDtoInfo = userSyncData.UserMissionOccurrenceHistoryDtoInfo;
         if (userSyncData.UserFriendMissionDtoInfoList.IsNotNullOrEmpty()) UserFriendMissionDtoInfoList = userSyncData.UserFriendMissionDtoInfoList;
-        if (userSyncData.UserGuidanceTimeMap.IsNotNullOrEmpty()) UserGuidanceTimeMap = UserGuidanceTimeMap.Merge(userSyncData.UserGuidanceTimeMap);
+        if (userSyncData.UserGuidanceTimeMap.IsNotNullOrEmpty()) UserGuidanceTimeMap = (UserGuidanceTimeMap?.ToDictionary()).Merge(userSyncData.UserGuidanceTimeMap);
         if (userSyncData.UserNotificationDtoInfoInfos.IsNotNullOrEmpty()) UserNotificationDtoInfoInfos = userSyncData.UserNotificationDtoInfoInfos;
         if (userSyncData.UserOpenContentDtoInfos.IsNotNullOrEmpty()) UserOpenContentDtoInfos = userSyncData.UserOpenContentDtoInfos;
         if (userSyncData.UserRankUpPrioritySettingDtoInfo != null) UserRankUpPrioritySettingDtoInfo = userSyncData.UserRankUpPrioritySettingDtoInfo;
@@ -268,10 +276,10 @@ public class UserSyncData
         if (userSyncData.UserShopSubscriptionDtoInfos.IsNotNullOrEmpty()) UserShopSubscriptionDtoInfos = userSyncData.UserShopSubscriptionDtoInfos;
         if (userSyncData.UserStatusDtoInfo != null) UserStatusDtoInfo = userSyncData.UserStatusDtoInfo;
         if (userSyncData.UserTowerBattleDtoInfos.IsNotNullOrEmpty())
-            UserTowerBattleDtoInfos = UserTowerBattleDtoInfos.Merge(userSyncData.UserTowerBattleDtoInfos, (a, b) => a.TowerType == b.TowerType);
+            UserTowerBattleDtoInfos = (UserTowerBattleDtoInfos?.ToList()).Merge(userSyncData.UserTowerBattleDtoInfos, (a, b) => a.TowerType == b.TowerType);
         if (userSyncData.UserVipGiftDtoInfos.IsNotNullOrEmpty()) UserVipGiftDtoInfos = userSyncData.UserVipGiftDtoInfos;
         if (userSyncData.ReceivedGuildTowerFloorRewardIdList.IsNotNullOrEmpty())
-            ReceivedGuildTowerFloorRewardIdList = ReceivedGuildTowerFloorRewardIdList.Merge(userSyncData.ReceivedGuildTowerFloorRewardIdList);
+            ReceivedGuildTowerFloorRewardIdList = (ReceivedGuildTowerFloorRewardIdList?.ToList()).Merge(userSyncData.ReceivedGuildTowerFloorRewardIdList);
         if (userSyncData.ExistPurchasableOneWeekLimitedPack != null) ExistPurchasableOneWeekLimitedPack = userSyncData.ExistPurchasableOneWeekLimitedPack;
         if (userSyncData.ChatEmoticonList.IsNotNullOrEmpty()) ChatEmoticonList = userSyncData.ChatEmoticonList;
         if (userSyncData.CharacterIconEffectList.IsNotNullOrEmpty()) CharacterIconEffectList = userSyncData.CharacterIconEffectList;

@@ -1,4 +1,5 @@
-﻿using MementoMori.Ortega.Share.Data.ApiInterface.LoginBonus;
+﻿using MementoMori.Exceptions;
+using MementoMori.Ortega.Share.Data.ApiInterface.LoginBonus;
 
 namespace MementoMori.Funcs;
 
@@ -9,12 +10,12 @@ public partial class MementoMoriFuncs
         await ExecuteQuickAction(async (log, token) =>
         {
             await GetMonthlyLoginBonusInfo();
-            var day = DateTimeOffset.Now.ToOffset(TimeSpan.FromHours(1)).Day;
+            var day = TimeManager.ServerNow.Day;
             if (!MonthlyLoginBonusInfo.ReceivedDailyRewardDayList.Contains(day))
             {
                 if (TimeManager.ServerNow.Hour >= 4)
                 {
-                    var bonus = await GetResponse<ReceiveDailyLoginBonusRequest, ReceiveDailyLoginBonusResponse>(new ReceiveDailyLoginBonusRequest {ReceiveDay = TimeManager.ServerNow.Day});
+                    var bonus = await GetResponse<ReceiveDailyLoginBonusRequest, ReceiveDailyLoginBonusResponse>(new ReceiveDailyLoginBonusRequest {ReceiveDay = day});
                     log($"{TextResourceTable.Get("[MyPageButtonLoginBonusLabel]")}:\n");
                     bonus.RewardItemList.PrintUserItems(log);
                 }
@@ -43,39 +44,49 @@ public partial class MementoMoriFuncs
 
             await GetMonthlyLoginBonusInfo();
 
-            var iconInfo = Mypage.MypageInfo.MypageIconInfos.FirstOrDefault(d => d.TransferDetailInfo.TransferSpotType == TransferSpotType.LimitedLoginBonus);
-            if (iconInfo != null)
+            // 周年庆等经常同时开好几个限时登录奖励，每个都领；单个失败不影响其他
+            var limitedLoginBonusIds = Mypage.MypageInfo.MypageIconInfos
+                .Where(d => d.TransferDetailInfo.TransferSpotType == TransferSpotType.LimitedLoginBonus)
+                .Select(d => d.TransferDetailInfo.NumberInfo1).Distinct().ToList();
+            foreach (var limitedLoginBonusId in limitedLoginBonusIds)
             {
-                var limitedLoginBonusId = iconInfo.TransferDetailInfo.NumberInfo1;
-                var limitedLoginBonusInfoResponse = await GetResponse<GetLimitedLoginBonusInfoRequest, GetLimitedLoginBonusInfoResponse>(new GetLimitedLoginBonusInfoRequest
-                {
-                    LimitedLoginBonusId = limitedLoginBonusId
-                });
-
                 var limitedLoginBonusMb = LimitedLoginBonusTable.GetById(limitedLoginBonusId);
-                var name = TextResourceTable.Get(limitedLoginBonusMb.TitleTextKey);
                 var loginBonusRewardListMb = LimitedLoginBonusRewardListTable.GetById(limitedLoginBonusId);
-                foreach (var dailyLimitedLoginBonusItem in loginBonusRewardListMb.DailyRewardList)
+                if (limitedLoginBonusMb == null || loginBonusRewardListMb == null) continue;
+                var name = TextResourceTable.Get(limitedLoginBonusMb.TitleTextKey);
+                try
                 {
-                    if (limitedLoginBonusInfoResponse.ReceivedDateList.Contains(dailyLimitedLoginBonusItem.Date)) continue;
-                    if (limitedLoginBonusInfoResponse.TotalLoginCount < dailyLimitedLoginBonusItem.Date) continue;
-                    log(name);
-                    var resp = await GetResponse<ReceiveDailyLimitedLoginBonusRequest, ReceiveDailyLimitedLoginBonusResponse>(new ReceiveDailyLimitedLoginBonusRequest
-                    {
-                        LimitedLoginBonusId = limitedLoginBonusId, ReceiveDate = dailyLimitedLoginBonusItem.Date
-                    });
-                    resp.RewardItemList.PrintUserItems(log);
-                }
-
-                if (loginBonusRewardListMb.ExistSpecialReward && limitedLoginBonusInfoResponse.TotalLoginCount >= loginBonusRewardListMb.SpecialRewardItem.Date &&
-                    !limitedLoginBonusInfoResponse.IsReceivedSpecialReward)
-                {
-                    log(name);
-                    var response = await GetResponse<ReceiveSpecialLimitedLoginBonusRequest, ReceiveSpecialLimitedLoginBonusResponse>(new ReceiveSpecialLimitedLoginBonusRequest
+                    var limitedLoginBonusInfoResponse = await GetResponse<GetLimitedLoginBonusInfoRequest, GetLimitedLoginBonusInfoResponse>(new GetLimitedLoginBonusInfoRequest
                     {
                         LimitedLoginBonusId = limitedLoginBonusId
                     });
-                    response.RewardItemList.PrintUserItems(log);
+
+                    foreach (var dailyLimitedLoginBonusItem in loginBonusRewardListMb.DailyRewardList)
+                    {
+                        if (limitedLoginBonusInfoResponse.ReceivedDateList.Contains(dailyLimitedLoginBonusItem.Date)) continue;
+                        if (limitedLoginBonusInfoResponse.TotalLoginCount < dailyLimitedLoginBonusItem.Date) continue;
+                        log(name);
+                        var resp = await GetResponse<ReceiveDailyLimitedLoginBonusRequest, ReceiveDailyLimitedLoginBonusResponse>(new ReceiveDailyLimitedLoginBonusRequest
+                        {
+                            LimitedLoginBonusId = limitedLoginBonusId, ReceiveDate = dailyLimitedLoginBonusItem.Date
+                        });
+                        resp.RewardItemList.PrintUserItems(log);
+                    }
+
+                    if (loginBonusRewardListMb.ExistSpecialReward && limitedLoginBonusInfoResponse.TotalLoginCount >= loginBonusRewardListMb.SpecialRewardItem.Date &&
+                        !limitedLoginBonusInfoResponse.IsReceivedSpecialReward)
+                    {
+                        log(name);
+                        var response = await GetResponse<ReceiveSpecialLimitedLoginBonusRequest, ReceiveSpecialLimitedLoginBonusResponse>(new ReceiveSpecialLimitedLoginBonusRequest
+                        {
+                            LimitedLoginBonusId = limitedLoginBonusId
+                        });
+                        response.RewardItemList.PrintUserItems(log);
+                    }
+                }
+                catch (ApiErrorException e) when (e.ErrorCode is not (ErrorCode.CommonNoSession or ErrorCode.CommonLoggedInAnotherDevice))
+                {
+                    log($"{name}: {e.Message}");
                 }
             }
         });
