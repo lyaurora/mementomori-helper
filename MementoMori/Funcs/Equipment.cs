@@ -6,20 +6,24 @@ public partial class MementoMoriFuncs
 {
     public async Task AutoEquipmentTraning()
     {
+        // 点击时固定目标：Funcs 上的属性是账号共享的，界面重新打开会改写它们
+        var targetGuid = TrainingEquipmentGuid;
+        var targetType = EquipmentTrainingTargetType;
+        var targetPercent = EquipmentTrainingTargetPercent;
         await ExecuteQuickAction(async (log, token) =>
         {
             var totalCount = 0;
             while (!token.IsCancellationRequested)
             {
                 // await UserGetUserData();
-                var equipment = UserSyncData.UserEquipmentDtoInfos.First(d => d.Guid == TrainingEquipmentGuid);
+                var equipment = UserSyncData.UserEquipmentDtoInfos.First(d => d.Guid == targetGuid);
                 var equipmentMb = EquipmentTable.GetById(equipment.EquipmentId);
-                var currentParameter = equipment.GetAdditionalParameter(EquipmentTrainingTargetType);
+                var currentParameter = equipment.GetAdditionalParameter(targetType);
                 var m =
-                    $"{TextResourceTable.Get("[CommonForgedLabel]")} {totalCount}, {TextResourceTable.Get(EquipmentTrainingTargetType)} {currentParameter} ({(double) currentParameter / equipmentMb.AdditionalParameterTotal:P})";
+                    $"{TextResourceTable.Get("[CommonForgedLabel]")} {totalCount}, {TextResourceTable.Get(targetType)} {currentParameter} ({(double) currentParameter / equipmentMb.AdditionalParameterTotal:P})";
                 log(m);
-                var targetValue = equipmentMb.AdditionalParameterTotal * EquipmentTrainingTargetPercent;
-                switch (EquipmentTrainingTargetType)
+                var targetValue = equipmentMb.AdditionalParameterTotal * targetPercent;
+                switch (targetType)
                 {
                     case BaseParameterType.Health when equipment.AdditionalParameterHealth >= targetValue:
                         return;
@@ -31,7 +35,7 @@ public partial class MementoMoriFuncs
                         return;
                 }
 
-                var response = await GetResponse<TrainingRequest, TrainingResponse>(new TrainingRequest {EquipmentGuid = TrainingEquipmentGuid, ParameterLockedList = new List<BaseParameterType>()});
+                var response = await GetResponse<TrainingRequest, TrainingResponse>(new TrainingRequest {EquipmentGuid = targetGuid, ParameterLockedList = new List<BaseParameterType>()});
                 totalCount++;
                 await Task.Delay(GameConfig.AutoRequestDelay, token);
             }

@@ -20,6 +20,7 @@ public partial class MementoMoriFuncs
         {
             while (!token.IsCancellationRequested)
             {
+                var progressed = false;
                 // 批量精炼
                 var equipments = UserSyncData.UserEquipmentDtoInfos.Select(d => new
                 {
@@ -52,6 +53,11 @@ public partial class MementoMoriFuncs
                         break;
                     }
 
+                    // UserSyncData lists are replaced (not mutated) on merge, so re-read them after the cast
+                    equipments = UserSyncData.UserEquipmentDtoInfos.Select(d => new
+                    {
+                        Equipment = d, EquipmentMB = EquipmentTable.GetById(d.EquipmentId)
+                    });
                     sEquipments = equipments.Where(d =>
                             d.Equipment.CharacterGuid == "" && // 未装备
                             d.Equipment.MatchlessSacredTreasureLv == 1 && // 魔装等级为 1
@@ -83,9 +89,12 @@ public partial class MementoMoriFuncs
                     {
                         var mb = x1.EquipmentMB;
                         var info = x1.Equipment;
-                        await InheritantEquipment(mb, info, log);
+                        progressed |= await InheritantEquipment(mb, info, log);
                     }
                 }
+
+                // 一轮没有任何继承就退出，避免无限循环
+                if (!progressed) break;
             }
         });
     }
@@ -172,7 +181,7 @@ public partial class MementoMoriFuncs
                             {
                                 EquipmentSlotTypes = new List<EquipmentSlotType> {equipmentMb.SlotType},
                                 UserCharacterGuid = userCharacterDtoInfo.Guid
-                            });
+                            }, ignoreOperationCancellation: true);
                         }
                         else
                         {
@@ -190,7 +199,7 @@ public partial class MementoMoriFuncs
                                             IsInherit = false
                                         }
                                     }
-                                });
+                                }, ignoreOperationCancellation: true);
                         }
                     }
                     catch (Exception e) when (changeException != null)
@@ -215,6 +224,7 @@ public partial class MementoMoriFuncs
         {
             while (!token.IsCancellationRequested)
             {
+                var progressed = false;
                 var usersyncData = await UserGetUserData();
                 // 找到所有 等级为S、魔装、未装备 的装备
                 var equipments = usersyncData.UserSyncData.UserEquipmentDtoInfos.Select(d => new
@@ -256,14 +266,17 @@ public partial class MementoMoriFuncs
                     {
                         var mb = x1.EquipmentMB;
                         var info = x1.Equipment;
-                        await InheritantEquipment(mb, info, log);
+                        progressed |= await InheritantEquipment(mb, info, log);
                     }
                 }
+
+                // 一轮没有任何继承就退出，避免无限循环
+                if (!progressed) break;
             }
         });
     }
 
-    private async Task InheritantEquipment(EquipmentMB mb, UserEquipmentDtoInfo info, Action<string> log)
+    private async Task<bool> InheritantEquipment(EquipmentMB mb, UserEquipmentDtoInfo info, Action<string> log)
     {
         // 同步数据
         await UserGetUserData();
@@ -291,8 +304,10 @@ public partial class MementoMoriFuncs
                     SourceEquipmentGuid = info.Guid
                 });
             log($"{TextResourceTable.Get("[EquipmentInheritanceButton]")}{ResourceStrings.Finished} {TextResourceTable.Get(mb.NameKey)}=>{TextResourceTable.Get(EquipmentTable.GetById(userEquipmentDtoInfo.EquipmentId).NameKey)}");
+            return true;
         }
-        else
-            log(ResourceStrings.NoInheritableDRarityEquip);
+
+        log(ResourceStrings.NoInheritableDRarityEquip);
+        return false;
     }
 }

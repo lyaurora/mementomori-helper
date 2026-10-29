@@ -80,12 +80,19 @@
                 return new CharacterInfo(characterName, level, d.Guid, CharacterTable.GetById(d.CharacterId).JobFlags);
             }).OrderByDescending(d => d.Lv).ToList() ?? [];
             if (_selectedCharacterGuid == null || !_characterGuids.Any(d => d.Guid == _selectedCharacterGuid.Guid))
-                SelectedCharacterChanged(_characterGuids.FirstOrDefault());
+            {
+                // 重新打开面板时沿用 Funcs 上已有的目标，不改写它
+                var ownerGuid = data?.UserEquipmentDtoInfos?.FirstOrDefault(d => d.Guid == Funcs.TrainingEquipmentGuid)?.CharacterGuid;
+                var owner = _selectedCharacterGuid == null ? _characterGuids.FirstOrDefault(d => d.Guid == ownerGuid) : null;
+                SelectCharacter(owner ?? _characterGuids.FirstOrDefault(), owner == null);
+            }
         }));
         return Task.CompletedTask;
     }
 
-    private void SelectedCharacterChanged(CharacterInfo? obj)
+    private void SelectedCharacterChanged(CharacterInfo? obj) => SelectCharacter(obj, true);
+
+    private void SelectCharacter(CharacterInfo? obj, bool resetTarget)
     {
         var data = Funcs.UserSyncData;
         _selectedCharacterGuid = obj;
@@ -108,15 +115,18 @@
             }).Where(d => d != null)
             .Where(d => d.CharacterGuid == obj?.Guid)
             .OrderBy(d => d.CharacterGuid).ToList() ?? [];
-        Funcs.TrainingEquipmentGuid = _characterEquipments.FirstOrDefault()?.EquipmentGuid;
-        Funcs.EquipmentTrainingTargetType = obj?.Job switch
+        if (resetTarget)
         {
-            JobFlags.Warrior => BaseParameterType.Muscle,
-            JobFlags.Sorcerer => BaseParameterType.Intelligence,
-            JobFlags.Sniper => BaseParameterType.Energy,
-            _ => BaseParameterType.Health
-        };
-        Funcs.EquipmentTrainingTargetPercent = 0.55;
+            Funcs.TrainingEquipmentGuid = _characterEquipments.FirstOrDefault()?.EquipmentGuid;
+            Funcs.EquipmentTrainingTargetType = obj?.Job switch
+            {
+                JobFlags.Warrior => BaseParameterType.Muscle,
+                JobFlags.Sorcerer => BaseParameterType.Intelligence,
+                JobFlags.Sniper => BaseParameterType.Energy,
+                _ => BaseParameterType.Health
+            };
+            Funcs.EquipmentTrainingTargetPercent = 0.55;
+        }
 
         InvokeAsync(() => StateHasChanged());
     }
