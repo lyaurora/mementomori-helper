@@ -176,15 +176,17 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
         {
             // The server dropped this session; let AutoLoginJob / the next scheduled job log in again.
             LoginOk = false;
+            _sessionLost = true;
             // Another device took over: give the player 15 minutes before the helper kicks it.
             if (e.ErrorCode == ErrorCode.CommonLoggedInAnotherDevice) NextAutoLoginAttempt = DateTimeOffset.UtcNow.AddMinutes(15);
             throw;
         }
     }
 
-    // Game day starts at 04:00 server time.
-    private DateTime GameDay => (TimeManager.ServerNow - TimeSpan.FromHours(4)).Date;
+    // Game day starts at 04:00 server time; the extra minutes keep a job at exactly 04:00 from re-logging in on pre-reset data.
+    private DateTime GameDay => (TimeManager.ServerNow - TimeSpan.FromHours(4) - TimeSpan.FromMinutes(5)).Date;
     private DateTime _loginGameDay;
+    private bool _sessionLost;
     // Respect the back-off after another device took over (112) and a permanent auth failure.
     private bool CanJobLogin => !_autoLoginStopped && DateTimeOffset.UtcNow >= NextAutoLoginAttempt;
 
@@ -206,6 +208,8 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
     public async Task ExecuteQuickAction(Func<Action<string>, CancellationToken, Task> func, CancellationToken cancellationToken = default)
     {
         var nested = _ownsExecutionSemaphore.Value;
+        // Session lost earlier in the same job: skip the remaining steps instead of failing each one on the dead session.
+        if (nested && _sessionLost) return;
         try
         {
             await ExecuteExclusive(async token =>
@@ -227,7 +231,8 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
         catch (OperationCanceledException) when (!nested) { }
     }
 
-    public async Task ExecuteScheduledJob(Func<Task> func, CancellationToken cancellationToken, Func<bool>? canExecute = null, string? jobName = null)
+    public async Task ExecuteScheduledJob(Func<Task> func, CancellationToken cancellationToken, Func<bool>? canExecute = null, string? jobName = null,
+        bool retryAfterRelogin = false)
     {
         var logoutVersion = Volatile.Read(ref _logoutVersion);
         if (_loggedOut || GameConfig.AutoJob.DisableAll || canExecute?.Invoke() == false) return;
@@ -249,11 +254,16 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
                 if (token.IsCancellationRequested || _loggedOut || !LoginOk
                     || GameConfig.AutoJob.DisableAll || canExecute?.Invoke() == false) return;
                 await func();
-                // The session died silently during the job: log in again and run it once more.
-                if (!LoginOk && CanJobLogin && !token.IsCancellationRequested)
+                // The session died silently during the job: log in again and run it once more. Only for jobs whose
+                // steps are bounded by fresh server state; a replay of daily/relic jobs could spend diamonds twice.
+                if (retryAfterRelogin && !LoginOk && CanJobLogin && !token.IsCancellationRequested)
                 {
                     await Login();
-                    if (LoginOk) await func();
+                    if (LoginOk)
+                    {
+                        _operationError = null;
+                        await func();
+                    }
                 }
             }
             catch (Exception e)

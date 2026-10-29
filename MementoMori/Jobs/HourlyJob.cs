@@ -34,6 +34,6 @@ public partial class HourlyJob : IJob
             await account.Funcs.ReadAllMemories();
             if (_gameConfig.Value.AutoJob.AutoFreeGacha) await account.Funcs.FreeGacha();
             if (_gameConfig.Value.AutoJob.AutoUseItems) await account.Funcs.AutoUseItems();
-        }, context.CancellationToken, jobName: context.JobDetail.Key.Name);
+        }, context.CancellationToken, jobName: context.JobDetail.Key.Name, retryAfterRelogin: true);
     }
 }

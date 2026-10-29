@@ -29,6 +29,6 @@ internal partial class PvpJob : IJob
             await account.Funcs.PvpAuto();
             await account.Funcs.CompleteMissions();
             await account.Funcs.RewardMissonActivity();
-        }, context.CancellationToken, () => _gameConfig.Value.AutoJob.AutoPvp, context.JobDetail.Key.Name);
+        }, context.CancellationToken, () => _gameConfig.Value.AutoJob.AutoPvp, context.JobDetail.Key.Name, retryAfterRelogin: true);
     }
 }

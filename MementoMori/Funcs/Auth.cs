@@ -27,6 +27,7 @@ public partial class MementoMoriFuncs
         await UserGetUserData();
         _cancellationTokenSource?.Token.ThrowIfCancellationRequested();
         LoginOk = true;
+        _sessionLost = false;
         _loginGameDay = GameDay;
         await _timeZoneAwareJobRegister.RegisterJobs(UserId);
         _chat?.Resume();
