@@ -11,6 +11,7 @@ using AutoCtor;
 namespace MementoMori.Jobs;
 
 [AutoConstruct]
+[DisallowConcurrentExecution]
 internal partial class GuildRaidBossReleaseJob : IJob
 {
     private readonly IWritableOptions<GameConfig> _gameConfig;

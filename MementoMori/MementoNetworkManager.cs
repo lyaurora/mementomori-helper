@@ -127,7 +127,7 @@ public partial class MementoNetworkManager : IDisposable
                 if (!DisableAutoUpdateMasterData)
                 {
                     _logger.LogInformation("auto updating master data");
-                    if (await DownloadMasterCatalog(cancellationToken: cts.Token)) LoadAllMasters();
+                    if (await DownloadMasterCatalog(cancellationToken: cts.Token) && !LoadAllMasters()) _logger.LogWarning("Some master tables failed to load; keeping their previous data");
                 }
             }
             catch (OperationCanceledException) when (cts.IsCancellationRequested) { break; }
@@ -146,7 +146,15 @@ public partial class MementoNetworkManager : IDisposable
         {
             log ??= Console.WriteLine;
             log(ResourceStrings.Downloading_master_directory___);
-            await GetLatestAvailableVersion(cancellationToken);
+            try
+            {
+                await GetLatestAvailableVersion(cancellationToken);
+            }
+            catch (Exception e) when (e is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+            {
+                // The master version comes from the API header; keep the current AppVersion.
+                _logger.LogWarning(e, "Failed to check the official game version");
+            }
             var response = await GetResponse<GetDataUriRequest, GetDataUriResponse>(
                 new GetDataUriRequest { CountryCode = "CN", UserId = 0 }, cancellationToken: cancellationToken);
             var version = MoriHttpClientHandler.OrtegaMasterVersion;
@@ -154,6 +162,7 @@ public partial class MementoNetworkManager : IDisposable
             var catalog = MessagePackSerializer.Deserialize<MasterBookCatalog>(catalogBytes);
             Directory.CreateDirectory("Master");
             HashSet<string> languages = ["TextResourceJaJpMB", "TextResourceZhTwMB", "TextResourceZhCnMB", "TextResourceEnUsMB", "TextResourceKoKrMB"];
+            var skipped = new List<string>();
             foreach (var (name, info) in catalog.MasterBookInfoMap)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -162,17 +171,29 @@ public partial class MementoNetworkManager : IDisposable
                 var path = Path.Combine("Master", name);
                 if (File.Exists(path) && string.Equals(await CalcFileMd5(path, cancellationToken), info.Hash, StringComparison.OrdinalIgnoreCase)) continue;
                 log(string.Format(ResourceStrings.MasterUpdatingFile, name));
-                var bytes = await _unityHttpClient.GetByteArrayAsync(string.Format(response.MasterUriFormat, version, name), cancellationToken);
-                if (!Convert.ToHexString(MD5.HashData(bytes)).Equals(info.Hash, StringComparison.OrdinalIgnoreCase))
-                    throw new InvalidDataException($"Master hash mismatch: {name}");
-                ValidateMasterData(name, bytes);
                 var temporary = $"{path}.{Guid.NewGuid():N}.tmp";
-                staged.Add((temporary, path));
-                await File.WriteAllBytesAsync(temporary, bytes, cancellationToken);
+                try
+                {
+                    var bytes = await _unityHttpClient.GetByteArrayAsync(string.Format(response.MasterUriFormat, version, name), cancellationToken);
+                    if (!Convert.ToHexString(MD5.HashData(bytes)).Equals(info.Hash, StringComparison.OrdinalIgnoreCase))
+                        throw new InvalidDataException($"Master hash mismatch: {name}");
+                    ValidateMasterData(name, bytes);
+                    staged.Add((temporary, path));
+                    await File.WriteAllBytesAsync(temporary, bytes, cancellationToken);
+                }
+                catch (Exception e) when (e is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+                {
+                    // One broken or schema-drifted table must not block every other table; keep the old file.
+                    _logger.LogWarning(e, "Skipped master file {Name}", name);
+                    skipped.Add(name);
+                    if (staged.Remove((temporary, path))) File.Delete(temporary);
+                }
             }
-            // Publish only after every changed file has downloaded and validated.
+            // Publish only after every changed file has been downloaded; failed files keep their old version.
             cancellationToken.ThrowIfCancellationRequested();
             foreach (var (temporary, target) in staged) File.Move(temporary, target, true);
+            if (skipped.Count > 0 && !HasUsableMasterData())
+                throw new InvalidDataException($"Master data is unusable, failed files: {string.Join(", ", skipped)}");
             log(ResourceStrings.Download_master_directory_completed);
             return staged.Count > 0;
         }
@@ -205,7 +226,7 @@ public partial class MementoNetworkManager : IDisposable
     {
         CultureInfo = cultureInfo;
         TextResourceTable.SetLanguageType(parseLanguageType(cultureInfo));
-        LoadAllMasters();
+        if (!LoadAllMasters()) _logger.LogWarning("Some master tables failed to load; keeping their previous data");
     }
 
     private LanguageType parseLanguageType(CultureInfo cultureInfo)

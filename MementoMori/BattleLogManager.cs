@@ -2,6 +2,7 @@
 using Injectio.Attributes;
 using MementoMori.Option;
 using MementoMori.Ortega.Share.Data.Battle.Result;
+using Microsoft.Extensions.Logging;
 
 namespace MementoMori;
 
@@ -10,10 +11,13 @@ namespace MementoMori;
 public partial class BattleLogManager
 {
     private readonly IWritableOptions<GameConfig> _writableGameConfig;
+    private readonly ILogger<BattleLogManager> _logger;
 
     public async Task SaveBattleLog(BattleResult battleResult, string prefix, string middle, string autoDeletePrefix = null, int autoDeletePreserveCount = 20)
     {
-        if (_writableGameConfig.Value.RecordBattleLog)
+        if (!_writableGameConfig.Value.RecordBattleLog) return;
+        // Logging a battle must never change battle-loop control flow.
+        try
         {
             Directory.CreateDirectory(_writableGameConfig.Value.BattleLogDir);
             var res = battleResult.SimulationResult.BattleEndInfo.IsWinAttacker() ? "win" : "lose";
@@ -27,6 +31,10 @@ public partial class BattleLogManager
             {
                 File.Delete(file);
             }
+        }
+        catch (Exception e)
+        {
+            _logger.LogWarning(e, "Failed to save battle log {Prefix}-{Middle}", prefix, middle);
         }
     }
 }

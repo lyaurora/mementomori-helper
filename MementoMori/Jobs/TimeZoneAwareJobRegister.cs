@@ -108,7 +108,7 @@ public partial class TimeZoneAwareJobRegister
             .Build();
         var existingTrigger = await scheduler.GetTrigger(trigger.Key);
         if (existingTrigger is ICronTrigger existingCronTrigger
-            && existingCronTrigger.CronExpressionString == cron
+            && string.Equals(existingCronTrigger.CronExpressionString, cron, StringComparison.OrdinalIgnoreCase)
             && existingCronTrigger.TimeZone.HasSameRules(customTimeZone))
             return;
 

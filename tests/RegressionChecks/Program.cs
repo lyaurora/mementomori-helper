@@ -73,7 +73,7 @@ var checks = new (string Name, Func<Task> Run)[]
     ("chat routing, history, reactions, delivery confirmation and cancellation", CheckChat),
     ("4.22/5.0 wire data, incremental sync and master rollback", CheckProtocol),
     ("master ID index preserves order and survives reload failure", CheckMasterIndex),
-    ("master download rejects corruption without replacing cached files", CheckMasterDownload)
+    ("master download publishes valid files, skips corrupt ones, and rejects unusable data", CheckMasterDownload)
 };
 foreach (var (name, run) in checks)
 {
@@ -1038,7 +1038,7 @@ static async Task CheckMasterDownload()
                     : request.RequestUri.AbsolutePath.EndsWith("TimeServerMB") ? valid : [0x90])
         }))));
         await Throws<InvalidDataException>(() => network.DownloadMasterCatalog(_ => { }));
-        Require(File.ReadAllBytes("Master/TimeServerMB").SequenceEqual(old), "A failed batch replaced the working master file");
+        Require(File.ReadAllBytes("Master/TimeServerMB").SequenceEqual(valid), "A valid master file was not published next to a failed one");
         Require(!File.Exists("Master/ItemMB") && !Directory.EnumerateFiles("Master", "*.tmp").Any(), "A rejected download left data or temporary files");
         Require(!MementoNetworkManager.HasUsableMasterData(), "An incomplete master directory was accepted as usable");
     }

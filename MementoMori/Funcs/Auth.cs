@@ -1,4 +1,5 @@
-﻿using MementoMori.Ortega.Share.Data.ApiInterface.Auth;
+﻿using MementoMori.Exceptions;
+using MementoMori.Ortega.Share.Data.ApiInterface.Auth;
 using MementoMori.Ortega.Share.Data.Auth;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
@@ -9,10 +10,11 @@ public partial class MementoMoriFuncs
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private int _autoLoginFailures;
+    private bool _autoLoginStopped;
 
     public string? LastLoginError { get; private set; }
     public DateTimeOffset NextAutoLoginAttempt { get; private set; }
-    public bool CanAutoLogin => !_loggedOut && !LoginOk && !IsQuickActionExecuting && DateTimeOffset.UtcNow >= NextAutoLoginAttempt;
+    public bool CanAutoLogin => !_loggedOut && !LoginOk && !_autoLoginStopped && !IsQuickActionExecuting && DateTimeOffset.UtcNow >= NextAutoLoginAttempt;
 
     public async Task AuthLogin(PlayerDataInfo playerDataInfo)
     {
@@ -25,6 +27,7 @@ public partial class MementoMoriFuncs
         await UserGetUserData();
         _cancellationTokenSource?.Token.ThrowIfCancellationRequested();
         LoginOk = true;
+        _loginGameDay = GameDay;
         await _timeZoneAwareJobRegister.RegisterJobs(UserId);
         _chat?.Resume();
     }
@@ -56,6 +59,9 @@ public partial class MementoMoriFuncs
                 LoginOk = false;
                 if (_chat != null) await _chat.ResetAsync();
                 LastLoginError = e.Message;
+                // The account itself is rejected (missing/deleted user, bad client key): retrying cannot help, wait for a manual login.
+                _autoLoginStopped = e is ApiErrorException { ErrorCode: ErrorCode.AuthNotFoundUserAccountDto or ErrorCode.AuthLoginInvalidRequest
+                    or ErrorCode.AuthLoginAlreadyDeletedUser };
                 _logger.LogError(e, "Auto login failed");
                 AddLog(e.Message);
             }
@@ -65,7 +71,7 @@ public partial class MementoMoriFuncs
                 if (!LoginOk && !token.IsCancellationRequested)
                 {
                     _autoLoginFailures = Math.Min(_autoLoginFailures + 1, 5);
-                    NextAutoLoginAttempt = DateTimeOffset.UtcNow.AddMinutes(Math.Min(1 << (_autoLoginFailures - 1), 15));
+                    NextAutoLoginAttempt = _autoLoginStopped ? default : DateTimeOffset.UtcNow.AddMinutes(Math.Min(1 << (_autoLoginFailures - 1), 15));
                 }
             }
         }, cancellationToken);
@@ -112,6 +118,7 @@ public partial class MementoMoriFuncs
             await GetMissionInfo();
             await GetBountyRequestInfo();
             _autoLoginFailures = 0;
+            _autoLoginStopped = false;
             NextAutoLoginAttempt = default;
             // await GetMonthlyLoginBonusInfo();
         }

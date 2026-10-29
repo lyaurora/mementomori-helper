@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,9 +24,10 @@ namespace MementoMori
 
         public bool IsInTime(IHasStartEndTime hasStartEndTime)
         {
-            var now = DateTime.UtcNow;
-            var start = DateTime.Parse(hasStartEndTime.StartTime);
-            var end = DateTime.Parse(hasStartEndTime.EndTime);
+            // Master Start/EndTime are server-local, like the game client's GetLocalDateTime().
+            var now = ServerNow;
+            var start = DateTime.Parse(hasStartEndTime.StartTime, CultureInfo.InvariantCulture);
+            var end = DateTime.Parse(hasStartEndTime.EndTime, CultureInfo.InvariantCulture);
             return now >= start && now <= end;
         }
     }

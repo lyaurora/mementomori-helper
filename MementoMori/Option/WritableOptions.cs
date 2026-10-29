@@ -35,15 +35,34 @@ public class WritableOptions<T> : IWritableOptions<T> where T : class, new()
         _fileProvider = fileProvider;
         _options = options;
         _configuration = configuration;
-        _configuration.GetReloadToken().RegisterChangeCallback(x => { _value = _options.CurrentValue; }, null);
         _section = section;
         _file = file;
-        _options.OnChange(obj => _value = obj);
+        // The bound object merges appsettings.json arrays by index; keep the user file (what Update writes) as the one source of truth.
+        // assign under the file lock so a reload can't overwrite a newer value written by Update (the lock is reentrant)
+        _configuration.GetReloadToken().RegisterChangeCallback(_ => { lock (WritableOptionsFileLock.SyncRoot) _value = ReadFile(_options.CurrentValue); }, null);
+        _options.OnChange(obj => { lock (WritableOptionsFileLock.SyncRoot) _value = ReadFile(obj); });
+    }
+
+    private string PhysicalPath => _fileProvider?.GetFileInfo(_file).PhysicalPath ?? Path.Combine(Directory.GetCurrentDirectory(), _file);
+
+    private T ReadFile(T fallback)
+    {
+        lock (WritableOptionsFileLock.SyncRoot)
+        {
+            try
+            {
+                if (File.Exists(PhysicalPath) && JsonConvert.DeserializeObject<JObject>(File.ReadAllText(PhysicalPath)) is { } jObject
+                    && jObject.TryGetValue(_section, out var section))
+                    return JsonConvert.DeserializeObject<T>(section.ToString()) ?? fallback;
+            }
+            catch (Exception e) when (e is IOException or JsonException) { }
+            return fallback;
+        }
     }
 
     private T _value;
 
-    public T Value => _value ??= _options.CurrentValue;
+    public T Value => _value ??= ReadFile(_options.CurrentValue);
 
     public T Get(string name)
     {
@@ -52,7 +71,7 @@ public class WritableOptions<T> : IWritableOptions<T> where T : class, new()
 
     public void Update(Action<T> applyChanges)
     {
-        var physicalPath = _fileProvider?.GetFileInfo(_file).PhysicalPath ?? Path.Combine(Directory.GetCurrentDirectory(), _file);
+        var physicalPath = PhysicalPath;
 
         lock (WritableOptionsFileLock.SyncRoot)
         {

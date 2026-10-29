@@ -4,6 +4,7 @@ using AutoCtor;
 using Injectio.Attributes;
 using MementoMori.Jobs;
 using MementoMori.Chat;
+using MementoMori.Exceptions;
 using MementoMori.Option;
 using MementoMori.Ortega.Share.Data;
 using MementoMori.Ortega.Share.Data.ApiInterface;
@@ -157,17 +158,35 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
         return data;
     }
 
-    public async Task<TResp> GetResponse<TReq, TResp>(TReq req, CancellationToken cancellationToken = default)
+    /// <param name="ignoreOperationCancellation">Only <paramref name="cancellationToken"/> can cancel the request; use for restore/cleanup requests that must still go out after the user cancels.</param>
+    public async Task<TResp> GetResponse<TReq, TResp>(TReq req, CancellationToken cancellationToken = default, bool ignoreOperationCancellation = false)
         where TReq : ApiRequestBase
         where TResp : ApiResponseBase
     {
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(OperationCancellation, cancellationToken);
-        return await NetworkManager.GetResponse<TReq, TResp>(req, AddLog, data =>
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ignoreOperationCancellation ? default : OperationCancellation, cancellationToken);
+        try
         {
-            UserSyncData.UserItemEditorMergeUserSyncData(data);
-            this.RaisePropertyChanged(nameof(UserSyncData));
-        }, cancellationToken: linked.Token);
+            return await NetworkManager.GetResponse<TReq, TResp>(req, AddLog, data =>
+            {
+                UserSyncData.UserItemEditorMergeUserSyncData(data);
+                this.RaisePropertyChanged(nameof(UserSyncData));
+            }, cancellationToken: linked.Token);
+        }
+        catch (ApiErrorException e) when (e.ErrorCode is ErrorCode.CommonNoSession or ErrorCode.CommonLoggedInAnotherDevice)
+        {
+            // The server dropped this session; let AutoLoginJob / the next scheduled job log in again.
+            LoginOk = false;
+            // Another device took over: give the player 15 minutes before the helper kicks it.
+            if (e.ErrorCode == ErrorCode.CommonLoggedInAnotherDevice) NextAutoLoginAttempt = DateTimeOffset.UtcNow.AddMinutes(15);
+            throw;
+        }
     }
+
+    // Game day starts at 04:00 server time.
+    private DateTime GameDay => (TimeManager.ServerNow - TimeSpan.FromHours(4)).Date;
+    private DateTime _loginGameDay;
+    // Respect the back-off after another device took over (112) and a permanent auth failure.
+    private bool CanJobLogin => !_autoLoginStopped && DateTimeOffset.UtcNow >= NextAutoLoginAttempt;
 
     public async Task SyncUserData()
     {
@@ -223,10 +242,19 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
             this.RaisePropertyChanged(nameof(JobRuns));
             try
             {
-                await Login();
+                // Log in when the session is gone (GetResponse clears LoginOk on session errors) or once per game day so
+                // daily work sees fresh user data / Mypage; otherwise keep the session, since a re-login resets chat.
+                if (CanJobLogin && (!LoginOk || _loginGameDay != GameDay)) await Login();
+                if (!LoginOk) _operationError ??= LastLoginError ?? ResourceStrings.PleaseLogin;
                 if (token.IsCancellationRequested || _loggedOut || !LoginOk
                     || GameConfig.AutoJob.DisableAll || canExecute?.Invoke() == false) return;
                 await func();
+                // The session died silently during the job: log in again and run it once more.
+                if (!LoginOk && CanJobLogin && !token.IsCancellationRequested)
+                {
+                    await Login();
+                    if (LoginOk) await func();
+                }
             }
             catch (Exception e)
             {

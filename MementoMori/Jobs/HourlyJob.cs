@@ -6,6 +6,7 @@ using Quartz;
 namespace MementoMori.Jobs;
 
 [AutoConstruct]
+[DisallowConcurrentExecution]
 public partial class HourlyJob : IJob
 {
     private readonly IWritableOptions<GameConfig> _gameConfig;
@@ -20,6 +21,7 @@ public partial class HourlyJob : IJob
         await account.Funcs.ExecuteScheduledJob(async () =>
         {
             await account.Funcs.GetLoginBonus();
+            await account.Funcs.BountyQuestRewardAuto();
             await account.Funcs.BountyQuestStartAuto();
             await account.Funcs.PresentReceiveItem();
             await account.Funcs.GetAutoBattleReward();
@@ -27,7 +29,6 @@ public partial class HourlyJob : IJob
             await account.Funcs.AutoGuildTower();
             await account.Funcs.ReceiveGvgReward();
             await account.Funcs.BulkTransferFriendPoint();
-            await account.Funcs.BountyQuestRewardAuto();
             await account.Funcs.CompleteMissions();
             await account.Funcs.RewardMissonActivity();
             await account.Funcs.ReadAllMemories();

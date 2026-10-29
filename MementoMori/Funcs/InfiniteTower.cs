@@ -46,7 +46,7 @@ public partial class MementoMoriFuncs
                     else
                         log(string.Format(ResourceStrings.AutoTowerElementExecMsg, name, targetQuestId, result, totalCount, winCount, errCount, towerBattleDtoInfo.TodayClearNewFloorCount));
 
-                    if (win && targetStopLayer > 0 && targetStopLayer == targetQuestId) break;
+                    if (win && targetStopLayer > 0 && targetQuestId >= targetStopLayer) break;
                 }
                 catch (Exception e)
                 {
@@ -58,7 +58,11 @@ public partial class MementoMoriFuncs
                         return;
                     }
 
-                    if (e is ApiErrorException) await AuthLogin(_lastPlayerDataInfo);
+                    // Re-login only after a session error (GetResponse cleared LoginOk); other API errors repeat, so stop.
+                    // Another device took over: don't kick the player's phone.
+                    if (e is ApiErrorException { ErrorCode: ErrorCode.CommonLoggedInAnotherDevice }) return;
+                    if (!LoginOk) await AuthLogin(_lastPlayerDataInfo);
+                    else if (e is ApiErrorException) return;
                 }
             }
         });

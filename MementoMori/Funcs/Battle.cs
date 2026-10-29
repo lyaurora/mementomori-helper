@@ -162,7 +162,7 @@ public partial class MementoMoriFuncs
                     if (win)
                     {
                         await GetResponse<MapInfoRequest, MapInfoResponse>(new MapInfoRequest() { IsUpdateOtherPlayerInfo = true });
-                        if (selectedTargetQuerstId > 0 && selectedTargetQuerstId == targetQuestId) break;
+                        if (selectedTargetQuerstId > 0 && targetQuestId >= selectedTargetQuerstId) break;
                         var nextQuestResponse = await GetResponse<NextQuestRequest, NextQuestResponse>(new NextQuestRequest());
                     }
                 }
@@ -176,7 +176,11 @@ public partial class MementoMoriFuncs
                         return;
                     }
 
-                    if (e is ApiErrorException) await AuthLogin(_lastPlayerDataInfo);
+                    // Re-login only after a session error (GetResponse cleared LoginOk); other API errors repeat, so stop.
+                    // Another device took over: don't kick the player's phone.
+                    if (e is ApiErrorException { ErrorCode: ErrorCode.CommonLoggedInAnotherDevice }) return;
+                    if (!LoginOk) await AuthLogin(_lastPlayerDataInfo);
+                    else if (e is ApiErrorException) return;
                 }
             }
         });

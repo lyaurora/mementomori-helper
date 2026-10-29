@@ -11,6 +11,7 @@ using Quartz;
 namespace MementoMori.Jobs;
 
 [AutoConstruct]
+[DisallowConcurrentExecution]
 internal partial class AutoDrawGachaRelicJob : IJob
 {
     private readonly AccountManager _accountManager;

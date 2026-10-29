@@ -5,6 +5,7 @@ using Quartz;
 namespace MementoMori.Jobs;
 
 [AutoConstruct]
+[DisallowConcurrentExecution]
 public partial class DailyJob: IJob
 {
     private readonly AccountManager _accountManager;
