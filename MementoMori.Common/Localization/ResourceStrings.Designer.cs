@@ -2680,5 +2680,50 @@ namespace MementoMori.Common.Localization {
                 return ResourceManager.GetString("FreeGachaFormat", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Cave state has not changed for 3 rounds, stopping.
+        /// </summary>
+        public static string DungeonBattleNoProgress {
+            get {
+                return ResourceManager.GetString("DungeonBattleNoProgress", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Battle did not start within 5 minutes, stopping.
+        /// </summary>
+        public static string LocalRaidWaitTimeout {
+            get {
+                return ResourceManager.GetString("LocalRaidWaitTimeout", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to No opponent left after filters for 3 rounds, stopping.
+        /// </summary>
+        public static string PvpNoEligibleTarget {
+            get {
+                return ResourceManager.GetString("PvpNoEligibleTarget", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to This page hit a display error. Open another page or reload to continue..
+        /// </summary>
+        public static string PageRenderError {
+            get {
+                return ResourceManager.GetString("PageRenderError", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid Quartz cron expression; not saved.
+        /// </summary>
+        public static string InvalidCronExpression {
+            get {
+                return ResourceManager.GetString("InvalidCronExpression", resourceCulture);
+            }
+        }
     }
 }

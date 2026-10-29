@@ -611,4 +611,9 @@
   <data name="AvatarFormat" xml:space="preserve"><value>{0}의 아이콘</value></data>
   <data name="AppearanceTitleFormat" xml:space="preserve"><value>{0}: {1}</value></data>
   <data name="FreeGachaFormat" xml:space="preserve"><value>무료 {0}</value></data>
+  <data name="DungeonBattleNoProgress" xml:space="preserve"><value>동굴 상태가 3회 연속 변하지 않아 중지합니다</value></data>
+  <data name="LocalRaidWaitTimeout" xml:space="preserve"><value>5분 안에 전투가 시작되지 않아 중지합니다</value></data>
+  <data name="PvpNoEligibleTarget" xml:space="preserve"><value>필터 적용 후 3회 연속 도전 가능한 상대가 없어 중지합니다</value></data>
+  <data name="PageRenderError" xml:space="preserve"><value>페이지 표시 중 오류가 발생했습니다. 다른 페이지로 이동하거나 새로고침하세요.</value></data>
+  <data name="InvalidCronExpression" xml:space="preserve"><value>Quartz cron 표현식이 올바르지 않아 저장되지 않았습니다</value></data>
 </root>

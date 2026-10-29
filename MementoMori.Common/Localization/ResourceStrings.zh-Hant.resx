@@ -717,4 +717,9 @@
   <data name="AvatarFormat" xml:space="preserve"><value>{0}的頭像</value></data>
   <data name="AppearanceTitleFormat" xml:space="preserve"><value>{0}：{1}</value></data>
   <data name="FreeGachaFormat" xml:space="preserve"><value>免費{0}</value></data>
+  <data name="DungeonBattleNoProgress" xml:space="preserve"><value>洞窟狀態連續 3 輪沒有變化，停止</value></data>
+  <data name="LocalRaidWaitTimeout" xml:space="preserve"><value>5 分鐘內未開始戰鬥，停止</value></data>
+  <data name="PvpNoEligibleTarget" xml:space="preserve"><value>篩選後連續 3 輪沒有可挑戰的對手，停止</value></data>
+  <data name="PageRenderError" xml:space="preserve"><value>頁面顯示出錯。請切換到其他頁面或重新整理後繼續。</value></data>
+  <data name="InvalidCronExpression" xml:space="preserve"><value>Quartz cron 運算式無效，未儲存</value></data>
 </root>

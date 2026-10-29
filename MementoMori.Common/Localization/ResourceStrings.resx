@@ -717,4 +717,9 @@
   <data name="AvatarFormat" xml:space="preserve"><value>{0}'s avatar</value></data>
   <data name="AppearanceTitleFormat" xml:space="preserve"><value>{0}: {1}</value></data>
   <data name="FreeGachaFormat" xml:space="preserve"><value>Free {0}</value></data>
+  <data name="DungeonBattleNoProgress" xml:space="preserve"><value>Cave state has not changed for 3 rounds, stopping</value></data>
+  <data name="LocalRaidWaitTimeout" xml:space="preserve"><value>Battle did not start within 5 minutes, stopping</value></data>
+  <data name="PvpNoEligibleTarget" xml:space="preserve"><value>No opponent left after filters for 3 rounds, stopping</value></data>
+  <data name="PageRenderError" xml:space="preserve"><value>This page hit a display error. Open another page or reload to continue.</value></data>
+  <data name="InvalidCronExpression" xml:space="preserve"><value>Invalid Quartz cron expression; not saved</value></data>
 </root>
