@@ -8,6 +8,7 @@
 @using MementoMori.Ortega.Share
 @using MementoMori.Ortega.Share.Data.ApiInterface.Gacha
 @using MementoMori.Ortega.Share.Data.Gacha
+@using MementoMori.Ortega.Share.Enums
 @using MementoMori.WebUI.Extensions
 @inherits MementoMori.BlazorShared.Models.AccountComponent
 @page "/Gacha"
@@ -63,7 +64,7 @@
                             var count = ViewModel.UserSyncData.GetUserItemCount(button.ConsumeUserItem.ItemType, button.ConsumeUserItem.ItemId, true);
                             var disabled = count < button.ConsumeUserItem.ItemCount;
 
-                            <MudButton Disabled="disabled" Variant="Variant.Filled" Class="gacha-draw-button" Color="Color.Primary" OnClick="() => DoGacha(button.GachaButtonId)"><span class="gacha-cost-name">@(Masters.TextResourceTable.Get(itemMb.NameKey))</span><span class="gacha-cost-count">× @button.ConsumeUserItem.ItemCount</span></MudButton>
+                            <MudButton Disabled="disabled || _drawing" Variant="Variant.Filled" Class="gacha-draw-button" Color="Color.Primary" OnClick="() => DoGacha(gachaCaseInfo, button)"><span class="gacha-cost-name">@(Masters.TextResourceTable.Get(itemMb.NameKey))</span><span class="gacha-cost-count">× @button.ConsumeUserItem.ItemCount</span></MudButton>
                         }
 
                     </MudCardActions>
@@ -78,7 +79,7 @@
     private List<GachaCaseInfo> gachaCaseInfos = new();
     private MementoMoriFuncs ViewModel;
     string alertMessage = "";
-    private bool _interactive, _loading;
+    private bool _interactive, _loading, _drawing;
 
     protected override async Task AccountChanged()
     {
@@ -117,16 +118,28 @@
         alertMessage = string.Empty;
     }
 
-    private async Task DoGacha(long buttonGachaButtonId)
+    private async Task DoGacha(GachaCaseInfo gachaCaseInfo, GachaButtonInfo button)
     {
+        // set before the first await so a double click cannot stack a second confirm/draw
+        if (_drawing) return;
+        _drawing = true;
         var token = CreateAccountCancellation();
         var funcs = ViewModel;
         alertMessage = string.Empty;
         try
         {
-            var showMessageBox = await DialogService.ShowMessageBox(Masters.TextResourceTable.Get("[GachaPurchaseConfirmationTitle]"), "", Masters.TextResourceTable.Get("[GachaPurchaseConfirmationOK]"), Masters.TextResourceTable.Get("[CommonCancelLabel]"));
+            var cost = button.ConsumeUserItem;
+            var sync = funcs.UserSyncData;
+            // diamonds: show free and paid separately so a draw that would dip into paid diamonds is visible
+            var held = cost.ItemType is ItemType.CurrencyFree or ItemType.CurrencyPaid
+                ? $"{Masters.TextResourceTable.Get("[CurrencyDetailCurrencyFree]")} {sync.GetUserItemCount(ItemType.CurrencyFree):N0} / {Masters.TextResourceTable.Get("[CurrencyDetailCurrencyPaid]")} {sync.GetUserItemCount(ItemType.CurrencyPaid):N0}"
+                : $"{Masters.TextResourceTable.Get("[CommonPossessionLabel]")} {sync.GetUserItemCount(cost.ItemType, cost.ItemId):N0}";
+            var confirm = $"{Masters.TextResourceTable.Get(Masters.GachaCaseUiTable.GetById(gachaCaseInfo.GachaCaseUiId)?.NameKey)}: {cost.GetItemName()} × {cost.ItemCount} ({held})";
+            if (cost.ItemType == ItemType.CurrencyFree) confirm += " " + Masters.TextResourceTable.Get("[GachaPurchaseConfirmationWarningFree]");
+            else if (cost.ItemType == ItemType.CurrencyPaid) confirm += " " + Masters.TextResourceTable.Get("[GachaPurchaseConfirmationWarningPaid]");
+            var showMessageBox = await DialogService.ShowMessageBox(Masters.TextResourceTable.Get("[GachaPurchaseConfirmationTitle]"), confirm, Masters.TextResourceTable.Get("[GachaPurchaseConfirmationOK]"), Masters.TextResourceTable.Get("[CommonCancelLabel]"));
             if (showMessageBox != true) return;
-            var drawResponse = await funcs.GetResponse<DrawRequest, DrawResponse>(new DrawRequest {GachaButtonId = buttonGachaButtonId}, token);
+            var drawResponse = await funcs.GetResponse<DrawRequest, DrawResponse>(new DrawRequest {GachaButtonId = button.GachaButtonId}, token);
             token.ThrowIfCancellationRequested();
             var msg = new StringBuilder();
             gachaCaseInfos = drawResponse.GachaCaseInfoList;
@@ -139,6 +152,7 @@
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
         catch (Exception e) { if (!token.IsCancellationRequested) alertMessage = e.Message; }
+        finally { _drawing = false; }
     }
 
     private async Task ShowDetail(GachaCaseInfo gachaCaseInfo)

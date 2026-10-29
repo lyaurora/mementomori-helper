@@ -106,16 +106,20 @@ public partial class MementoMoriFuncs
 
             for (var i = 0; i < 3; i++)
             {
-                var currency = UserSyncData.GetUserItemCount(ItemType.CurrencyFree, isAnyCurrency: true);
-                var gachaButtonInfo = gachaCaseInfo.GachaButtonInfoList.Find(d => d.ConsumeUserItem.IsCurrency() && d.ConsumeUserItem.ItemCount == 300);
+                // free diamonds only: the server spends free diamonds first, so free >= cost never touches paid ones
+                var currency = UserSyncData.GetUserItemCount(ItemType.CurrencyFree);
+                var gachaButtonInfo = gachaCaseInfo.GachaButtonInfoList.Find(d => d.ConsumeUserItem?.ItemType == ItemType.CurrencyFree && d.ConsumeUserItem.ItemCount == 300);
                 if (gachaButtonInfo == null) break;
 
-                if (gachaCaseInfo.GachaBonusDrawCount >= 10 || currency < 300) break;
+                if (gachaCaseInfo.GachaBonusDrawCount >= 10 || currency < gachaButtonInfo.ConsumeUserItem.ItemCount) break;
 
                 var drawResponse = await GetResponse<DrawRequest, DrawResponse>(new DrawRequest {GachaButtonId = gachaButtonInfo.GachaButtonId});
                 drawResponse.GachaRewardItemList.PrintUserItems(log);
                 drawResponse.BonusRewardItemList.PrintUserItems(log);
+                gachaCaseInfo = drawResponse.GachaCaseInfoList?.Find(d => d.GachaCaseId == gachaCaseInfo.GachaCaseId) ?? gachaCaseInfo;
             }
         });
     }
+
+    public Task<SetSelectListResponse> SetGachaSelectList(long gachaCaseId, GachaSelectListType type, List<long> characterIds, CancellationToken token) => GetResponse<SetSelectListRequest, SetSelectListResponse>(new() { GachaCaseId = gachaCaseId, GachaSelectListType = type, CharacterIdList = characterIds }, token);
 }

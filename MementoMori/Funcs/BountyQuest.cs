@@ -58,7 +58,8 @@ public partial class MementoMoriFuncs
             // if rank is not in the list, do not refresh (rank is too low)
             if (!DiamondExpectedCount.ContainsKey(response1!.UserBoardRank)) return;
 
-            var date = TimeManager.ServerNow.ToString("yyyy-MM-dd");
+            // game day resets at 04:00 server time
+            var date = (TimeManager.ServerNow - TimeSpan.FromHours(4)).ToString("yyyy-MM-dd");
             // if new date, clear old values and initialize new date
             if (!PlayerOption.BountyQuest.TodayRefreshCount.ContainsKey(date))
             {
@@ -75,9 +76,8 @@ public partial class MementoMoriFuncs
                 response1 = await GetBountyRequestInfo();
                 if (response1 == null) return;
 
-                var notDispatchedQuests = response1.BountyQuestInfos
-                    .Where(d => response1.UserBountyQuestDtoInfos.Find(x => d.BountyQuestId == x.BountyQuestId).BountyQuestEndTime == 0)
-                    .ToList();
+                // remake only rerolls Solo quests; undispatched Team quests persist and must not count
+                var notDispatchedQuests = NotDispatchedSoloQuests(response1);
 
                 var expectedDiamond = DiamondExpectedCount[response1.UserBoardRank] * notDispatchedQuests.Count;
                 var eventMb = BountyQuestEventTable.GetByInTime(d => TimeManager.IsInTime(d));
@@ -108,17 +108,16 @@ public partial class MementoMoriFuncs
                 log(string.Format(ResourceStrings.Current_expected_value___0___Today___1___2__auto_refreshes_completed__Refreshing_now_, expectedDiamond,
                     PlayerOption.BountyQuest.TodayRefreshCount[date], PlayerOption.BountyQuest.MaxRefreshCount));
 
-                await GetResponse<RemakeRequest, RemakeResponse>(new RemakeRequest());
+                // count before sending so a timed-out but applied remake still counts toward the cap
                 _playersOption.Update(opt =>
                 {
                     var playerOpt = opt.GetOrAdd(NetworkManager.PlayerId, id => new PlayerOption {PlayerId = id});
                     playerOpt.BountyQuest.TodayRefreshCount[date]++;
                 });
+                await GetResponse<RemakeRequest, RemakeResponse>(new RemakeRequest());
                 response1 = await GetBountyRequestInfo();
                 if (response1 == null) return;
-                notDispatchedQuests = response1.BountyQuestInfos
-                    .Where(d => response1.UserBountyQuestDtoInfos.Find(x => d.BountyQuestId == x.BountyQuestId)!.BountyQuestEndTime == 0)
-                    .ToList();
+                notDispatchedQuests = NotDispatchedSoloQuests(response1);
 
                 var diamondQuests = notDispatchedQuests.Where(d => d.RewardItems.Exists(x => x.IsCurrency())).ToList();
                 if (diamondQuests.Count > 0)
@@ -131,6 +130,10 @@ public partial class MementoMoriFuncs
 
             await GetBountyRequestInfo();
         });
+
+        static List<BountyQuestInfo> NotDispatchedSoloQuests(GetListResponse response) => response.BountyQuestInfos
+            .Where(d => d.BountyQuestType == BountyQuestType.Solo && response.UserBountyQuestDtoInfos.Find(x => d.BountyQuestId == x.BountyQuestId)?.BountyQuestEndTime == 0)
+            .ToList();
 
         async Task Dispatch(List<BountyQuestStartInfo> bountyQuestStartInfos, Action<string> log)
         {
@@ -168,8 +171,15 @@ public partial class MementoMoriFuncs
                 {
                     foreach (var questId in questIds)
                     {
-                        var rewardResponse = await GetResponse<RewardRequest, RewardResponse>(new RewardRequest {BountyQuestIds = [questId], ConsumeCurrency = 0, IsQuick = false});
-                        rewardResponse.RewardItems.PrintUserItems(log);
+                        try
+                        {
+                            var rewardResponse = await GetResponse<RewardRequest, RewardResponse>(new RewardRequest {BountyQuestIds = [questId], ConsumeCurrency = 0, IsQuick = false});
+                            rewardResponse.RewardItems.PrintUserItems(log);
+                        }
+                        catch (ApiErrorException ex) when (ex.ErrorCode is not (ErrorCode.CommonNoSession or ErrorCode.CommonLoggedInAnotherDevice))
+                        {
+                            log(ex.Message);
+                        }
                     }
                 }
                 await GetResponse<GetListRequest, GetListResponse>(new GetListRequest());

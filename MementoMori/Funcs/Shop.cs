@@ -67,7 +67,7 @@ public partial class MementoMoriFuncs
 
                 foreach (var shopItem in tabInfo.TradeShopItems)
                 {
-                    if (shopItem.IsSoldOut()) continue;
+                    if (shopItem.IsSoldOut() || shopItem.Disabled) continue;
 
                     if (!shopItem.IsFree())
                     {
@@ -100,10 +100,10 @@ public partial class MementoMoriFuncs
 
                         if (shopAutoBuyItem == null) continue;
 
-                        // check if user has enough items to consume
-                        if (shopItem.ConsumeItem1 != null && shopItem.ConsumeItem1.ItemCount > UserSyncData.GetUserItemCount(shopItem.ConsumeItem1.ItemType, shopItem.ConsumeItem1.ItemId, true))
+                        // check if user has enough items to consume (diamond costs count free diamonds only, never paid)
+                        if (shopItem.ConsumeItem1 != null && shopItem.ConsumeItem1.ItemCount > UserSyncData.GetUserItemCount(shopItem.ConsumeItem1.ItemType, shopItem.ConsumeItem1.ItemId))
                             continue;
-                        if (shopItem.ConsumeItem2 != null && shopItem.ConsumeItem2.ItemCount > UserSyncData.GetUserItemCount(shopItem.ConsumeItem2.ItemType, shopItem.ConsumeItem2.ItemId, true))
+                        if (shopItem.ConsumeItem2 != null && shopItem.ConsumeItem2.ItemCount > UserSyncData.GetUserItemCount(shopItem.ConsumeItem2.ItemType, shopItem.ConsumeItem2.ItemId))
                             continue;
 
                         // check if discount is enough

@@ -22,7 +22,7 @@
         </MudSlider>
     </MudCardContent>
     <MudCardActions>
-        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Disabled="!BuyBtnEnabled" OnClick="BuySphere">@ConsumeText</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Disabled="!BuyBtnEnabled || _buying" OnClick="BuySphere">@ConsumeText</MudButton>
     </MudCardActions>
 </MudCard>
 
@@ -36,6 +36,7 @@
 
     private int _buyCount = 1;
     private int _buyLv = 1;
+    private bool _buying;
     private string _itemName;
 
     private MementoMoriFuncs ViewModel;
@@ -116,6 +117,9 @@
 
     private async Task BuySphere()
     {
+        // set before the first await so a double click cannot stack a second confirm/purchase
+        if (_buying) return;
+        _buying = true;
         var token = CreateAccountCancellation();
         var funcs = ViewModel;
         try
@@ -135,6 +139,7 @@
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
         catch (Exception e) { if (!token.IsCancellationRequested) await DialogService.ShowMessageBox(Masters.TextResourceTable.Get("[CommonErrorLabel]"), e.Message, Masters.TextResourceTable.Get("[CommonOkLabel]")); }
+        finally { _buying = false; }
     }
 
 }
