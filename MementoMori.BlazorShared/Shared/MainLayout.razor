@@ -61,7 +61,10 @@
     </MudDrawer>
     <MudMainContent>
         <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="app-content">
-            @Body
+            <ErrorBoundary @ref="_errorBoundary">
+                <ChildContent>@Body</ChildContent>
+                <ErrorContent><MudAlert Severity="Severity.Error">@ResourceStrings.PageRenderError</MudAlert></ErrorContent>
+            </ErrorBoundary>
         </MudContainer>
     </MudMainContent>
 </MudLayout>
@@ -180,6 +183,11 @@
             NavigationManager.NavigateTo(NavigationManager.Uri, true);
         }
     }
+
+    // A render fault (e.g. a list mutated by a job mid-render) shows an error instead of dropping the circuit; navigating recovers.
+    ErrorBoundary? _errorBoundary;
+
+    protected override void OnParametersSet() => _errorBoundary?.Recover();
 
     protected override void OnInitialized()
     {

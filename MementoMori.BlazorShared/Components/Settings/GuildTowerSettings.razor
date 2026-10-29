@@ -39,7 +39,7 @@
 
     protected override async Task AccountChanged()
     {
-        var playerOpt = PlayersOptions.Value.GetOrAdd(NetworkManager.PlayerId, (id) => new PlayerOption() {PlayerId = id});
+        var playerOpt = PlayersOptions.Value.TryGetValue(NetworkManager.PlayerId, out var saved) ? saved : new PlayerOption {PlayerId = NetworkManager.PlayerId};
         _autoEntry = playerOpt.GuildTower.AutoEntry;
         _autoChallenge = playerOpt.GuildTower.AutoChallenge;
         _autoChallengeRetryCount = playerOpt.GuildTower.AutoChallengeRetryCount;

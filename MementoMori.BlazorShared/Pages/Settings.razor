@@ -5,6 +5,7 @@
 @using MementoMori.Ortega.Share.Data.Item
 @using MementoMori.Ortega.Share.Enums
 @using MementoMori.BlazorShared.Components.Settings
+@using ReactiveUI
 @inject IWritableOptions<GameConfig> WritableGameConfig
 
 @inherits MementoMori.BlazorShared.Models.AccountComponent
@@ -23,36 +24,52 @@
     <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
         <AutoJobNextExecution @ref="_autoJobNextExecution"/>
     </MudItem>
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
-        <GachaSettings/>
-    </MudItem>
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
-        <BountyQuest />
-    </MudItem>
+    @if (PlayerReady)
+    {
+        <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
+            <GachaSettings @key="NetworkManager.PlayerId"/>
+        </MudItem>
+        <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
+            <BountyQuest @key="NetworkManager.PlayerId"/>
+        </MudItem>
+    }
+    else
+    {
+        @* per-character cards are hidden until login so defaults can't overwrite saved settings *@
+        <MudItem xs="12">
+            <MudAlert Severity="Severity.Info">@ResourceStrings.PleaseLogin</MudAlert>
+        </MudItem>
+    }
     <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
         <DungeonBattleSettings />
     </MudItem>
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
-        <LocalRaidSettings/>
-    </MudItem>
+    @if (PlayerReady)
+    {
+        <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
+            <LocalRaidSettings @key="NetworkManager.PlayerId"/>
+        </MudItem>
+    }
     <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
         <ShopSettings />
     </MudItem>
     <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
         <ItemsSetting/>
     </MudItem>
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
-        <PvpSettings LeagueType="0"></PvpSettings>
-    </MudItem>
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
-        <PvpSettings LeagueType="1"></PvpSettings>
-    </MudItem>
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
-        <FriendManageSettings/>
-    </MudItem>
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
-        <GuildTowerSettings/>
-    </MudItem>
+    @if (PlayerReady)
+    {
+        <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
+            <PvpSettings LeagueType="0" @key="NetworkManager.PlayerId"/>
+        </MudItem>
+        <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
+            <PvpSettings LeagueType="1" @key="NetworkManager.PlayerId"/>
+        </MudItem>
+        <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
+            <FriendManageSettings @key="NetworkManager.PlayerId"/>
+        </MudItem>
+        <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
+            <GuildTowerSettings @key="NetworkManager.PlayerId"/>
+        </MudItem>
+    }
     <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
         <MudCard>
             <MudCardHeader>
@@ -75,8 +92,12 @@
 
     private Task RefreshJobs() => _autoJobNextExecution?.Refresh() ?? Task.CompletedTask;
 
+    // Per-character cards load by PlayerId once; hide them until login and recreate them when PlayerId changes.
+    private bool PlayerReady => NetworkManager.PlayerId > 0;
+
     protected override async Task AccountChanged()
     {
+        TrackAccountSubscription(Funcs.WhenAnyValue(f => f.LoginOk).Subscribe(_ => InvokeAsync(StateHasChanged)));
         await InvokeAsync(StateHasChanged);
     }
 

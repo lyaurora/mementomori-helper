@@ -15,6 +15,9 @@ namespace MementoMori.Ortega.Common.Utils
     {
         public static string GetItemName(ItemType itemType, long itemId)
         {
+            // Rows can be missing until the local master refreshes (new item after a game update); log "type:id" instead of throwing.
+            var missing = $"{itemType}:{itemId}";
+            string Name(string nameKey) => nameKey == null ? missing : Masters.TextResourceTable.Get(nameKey);
             switch (itemType)
             {
                 case ItemType.None:
@@ -43,52 +46,44 @@ namespace MementoMori.Ortega.Common.Utils
                 case ItemType.UnlockPanelGridItem:
                 case ItemType.PanelUnlockItem:
                 case ItemType.MusicTicket:
-                    var itemMb = Masters.ItemTable.GetByItemTypeAndItemId(itemType, itemId);
-                    return Masters.TextResourceTable.Get(itemMb.NameKey);
+                    return Name(Masters.ItemTable.GetByItemTypeAndItemId(itemType, itemId)?.NameKey);
                 case ItemType.Equipment:
                 {
-                    var equipmentMb = Masters.EquipmentTable.GetById(itemId);
-                    return Masters.TextResourceTable.Get(equipmentMb.NameKey);
+                    return Name(Masters.EquipmentTable.GetById(itemId)?.NameKey);
                 }
                 case ItemType.EquipmentFragment:
                 {
                     var equipmentCompositeMb = Masters.EquipmentCompositeTable.GetById(itemId);
-                    var equipmentMb = Masters.EquipmentTable.GetById(equipmentCompositeMb.EquipmentId);
+                    var equipmentMb = equipmentCompositeMb == null ? null : Masters.EquipmentTable.GetById(equipmentCompositeMb.EquipmentId);
+                    if (equipmentMb == null) return missing;
                     var name = Masters.TextResourceTable.Get(equipmentMb.NameKey);
                     return Masters.TextResourceTable.Get("[CommonItemEquipmentFragmentFormat]", name);
                 }
                 case ItemType.Character:
                 {
-                    var characterMb = Masters.CharacterTable.GetById(itemId);
-                    var combinedName = characterMb.GetCombinedName();
-                    return combinedName;
+                    return Masters.CharacterTable.GetById(itemId)?.GetCombinedName() ?? missing;
                 }
                 case ItemType.CharacterFragment:
                 {
                     var characterMb = Masters.CharacterTable.GetById(itemId);
-                    var combinedName = characterMb.GetCombinedName();
-                    return Masters.TextResourceTable.Get("[CommonItemCharacterFragment]", combinedName);
+                    if (characterMb == null) return missing;
+                    return Masters.TextResourceTable.Get("[CommonItemCharacterFragment]", characterMb.GetCombinedName());
                     break;
                 }
                 case ItemType.DungeonBattleRelic:
-                    var dungeonBattleRelicMb = Masters.DungeonBattleRelicTable.GetById(itemId);
-                    return Masters.TextResourceTable.Get(dungeonBattleRelicMb.NameKey);
+                    return Name(Masters.DungeonBattleRelicTable.GetById(itemId)?.NameKey);
                     break;
                 case ItemType.EquipmentSetMaterial:
-                    var equipmentSetMaterialMb = Masters.EquipmentSetMaterialTable.GetById(itemId);
-                    return Masters.TextResourceTable.Get(equipmentSetMaterialMb.NameKey);
+                    return Name(Masters.EquipmentSetMaterialTable.GetById(itemId)?.NameKey);
                     break;
                 case ItemType.Sphere:
-                    var sphereMb = Masters.SphereTable.GetById(itemId);
-                    return Masters.TextResourceTable.Get(sphereMb.NameKey);
+                    return Name(Masters.SphereTable.GetById(itemId)?.NameKey);
                     break;
                 case ItemType.TreasureChest:
-                    var treasureChestMb = Masters.TreasureChestTable.GetById(itemId);
-                    return Masters.TextResourceTable.Get(treasureChestMb.NameKey);
+                    return Name(Masters.TreasureChestTable.GetById(itemId)?.NameKey);
                     break;
                 case ItemType.LevelLinkExp:
-                    var levelLinkExpMb = Masters.LevelLinkTable.GetById(itemId);
-                    return levelLinkExpMb.Memo;
+                    return Masters.LevelLinkTable.GetById(itemId)?.Memo ?? missing;
                     break;
             }
 
@@ -116,6 +111,7 @@ namespace MementoMori.Ortega.Common.Utils
 
         public static string GetItemRarity(ItemType itemType, long itemId)
         {
+            var missing = $"{itemType}:{itemId}";
             switch (itemType)
             {
                 case ItemType.None:
@@ -144,41 +140,33 @@ namespace MementoMori.Ortega.Common.Utils
                 case ItemType.UnlockPanelGridItem:
                 case ItemType.PanelUnlockItem:
                 case ItemType.MusicTicket:
-                    var itemMb = Masters.ItemTable.GetByItemTypeAndItemId(itemType, itemId);
-                    return itemMb.ItemRarityFlags.ToString();
+                    return Masters.ItemTable.GetByItemTypeAndItemId(itemType, itemId)?.ItemRarityFlags.ToString() ?? missing;
                 case ItemType.Equipment:
-                    var equipmentMb = Masters.EquipmentTable.GetById(itemId);
-                    return equipmentMb.RarityFlags.ToString();
+                    return Masters.EquipmentTable.GetById(itemId)?.RarityFlags.ToString() ?? missing;
                 case ItemType.EquipmentFragment:
-                    var equipmentFragmentMb = Masters.EquipmentTable.GetById(itemId);
-                    return equipmentFragmentMb.RarityFlags.ToString();
+                    // Fragment ids are EquipmentComposite ids; resolve the equipment through the composite row.
+                    var equipmentCompositeMb = Masters.EquipmentCompositeTable.GetById(itemId);
+                    return (equipmentCompositeMb == null ? null : Masters.EquipmentTable.GetById(equipmentCompositeMb.EquipmentId))?.RarityFlags.ToString() ?? missing;
                     break;
                 case ItemType.Character:
-                    var characterMb = Masters.CharacterTable.GetById(itemId);
-                    return characterMb.RarityFlags.ToString();
+                    return Masters.CharacterTable.GetById(itemId)?.RarityFlags.ToString() ?? missing;
                     break;
                 case ItemType.CharacterFragment:
-                    var characterFragmentMb = Masters.CharacterTable.GetById(itemId);
-                    return characterFragmentMb.RarityFlags.ToString();
+                    return Masters.CharacterTable.GetById(itemId)?.RarityFlags.ToString() ?? missing;
                     break;
                 case ItemType.DungeonBattleRelic:
-                    var dungeonBattleRelicMb = Masters.DungeonBattleRelicTable.GetById(itemId);
-                    return dungeonBattleRelicMb.DungeonRelicRarityType.ToString();
+                    return Masters.DungeonBattleRelicTable.GetById(itemId)?.DungeonRelicRarityType.ToString() ?? missing;
                     break;
                 case ItemType.EquipmentSetMaterial:
-                    var equipmentSetMaterialMb = Masters.EquipmentSetMaterialTable.GetById(itemId);
-                    return equipmentSetMaterialMb.ItemRarityFlags.ToString();
+                    return Masters.EquipmentSetMaterialTable.GetById(itemId)?.ItemRarityFlags.ToString() ?? missing;
                     break;
                 case ItemType.Sphere:
-                    var sphereMb = Masters.SphereTable.GetById(itemId);
-                    return sphereMb.RarityFlags.ToString();
+                    return Masters.SphereTable.GetById(itemId)?.RarityFlags.ToString() ?? missing;
                     break;
                 case ItemType.TreasureChest:
-                    var treasureChestMb = Masters.TreasureChestTable.GetById(itemId);
-                    return treasureChestMb.ItemRarityFlags.ToString();
+                    return Masters.TreasureChestTable.GetById(itemId)?.ItemRarityFlags.ToString() ?? missing;
                     break;
                 case ItemType.LevelLinkExp:
-                    var levelLinkExpMb = Masters.LevelLinkTable.GetById(itemId);
                     return "None";
                     break;
             }

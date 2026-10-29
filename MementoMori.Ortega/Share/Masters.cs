@@ -439,19 +439,26 @@ public static class Masters
     // }
     public static bool LoadAllMasters()
     {
+        // Load every table even if one fails; a failed table keeps its previous snapshot (TableBase publishes atomically).
+        var ok = true;
         foreach (var allTable in GetAllTables())
         {
             try
             {
-                if (!allTable.Load()) return false;
+                if (!allTable.Load()) ok = false;
             }
-            catch (FileNotFoundException e)
+            catch (FileNotFoundException)
             {
                 // ignored
             }
+            catch (Exception e)
+            {
+                ok = false;
+                Console.Error.WriteLine($"Failed to load master {allTable.GetMasterBookName()}: {e.Message}");
+            }
         }
 
-        return true;
+        return ok;
     }
 
     private static ITable[] GetClientTables()

@@ -153,7 +153,7 @@
                 }
                 <MudButton Size="Size.Small" Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.BountyQuestRewardAuto">@Tr("[BountyQuestAllReceive]")</MudButton>
                 <MudButton Size="Size.Small" Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.BountyQuestStartAuto">@Tr("[BountyQuestAutoPlacement]")</MudButton>
-                <MudButton Variant="Variant.Filled" Size="Size.Small" @onclick="Funcs.RemakeBountyRequest" StartIcon="@Icons.Material.Filled.Refresh">
+                <MudButton Variant="Variant.Filled" Size="Size.Small" Disabled="@Funcs.IsQuickActionExecuting" @onclick="RemakeBounty" StartIcon="@Icons.Material.Filled.Refresh">
                     @Tr("[CommonAlternativesItemFormat]", Tr("[CommonCurrencyName]"), 20)
                 </MudButton>
                 <MudButton Class="ml-2" Variant="Variant.Filled" Size="Size.Small" @onclick="Funcs.GetBountyRequestInfo" StartIcon="@Icons.Material.Filled.Sync">@ResourceStrings.Sync</MudButton>
@@ -205,52 +205,14 @@
                     <tbody>
                     @foreach (var missionInfo in Funcs.MissionInfoDict?.Values.SelectMany(d => d.UserMissionDtoInfoDict?.Values.SelectMany(x => x) ?? Array.Empty<UserMissionDtoInfo>()) ?? Array.Empty<UserMissionDtoInfo>())
                     {
-                        @if (missionInfo.MissionStatusHistory[MissionStatusType.Progress].Any())
+                        var (missionId, status) = MissionRow(missionInfo);
+                        var missionMb = missionId is { } id ? MissionTable.GetById(id) : null;
+                        @if (missionMb != null)
                         {
-                            var missionId = missionInfo.MissionStatusHistory[MissionStatusType.Progress].Last();
-                            var missionMb = MissionTable.GetById(missionId);
-                            var name = Tr(missionMb.NameKey);
-                            var info = $"{missionInfo.ProgressCount}/{missionMb.RequireValue}";
-
                             <tr>
                                 <td>@MissionTypeName(missionInfo.MissionType)</td>
-                                <td>@name</td>
-                                <td>@info</td>
-                            </tr>
-                        }
-                        else if (missionInfo.MissionStatusHistory[MissionStatusType.NotReceived].Any())
-                        {
-                            var missionId = missionInfo.MissionStatusHistory[MissionStatusType.NotReceived].Last();
-                            var missionMb = MissionTable.GetById(missionId);
-                            var name = Tr(missionMb.NameKey);
-
-                            <tr>
-                                <td>@MissionTypeName(missionInfo.MissionType)</td>
-                                <td>@name</td>
-                                <td>@ResourceStrings.NotReceived</td>
-                            </tr>
-                        }
-                        else if (missionInfo.MissionStatusHistory[MissionStatusType.Locked].Any())
-                        {
-                            var missionId = missionInfo.MissionStatusHistory[MissionStatusType.Locked].Last();
-                            var missionMb = MissionTable.GetById(missionId);
-                            var name = Tr(missionMb.NameKey);
-
-                            <tr>
-                                <td>@MissionTypeName(missionInfo.MissionType)</td>
-                                <td>@name</td>
-                                <td>@ResourceStrings.NotUnlocked</td>
-                            </tr>
-                        }
-                        else if (missionInfo.MissionType == MissionType.Daily || missionInfo.MissionType == MissionType.Weekly)
-                        {
-                            var missionId = missionInfo.MissionStatusHistory[MissionStatusType.Received].Last();
-                            var missionMb = MissionTable.GetById(missionId);
-                            var name = Tr(missionMb.NameKey);
-                            <tr>
-                                <td>@MissionTypeName(missionInfo.MissionType)</td>
-                                <td>@name</td>
-                                <td>@ResourceStrings.Finished</td>
+                                <td>@Tr(missionMb.NameKey)</td>
+                                <td>@(status ?? $"{missionInfo.ProgressCount}/{missionMb.RequireValue}")</td>
                             </tr>
                         }
                     }
@@ -431,6 +393,8 @@
 
     protected override async Task AccountChanged()
     {
+        selectedTargetQuerstId = 0;
+        selectedTargetTowerLayer = 0;
         try
         {
             alertMessage = Funcs.LoginOk ? string.Empty : ResourceStrings.PleaseLogin;
@@ -444,8 +408,12 @@
         {
             await InvokeAsync(StateHasChanged);
         }
-        if (_interactive) await LoadNotices();
+        // Don't block the account-switch queue on network I/O; LoadNotices is account-scoped and catches everything.
+        if (_interactive) _ = LoadNotices();
     }
+
+    // Paid action: drop clicks while another action runs instead of queueing a second 20-diamond remake.
+    private Task RemakeBounty() => Funcs.IsQuickActionExecuting ? Task.CompletedTask : Funcs.RemakeBountyRequest();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -474,7 +442,8 @@
 
     private async Task ShowPlayerList()
     {
-        playerDataInfos = await Funcs.GetPlayerDataInfo();
+        var funcs = Funcs; // the selected account may change while the dialog is open
+        playerDataInfos = await funcs.GetPlayerDataInfo();
         var parameters = new DialogParameters<SelectPlayer>();
         parameters.Add(d => d.PlayerDataInfos, playerDataInfos);
         var dialog = await DialogService.ShowAsync<SelectPlayer>(ResourceStrings.SelectPlayer, parameters, new DialogOptions() {CloseButton = true});
@@ -482,8 +451,19 @@
 
         if (!result.Canceled && result.Data is PlayerDataInfoEx playerDataInfoEx && playerDataInfoEx.PlayerDataInfo is PlayerDataInfo playerDataInfo)
         {
-            await Funcs.Login(playerDataInfo, playerDataInfoEx.AutoLoginThisWorld);
+            await funcs.Login(playerDataInfo, playerDataInfoEx.AutoLoginThisWorld);
         }
+    }
+
+    // Mission row to show: latest id of the first non-empty status bucket (null status = show progress). Groups may lack buckets and ids may be missing from the master.
+    private static (long? Id, string? Status) MissionRow(UserMissionDtoInfo m)
+    {
+        long? Last(MissionStatusType t) => m.MissionStatusHistory != null && m.MissionStatusHistory.TryGetValue(t, out var l) && l.Count > 0 ? l[^1] : null;
+        if (Last(MissionStatusType.Progress) is { } progress) return (progress, null);
+        if (Last(MissionStatusType.NotReceived) is { } notReceived) return (notReceived, ResourceStrings.NotReceived);
+        if (Last(MissionStatusType.Locked) is { } locked) return (locked, ResourceStrings.NotUnlocked);
+        if (m.MissionType is MissionType.Daily or MissionType.Weekly && Last(MissionStatusType.Received) is { } received) return (received, ResourceStrings.Finished);
+        return (null, null);
     }
 
     private static string MissionTypeName(MissionType type) => type switch

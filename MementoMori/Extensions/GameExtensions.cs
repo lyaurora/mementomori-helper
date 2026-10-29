@@ -37,9 +37,9 @@ public static class GameExtensions
 
         foreach (var userItem in userItems)
         {
-            var characterMb = CharacterTable.GetById(userItem.CharacterId);
-            var name = TextResourceTable.Get(characterMb.NameKey);
-            log($"{ResourceStrings.Name}: {name}({characterMb.RarityFlags}) Lv{userItem.Level}");
+            var name = ItemUtil.GetItemName(ItemType.Character, userItem.CharacterId);
+            var rarity = ItemUtil.GetItemRarity(ItemType.Character, userItem.CharacterId);
+            log($"{ResourceStrings.Name}: {name}({rarity}) Lv{userItem.Level}");
         }
     }
 

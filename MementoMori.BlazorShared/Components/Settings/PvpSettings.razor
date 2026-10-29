@@ -133,9 +133,12 @@
     protected override Task AccountChanged()
     {
         playerOption = PlayersOptions.Value.TryGetValue(NetworkManager.PlayerId, out var opt) ? opt : new PlayerOption {PlayerId = NetworkManager.PlayerId};
-        pvpOption = pvpOptionSelector(playerOption);
+        pvpOption = Clone(pvpOptionSelector(playerOption));
         return Task.CompletedTask;
     }
+
+    // Edit a copy so unsaved edits don't leak into running jobs through the live PlayersOption.
+    private static PvpOption Clone(PvpOption option) => Newtonsoft.Json.JsonConvert.DeserializeObject<PvpOption>(Newtonsoft.Json.JsonConvert.SerializeObject(option))!;
 
     private void OpenCreateFilter()
     {
@@ -177,11 +180,11 @@
             var playerOpt = opt.GetOrAdd(NetworkManager.PlayerId, id => new PlayerOption {PlayerId = id});
             if (LeagueType == 0)
             {
-                playerOpt.BattleLeague = pvpOption;
+                playerOpt.BattleLeague = Clone(pvpOption);
             }
             else
             {
-                playerOpt.LegendLeague = pvpOption;
+                playerOpt.LegendLeague = Clone(pvpOption);
             }
         });
 

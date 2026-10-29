@@ -44,7 +44,7 @@
 
     protected override Task AccountChanged()
     {
-        var playerOpt = PlayersOptions.Value.GetOrAdd(NetworkManager.PlayerId, (id) => new PlayerOption() {PlayerId = id});
+        var playerOpt = PlayersOptions.Value.TryGetValue(NetworkManager.PlayerId, out var saved) ? saved : new PlayerOption {PlayerId = NetworkManager.PlayerId};
         _localRaidRewardItems = playerOpt.LocalRaid.RewardItems;
         if (_localRaidRewardItems.Count == 0)
         {
