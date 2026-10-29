@@ -16,6 +16,7 @@ public partial class MementoMoriFuncs
         {
             log($"{TextResourceTable.Get("[CommonHeaderLocalPvpLabel]")}:\n");
             var count = 100;
+            var noTargetRounds = 0;
             var characterDetailInfoDict = new Dictionary<long, List<(string, CharacterDetailInfo)>>();
             while (!token.IsCancellationRequested && count-- > 0)
             {
@@ -43,7 +44,15 @@ public partial class MementoMoriFuncs
                     }
 
                     var targetPlayerId = await SelectLeagueTarget(log, PlayerOption.BattleLeague, list);
-                    if (targetPlayerId == 0) continue;
+                    if (targetPlayerId == 0)
+                    {
+                        // 过滤掉了所有对手，对手列表不会变，别反复刷新
+                        if (++noTargetRounds < 3) continue;
+                        log(ResourceStrings.PvpNoEligibleTarget);
+                        return;
+                    }
+
+                    noTargetRounds = 0;
 
                     var playerInfo = pvpInfoResponse.MatchingRivalList.FirstOrDefault(d => d.PlayerInfo.PlayerId == targetPlayerId);
                     if (playerInfo == null) continue;
@@ -186,6 +195,7 @@ public partial class MementoMoriFuncs
         {
             log($"{TextResourceTable.Get("[CommonHeaderGlobalPvpLabel]")}");
             var count = 100;
+            var noTargetRounds = 0;
             var characterDetailInfoDict = new Dictionary<long, List<(string, CharacterDetailInfo)>>();
             while (!token.IsCancellationRequested && count-- > 0)
             {
@@ -218,7 +228,15 @@ public partial class MementoMoriFuncs
                     }
 
                     var targetPlayerId = await SelectLeagueTarget(log, PlayerOption.LegendLeague, list);
-                    if (targetPlayerId == 0) continue;
+                    if (targetPlayerId == 0)
+                    {
+                        // 过滤掉了所有对手，对手列表不会变，别反复刷新
+                        if (++noTargetRounds < 3) continue;
+                        log(ResourceStrings.PvpNoEligibleTarget);
+                        return;
+                    }
+
+                    noTargetRounds = 0;
 
                     var leagueStartResponse = await GetResponse<LegendLeagueStartRequest, LegendLeagueStartResponse>(new LegendLeagueStartRequest
                     {

@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using MementoMori.Ortega.Common.Enums;
 using MementoMori.Ortega.Network.MagicOnion.Client;
 using MementoMori.Ortega.Network.MagicOnion.Interface;
@@ -125,6 +124,7 @@ public class LocalRaidJoinRoomReceiver : LocalRaidBaseReceiver
     public override async void OnRefuse()
     {
         _log(TextResourceTable.Get("[LocalRaidRoomRefuseReceiveDialogMessage]"));
+        _startSw.Restart();
         await RetryJoin();
     }
 
@@ -191,7 +191,8 @@ public class LocalRaidJoinRoomReceiver : LocalRaidBaseReceiver
 public class LocalRaidCreateRoomReceiver : LocalRaidBaseReceiver
 {
     private readonly int _waitSeconds;
-    private string _lastRoomId;
+    private volatile LocalRaidPartyInfo _party;
+    private int _loopRunning;
 
     public LocalRaidCreateRoomReceiver(OrtegaMagicOnionClient ortegaMagicOnionClient, Action<string> log, int waitSeconds, CancellationToken cancellationToken) : base(ortegaMagicOnionClient, log,
         cancellationToken)
@@ -205,19 +206,45 @@ public class LocalRaidCreateRoomReceiver : LocalRaidBaseReceiver
         StartBattle(response.LocalRaidPartyInfo);
     }
 
-    [MethodImpl(MethodImplOptions.Synchronized)]
+    // 每次加入/更新房间只刷新最新的队伍信息，同一时间只跑一个开战循环
     private void StartBattle(LocalRaidPartyInfo partyInfo)
     {
-        _lastRoomId = partyInfo.RoomId;
-        Task.Delay(TimeSpan.FromSeconds(_waitSeconds), CancellationToken).ContinueWith(async _ =>
+        _party = partyInfo;
+        if (Interlocked.Exchange(ref _loopRunning, 1) == 1) return;
+        _ = StartBattleLoop();
+    }
+
+    private async Task StartBattleLoop()
+    {
+        try
         {
+            var roomId = _party.RoomId;
+            await Task.Delay(TimeSpan.FromSeconds(_waitSeconds), CancellationToken);
             while (!IsBattleStarted && !CancellationToken.IsCancellationRequested)
             {
-                if (partyInfo.IsReady) _ortegaMagicOnionClient.SendLocalRaidStartBattle();
+                var party = _party;
+                if (party.RoomId != roomId)
+                {
+                    // 换了新房间，重新等待
+                    roomId = party.RoomId;
+                    await Task.Delay(TimeSpan.FromSeconds(_waitSeconds), CancellationToken);
+                    continue;
+                }
 
-                await Task.Delay(TimeSpan.FromSeconds(1));
+                if (party.IsReady) _ortegaMagicOnionClient.SendLocalRaidStartBattle();
+
+                await Task.Delay(TimeSpan.FromSeconds(1), CancellationToken);
             }
-        }, CancellationToken);
+        }
+        catch (OperationCanceledException) when (CancellationToken.IsCancellationRequested) { }
+        catch (Exception e)
+        {
+            _log(e.Message);
+        }
+        finally
+        {
+            Volatile.Write(ref _loopRunning, 0);
+        }
     }
 
     public override void OnUpdateRoom(OnUpdateRoomResponse response)

@@ -34,6 +34,7 @@ public partial class MementoMoriFuncs
             while (!token.IsCancellationRequested)
             {
                 var soloLosses = 0;
+                var timedOut = false;
                 OrtegaMagicOnionClient client = null;
                 LocalRaidBaseReceiver localRaidReceiver = null;
                 using var connectionCts = CancellationTokenSource.CreateLinkedTokenSource(token);
@@ -80,12 +81,24 @@ public partial class MementoMoriFuncs
                             client.SendLocalRaidJoinRandomRoom(questId);
                         }
 
+                        // 两种模式共用的总超时：被踢、房主挂机、未处理的错误都不会无限等待并占住账号锁
+                        var roundStart = DateTime.UtcNow;
                         while (!token.IsCancellationRequested)
                         {
                             await Task.Delay(1000, token);
                             if (keepaliveTask.IsFaulted) await keepaliveTask;
                             if (localRaidReceiver.IsNoRemainingChallenges) return;
                             if (localRaidReceiver.IsMaxTimeExceeded) goto Done;
+                            // host mode waits WaitSeconds before starting, so give it that on top
+                            var limit = TimeSpan.FromMinutes(5) + (createRoom ? TimeSpan.FromSeconds(Math.Max(0, PlayerOption.LocalRaid.WaitSeconds)) : TimeSpan.Zero);
+                            if (!localRaidReceiver.IsBattleStarted && DateTime.UtcNow - roundStart > limit)
+                            {
+                                log(ResourceStrings.LocalRaidWaitTimeout);
+                                if (createRoom) return;
+                                // join mode: fall back to creating our own room, like IsMaxTimeExceeded
+                                timedOut = true;
+                                goto Done;
+                            }
 
                             if (localRaidReceiver.IsBattleStarted)
                             {
@@ -125,51 +138,40 @@ public partial class MementoMoriFuncs
                     }
                 }
                 Done:
-                if (createRoom || !localRaidReceiver.IsMaxTimeExceeded || token.IsCancellationRequested) return;
+                if (createRoom || !(localRaidReceiver.IsMaxTimeExceeded || timedOut) || token.IsCancellationRequested) return;
                 log(ResourceStrings.LocalRaidNoTeamCreateOwn);
                 createRoom = true;
             }
 
             long GetQuestId(GetLocalRaidInfoResponse response)
             {
-                if (response.OpenEventLocalRaidQuestIds.Count > 0)
-                {
-                    var localRaidQuestMbs = response.LocalRaidQuestInfos;
-                    var localRaidQuestMb = localRaidQuestMbs.OrderByDescending(d =>
-                    {
-                        if (response.ClearCountDict.TryGetValue(d.Id, out var c) && c > 0) return d.FixedBattleRewards[0].ItemCount;
+                // 只选开放的任务（活动期间只选活动任务），筛完为空时退回原列表
+                var openIds = response.OpenEventLocalRaidQuestIds.Count > 0 ? response.OpenEventLocalRaidQuestIds : response.OpenLocalRaidQuestIds;
+                var localRaidQuestMbs = response.LocalRaidQuestInfos.Where(d => openIds?.Contains(d.Id) == true).ToList();
+                if (localRaidQuestMbs.Count == 0) localRaidQuestMbs = response.LocalRaidQuestInfos;
+                if (rewardItems.Count == 0) return localRaidQuestMbs.OrderByDescending(d => d.Level).First().Id;
 
-                        return d.FixedBattleRewards[0].ItemCount + d.FirstBattleRewards[0].ItemCount;
-                    }).First();
-                    return localRaidQuestMb.Id;
-                }
-                else
+                return localRaidQuestMbs.Select(d =>
                 {
-                    var localRaidQuestMbs = response.LocalRaidQuestInfos;
-                    if (rewardItems.Count == 0) return localRaidQuestMbs.OrderByDescending(d => d.Level).First().Id;
-
-                    return localRaidQuestMbs.Select(d =>
+                    var count = 0D;
+                    // if cleared dict contains the quest id, it means the quest has been cleared before
+                    var isFirst = !response.ClearCountDict.ContainsKey(d.Id);
+                    foreach (var rewardItem in rewardItems)
                     {
-                        var count = 0D;
-                        // if cleared dict contains the quest id, it means the quest has been cleared before
-                        var isFirst = !response.ClearCountDict.ContainsKey(d.Id);
-                        foreach (var rewardItem in rewardItems)
+                        foreach (var reward in d.FixedBattleRewards)
                         {
-                            foreach (var reward in d.FixedBattleRewards)
-                            {
-                                if (reward.IsEqual(rewardItem.ItemType, rewardItem.ItemId)) count += reward.ItemCount / GetMaxItemCount(rewardItem) * rewardItem.Weight;
-                            }
-
-                            if (!isFirst) continue;
-                            foreach (var reward in d.FirstBattleRewards)
-                            {
-                                if (reward.IsEqual(rewardItem.ItemType, rewardItem.ItemId)) count += reward.ItemCount / GetMaxItemCount(rewardItem) * rewardItem.Weight;
-                            }
+                            if (reward.IsEqual(rewardItem.ItemType, rewardItem.ItemId)) count += reward.ItemCount / GetMaxItemCount(rewardItem) * rewardItem.Weight;
                         }
 
-                        return new {quest = d, count};
-                    }).OrderByDescending(d => d.count).First().quest.Id;
-                }
+                        if (!isFirst) continue;
+                        foreach (var reward in d.FirstBattleRewards)
+                        {
+                            if (reward.IsEqual(rewardItem.ItemType, rewardItem.ItemId)) count += reward.ItemCount / GetMaxItemCount(rewardItem) * rewardItem.Weight;
+                        }
+                    }
+
+                    return new {quest = d, count};
+                }).OrderByDescending(d => d.count).ThenByDescending(d => d.quest.Level).First().quest.Id;
             }
 
             double GetMaxItemCount(IUserItem userItem)

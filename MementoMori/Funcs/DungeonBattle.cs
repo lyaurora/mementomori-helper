@@ -1,5 +1,6 @@
 ﻿using MementoMori.Exceptions;
 using MementoMori.Ortega.Common.Utils;
+using MementoMori.Ortega.Custom;
 using MementoMori.Ortega.Share.Data.ApiInterface.Battle;
 using MementoMori.Ortega.Share.Data.ApiInterface.DungeonBattle;
 using MementoMori.Ortega.Share.Data.ApiInterface.Equipment;
@@ -71,7 +72,7 @@ public partial class MementoMoriFuncs
                         await GetResponse<ChangeEquipmentRequest, ChangeEquipmentResponse>(new ChangeEquipmentRequest
                         {
                             UserCharacterGuid = g.Key, EquipmentChangeInfos = changeInfos.ToList()
-                        });
+                        }, ignoreOperationCancellation: true);
                     }
                     catch (Exception e)
                     {
@@ -100,6 +101,8 @@ public partial class MementoMoriFuncs
         var gridData = new Dictionary<string, GetBattleGridDataResponse>();
 
         var shouldStop = false;
+        string? lastProgressKey = null;
+        var unchangedRounds = 0;
         while (!cancellationToken.IsCancellationRequested && !shouldStop)
         {
             // 获取副本信息
@@ -137,6 +140,20 @@ public partial class MementoMoriFuncs
             var memo = currentGrid.GridMb.Memo;
             var type = currentGrid.GridMb.DungeonGridType;
             log(string.Format(ResourceStrings.CaveCurrentState, layer, currentGrid.Grid.X, currentGrid.Grid.Y, state, type, currentGrid.Power));
+
+            // 连续 3 轮状态没有变化就停止，避免占着账号锁原地重试
+            var progressKey = $"{layer}|{currentGrid.Grid.DungeonGridGuid}|{state}|{battleInfoResponse.UserDungeonDtoInfo.UseDungeonRecoveryItemCount}|" +
+                              $"{battleInfoResponse.UserDungeonDtoInfo.RelicIds.Count}|{battleInfoResponse.UserDungeonBattleCharacterDtoInfos.Sum(d => (long) d.CurrentHpPerMill)}";
+            if (progressKey != lastProgressKey)
+            {
+                lastProgressKey = progressKey;
+                unchangedRounds = 0;
+            }
+            else if (++unchangedRounds >= 3)
+            {
+                log(ResourceStrings.DungeonBattleNoProgress);
+                return;
+            }
 
             async Task DoBattle()
             {
@@ -389,20 +406,20 @@ public partial class MementoMoriFuncs
                         {
                             case DungeonBattleGridType.JoinCharacter:
                             {
-                                var characterIds = battleInfoResponse.UserDungeonDtoInfo
+                                // GuestCharacterMap 存的是 DungeonBattleGuestMB id，请求也要发 MB id（不是 CharacterId）
+                                var guestMbIds = battleInfoResponse.UserDungeonDtoInfo
                                     .GuestCharacterMap[nextGrid.DungeonGridGuid]
-                                    .Select(d=>DungeonBattleGuestTable.GetById(d).CharacterId);
-                                var infos = battleInfoResponse.UserDungeonBattleGuestCharacterDtoInfos
-                                    .Where(d => characterIds.Contains(d.CharacterId))
-                                    .OrderByDescending(d => d.BattlePower).ToList();
-                                foreach (var info in infos)
+                                    .OrderByDescending(id => battleInfoResponse.UserDungeonBattleGuestCharacterDtoInfos
+                                        .FirstOrDefault(d => d.CharacterId == DungeonBattleGuestTable.GetById(id)?.CharacterId)?.BattlePower ?? -1)
+                                    .ToList();
+                                foreach (var guestMbId in guestMbIds)
                                 {
                                     try
                                     {
                                         var execGuestResponse = await GetResponse<ExecGuestRequest, ExecGuestResponse>(new ExecGuestRequest
                                         {
                                             DungeonGridGuid = nextGrid.DungeonGridGuid,
-                                            GuestMBId = info.CharacterId,
+                                            GuestMBId = guestMbId,
                                             CurrentTermId = battleInfoResponse.CurrentTermId
                                         });
                                         break;
@@ -459,7 +476,17 @@ public partial class MementoMoriFuncs
                             {
                                 foreach (var tradeShopItem in tradeShopItemList)
                                 {
-                                    if (GameConfig.DungeonBattle.ShopTargetItems.Any(d => d.ItemType == tradeShopItem.GiveItem.ItemType && d.ItemId == tradeShopItem.GiveItem.ItemId))
+                                    if (tradeShopItem.IsSoldOut() || tradeShopItem.Disabled) continue;
+                                    if (!GameConfig.DungeonBattle.ShopTargetItems.Any(d =>
+                                            d.ItemType == tradeShopItem.GiveItem.ItemType && d.ItemId == tradeShopItem.GiveItem.ItemId && tradeShopItem.SalePercent >= d.MinDiscountPercent))
+                                        continue;
+                                    // diamond prices count free diamonds only, never paid (same as Shop.cs)
+                                    if (tradeShopItem.ConsumeItem1 != null && tradeShopItem.ConsumeItem1.ItemCount > UserSyncData.GetUserItemCount(tradeShopItem.ConsumeItem1.ItemType, tradeShopItem.ConsumeItem1.ItemId))
+                                        continue;
+                                    if (tradeShopItem.ConsumeItem2 != null && tradeShopItem.ConsumeItem2.ItemCount > UserSyncData.GetUserItemCount(tradeShopItem.ConsumeItem2.ItemType, tradeShopItem.ConsumeItem2.ItemId))
+                                        continue;
+
+                                    try
                                     {
                                         // 购买
                                         var execShopResponse = await GetResponse<ExecShopRequest, ExecShopResponse>(new ExecShopRequest
@@ -469,6 +496,11 @@ public partial class MementoMoriFuncs
                                             TradeShopItemId = tradeShopItem.TradeShopItemId
                                         });
                                         log(string.Format(ResourceStrings.CaveBuyItemSuccess, ItemUtil.GetItemName(tradeShopItem.GiveItem), tradeShopItem.GiveItem.ItemCount));
+                                    }
+                                    catch (ApiErrorException e) when (e.ErrorCode is not (ErrorCode.CommonNoSession or ErrorCode.CommonLoggedInAnotherDevice))
+                                    {
+                                        // 购买失败也要离开商店，否则之后每次都卡在这里
+                                        log(e.Message);
                                     }
                                 }
                             }

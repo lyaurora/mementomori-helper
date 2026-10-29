@@ -98,10 +98,17 @@ public partial class MementoMoriFuncs
 
                                 log($"{TextResourceTable.Get("[GuildTowerTitle]")} {msg} {TextResourceTable.Get("[LocalRaidBattleLoseMessage]")}");
                             }
-                            catch (ApiErrorException e) when (e.ErrorCode == ErrorCode.GuildTowerAlreadyClearFloor)
+                            catch (ApiErrorException e) when (e.ErrorCode is not (ErrorCode.CommonNoSession or ErrorCode.CommonLoggedInAnotherDevice))
                             {
-                                isFloorClearedByOther = true;
-                                break;
+                                if (e.ErrorCode == ErrorCode.GuildTowerAlreadyClearFloor)
+                                {
+                                    isFloorClearedByOther = true;
+                                    break;
+                                }
+
+                                // 次数不足、不在挑战时间等：停止挑战，继续后面的强化和楼层奖励
+                                log(e.Message);
+                                goto ChallengeDone;
                             }
                         }
 
@@ -110,6 +117,8 @@ public partial class MementoMoriFuncs
 
                     guildTowerInfo = await GetResponse<GetGuildTowerInfoRequest, GetGuildTowerInfoResponse>(new GetGuildTowerInfoRequest());
                 }
+
+                ChallengeDone: ;
             }
 
             // job reinforcement
@@ -124,6 +133,8 @@ public partial class MementoMoriFuncs
                     var reinforcementJobData = guildTowerReinforcementJobData;
                     var guildTowerReinforcementJobLevelMb =
                         GuildTowerReinforcementJobLevelTable.GetByEventNoJobFlagsLevel(guildTowerEventMb.EventNo, reinforcementJobData.JobFlags, reinforcementJobData.Level);
+                    // 职业满级时没有对应行或材料为 null
+                    if (guildTowerReinforcementJobLevelMb?.RequiredMaterialList is not {Count: > 0}) continue;
                     var userItem = guildTowerReinforcementJobLevelMb.RequiredMaterialList.OrderByDescending(d => d.ItemCount).First();
                     long count;
                     while ((count = UserSyncData.GetUserItemCount(userItem.ItemType, userItem.ItemId)) > 0)
@@ -133,13 +144,22 @@ public partial class MementoMoriFuncs
                         if (toConsumeCount == 0) break;
 
                         log($"{TextResourceTable.Get("[GuildTowerJobReinforceLabel]")} {TextResourceTable.Get(reinforcementJobData.JobFlags)}");
-                        var reinforceJobResponse = await GetResponse<ReinforceJobRequest, ReinforceJobResponse>(new ReinforceJobRequest
+                        try
                         {
-                            JobFlags = reinforcementJobData.JobFlags,
-                            Level = reinforcementJobData.Level,
-                            MaterialItemList = [new UserItem {ItemType = userItem.ItemType, ItemId = userItem.ItemId, ItemCount = toConsumeCount}]
-                        });
-                        reinforcementJobData = reinforceJobResponse.ReinforcementJobData;
+                            var reinforceJobResponse = await GetResponse<ReinforceJobRequest, ReinforceJobResponse>(new ReinforceJobRequest
+                            {
+                                JobFlags = reinforcementJobData.JobFlags,
+                                Level = reinforcementJobData.Level,
+                                MaterialItemList = [new UserItem {ItemType = userItem.ItemType, ItemId = userItem.ItemId, ItemCount = toConsumeCount}]
+                            });
+                            reinforcementJobData = reinforceJobResponse.ReinforcementJobData;
+                        }
+                        catch (ApiErrorException e) when (e.ErrorCode is not (ErrorCode.CommonNoSession or ErrorCode.CommonLoggedInAnotherDevice))
+                        {
+                            // 一个职业失败不影响其他职业和楼层奖励
+                            log(e.Message);
+                            break;
+                        }
                     }
                 }
             }
