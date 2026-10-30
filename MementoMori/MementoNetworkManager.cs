@@ -311,10 +311,18 @@ public partial class MementoNetworkManager : IDisposable
         }
     }
 
+    // Hourly master checks re-read ~128 MB; reuse hashes of files whose size and write time are unchanged.
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, (long Length, DateTime WriteTime, string Hash)> _fileMd5Cache = new();
+
     private static async Task<string> CalcFileMd5(string path, CancellationToken cancellationToken = default)
     {
+        var file = new FileInfo(path);
+        var key = file.FullName;
+        if (_fileMd5Cache.TryGetValue(key, out var cached) && cached.Length == file.Length && cached.WriteTime == file.LastWriteTimeUtc) return cached.Hash;
         await using var stream = File.OpenRead(path);
-        return Convert.ToHexStringLower(await MD5.HashDataAsync(stream, cancellationToken));
+        var hash = Convert.ToHexStringLower(await MD5.HashDataAsync(stream, cancellationToken));
+        _fileMd5Cache[key] = (file.Length, file.LastWriteTimeUtc, hash);
+        return hash;
     }
 
     public async Task<List<PlayerDataInfo>> GetPlayerDataInfoList(LoginRequest loginRequest, Action<string> log = null, CancellationToken cancellationToken = default)
@@ -368,8 +376,9 @@ public partial class MementoNetworkManager : IDisposable
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, cts.Token);
         var token = linkedCts.Token;
         // ponytail: serialize requests across accounts to preserve the current server request rate.
-        using var releaser = await asyncSemaphore.EnterAsync(token);
+        // Pace outside the lock so one account's wait doesn't stall the other.
         await Task.Delay(Math.Max(0, _gameConfig.Value.AutoRequestDelay), token);
+        using var releaser = await asyncSemaphore.EnterAsync(token);
         apiHost ??= _apiHost;
         apiAuth ??= _apiAuth;
         log ??= Console.WriteLine;

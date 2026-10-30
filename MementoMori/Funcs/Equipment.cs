@@ -37,7 +37,6 @@ public partial class MementoMoriFuncs
 
                 var response = await GetResponse<TrainingRequest, TrainingResponse>(new TrainingRequest {EquipmentGuid = targetGuid, ParameterLockedList = new List<BaseParameterType>()});
                 totalCount++;
-                await Task.Delay(GameConfig.AutoRequestDelay, token);
             }
         });
     }

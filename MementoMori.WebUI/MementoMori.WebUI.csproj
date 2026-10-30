@@ -7,7 +7,14 @@
         <Nullable>warnings</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <Version>1.0.0</Version>
+        <!-- Small idle box shared with builds/Chromium: Workstation+concurrent GC, conserve memory. -->
+        <ServerGarbageCollection>false</ServerGarbageCollection>
+        <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
     </PropertyGroup>
+
+    <ItemGroup>
+        <RuntimeHostConfigurationOption Include="System.GC.ConserveMemory" Value="5" />
+    </ItemGroup>
 
     <ItemGroup>
         <SupportedPlatform Include="browser" />
