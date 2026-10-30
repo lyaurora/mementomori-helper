@@ -57,8 +57,15 @@ namespace MementoMori.Ortega.Share.Master.Data
 			get;
 		}
 
+		[PropertyOrder(8)]
+		[Description("団結ミッション受注回数購入に必要な仮想通貨")]
+		public long UnionMission
+		{
+			get;
+		}
+
 		[SerializationConstructor]
-		public RequiredCurrencyMB(long id, bool? isIgnore, string memo, long bossBattle, long count, long legendLeague, long pvp, long quick, long towerBattle, long levelLinkMember)
+		public RequiredCurrencyMB(long id, bool? isIgnore, string memo, long bossBattle, long count, long legendLeague, long pvp, long quick, long towerBattle, long levelLinkMember, long unionMission = 0)
 			:base(id, isIgnore, memo)
 		{
 			BossBattle = bossBattle;
@@ -68,6 +75,7 @@ namespace MementoMori.Ortega.Share.Master.Data
 			Quick = quick;
 			TowerBattle = towerBattle;
 			LevelLinkMember = levelLinkMember;
+			UnionMission = unionMission;
 		}
 
 		public RequiredCurrencyMB() :base(0L, false, ""){}

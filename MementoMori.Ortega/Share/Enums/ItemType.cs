@@ -118,6 +118,7 @@ namespace MementoMori.Ortega.Share.Enums
         [Description("Stripeクーポン")]
         StripeCoupon = 1001,
         [Description("Webクリスタル")]
-        WebCrystal = 2001
+        WebCrystal = 2001,
+        UnionMissionTicket = 57,
 	}
 }

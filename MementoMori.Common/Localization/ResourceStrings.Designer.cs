@@ -2725,5 +2725,383 @@ namespace MementoMori.Common.Localization {
                 return ResourceManager.GetString("InvalidCronExpression", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Pause this account's jobs.
+        /// </summary>
+        public static string PauseJobs {
+            get {
+                return ResourceManager.GetString("PauseJobs", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Paused until {0}.
+        /// </summary>
+        public static string PausedUntilFormat {
+            get {
+                return ResourceManager.GetString("PausedUntilFormat", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Paused until resumed.
+        /// </summary>
+        public static string PausedUntilResumed {
+            get {
+                return ResourceManager.GetString("PausedUntilResumed", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Until resumed.
+        /// </summary>
+        public static string UntilResumed {
+            get {
+                return ResourceManager.GetString("UntilResumed", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Resume.
+        /// </summary>
+        public static string ResumeJobs {
+            get {
+                return ResourceManager.GetString("ResumeJobs", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Union Mission: +{0} points (personal total {1}).
+        /// </summary>
+        public static string UnionMissionPointMsg {
+            get {
+                return ResourceManager.GetString("UnionMissionPointMsg", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to B.
+        /// </summary>
+        public static string NumberUnitLarge {
+            get {
+                return ResourceManager.GetString("NumberUnitLarge", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Not enough {0}.
+        /// </summary>
+        public static string NotEnoughFormat {
+            get {
+                return ResourceManager.GetString("NotEnoughFormat", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Debug Info.
+        /// </summary>
+        public static string DebugInfo {
+            get {
+                return ResourceManager.GetString("DebugInfo", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Every N hours.
+        /// </summary>
+        public static string CronModeHours {
+            get {
+                return ResourceManager.GetString("CronModeHours", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Daily.
+        /// </summary>
+        public static string CronModeDaily {
+            get {
+                return ResourceManager.GetString("CronModeDaily", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Weekly.
+        /// </summary>
+        public static string CronModeWeekly {
+            get {
+                return ResourceManager.GetString("CronModeWeekly", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Custom.
+        /// </summary>
+        public static string CronModeCustom {
+            get {
+                return ResourceManager.GetString("CronModeCustom", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Every (hours).
+        /// </summary>
+        public static string CronIntervalHours {
+            get {
+                return ResourceManager.GetString("CronIntervalHours", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to At minute.
+        /// </summary>
+        public static string CronAtMinute {
+            get {
+                return ResourceManager.GetString("CronAtMinute", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Next runs (server time).
+        /// </summary>
+        public static string CronNextRuns {
+            get {
+                return ResourceManager.GetString("CronNextRuns", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to No scheduled tasks.
+        /// </summary>
+        public static string NoScheduledJobs {
+            get {
+                return ResourceManager.GetString("NoScheduledJobs", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Every {0} h at :{1}.
+        /// </summary>
+        public static string CronEveryHoursFormat {
+            get {
+                return ResourceManager.GetString("CronEveryHoursFormat", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to {0}× at :{1}.
+        /// </summary>
+        public static string CronTimesPerDayFormat {
+            get {
+                return ResourceManager.GetString("CronTimesPerDayFormat", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Edit schedule.
+        /// </summary>
+        public static string EditSchedule {
+            get {
+                return ResourceManager.GetString("EditSchedule", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Server time.
+        /// </summary>
+        public static string ServerTimeLabel {
+            get {
+                return ResourceManager.GetString("ServerTimeLabel", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Recent growth.
+        /// </summary>
+        public static string GrowthRecent {
+            get {
+                return ResourceManager.GetString("GrowthRecent", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Growth history.
+        /// </summary>
+        public static string GrowthHistoryTitle {
+            get {
+                return ResourceManager.GetString("GrowthHistoryTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to View all.
+        /// </summary>
+        public static string GrowthViewAll {
+            get {
+                return ResourceManager.GetString("GrowthViewAll", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Last 24 h.
+        /// </summary>
+        public static string GrowthLast24h {
+            get {
+                return ResourceManager.GetString("GrowthLast24h", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Nothing recorded yet. Growth shows up here as the helper syncs and runs jobs..
+        /// </summary>
+        public static string GrowthNoData {
+            get {
+                return ResourceManager.GetString("GrowthNoData", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Log in to start recording growth..
+        /// </summary>
+        public static string GrowthNotLoggedIn {
+            get {
+                return ResourceManager.GetString("GrowthNotLoggedIn", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to All.
+        /// </summary>
+        public static string GrowthFilterAll {
+            get {
+                return ResourceManager.GetString("GrowthFilterAll", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Rewards.
+        /// </summary>
+        public static string GrowthFilterRewards {
+            get {
+                return ResourceManager.GetString("GrowthFilterRewards", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Characters.
+        /// </summary>
+        public static string GrowthFilterCharacters {
+            get {
+                return ResourceManager.GetString("GrowthFilterCharacters", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Equipment.
+        /// </summary>
+        public static string GrowthFilterEquipment {
+            get {
+                return ResourceManager.GetString("GrowthFilterEquipment", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Progress.
+        /// </summary>
+        public static string GrowthFilterProgress {
+            get {
+                return ResourceManager.GetString("GrowthFilterProgress", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Main quest.
+        /// </summary>
+        public static string GrowthMainQuest {
+            get {
+                return ResourceManager.GetString("GrowthMainQuest", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Battle power (top 5).
+        /// </summary>
+        public static string GrowthBattlePowerTop5 {
+            get {
+                return ResourceManager.GetString("GrowthBattlePowerTop5", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Trend.
+        /// </summary>
+        public static string GrowthTrend {
+            get {
+                return ResourceManager.GetString("GrowthTrend", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to {0} days.
+        /// </summary>
+        public static string GrowthDays {
+            get {
+                return ResourceManager.GetString("GrowthDays", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Not enough snapshots yet (about one per hour while active)..
+        /// </summary>
+        public static string GrowthTrendNeedMore {
+            get {
+                return ResourceManager.GetString("GrowthTrendNeedMore", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to just now.
+        /// </summary>
+        public static string GrowthJustNow {
+            get {
+                return ResourceManager.GetString("GrowthJustNow", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to {0} min ago.
+        /// </summary>
+        public static string GrowthMinutesAgo {
+            get {
+                return ResourceManager.GetString("GrowthMinutesAgo", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to {0} h ago.
+        /// </summary>
+        public static string GrowthHoursAgo {
+            get {
+                return ResourceManager.GetString("GrowthHoursAgo", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to {0} d ago.
+        /// </summary>
+        public static string GrowthDaysAgo {
+            get {
+                return ResourceManager.GetString("GrowthDaysAgo", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Every {0} h from {1}.
+        /// </summary>
+        public static string CronEveryHoursFromFormat {
+            get {
+                return ResourceManager.GetString("CronEveryHoursFromFormat", resourceCulture);
+            }
+        }
     }
 }

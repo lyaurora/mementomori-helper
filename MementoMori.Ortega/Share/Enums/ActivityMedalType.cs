@@ -20,6 +20,7 @@ namespace MementoMori.Ortega.Share.Enums
 		[Description("コラボ")]
 		Collab,
 		[Description("コラボ2")]
-		Collab2
+		Collab2,
+        UnionMission = 9,
 	}
 }

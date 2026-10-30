@@ -276,6 +276,14 @@ public static class Masters
 
     public static UnionMissionEventTable UnionMissionEventTable { get; } = new();
 
+    public static UnionMissionTable UnionMissionTable { get; } = new();
+
+    public static UnionMissionRankingRewardTable UnionMissionRankingRewardTable { get; } = new();
+
+    public static UnionMissionRepeatPersonalRewardTable UnionMissionRepeatPersonalRewardTable { get; } = new();
+
+    public static UnionMissionTotalPointRewardTable UnionMissionTotalPointRewardTable { get; } = new();
+
     public static ITable[] GetAllTables()
     {
         return new ITable[]
@@ -283,6 +291,10 @@ public static class Masters
             AchieveRankingRewardTable,
             UnionMissionClassTable,
             UnionMissionEventTable,
+            UnionMissionTable,
+            UnionMissionRankingRewardTable,
+            UnionMissionRepeatPersonalRewardTable,
+            UnionMissionTotalPointRewardTable,
             CharacterProfileTable,
             CharacterDetailVoiceTable,
             CommunityTable,

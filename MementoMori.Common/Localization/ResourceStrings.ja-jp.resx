@@ -616,4 +616,46 @@
   <data name="PvpNoEligibleTarget" xml:space="preserve"><value>フィルター後、3回連続で挑戦可能な相手がいないため、停止します</value></data>
   <data name="PageRenderError" xml:space="preserve"><value>ページの表示でエラーが発生しました。別のページに移動するか、再読み込みしてください。</value></data>
   <data name="InvalidCronExpression" xml:space="preserve"><value>Quartz の cron 式が無効なため保存されませんでした</value></data>
+  <data name="PauseJobs" xml:space="preserve"><value>このアカウントのジョブを一時停止</value></data>
+  <data name="PausedUntilFormat" xml:space="preserve"><value>{0} まで一時停止中</value></data>
+  <data name="PausedUntilResumed" xml:space="preserve"><value>再開するまで一時停止中</value></data>
+  <data name="UntilResumed" xml:space="preserve"><value>再開まで</value></data>
+  <data name="ResumeJobs" xml:space="preserve"><value>再開</value></data>
+  <data name="UnionMissionPointMsg" xml:space="preserve"><value>団結ミッション：+{0}pt（個人累計 {1}）</value></data>
+  <data name="NumberUnitLarge" xml:space="preserve"><value>億</value></data>
+  <data name="NotEnoughFormat" xml:space="preserve"><value>{0}不足</value></data>
+  <data name="DebugInfo" xml:space="preserve"><value>デバッグ情報</value></data>
+  <data name="CronModeHours" xml:space="preserve"><value>N 時間ごと</value></data>
+  <data name="CronModeDaily" xml:space="preserve"><value>毎日</value></data>
+  <data name="CronModeWeekly" xml:space="preserve"><value>毎週</value></data>
+  <data name="CronModeCustom" xml:space="preserve"><value>カスタム</value></data>
+  <data name="CronIntervalHours" xml:space="preserve"><value>間隔（時間）</value></data>
+  <data name="CronAtMinute" xml:space="preserve"><value>分</value></data>
+  <data name="CronNextRuns" xml:space="preserve"><value>次回実行（サーバー時間）</value></data>
+  <data name="NoScheduledJobs" xml:space="preserve"><value>予定されたタスクはありません</value></data>
+  <data name="CronEveryHoursFormat" xml:space="preserve"><value>{0} 時間ごと :{1}</value></data>
+  <data name="CronTimesPerDayFormat" xml:space="preserve"><value>{0} 回 :{1}</value></data>
+  <data name="EditSchedule" xml:space="preserve"><value>スケジュールを編集</value></data>
+  <data name="ServerTimeLabel" xml:space="preserve"><value>サーバー時間</value></data>
+  <data name="GrowthRecent" xml:space="preserve"><value>最近の成長</value></data>
+  <data name="GrowthHistoryTitle" xml:space="preserve"><value>成長履歴</value></data>
+  <data name="GrowthViewAll" xml:space="preserve"><value>すべて表示</value></data>
+  <data name="GrowthLast24h" xml:space="preserve"><value>直近 24 時間</value></data>
+  <data name="GrowthNoData" xml:space="preserve"><value>まだ記録がありません。同期やジョブ実行のたびにここへ記録されます。</value></data>
+  <data name="GrowthNotLoggedIn" xml:space="preserve"><value>ログインすると成長の記録が始まります。</value></data>
+  <data name="GrowthFilterAll" xml:space="preserve"><value>すべて</value></data>
+  <data name="GrowthFilterRewards" xml:space="preserve"><value>報酬</value></data>
+  <data name="GrowthFilterCharacters" xml:space="preserve"><value>キャラ</value></data>
+  <data name="GrowthFilterEquipment" xml:space="preserve"><value>装備</value></data>
+  <data name="GrowthFilterProgress" xml:space="preserve"><value>進行度</value></data>
+  <data name="GrowthMainQuest" xml:space="preserve"><value>メインクエスト</value></data>
+  <data name="GrowthBattlePowerTop5" xml:space="preserve"><value>戦闘力（上位5体）</value></data>
+  <data name="GrowthTrend" xml:space="preserve"><value>推移</value></data>
+  <data name="GrowthDays" xml:space="preserve"><value>{0} 日</value></data>
+  <data name="GrowthTrendNeedMore" xml:space="preserve"><value>スナップショットがまだ足りません（稼働中は約1時間ごと）。</value></data>
+  <data name="GrowthJustNow" xml:space="preserve"><value>たった今</value></data>
+  <data name="GrowthMinutesAgo" xml:space="preserve"><value>{0} 分前</value></data>
+  <data name="GrowthHoursAgo" xml:space="preserve"><value>{0} 時間前</value></data>
+  <data name="GrowthDaysAgo" xml:space="preserve"><value>{0} 日前</value></data>
+  <data name="CronEveryHoursFromFormat" xml:space="preserve"><value>{1} から {0} 時間ごと</value></data>
 </root>

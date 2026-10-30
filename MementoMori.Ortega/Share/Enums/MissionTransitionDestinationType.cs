@@ -102,5 +102,6 @@ namespace MementoMori.Ortega.Share.Enums
         WebStoreGuidance = 602,
         WebStoreGuidanceFreeProduct = 603,
         MiningQuest = 2901,
+        ItemBoxConsumption = 804,
     }
 }

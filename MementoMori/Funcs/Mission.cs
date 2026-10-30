@@ -3,6 +3,8 @@ using MementoMori.Ortega.Share.Data.ApiInterface.Guild;
 using MementoMori.Ortega.Share.Data.ApiInterface.Mission;
 using MementoMori.Ortega.Share.Data.ApiInterface.Ranking;
 using MementoMori.Ortega.Share.Data.Mission;
+using MementoMori.Ortega.Share.Data.ApiInterface.UnionMission;
+using MementoMori.Ortega.Share.Data.UnionMission;
 
 namespace MementoMori.Funcs;
 
@@ -103,6 +105,8 @@ public partial class MementoMoriFuncs
                 }
             }
 
+            await ReceiveUnionMissionRewards();
+
 
             async Task RewardMission()
             {
@@ -122,6 +126,46 @@ public partial class MementoMoriFuncs
                 }
 
                 missionIds.Clear();
+            }
+
+            // 5.1.1 团结任务（公会活动，独立于任务组）：只领取本人已完成任务的点数与累计点数奖励，不接任务、不刷新、不买次数
+            async Task ReceiveUnionMissionRewards()
+            {
+                if (!UnionMissionEventTable.GetArray().Any(TimeManager.IsInTime)) return;
+                try
+                {
+                    var info = await GetResponse<UnionMissionGetInfoRequest, UnionMissionGetInfoResponse>(new UnionMissionGetInfoRequest());
+                    if (!info.IsOpen) return;
+                    foreach (var panel in (info.PersonalMissionPanelList ?? []).Concat(info.SharedMissionPanelList ?? []))
+                    {
+                        if (panel.AcceptedPlayerId != NetworkManager.PlayerId) continue;
+                        // ponytail: 「完了済み」或进度达标视为可领；状态语义未经实服确认，服务器拒绝时只记日志
+                        var done = panel.Status == UnionMissionPanelStatus.Completed
+                                   || (panel.Status == UnionMissionPanelStatus.Accepted && UnionMissionTable.GetById(panel.MissionId) is { } mb && panel.ProgressCount >= mb.RequireValue);
+                        if (!done) continue;
+                        try
+                        {
+                            var response = await GetResponse<UnionMissionReceiveMissionRewardRequest, UnionMissionReceiveMissionRewardResponse>(
+                                new UnionMissionReceiveMissionRewardRequest {MissionPanelId = panel.MissionPanelId});
+                            log(string.Format(ResourceStrings.UnionMissionPointMsg, response.GainedPoint, response.PersonalPoint));
+                            info.ExistReceivableTotalPointReward = true;
+                        }
+                        catch (ApiErrorException e) when (e.ErrorCode is not (ErrorCode.CommonNoSession or ErrorCode.CommonLoggedInAnotherDevice))
+                        {
+                            log(e.Message);
+                        }
+                    }
+
+                    if (!info.ExistReceivableTotalPointReward) return;
+                    var total = await GetResponse<UnionMissionReceiveTotalPointRewardRequest, UnionMissionReceiveTotalPointRewardResponse>(new UnionMissionReceiveTotalPointRewardRequest());
+                    total.RewardItemList?.PrintUserItems(log);
+                }
+                catch (ApiErrorException e) when (e.ErrorCode is not (ErrorCode.CommonNoSession or ErrorCode.CommonLoggedInAnotherDevice))
+                {
+                    // 未加入公会、未报名/未匹配或不在活动期：静默跳过；其他错误记日志，不影响其他任务
+                    if (e.ErrorCode is not (ErrorCode.UnionMissionNotBelongToGuild or ErrorCode.UnionMissionEventNotHeld or ErrorCode.UnionMissionNotMatched
+                        or ErrorCode.UnionMissionNotInMatchingWorld or ErrorCode.UnionMissionInBatchTime)) log(e.Message);
+                }
             }
 
             // 面板连线奖励：一行/一列 3 个任务都已领取后才能领

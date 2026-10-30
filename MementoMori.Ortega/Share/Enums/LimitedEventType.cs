@@ -24,5 +24,6 @@ namespace MementoMori.Ortega.Share.Enums
         DisableAgeAssurance = 7,
         WebstoreRelease = 20000,
         DisableAssetCacheClear = 30000,
+        PlayVideoIgnoreLiveMode = 6,
     }
 }

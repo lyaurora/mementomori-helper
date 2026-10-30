@@ -1,6 +1,6 @@
 # Maintaining this fork
 
-This fork targets .NET 10 LTS and aligns the used protocol models with the official Android client **5.0.0**. Legacy response members are retained so old logs and data remain readable. MiningQuest, web-store and UnionMission definitions provide protocol coverage; they do not enable automatic spending or event entry. UnionMission is the upcoming guild points/ranking event announced for 2026-10-29 as 「団結ミッション」 in the [official anniversary news](https://boi.jp/news/261015o.html).
+This fork targets .NET 10 LTS and aligns the used protocol models with the official Android client **5.1.1**. Legacy response members are retained so old logs and data remain readable. MiningQuest, web-store and UnionMission definitions provide protocol coverage; they do not enable automatic spending or event entry. UnionMission is the upcoming guild points/ranking event announced for 2026-10-29 as 「団結ミッション」 in the [official anniversary news](https://boi.jp/news/261015o.html).
 
 ## Build and verify
 
@@ -101,3 +101,5 @@ Settings shows each scheduled task's last start/end time, result and error. This
 After deploying, run `python3 tests/check-webui.py http://127.0.0.1:5290` and check a menu or theme toggle in a browser. HTTP 200 for the HTML page alone does not verify Blazor interactivity. Framework scripts use the static-asset manifest and fingerprinted URLs. ASP.NET data-protection keys are persisted under the configuration directory so redeployments retain the cookie encryption keys.
 
 Set `ConfigDirectory` to mount a writable configuration directory, as in the compose example. Saves keep a `.bak` copy and preserve file permissions. `GameConfig.AssetsUrl` and `GameConfig.BattleLogViewerUrl` can be changed in Settings. The public AuthToken is cached only for its matching game version; account client keys remain in the private configuration file.
+
+The 5.1.1 sync adds the twelve `unionMission/*` HTTP models (info, ranking, accept/retire/refresh/select, cool-time reset, accept-count purchase and reward claims), panel/ranking DTOs, `UnionMissionMB` plus ranking/repeat/total-point reward masters, `LimitedEventMB.TargetInfoList`, `RequiredCurrencyMB.UnionMission`, and new enum and error-code values. "Complete missions" also claims finished Union Mission panels accepted by the current player and the cumulative point rewards while a `UnionMissionEventMB` period is active; it never accepts, refreshes, resets cool time or buys accept counts.

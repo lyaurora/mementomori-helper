@@ -47,5 +47,6 @@ namespace MementoMori.Ortega.Share.Enums
         ManagementGuildNote = 22,
         SortGuildNote = 23,
         EntryUnionMission = 24,
+        RefreshUnionSharedMission = 25,
     }
 }

@@ -616,4 +616,46 @@
   <data name="PvpNoEligibleTarget" xml:space="preserve"><value>필터 적용 후 3회 연속 도전 가능한 상대가 없어 중지합니다</value></data>
   <data name="PageRenderError" xml:space="preserve"><value>페이지 표시 중 오류가 발생했습니다. 다른 페이지로 이동하거나 새로고침하세요.</value></data>
   <data name="InvalidCronExpression" xml:space="preserve"><value>Quartz cron 표현식이 올바르지 않아 저장되지 않았습니다</value></data>
+  <data name="PauseJobs" xml:space="preserve"><value>이 계정 작업 일시 정지</value></data>
+  <data name="PausedUntilFormat" xml:space="preserve"><value>{0}까지 일시 정지됨</value></data>
+  <data name="PausedUntilResumed" xml:space="preserve"><value>재개할 때까지 일시 정지됨</value></data>
+  <data name="UntilResumed" xml:space="preserve"><value>재개할 때까지</value></data>
+  <data name="ResumeJobs" xml:space="preserve"><value>재개</value></data>
+  <data name="UnionMissionPointMsg" xml:space="preserve"><value>단결 미션: +{0}점 (개인 누계 {1})</value></data>
+  <data name="NumberUnitLarge" xml:space="preserve"><value>억</value></data>
+  <data name="NotEnoughFormat" xml:space="preserve"><value>{0} 부족</value></data>
+  <data name="DebugInfo" xml:space="preserve"><value>디버그 정보</value></data>
+  <data name="CronModeHours" xml:space="preserve"><value>N시간마다</value></data>
+  <data name="CronModeDaily" xml:space="preserve"><value>매일</value></data>
+  <data name="CronModeWeekly" xml:space="preserve"><value>매주</value></data>
+  <data name="CronModeCustom" xml:space="preserve"><value>사용자 지정</value></data>
+  <data name="CronIntervalHours" xml:space="preserve"><value>간격(시간)</value></data>
+  <data name="CronAtMinute" xml:space="preserve"><value>분</value></data>
+  <data name="CronNextRuns" xml:space="preserve"><value>다음 실행(서버 시간)</value></data>
+  <data name="NoScheduledJobs" xml:space="preserve"><value>예약된 작업이 없습니다</value></data>
+  <data name="CronEveryHoursFormat" xml:space="preserve"><value>{0}시간마다 :{1}</value></data>
+  <data name="CronTimesPerDayFormat" xml:space="preserve"><value>{0}회 :{1}</value></data>
+  <data name="EditSchedule" xml:space="preserve"><value>일정 편집</value></data>
+  <data name="ServerTimeLabel" xml:space="preserve"><value>서버 시간</value></data>
+  <data name="GrowthRecent" xml:space="preserve"><value>최근 성장</value></data>
+  <data name="GrowthHistoryTitle" xml:space="preserve"><value>성장 기록</value></data>
+  <data name="GrowthViewAll" xml:space="preserve"><value>모두 보기</value></data>
+  <data name="GrowthLast24h" xml:space="preserve"><value>최근 24시간</value></data>
+  <data name="GrowthNoData" xml:space="preserve"><value>아직 기록이 없습니다. 동기화나 작업 실행 후 여기에 표시됩니다.</value></data>
+  <data name="GrowthNotLoggedIn" xml:space="preserve"><value>로그인하면 성장 기록이 시작됩니다.</value></data>
+  <data name="GrowthFilterAll" xml:space="preserve"><value>전체</value></data>
+  <data name="GrowthFilterRewards" xml:space="preserve"><value>보상</value></data>
+  <data name="GrowthFilterCharacters" xml:space="preserve"><value>캐릭터</value></data>
+  <data name="GrowthFilterEquipment" xml:space="preserve"><value>장비</value></data>
+  <data name="GrowthFilterProgress" xml:space="preserve"><value>진행도</value></data>
+  <data name="GrowthMainQuest" xml:space="preserve"><value>메인 퀘스트</value></data>
+  <data name="GrowthBattlePowerTop5" xml:space="preserve"><value>전투력(상위 5명)</value></data>
+  <data name="GrowthTrend" xml:space="preserve"><value>추이</value></data>
+  <data name="GrowthDays" xml:space="preserve"><value>{0}일</value></data>
+  <data name="GrowthTrendNeedMore" xml:space="preserve"><value>스냅샷이 아직 부족합니다(활동 중 약 1시간마다).</value></data>
+  <data name="GrowthJustNow" xml:space="preserve"><value>방금</value></data>
+  <data name="GrowthMinutesAgo" xml:space="preserve"><value>{0}분 전</value></data>
+  <data name="GrowthHoursAgo" xml:space="preserve"><value>{0}시간 전</value></data>
+  <data name="GrowthDaysAgo" xml:space="preserve"><value>{0}일 전</value></data>
+  <data name="CronEveryHoursFromFormat" xml:space="preserve"><value>{1}부터 {0}시간마다</value></data>
 </root>

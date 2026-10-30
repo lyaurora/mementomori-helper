@@ -56,6 +56,8 @@ namespace MementoMori.Ortega.Share.Enums
 		[Description("マイニングクエスト シーズングレード報酬")]
 		MiningQuestSeasonGradeReward,
 		[Description("Webストア購入")]
-		WebStorePurchase
+		WebStorePurchase,
+        UnionMissionPersonalRankingReward = 26,
+        UnionMissionGuildRankingReward = 27,
 	}
 }

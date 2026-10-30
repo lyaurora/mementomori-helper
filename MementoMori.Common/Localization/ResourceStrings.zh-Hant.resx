@@ -722,4 +722,46 @@
   <data name="PvpNoEligibleTarget" xml:space="preserve"><value>篩選後連續 3 輪沒有可挑戰的對手，停止</value></data>
   <data name="PageRenderError" xml:space="preserve"><value>頁面顯示出錯。請切換到其他頁面或重新整理後繼續。</value></data>
   <data name="InvalidCronExpression" xml:space="preserve"><value>Quartz cron 運算式無效，未儲存</value></data>
+  <data name="PauseJobs" xml:space="preserve"><value>暫停本帳號定時任務</value></data>
+  <data name="PausedUntilFormat" xml:space="preserve"><value>已暫停至 {0}</value></data>
+  <data name="PausedUntilResumed" xml:space="preserve"><value>已暫停，直到手動恢復</value></data>
+  <data name="UntilResumed" xml:space="preserve"><value>直到恢復</value></data>
+  <data name="ResumeJobs" xml:space="preserve"><value>恢復</value></data>
+  <data name="UnionMissionPointMsg" xml:space="preserve"><value>團結任務：+{0} 點（個人累計 {1}）</value></data>
+  <data name="NumberUnitLarge" xml:space="preserve"><value>億</value></data>
+  <data name="NotEnoughFormat" xml:space="preserve"><value>{0}不足</value></data>
+  <data name="DebugInfo" xml:space="preserve"><value>除錯資訊</value></data>
+  <data name="CronModeHours" xml:space="preserve"><value>每隔 N 小時</value></data>
+  <data name="CronModeDaily" xml:space="preserve"><value>每天</value></data>
+  <data name="CronModeWeekly" xml:space="preserve"><value>每週</value></data>
+  <data name="CronModeCustom" xml:space="preserve"><value>自訂</value></data>
+  <data name="CronIntervalHours" xml:space="preserve"><value>間隔（小時）</value></data>
+  <data name="CronAtMinute" xml:space="preserve"><value>第幾分鐘</value></data>
+  <data name="CronNextRuns" xml:space="preserve"><value>接下來的執行（伺服器時間）</value></data>
+  <data name="NoScheduledJobs" xml:space="preserve"><value>暫無排程任務</value></data>
+  <data name="CronEveryHoursFormat" xml:space="preserve"><value>每 {0} 小時 :{1}</value></data>
+  <data name="CronTimesPerDayFormat" xml:space="preserve"><value>{0} 次 :{1}</value></data>
+  <data name="EditSchedule" xml:space="preserve"><value>編輯時間</value></data>
+  <data name="ServerTimeLabel" xml:space="preserve"><value>伺服器時間</value></data>
+  <data name="GrowthRecent" xml:space="preserve"><value>近期成長</value></data>
+  <data name="GrowthHistoryTitle" xml:space="preserve"><value>成長紀錄</value></data>
+  <data name="GrowthViewAll" xml:space="preserve"><value>查看全部</value></data>
+  <data name="GrowthLast24h" xml:space="preserve"><value>近 24 小時</value></data>
+  <data name="GrowthNoData" xml:space="preserve"><value>暫無紀錄。助手同步或執行任務後，成長會顯示在這裡。</value></data>
+  <data name="GrowthNotLoggedIn" xml:space="preserve"><value>登入後開始記錄成長。</value></data>
+  <data name="GrowthFilterAll" xml:space="preserve"><value>全部</value></data>
+  <data name="GrowthFilterRewards" xml:space="preserve"><value>獎勵</value></data>
+  <data name="GrowthFilterCharacters" xml:space="preserve"><value>角色</value></data>
+  <data name="GrowthFilterEquipment" xml:space="preserve"><value>裝備</value></data>
+  <data name="GrowthFilterProgress" xml:space="preserve"><value>進度</value></data>
+  <data name="GrowthMainQuest" xml:space="preserve"><value>主線</value></data>
+  <data name="GrowthBattlePowerTop5" xml:space="preserve"><value>戰力（前 5 角色）</value></data>
+  <data name="GrowthTrend" xml:space="preserve"><value>趨勢</value></data>
+  <data name="GrowthDays" xml:space="preserve"><value>{0} 天</value></data>
+  <data name="GrowthTrendNeedMore" xml:space="preserve"><value>快照還不夠（活躍時約每小時一次）。</value></data>
+  <data name="GrowthJustNow" xml:space="preserve"><value>剛剛</value></data>
+  <data name="GrowthMinutesAgo" xml:space="preserve"><value>{0} 分鐘前</value></data>
+  <data name="GrowthHoursAgo" xml:space="preserve"><value>{0} 小時前</value></data>
+  <data name="GrowthDaysAgo" xml:space="preserve"><value>{0} 天前</value></data>
+  <data name="CronEveryHoursFromFormat" xml:space="preserve"><value>每 {0} 小時（{1} 起）</value></data>
 </root>

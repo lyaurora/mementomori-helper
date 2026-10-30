@@ -8,6 +8,8 @@ namespace MementoMori.Ortega.Share.Enums.Battle.Skill
 		[Description("ターンの終わり")]
 		TurnCountEnd,
 		[Description("ターンの終わりとダメージを受けたとき")]
-		TurnCountEndAndReceiveDamage
+		TurnCountEndAndReceiveDamage,
+        ActionEnd = 2,
+        TurnCountEndAndGranterDead = 3,
 	}
 }

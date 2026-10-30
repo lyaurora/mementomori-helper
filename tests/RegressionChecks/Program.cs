@@ -621,7 +621,17 @@ static Task CheckProtocol()
         (typeof(CreateGuildNoteRequest), "guildNote/createGuildNote"), (typeof(GetGuildNoteListRequest), "guildNote/getGuildNoteList"),
         (typeof(GetReactionDetailInfoRequest), "guildNote/getReactionDetailInfo"), (typeof(ReactGuildNoteRequest), "guildNote/reactGuildNote"),
         (typeof(ShareGuildNoteRequest), "guildNote/shareGuildNote"), (typeof(UpdateGuildNoteRequest), "guildNote/updateGuildNote"),
-        (typeof(UpdateGuildNoteListRequest), "guildNote/updateGuildNoteList"), (typeof(EntryUnionMissionRequest), "unionMission/entryUnionMission")
+        (typeof(UpdateGuildNoteListRequest), "guildNote/updateGuildNoteList"), (typeof(EntryUnionMissionRequest), "unionMission/entryUnionMission"),
+        // 5.1.1
+        (typeof(UnionMissionGetInfoRequest), "unionMission/getInfo"), (typeof(UnionMissionGetRankingRequest), "unionMission/getRanking"),
+        (typeof(UnionMissionAcceptMissionRequest), "unionMission/acceptMission"), (typeof(UnionMissionBuyAcceptCountRequest), "unionMission/buyAcceptCount"),
+        (typeof(UnionMissionReceiveIndividualTotalPointRewardRequest), "unionMission/receiveIndividualTotalPointReward"),
+        (typeof(UnionMissionReceiveMissionRewardRequest), "unionMission/receiveMissionReward"),
+        (typeof(UnionMissionReceiveTotalPointRewardRequest), "unionMission/receiveTotalPointReward"),
+        (typeof(UnionMissionRefreshPersonalMissionRequest), "unionMission/refreshPersonalMission"),
+        (typeof(UnionMissionRefreshSharedMissionRequest), "unionMission/refreshSharedMission"),
+        (typeof(UnionMissionResetCoolTimeMissionRequest), "unionMission/resetCoolTimeMission"),
+        (typeof(UnionMissionRetireMissionRequest), "unionMission/retireMission"), (typeof(UnionMissionSelectMissionRequest), "unionMission/selectMission")
     })
     {
         var api = requestType.GetCustomAttribute<OrtegaApiAttribute>();
@@ -630,6 +640,16 @@ static Task CheckProtocol()
     Require(new CreateGuildNoteResponse() is IUserSyncApiResponse && new GetGuildNoteListResponse() is IUserSyncApiResponse
         && new ShareGuildNoteResponse() is IUserSyncApiResponse && new UpdateGuildNoteListResponse() is IUserSyncApiResponse
         && new EntryUnionMissionResponse() is IGuildSyncApiResponse, "5.0 API responses bypass automatic user/guild state updates");
+    var unionInfo = MessagePackSerializer.Deserialize<UnionMissionGetInfoResponse>(MessagePackSerializer.ConvertFromJson(
+        """{"ClassType":1,"IsOpen":true,"ExistReceivableTotalPointReward":true,"PersonalMissionPanelList":[{"MissionPanelId":7,"MissionId":3,"MissionType":1,"Status":2,"ProgressCount":5,"AcceptedPlayerId":101}],"UserSyncData":{}}"""));
+    var unionReward = MessagePackSerializer.Deserialize<UnionMissionReceiveMissionRewardResponse>(MessagePackSerializer.ConvertFromJson(
+        """{"GainedPoint":30,"PersonalPoint":90,"SharedMissionPanelList":[{"MissionPanelId":8,"MissionType":2,"Status":4}]}"""));
+    Require(unionInfo is { ClassType: UnionMissionClassType.Bronze, IsOpen: true, ExistReceivableTotalPointReward: true, UserSyncData: not null }
+        && unionInfo.PersonalMissionPanelList.Single() is { MissionPanelId: 7, MissionId: 3, MissionType: UnionMissionType.Personal, Status: UnionMissionPanelStatus.Accepted, ProgressCount: 5, AcceptedPlayerId: 101 }
+        && unionReward is { GainedPoint: 30, PersonalPoint: 90 } && unionReward.SharedMissionPanelList.Single().Status == UnionMissionPanelStatus.Completed
+        && new UnionMissionReceiveMissionRewardResponse() is IUserSyncApiResponse && new UnionMissionGetInfoResponse() is IUserSyncApiResponse
+        && (int)ItemType.UnionMissionTicket == 57 && (int)ErrorCode.UnionMissionNotFoundBlockGuildData == 581027 && (int)PresentType.UnionMissionGuildRankingReward == 27,
+        "5.1.1 UnionMission named keys, inherited panel lists, sync interfaces or enum values drifted");
     var notes = MessagePackSerializer.Deserialize<GetGuildNoteListResponse>(MessagePackSerializer.ConvertFromJson(
         """{"GuildNoteInfoList":[{"GuildNoteId":42,"Title":"raid plan","Content":"first\nsecond","GuildNoteCategoryType":2,"IconId":109,"IconEffectId":7,"LegendLeagueClass":1,"PlayerId":101,"PlayerName":"author","IsDeletedPlayer":false,"MyChatReactionType":3,"ChatReactionCountMap":{},"UpdateLocalTimeStamp":456,"Order":1}],"UserSyncData":{}}"""));
     var noteReactions = MessagePackSerializer.Deserialize<MementoMori.Ortega.Share.Data.GuildNote.GuildNoteInfo>(MessagePackSerializer.Serialize(

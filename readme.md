@@ -8,7 +8,7 @@
 [![GitHub all releases](https://img.shields.io/github/downloads/moonheart/mementomori-helper/total)](https://github.com/moonheart/mementomori-helper/releases)
 [![Docker Pulls](https://img.shields.io/docker/pulls/moonheartmoon/mementomori-webui)](https://hub.docker.com/r/moonheartmoon/mementomori-webui/)
 
-本 fork 使用 .NET 10 LTS，已同步游戏 5.0.0 的相关协议、聊天资源和公会笔记。构建、回归检查、版本同步和配置迁移见 [维护说明](docs/maintenance.md)。推荐使用仓库中的 Docker Compose 示例。
+本 fork 使用 .NET 10 LTS，已同步游戏 5.1.1 的相关协议（聊天资源和公会笔记来自 5.0.0）。构建、回归检查、版本同步和配置迁移见 [维护说明](docs/maintenance.md)。推荐使用仓库中的 Docker Compose 示例。
 
 
 

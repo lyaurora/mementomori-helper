@@ -335,5 +335,10 @@ namespace MementoMori.Ortega.Share.Enums
         MiningQuestCollectionLevel = 29010800,
         MiningQuestMaxScore = 29010900,
         MiningQuestGrade = 29011000,
+        ShopGetWebCrystalCount = 6040100,
+        SealedChestBronzeUseCount = 8040100,
+        SealedChestSilverUseCount = 8040200,
+        SealedChestGoldUseCount = 8040300,
+        GachaCharaOrEquipmentDrawCount = 15010500,
     }
 }

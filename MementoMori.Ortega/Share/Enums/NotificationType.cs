@@ -64,6 +64,9 @@ namespace MementoMori.Ortega.Share.Enums
 		PlayVideoFromEventPortal,
 		[Description("人気投票 グループ投票チケットを1枚以上もっているかつ、予選本選いずれかの期間内で、その日一度も投票してない時")]
 		NotPopularityVoteGroupOnDay,
-        EntryUnionMissionAvailable = 30
+        EntryUnionMissionAvailable = 30,
+        NotVisitUnionMissionOnDay = 31,
+        ReceivableUnionMissionPoint = 32,
+        ReceivableUnionMissionReward = 33,
 	}
 }

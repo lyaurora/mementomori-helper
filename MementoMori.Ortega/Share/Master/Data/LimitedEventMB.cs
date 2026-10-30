@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using MementoMori.Ortega.Share.Data.LimitedEvent;
 using MementoMori.Ortega.Share.Enums;
 using MementoMori.Ortega.Share.Master.Attributes;
 using MementoMori.Ortega.Share.Utils;
@@ -17,14 +18,21 @@ namespace MementoMori.Ortega.Share.Master.Data
 			get;
 		}
 
-		[Description("開始日時")]
+		[Description("対象情報リスト")]
 		[PropertyOrder(2)]
+		public IReadOnlyList<TargetInfo> TargetInfoList
+		{
+			get;
+		}
+
+		[Description("開始日時")]
+		[PropertyOrder(3)]
 		public string StartTime
 		{
 			get;
 		}
 
-		[PropertyOrder(3)]
+		[PropertyOrder(4)]
 		[Description("終了日時")]
 		public string EndTime
 		{
@@ -32,12 +40,13 @@ namespace MementoMori.Ortega.Share.Master.Data
 		}
 
 		[SerializationConstructor]
-		public LimitedEventMB(long id, bool? isIgnore, string memo, LimitedEventType limitedEventType, string startTime, string endTime)
+		public LimitedEventMB(long id, bool? isIgnore, string memo, LimitedEventType limitedEventType, string startTime, string endTime, IReadOnlyList<TargetInfo> targetInfoList = null)
 			:base(id, isIgnore, memo)
 		{
 			LimitedEventType = limitedEventType;
 			StartTime = startTime;
 			EndTime = endTime;
+			TargetInfoList = targetInfoList;
 		}
 
 		public LimitedEventMB() :base(0L, false, ""){}

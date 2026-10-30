@@ -722,4 +722,46 @@
   <data name="PvpNoEligibleTarget" xml:space="preserve"><value>No opponent left after filters for 3 rounds, stopping</value></data>
   <data name="PageRenderError" xml:space="preserve"><value>This page hit a display error. Open another page or reload to continue.</value></data>
   <data name="InvalidCronExpression" xml:space="preserve"><value>Invalid Quartz cron expression; not saved</value></data>
+  <data name="PauseJobs" xml:space="preserve"><value>Pause this account's jobs</value></data>
+  <data name="PausedUntilFormat" xml:space="preserve"><value>Paused until {0}</value></data>
+  <data name="PausedUntilResumed" xml:space="preserve"><value>Paused until resumed</value></data>
+  <data name="UntilResumed" xml:space="preserve"><value>Until resumed</value></data>
+  <data name="ResumeJobs" xml:space="preserve"><value>Resume</value></data>
+  <data name="UnionMissionPointMsg" xml:space="preserve"><value>Union Mission: +{0} points (personal total {1})</value></data>
+  <data name="NumberUnitLarge" xml:space="preserve"><value>B</value></data>
+  <data name="NotEnoughFormat" xml:space="preserve"><value>Not enough {0}</value></data>
+  <data name="DebugInfo" xml:space="preserve"><value>Debug Info</value></data>
+  <data name="CronModeHours" xml:space="preserve"><value>Every N hours</value></data>
+  <data name="CronModeDaily" xml:space="preserve"><value>Daily</value></data>
+  <data name="CronModeWeekly" xml:space="preserve"><value>Weekly</value></data>
+  <data name="CronModeCustom" xml:space="preserve"><value>Custom</value></data>
+  <data name="CronIntervalHours" xml:space="preserve"><value>Every (hours)</value></data>
+  <data name="CronAtMinute" xml:space="preserve"><value>At minute</value></data>
+  <data name="CronNextRuns" xml:space="preserve"><value>Next runs (server time)</value></data>
+  <data name="NoScheduledJobs" xml:space="preserve"><value>No scheduled tasks</value></data>
+  <data name="CronEveryHoursFormat" xml:space="preserve"><value>Every {0} h at :{1}</value></data>
+  <data name="CronTimesPerDayFormat" xml:space="preserve"><value>{0}× at :{1}</value></data>
+  <data name="EditSchedule" xml:space="preserve"><value>Edit schedule</value></data>
+  <data name="ServerTimeLabel" xml:space="preserve"><value>Server time</value></data>
+  <data name="GrowthRecent" xml:space="preserve"><value>Recent growth</value></data>
+  <data name="GrowthHistoryTitle" xml:space="preserve"><value>Growth history</value></data>
+  <data name="GrowthViewAll" xml:space="preserve"><value>View all</value></data>
+  <data name="GrowthLast24h" xml:space="preserve"><value>Last 24 h</value></data>
+  <data name="GrowthNoData" xml:space="preserve"><value>Nothing recorded yet. Growth shows up here as the helper syncs and runs jobs.</value></data>
+  <data name="GrowthNotLoggedIn" xml:space="preserve"><value>Log in to start recording growth.</value></data>
+  <data name="GrowthFilterAll" xml:space="preserve"><value>All</value></data>
+  <data name="GrowthFilterRewards" xml:space="preserve"><value>Rewards</value></data>
+  <data name="GrowthFilterCharacters" xml:space="preserve"><value>Characters</value></data>
+  <data name="GrowthFilterEquipment" xml:space="preserve"><value>Equipment</value></data>
+  <data name="GrowthFilterProgress" xml:space="preserve"><value>Progress</value></data>
+  <data name="GrowthMainQuest" xml:space="preserve"><value>Main quest</value></data>
+  <data name="GrowthBattlePowerTop5" xml:space="preserve"><value>Battle power (top 5)</value></data>
+  <data name="GrowthTrend" xml:space="preserve"><value>Trend</value></data>
+  <data name="GrowthDays" xml:space="preserve"><value>{0} days</value></data>
+  <data name="GrowthTrendNeedMore" xml:space="preserve"><value>Not enough snapshots yet (about one per hour while active).</value></data>
+  <data name="GrowthJustNow" xml:space="preserve"><value>just now</value></data>
+  <data name="GrowthMinutesAgo" xml:space="preserve"><value>{0} min ago</value></data>
+  <data name="GrowthHoursAgo" xml:space="preserve"><value>{0} h ago</value></data>
+  <data name="GrowthDaysAgo" xml:space="preserve"><value>{0} d ago</value></data>
+  <data name="CronEveryHoursFromFormat" xml:space="preserve"><value>Every {0} h from {1}</value></data>
 </root>
