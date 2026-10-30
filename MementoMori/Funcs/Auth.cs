@@ -14,7 +14,8 @@ public partial class MementoMoriFuncs
 
     public string? LastLoginError { get; private set; }
     public DateTimeOffset NextAutoLoginAttempt { get; private set; }
-    public bool CanAutoLogin => !_loggedOut && !LoginOk && !_autoLoginStopped && !IsQuickActionExecuting && DateTimeOffset.UtcNow >= NextAutoLoginAttempt;
+    public bool IsPaused => _accountManager.GetAccountInfo(UserId)?.PauseUntil > DateTimeOffset.UtcNow;
+    public bool CanAutoLogin => !IsPaused && !_loggedOut && !LoginOk && !_autoLoginStopped && !IsQuickActionExecuting && DateTimeOffset.UtcNow >= NextAutoLoginAttempt;
 
     public async Task AuthLogin(PlayerDataInfo playerDataInfo)
     {
@@ -40,7 +41,7 @@ public partial class MementoMoriFuncs
         await ExecuteExclusive(async token =>
         {
             var accountInfo = _accountManager.GetAccountInfo(UserId);
-            if (accountInfo == null || (!manual && (!accountInfo.AutoLogin || _loggedOut
+            if (accountInfo == null || (!manual && (!accountInfo.AutoLogin || IsPaused || _loggedOut
                 || logoutVersion != Volatile.Read(ref _logoutVersion) || LoginOk))) return;
             Logining = true;
             try

@@ -235,11 +235,11 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
         bool retryAfterRelogin = false)
     {
         var logoutVersion = Volatile.Read(ref _logoutVersion);
-        if (_loggedOut || GameConfig.AutoJob.DisableAll || canExecute?.Invoke() == false) return;
+        if (_loggedOut || IsPaused || GameConfig.AutoJob.DisableAll || canExecute?.Invoke() == false) return;
 
         await ExecuteQuickAction(async (_, token) =>
         {
-            if (_loggedOut || logoutVersion != Volatile.Read(ref _logoutVersion)
+            if (_loggedOut || IsPaused || logoutVersion != Volatile.Read(ref _logoutVersion)
                 || GameConfig.AutoJob.DisableAll || canExecute?.Invoke() == false) return;
             var key = jobName ?? func.Method.Name;
             var run = new JobRun(DateTimeOffset.UtcNow);
@@ -366,6 +366,7 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
             await GuildRaid();
             await AutoGuildTower();
             await AutoFriendManage();
+            await RewardFriendMissions();
             await ReceiveAchievementReward();
             await ReadAllMemories();
             await BountyQuestRewardAuto();
@@ -373,6 +374,7 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
             if (GameConfig.AutoJob.AutoDungeonBattle) await AutoDungeonBattle();
             await CompleteMissions();
             await RewardMissonActivity();
+            await ReceiveRentalRaidShareReward();
             if (GameConfig.AutoJob.AutoUseItems) await AutoUseItems();
             if (GameConfig.AutoJob.AutoFreeGacha) await FreeGacha();
             if (GameConfig.AutoJob.AutoUseItems) await AutoUseItems();

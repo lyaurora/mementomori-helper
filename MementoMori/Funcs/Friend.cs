@@ -25,6 +25,32 @@ public partial class MementoMoriFuncs
         });
     }
 
+    // 好友活动任务：只领取已达成未领取的奖励，活动期外不请求
+    public async Task RewardFriendMissions()
+    {
+        await ExecuteQuickAction(async (log, _) =>
+        {
+            var campaignMb = FriendCampaignTable.GetArray().FirstOrDefault(TimeManager.IsInTime);
+            if (campaignMb == null) return;
+            try
+            {
+                var response = await GetResponse<GetFriendCampaignInfoRequest, GetFriendCampaignInfoResponse>(new GetFriendCampaignInfoRequest());
+                foreach (var info in response.UserFriendMissionDtoInfoList ?? [])
+                foreach (var missionId in info.MissionStatusHistory?.GetValueOrDefault(MissionStatusType.NotReceived) ?? [])
+                {
+                    var reward = await GetResponse<RewardFriendMissionRequest, RewardFriendMissionResponse>(new RewardFriendMissionRequest
+                        {FriendCampaignId = info.FriendCampaignId, AchievementType = info.AchievementType, FriendMissionId = missionId});
+                    log(TextResourceTable.Get(campaignMb.Title));
+                    reward.RewardItemList.PrintUserItems(log);
+                }
+            }
+            catch (ApiErrorException e) when (e.ErrorCode is not (ErrorCode.CommonNoSession or ErrorCode.CommonLoggedInAnotherDevice))
+            {
+                log(e.Message);
+            }
+        });
+    }
+
     public async Task UseFriendCode()
     {
         await ExecuteQuickAction(async (log, _) =>

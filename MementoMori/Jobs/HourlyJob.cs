@@ -31,6 +31,7 @@ public partial class HourlyJob : IJob
             await account.Funcs.BulkTransferFriendPoint();
             await account.Funcs.CompleteMissions();
             await account.Funcs.RewardMissonActivity();
+            await account.Funcs.ReceiveRentalRaidShareReward();
             await account.Funcs.ReadAllMemories();
             if (_gameConfig.Value.AutoJob.AutoFreeGacha) await account.Funcs.FreeGacha();
             if (_gameConfig.Value.AutoJob.AutoUseItems) await account.Funcs.AutoUseItems();

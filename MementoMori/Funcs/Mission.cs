@@ -2,6 +2,7 @@
 using MementoMori.Ortega.Share.Data.ApiInterface.Guild;
 using MementoMori.Ortega.Share.Data.ApiInterface.Mission;
 using MementoMori.Ortega.Share.Data.ApiInterface.Ranking;
+using MementoMori.Ortega.Share.Data.ApiInterface.RentalRaid;
 using MementoMori.Ortega.Share.Data.Mission;
 using MementoMori.Ortega.Share.Data.ApiInterface.UnionMission;
 using MementoMori.Ortega.Share.Data.UnionMission;
@@ -197,6 +198,29 @@ public partial class MementoMoriFuncs
                         }
                     }
                 }
+            }
+        });
+    }
+
+    // 租借讨伐：别人借用我的分享角色攒的点数奖励，只在活动图标在主页时请求
+    public async Task ReceiveRentalRaidShareReward()
+    {
+        await ExecuteQuickAction(async (log, _) =>
+        {
+            if (Mypage.MypageInfo?.GetMypageIconInfoByTransferSpotType(TransferSpotType.RentalRaid) == null) return;
+            try
+            {
+                var info = await GetResponse<GetShareRewardInfoRequest, GetShareRewardInfoResponse>(new GetShareRewardInfoRequest());
+                foreach (var reward in (info.ShareRewardInfoList ?? []).Where(d => !d.IsReceived && d.RequiredSharePoint > 0 && d.RequiredSharePoint <= info.CurrentSharePoint).OrderBy(d => d.RequiredSharePoint))
+                {
+                    var response = await GetResponse<ReceiveShareRewardRequest, ReceiveShareRewardResponse>(new ReceiveShareRewardRequest {SharePoint = reward.RequiredSharePoint});
+                    log($"{TextResourceTable.Get("[RentalRaidTitle]")} {reward.RequiredSharePoint}/{info.CurrentSharePoint}");
+                    response.ReceiveItems.PrintUserItems(log);
+                }
+            }
+            catch (ApiErrorException e) when (e.ErrorCode is not (ErrorCode.CommonNoSession or ErrorCode.CommonLoggedInAnotherDevice))
+            {
+                log(e.Message);
             }
         });
     }

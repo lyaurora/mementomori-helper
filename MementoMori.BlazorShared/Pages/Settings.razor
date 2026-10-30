@@ -16,7 +16,7 @@
         <AccountManagement/>
     </MudItem>
     <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
-        <AutoJobSwitch OnJobsChanged="RefreshJobs"/>
+        <AutoJobSwitch UserId="AccountSelection.CurrentUserId" OnJobsChanged="RefreshJobs"/>
     </MudItem>
     <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
         <AutoJobCron OnJobsChanged="RefreshJobs"/>

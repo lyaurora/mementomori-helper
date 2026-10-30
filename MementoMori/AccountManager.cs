@@ -133,6 +133,16 @@ public partial class AccountManager : ReactiveObject
         }
     }
 
+    public void SetPauseUntil(long userId, DateTimeOffset? until)
+    {
+        _authOption.Update(opt =>
+        {
+            var info = opt.Accounts.FirstOrDefault(a => a.UserId == userId);
+            if (info != null) info.PauseUntil = until;
+        });
+        UpdateAccountInfo(userId);
+    }
+
     public void UpdateAccountInfo(long userId)
     {
         Get(userId).AccountInfo = GetAccountInfo(userId);
