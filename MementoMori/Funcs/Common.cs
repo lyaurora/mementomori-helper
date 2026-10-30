@@ -168,6 +168,7 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
         {
             return await NetworkManager.GetResponse<TReq, TResp>(req, AddLog, data =>
             {
+                RecordGrowth(data);
                 UserSyncData.UserItemEditorMergeUserSyncData(data);
                 this.RaisePropertyChanged(nameof(UserSyncData));
             }, cancellationToken: linked.Token);
