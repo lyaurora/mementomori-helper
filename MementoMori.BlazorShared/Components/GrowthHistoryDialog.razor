@@ -1,0 +1,86 @@
+@using MementoMori.Funcs
+@using System.Globalization
+@inject MementoMori.WebUI.UI.AtlasManager Atlas
+
+<MudDialog>
+    <DialogContent>
+        <div class="growth-dialog">
+            <div class="growth-trend">
+                <div class="growth-trend-head">
+                    <span class="growth-trend-title">@ResourceStrings.GrowthTrend</span>
+                    <span class="growth-chips" role="radiogroup">
+                        @foreach (var d in new[] { 7, 30 })
+                        {
+                            <button type="button" role="radio" aria-checked="@(d == _days ? "true" : "false")" class="app-choice" @onclick="() => _days = d">@string.Format(ResourceStrings.GrowthDays, d)</button>
+                        }
+                    </span>
+                </div>
+                @{
+                    var snaps = Events.Where(e => e.Kind == "Snapshot" && e.Values != null && e.Time >= DateTimeOffset.UtcNow.AddDays(-_days)).ToList();
+                }
+                @if (snaps.Count < 2 || snaps[^1].Time - snaps[0].Time < TimeSpan.FromHours(1))
+                {
+                    <div class="growth-empty">@ResourceStrings.GrowthTrendNeedMore</div>
+                }
+                else
+                {
+                    var t0 = DateTimeOffset.UtcNow.AddDays(-_days).ToUnixTimeSeconds();
+                    var span = (double) (DateTimeOffset.UtcNow.ToUnixTimeSeconds() - t0);
+                    <svg class="growth-chart" viewBox="0 0 300 80" preserveAspectRatio="none" role="img" aria-label="@ResourceStrings.GrowthTrend">
+                        <polyline class="is-bp" points="@Points(snaps, "BattlePower", t0, span)" vector-effect="non-scaling-stroke"/>
+                        <polyline class="is-tower" points="@Points(snaps, "TowerInfinite", t0, span)" vector-effect="non-scaling-stroke"/>
+                    </svg>
+                    <div class="growth-legend">
+                        <span><i class="is-bp"></i>@ResourceStrings.GrowthBattlePowerTop5 <b>@Compact(Last(snaps, "BattlePower"))</b></span>
+                        <span><i class="is-tower"></i>@Tr("[CommonHeaderTowerBattleLabel]") <b>@Last(snaps, "TowerInfinite")</b></span>
+                    </div>
+                }
+            </div>
+            <div class="growth-chips" role="radiogroup">
+                @foreach (var (key, label) in Filters)
+                {
+                    <button type="button" role="radio" aria-checked="@(key == _filter ? "true" : "false")" class="app-choice" @onclick="() => _filter = key">@label</button>
+                }
+            </div>
+            @{
+                var shown = Events.Where(e => e.Kind != "Snapshot" && (_filter == "" || GrowthCard.Category(e) == _filter)).Reverse().ToList();
+            }
+            @if (shown.Count == 0)
+            {
+                <div class="growth-empty">@ResourceStrings.GrowthNoData</div>
+            }
+            @foreach (var day in shown.GroupBy(e => e.Time.ToLocalTime().Date))
+            {
+                <div class="growth-day">@day.Key.ToString("D", CultureInfo.CurrentUICulture)</div>
+                @foreach (var e in day)
+                {
+                    @GrowthCard.Row(e, Atlas, false)
+                }
+            }
+        </div>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [Parameter] public List<GrowthEvent> Events { get; set; } = new();
+
+    private int _days = 7;
+    private string _filter = "";
+
+    private static (string, string)[] Filters =>
+    [
+        ("", ResourceStrings.GrowthFilterAll), ("reward", ResourceStrings.GrowthFilterRewards), ("character", ResourceStrings.GrowthFilterCharacters),
+        ("equipment", ResourceStrings.GrowthFilterEquipment), ("progress", ResourceStrings.GrowthFilterProgress)
+    ];
+
+    private static long Last(List<GrowthEvent> snaps, string key) => snaps.LastOrDefault(s => s.Values!.ContainsKey(key))?.Values![key] ?? 0;
+
+    // each series is scaled to its own min..max, so the two lines show shape, not comparable magnitudes
+    private static string Points(List<GrowthEvent> snaps, string key, long t0, double span)
+    {
+        var pts = snaps.Where(s => s.Values!.ContainsKey(key)).Select(s => (X: (s.Time.ToUnixTimeSeconds() - t0) / span * 300, Y: (double) s.Values![key])).ToList();
+        if (pts.Count == 0) return "";
+        double min = pts.Min(p => p.Y), max = pts.Max(p => p.Y);
+        return string.Join(" ", pts.Select(p => FormattableString.Invariant($"{p.X:0.#},{(max == min ? 40 : 74 - (p.Y - min) / (max - min) * 68):0.#}")));
+    }
+}

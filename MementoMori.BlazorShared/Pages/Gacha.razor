@@ -1,4 +1,5 @@
 ﻿@inject IDialogService DialogService
+@inject MementoMori.WebUI.UI.AtlasManager Atlas
 @using System.Text
 @using MementoMori.BlazorShared.Components
 @using MementoMori.Common.Localization
@@ -15,58 +16,96 @@
 <PageTitle>@Masters.TextResourceTable.Get("[CommonFooterGachaButtonLabel]")</PageTitle>
 
 <section class="gacha-page">
+@{ var sync = ViewModel?.UserSyncData; }
+<header class="gacha-head">
+    <MudText Typo="Typo.h5" Component="h1">@Tr("[CommonFooterGachaButtonLabel]")</MudText>
+    @if (sync?.UserItemDtoInfo != null && gachaCaseInfos.Count > 0)
+    {
+        <div class="gacha-wallet">
+            <span class="gacha-wallet-label">@Tr("[CommonPossessionLabel]")</span>
+            @* diamonds: free and paid buttons share one pill, the count already sums both *@
+            @foreach (var item in gachaCaseInfos.OrderByDescending(d => d.DisplayOrder).SelectMany(d => d.GachaButtonInfoList).Select(d => d.ConsumeUserItem)
+                          .DistinctBy(d => d.ItemType is ItemType.CurrencyFree or ItemType.CurrencyPaid ? (ItemType.CurrencyFree, 0L) : (d.ItemType, d.ItemId)))
+            {
+                var held = sync.GetUserItemCount(item.ItemType, item.ItemId, true);
+                var name = item.GetItemName();
+                var icon = Atlas.GetItemIcon(item.ItemType, item.ItemId);
+                <span class="gacha-coin" title="@($"{name} {held:N0}")">
+                    <span class="gacha-icon is-coin">@if (icon != null) { <img src="@icon" @key="icon" width="28" height="28" loading="lazy" decoding="async" alt="" onerror="this.remove()" /> }</span>
+                    <b>@Compact(held)</b><span>@name</span>
+                </span>
+            }
+        </div>
+    }
+</header>
 @if (!string.IsNullOrEmpty(alertMessage))
 {
     <MudAlert Severity="Severity.Warning">@alertMessage</MudAlert>
 }
 @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="@ResourceStrings.Loading" /> }
 
-@if (ViewModel?.UserSyncData?.UserItemDtoInfo != null)
+@if (sync?.UserItemDtoInfo != null)
 {
-    <MudGrid>
+    <MudGrid Spacing="6">
         @foreach (var gachaCaseInfo in gachaCaseInfos.OrderByDescending(d => d.DisplayOrder))
         {
-            var gachaCaseMb = Masters.GachaCaseTable.GetById(gachaCaseInfo.GachaCaseId);
             var gachaCaseUiMb = Masters.GachaCaseUiTable.GetById(gachaCaseInfo.GachaCaseUiId);
             var explanation = gachaCaseUiMb?.PickUpCharacterId > 0
                 ? Masters.TextResourceTable.Get(gachaCaseUiMb.ExplanationKey,
                     Masters.TextResourceTable.Get(Masters.CharacterTable.GetById(gachaCaseUiMb.PickUpCharacterId).NameKey))
                 : Masters.TextResourceTable.Get(gachaCaseUiMb?.ExplanationKey);
+            var banner = gachaCaseUiMb?.BannerImageNumber > 0 ? Atlas.GetGachaBanner(gachaCaseUiMb.BannerImageNumber) : null;
+            var buttons = gachaCaseInfo.GachaButtonInfoList;
+            var multi = buttons.Count > 1 ? buttons.MaxBy(b => (b.LotteryCount, b.ConsumeUserItem.ItemCount)) : null;
+            var selectType = gachaCaseInfo.GachaSelectListType;
+            var selected = _selectListMap?.GetValueOrDefault(selectType) ?? [];
+            var candidates = SelectCandidates(selectType);
 
-            <MudItem xs="12" sm="6" md="4" lg="3" xl="2" xxl="2">
+            <MudItem xs="12" sm="6" md="4" lg="3">
                 <MudCard Class="gacha-card">
-                    <MudCardHeader Class="gacha-card-header">
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.body1" Class="gacha-card-title">@(Masters.TextResourceTable.Get(gachaCaseUiMb?.NameKey))</MudText>
-                            <MudText Typo="Typo.body2" Class="gacha-card-description">@explanation</MudText>
-                        </CardHeaderContent>
-                        <CardHeaderActions>
-                            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="() => ShowDetail(gachaCaseInfo)">@Masters.TextResourceTable.Get("[CommonDetailLabel]")</MudButton>
-                        </CardHeaderActions>
-                    </MudCardHeader>
+                    <div class="gacha-art">
+                        @if (banner != null) { <img src="@banner" @key="banner" width="300" height="156" loading="lazy" decoding="async" alt="" onerror="this.remove()" /> }
+                        <h2 class="gacha-art-title">@Tr(gachaCaseUiMb?.NameKey)</h2>
+                        @if (gachaCaseInfo.ElementType != ElementType.None)
+                        {
+                            var elementIcon = Atlas.GetIconCharacterElement(gachaCaseInfo.ElementType);
+                            <span class="gacha-icon is-element"><img src="@elementIcon" @key="elementIcon" width="22" height="22" loading="lazy" decoding="async" alt="" onerror="this.remove()" /></span>
+                        }
+                        <MudButton Class="gacha-detail-button" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Info" OnClick="() => ShowDetail(gachaCaseInfo)">@Tr("[CommonDetailLabel]")</MudButton>
+                    </div>
                     <MudCardContent Class="gacha-card-content">
-                        <div class="gacha-possession">
-                            <span class="gacha-possession-label">@Masters.TextResourceTable.Get("[CommonPossessionLabel]")</span>
-                            @foreach (var userItem in gachaCaseInfo.GachaButtonInfoList.Select(d => d.ConsumeUserItem).DistinctBy(d => new {d.ItemType, d.ItemId}))
-                            {
-                                <div class="gacha-balance-row">
-                                    <span>@userItem.GetItemName()</span>
-                                    <span class="gacha-balance-count">× @ViewModel.UserSyncData.GetUserItemCount(userItem.ItemType, userItem.ItemId, true).ToString("N0")</span>
-                                </div>
-                            }
-                        </div>
-
+                        <p class="gacha-card-description" title="@explanation">@explanation</p>
+                        @if (selected.Count > 0 || candidates?.Count > 0)
+                        {
+                            var single = selectType != GachaSelectListType.Default;
+                            <MudButton Variant="Variant.Text" Size="Size.Small" Class="gacha-select-button" Disabled="@(_selecting || !(candidates?.Count > 0))" OnClick="() => EditSelection(gachaCaseInfo, candidates!)">
+                                <span class="gacha-select-label">@Tr("[GachaSelectListSettingLabel]")</span>
+                                @if (single && selected.Count > 0)
+                                {
+                                    <PlayerAvatar IconId="selected[0]" Name="@Masters.CharacterTable.GetCharacterName(selected[0])" Size="24" />
+                                }
+                                <span class="gacha-select-status@(!single && selected.Count > 20 ? " is-over" : "")" title="@(single && selected.Count > 0 ? Masters.CharacterTable.GetCharacterName(selected[0]) : null)">@(single ? (selected.Count > 0 ? Masters.CharacterTable.GetCharacterName(selected[0]) : ResourceStrings.NotSelected) : $"{selected.Count}/20")</span>
+                            </MudButton>
+                        }
                     </MudCardContent>
                     <MudCardActions Class="gacha-card-actions">
-                        @foreach (var button in gachaCaseInfo.GachaButtonInfoList)
+                        @foreach (var button in buttons)
                         {
-                            var itemMb = Masters.ItemTable.GetByItemTypeAndItemId(button.ConsumeUserItem.ItemType, button.ConsumeUserItem.ItemId);
-                            var count = ViewModel.UserSyncData.GetUserItemCount(button.ConsumeUserItem.ItemType, button.ConsumeUserItem.ItemId, true);
-                            var disabled = count < button.ConsumeUserItem.ItemCount;
-
-                            <MudButton Disabled="disabled || _drawing" Variant="Variant.Filled" Class="gacha-draw-button" Color="Color.Primary" OnClick="() => DoGacha(gachaCaseInfo, button)"><span class="gacha-cost-name">@(Masters.TextResourceTable.Get(itemMb.NameKey))</span><span class="gacha-cost-count">× @button.ConsumeUserItem.ItemCount</span></MudButton>
+                            var cost = button.ConsumeUserItem;
+                            var itemName = cost.GetItemName();
+                            var isShort = sync.GetUserItemCount(cost.ItemType, cost.ItemId, true) < cost.ItemCount;
+                            // ponytail: LotteryCount can be 0 (no master table for buttons); game buttons are 1x or 10x, so the cheapest same-item button is 1x and any dearer one 10x (discounted 10x like relic 1,800 still reads 10). Breaks if a 5x button appears.
+                            var minCost = buttons.Where(b => b.ConsumeUserItem.ItemType == cost.ItemType && b.ConsumeUserItem.ItemId == cost.ItemId).Min(b => b.ConsumeUserItem.ItemCount);
+                            var count = button.LotteryCount > 0 ? button.LotteryCount : cost.ItemCount > minCost ? 10 : 1;
+                            var drawLabel = count > 0 ? Tr("[GachaDrawCurrencyButtonFormat]", count) : null;
+                            var note = isShort ? string.Format(ResourceStrings.NotEnoughFormat, itemName) : drawLabel;
+                            var icon = Atlas.GetItemIcon(cost.ItemType, cost.ItemId);
+                            <MudButton Disabled="isShort || _drawing" Variant="Variant.Outlined" Class="@($"gacha-draw-button{(button == multi ? " is-multi" : "")}{(isShort ? " is-short" : "")}")"
+                                       title="@($"{itemName} × {cost.ItemCount:N0} {drawLabel}")" OnClick="() => DoGacha(gachaCaseInfo, button)">
+                                <span class="gacha-icon is-cost">@if (icon != null) { <img src="@icon" @key="icon" width="30" height="30" loading="lazy" decoding="async" alt="" onerror="this.remove()" /> }</span>
+                                <span class="gacha-draw-text"><b>@cost.ItemCount.ToString("N0")</b>@if (note != null) { <small>@note</small> }</span>
+                            </MudButton>
                         }
-
                     </MudCardActions>
                 </MudCard>
             </MudItem>
@@ -79,12 +118,14 @@
     private List<GachaCaseInfo> gachaCaseInfos = new();
     private MementoMoriFuncs ViewModel;
     string alertMessage = "";
-    private bool _interactive, _loading, _drawing;
+    private Dictionary<GachaSelectListType, List<long>>? _selectListMap;
+    private bool _interactive, _loading, _drawing, _selecting;
 
     protected override async Task AccountChanged()
     {
         ViewModel = Funcs;
         gachaCaseInfos = new();
+        _selectListMap = null;
         alertMessage = Funcs.LoginOk ? string.Empty : ResourceStrings.PleaseLogin;
         _loading = Funcs.LoginOk;
         if (!_interactive || !Funcs.LoginOk) return;
@@ -115,7 +156,62 @@
         var listResponse = await ViewModel.GetResponse<GetListRequest, GetListResponse>(new GetListRequest(), token);
         token.ThrowIfCancellationRequested();
         gachaCaseInfos = listResponse.GachaCaseInfoList;
+        // Live-verified: this map holds the CURRENT picks per type (compact ids, no 0 slots); GachaCaseInfo.GachaSelectCharacterIdList is null.
+        _selectListMap = listResponse.GachaSelectListCharacterIdMap;
         alertMessage = string.Empty;
+    }
+
+    // Candidates = active GachaSelectListMB rows of the type (fixed JST windows); the server rejects anything else (200131 / 200211).
+    private static List<long> SelectCandidates(GachaSelectListType type)
+    {
+        if (type == GachaSelectListType.None) return [];
+        var jstNow = DateTime.UtcNow.AddHours(9).ToString("yyyy-MM-dd HH:mm:ss"); // same fixed format, so ordinal compare works
+        return Masters.GachaSelectListTable.GetArray()
+            .Where(m => m.GachaSelectListType == type && string.CompareOrdinal(m.StartTimeFixJST, jstNow) <= 0 && string.CompareOrdinal(jstNow, m.EndTimeFixJST) <= 0)
+            .SelectMany(m => m.CharacterIdList).Distinct().ToList();
+    }
+
+    private async Task EditSelection(GachaCaseInfo gachaCaseInfo, List<long> candidates)
+    {
+        if (_selecting) return;
+        _selecting = true;
+        var funcs = ViewModel;
+        var token = CreateAccountCancellation();
+        alertMessage = string.Empty;
+        try
+        {
+            var type = gachaCaseInfo.GachaSelectListType;
+            // Counts from the game's own text (master TextResource): wish list (Default) = "max of 5 characters from each Soul, for a total of 20",
+            // openings allowed ([HelpMainText4600]); the other types name a single "character of chance/guidance" / "Chosen Character".
+            // ponytail: hard-coded per type (no limit field in the DTOs or GachaSelectListMB); a wrong count only gets a server error alert. Move to data if the game adds one.
+            // Live-verified on the global server: wish list takes 0-20 compact ids in any order (empty clears it); >20 -> 200130, >5 per element -> 200132; others exactly 1 (2 -> 200130).
+            var (min, max, perElement) = type == GachaSelectListType.Default ? (0, 20, 5) : (1, 1, 0);
+            var parameters = new DialogParameters<GachaSelectDialog>
+            {
+                { d => d.Candidates, candidates },
+                { d => d.Selected, _selectListMap?.GetValueOrDefault(type) ?? [] },
+                { d => d.Min, min },
+                { d => d.Max, Math.Min(max, candidates.Count) },
+                { d => d.MaxPerElement, perElement },
+            };
+            var title = Tr(type switch
+            {
+                GachaSelectListType.Destiny => "[GachaDestinyCharacterSettingTitle]",
+                GachaSelectListType.StarsGuidance => "[GachaStarsGuidanceCharacterSettingTitle]",
+                GachaSelectListType.SelectablePickUp or GachaSelectListType.SpecialSelectablePickUp => "[GachaSelectablePickUpCharacterSettingTitle]",
+                _ => "[GachaSelectListSettingTitle]",
+            });
+            var dialog = await DialogService.ShowAsync<GachaSelectDialog>(title, parameters, new DialogOptions {CloseButton = true, CloseOnEscapeKey = true, FullWidth = true, MaxWidth = MaxWidth.Small});
+            if (await dialog.Result is not { Canceled: false, Data: List<long> ids }) return;
+            token.ThrowIfCancellationRequested(); // account switched while the dialog was open: don't submit for the old one
+            var response = await funcs.SetGachaSelectList(gachaCaseInfo.GachaCaseId, type, ids, token);
+            token.ThrowIfCancellationRequested();
+            gachaCaseInfos = response.GachaCaseInfoList ?? gachaCaseInfos;
+            if (_selectListMap != null) _selectListMap[type] = response.SetCharacterIdList ?? ids;
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception e) { if (!token.IsCancellationRequested) alertMessage = e.Message; }
+        finally { _selecting = false; }
     }
 
     private async Task DoGacha(GachaCaseInfo gachaCaseInfo, GachaButtonInfo button)

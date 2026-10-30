@@ -38,11 +38,11 @@
         <span class="icon-level" style="color: @(isLevelLinkMember ? "#abe4e6" : "white");">Lv @level</span>
         @if (!string.IsNullOrEmpty(deco))
         {
-            <img class="icon-deco" src="@deco"/>
+            <img class="icon-deco" src="@deco" loading="lazy" decoding="async"/>
         }
         @if (!string.IsNullOrEmpty(element))
         {
-            <img class="icon-element" src="@element"/>
+            <img class="icon-element" src="@element" loading="lazy" decoding="async"/>
         }
         @if (UserCharacterInfo.RarityFlags > CharacterRarityFlags.LR)
         {
@@ -81,11 +81,11 @@
             <div class="icon-rarity-star-container">
                 @for (var i = 0; i < star2Count; i++)
                 {
-                    <img class="icon-rarity-star" src="@star2"/>
+                    <img class="icon-rarity-star" src="@star2" loading="lazy" decoding="async"/>
                 }
                 @for (var i = 0; i < star1Count; i++)
                 {
-                    <img class="icon-rarity-star" src="@star1"/>
+                    <img class="icon-rarity-star" src="@star1" loading="lazy" decoding="async"/>
                 }
             </div>
         }

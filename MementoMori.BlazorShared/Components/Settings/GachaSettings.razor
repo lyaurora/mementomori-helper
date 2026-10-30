@@ -1,4 +1,5 @@
-﻿@inject ISnackbar Snackbar
+﻿@using MementoMori.BlazorShared.Components
+@inject ISnackbar Snackbar
 @inject IWritableOptions<PlayersOption> PlayersOptions
 @using MementoMori.Option
 @using MementoMori.Ortega.Common.Utils
@@ -13,7 +14,7 @@
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.AutoAwesome" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[CommonFooterGachaButtonLabel]") <span class="panel-scope">(@ResourceStrings.AllAccounts)</span></span></MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.AutoAwesome" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[CommonFooterGachaButtonLabel]") <span class="panel-scope">@ResourceStrings.AllAccounts</span></span></MudText>
         </CardHeaderContent>
         <CardHeaderActions>
             <MudButton Class="setting-save-button" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Save" OnClick="() => SavePlayerSetting()">@Masters.TextResourceTable.Get("[CommonSaveLabel]")</MudButton>
@@ -28,7 +29,7 @@
             }
         </MudSelect>
         <div class="setting-section">
-            <MudText Class="setting-field-label">@($"{Tr("[TradeShopTabName11]")} ({Funcs?.UserSyncData?.UserStatusDtoInfo?.Name})")</MudText>
+            <MudText Class="setting-field-label">@(Tr("[TradeShopTabName11]")) <span class="panel-scope is-account"><PlayerAvatar IconId="@(Funcs?.UserSyncData?.UserStatusDtoInfo?.MainCharacterIconId ?? 0)" Name="@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name)" Size="16" />@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name)</span></MudText>
             <MudSelect T="GachaRelicType" Label="@Tr("[GachaRelicChangeTitle]")" @bind-Value="_targetRelicType" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense">
                 <MudSelectItem T="GachaRelicType" Value="GachaRelicType.None">@Tr("[CommonNoneLabel]")</MudSelectItem>
                 <MudSelectItem T="GachaRelicType" Value="GachaRelicType.ChaliceOfHeavenly">@Tr("[ItemName45]")</MudSelectItem>

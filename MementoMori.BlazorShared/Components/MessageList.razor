@@ -5,6 +5,7 @@
 
 @inherits MementoMori.BlazorShared.Models.AccountComponent
 
+<div class="msg-log">
 <MudSimpleTable Class="execution-messages" Elevation="0" Dense="true">
     <tbody class="d-flex flex-column-reverse">
     @foreach (var msg in _messageList)
@@ -15,6 +16,7 @@
     }
     </tbody>
 </MudSimpleTable>
+</div>
 
 @code {
 

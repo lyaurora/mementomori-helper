@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace MementoMori.Funcs;
 
 /// <summary>One growth-history line. Kind: Reward (Type=ItemType, Id=ItemId, To=count), CharacterLevel / CharacterRarity (Id=CharacterId),
-/// EquipmentReinforce (Id=EquipmentId), PlayerRank, MainQuest, Tower (Type=TowerType), Snapshot (Values).</summary>
+/// EquipmentReinforce (Id=EquipmentId), EquipmentUpgrade (Id=new EquipmentId, From=old EquipmentId), PlayerRank, MainQuest, Tower (Type=TowerType), Snapshot (Values).</summary>
 public record GrowthEvent(DateTimeOffset Time, string Kind, long Type = 0, long Id = 0, long From = 0, long To = 0, Dictionary<string, long>? Values = null);
 
 public partial class MementoMoriFuncs
@@ -18,7 +18,7 @@ public partial class MementoMoriFuncs
     private static readonly JsonSerializerOptions GrowthJson = new() { DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault };
     // ponytail: caps checked only when the file passes 2 MB; then keep the last 90 days, at most 10000 lines.
     private const long GrowthMaxBytes = 2 * 1024 * 1024;
-    private const int GrowthMaxLines = 10000;
+    private const int GrowthMaxLines = 5000; // well under 2 MB, so a trim is not repeated on every append
     private static readonly TimeSpan GrowthMaxAge = TimeSpan.FromDays(90);
     private DateTimeOffset _lastGrowthSnapshot;
 
@@ -41,6 +41,7 @@ public partial class MementoMoriFuncs
             if (!File.Exists(path)) return new();
             lines = File.ReadAllLines(path);
         }
+        // appends run on the thread pool and may land slightly out of order
 
         var result = new List<GrowthEvent>();
         foreach (var line in lines)
@@ -52,7 +53,7 @@ public partial class MementoMoriFuncs
             }
             catch (JsonException) { } // a torn last line after a crash
         }
-        return result;
+        return result.OrderBy(e => e.Time).ToList();
     }
 
     /// <summary>Called with each response's UserSyncData before it is merged; diffs it against the current state. Never throws.</summary>
@@ -65,12 +66,13 @@ public partial class MementoMoriFuncs
             var current = UserSyncData;
             var events = new List<GrowthEvent>();
 
-            foreach (var item in incoming.GivenItemCountInfoList ?? new())
-                if (item.ItemCount != 0) events.Add(new(now, "Reward", (long) item.ItemType, item.ItemId, 0, item.ItemCount));
+            // gains only (spent currency comes back negative); one line per item per response even if the server lists it twice
+            foreach (var g in (incoming.GivenItemCountInfoList ?? new()).Where(i => i.ItemCount > 0).GroupBy(i => (i.ItemType, i.ItemId)))
+                events.Add(new(now, "Reward", (long) g.Key.ItemType, g.Key.ItemId, 0, g.Sum(i => i.ItemCount)));
 
             if (current.UserCharacterDtoInfos != null)
             {
-                var old = current.UserCharacterDtoInfos.ToDictionary(d => d.Guid);
+                var old = current.UserCharacterDtoInfos.DistinctBy(d => d.Guid).ToDictionary(d => d.Guid);
                 foreach (var c in incoming.UserCharacterDtoInfos ?? new())
                 {
                     if (!old.TryGetValue(c.Guid, out var o)) continue;
@@ -81,10 +83,13 @@ public partial class MementoMoriFuncs
 
             if (current.UserEquipmentDtoInfos != null)
             {
-                var old = current.UserEquipmentDtoInfos.ToDictionary(d => d.Guid);
+                var old = current.UserEquipmentDtoInfos.DistinctBy(d => d.Guid).ToDictionary(d => d.Guid);
                 foreach (var e in incoming.UserEquipmentDtoInfos ?? new())
-                    if (old.TryGetValue(e.Guid, out var o) && e.ReinforcementLv > o.ReinforcementLv)
-                        events.Add(new(now, "EquipmentReinforce", 0, e.EquipmentId, o.ReinforcementLv, e.ReinforcementLv));
+                {
+                    if (!old.TryGetValue(e.Guid, out var o)) continue;
+                    if (e.EquipmentId != o.EquipmentId) events.Add(new(now, "EquipmentUpgrade", 0, e.EquipmentId, o.EquipmentId, e.EquipmentId));
+                    else if (e.ReinforcementLv > o.ReinforcementLv) events.Add(new(now, "EquipmentReinforce", 0, e.EquipmentId, o.ReinforcementLv, e.ReinforcementLv));
+                }
             }
 
             if (current.UserStatusDtoInfo != null && incoming.UserStatusDtoInfo != null && incoming.UserStatusDtoInfo.Rank > current.UserStatusDtoInfo.Rank)

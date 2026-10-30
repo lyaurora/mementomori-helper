@@ -1,0 +1,4 @@
+/* Timeline: keep a clear gap between dot and text, and centre the dot on the first text line (5px pad + 21.6px line).
+   Line: 1.5px wide at x=4.75 (centre 5.5); dot: 11px border-box at x=0 (centre 5.5). */
+.msg-log ::deep .execution-messages.mud-simple-table td { padding: 5px 0 5px 24px; background-position: 4.75px 0; }
+.msg-log ::deep .execution-messages.mud-simple-table td::before { box-sizing: border-box; left: 0; top: 10.3px; width: 11px; height: 11px; }

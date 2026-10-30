@@ -6,6 +6,7 @@
 @using MementoMori.Ortega.Share.Enums
 @inject IWritableOptions<GameConfig> WritableGameConfig
 
+@inject MementoMori.WebUI.UI.AtlasManager Atlas
 @inherits MementoMori.BlazorShared.Models.AccountComponent
 
 
@@ -13,10 +14,10 @@
     <MudCardHeader>
         <CardHeaderContent>
             <!--商城-->
-            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Storefront" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[CommonHeaderExchangeLabel]") <span class="panel-scope">(@ResourceStrings.AllAccounts)</span></span></MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Storefront" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[CommonHeaderExchangeLabel]") <span class="panel-scope">@ResourceStrings.AllAccounts</span></span></MudText>
         </CardHeaderContent>
         <CardHeaderActions>
-            <MudButton OnClick="ShopAutoBuyRestoreDefault">@ResourceStrings.ResettoDefault</MudButton>
+            <MudButton Class="setting-save-button" Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Restore" OnClick="ShopAutoBuyRestoreDefault">@ResourceStrings.ResettoDefault</MudButton>
         </CardHeaderActions>
     </MudCardHeader>
     <MudCardContent Class="settings-form">
@@ -28,8 +29,14 @@
                 var amountDesc = item.ConsumeItem?.ItemCount == 0 ? ResourceStrings.Any_amount : item.ConsumeItem?.ItemCount.ToString();
                 var consume = item.ConsumeItem == null ? ResourceStrings.AnyItems : $"{ItemUtil.GetItemName(item.ConsumeItem.ItemType, item.ConsumeItem.ItemId)}×{amountDesc}";
                 var text = string.Format(ResourceStrings.BuyWith, consume, buy);
+                var iconItem = item.BuyItem ?? item.ConsumeItem;
+                var icon = iconItem == null ? null : Atlas.GetItemIcon(iconItem.ItemType, iconItem.ItemId);
                 <div class="setting-item-row">
-                    <span class="setting-item-text shop-rule-text"><span class="shop-rule-sentence">@text.Replace("×", "\u2060×\u2060")</span> <span class="shop-rule-discount">@($"{item.MinDiscountPercent}{Masters.TextResourceTable.Get("[ShopDiscountLabel]")}")</span></span>
+                    @if (icon != null)
+                    {
+                        <span class="setting-item-art"><img src="@icon" @key="icon" width="28" height="28" loading="lazy" decoding="async" alt="" onerror="this.remove()"></span>
+                    }
+                    <span class="setting-item-text shop-rule-text"><span class="shop-rule-sentence">@text.Replace("×", "\u2060×\u2060")</span> @if (item.MinDiscountPercent > 0) { <span class="shop-rule-discount">@($"{item.MinDiscountPercent}{Masters.TextResourceTable.Get("[ShopDiscountLabel]")}")</span> }</span>
                     <MudIconButton Class="setting-item-remove" Icon="@Icons.Material.Filled.Close" Size="Size.Small" aria-label="@($"{Masters.TextResourceTable.Get("[BulkBuyProductRemoveCartItemButtonLabel]")}: {text}")" OnClick="() => RemoveShopAutoBuyItem(item)" />
                 </div>
             }

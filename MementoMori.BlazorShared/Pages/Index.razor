@@ -1,6 +1,7 @@
 ﻿@inject IJSRuntime JsRuntime
 @inject IDialogService DialogService
 @inject IWritableOptions<GameConfig> GameConfig
+@inject MementoMori.WebUI.UI.AtlasManager Atlas
 
 @inherits MementoMori.BlazorShared.Models.AccountComponent
 @page "/"
@@ -10,6 +11,7 @@
 @using MementoMori.WebUI.Extensions
 @using MementoMori.BlazorShared.Components
 @using ReactiveUI
+@using System.Reactive.Linq
 @using DynamicData.Binding
 @using MementoMori.Ortega.Common.Utils
 @using MementoMori.Ortega.Share.Data.Auth
@@ -22,215 +24,86 @@
 @using Microsoft.Extensions.Options
 @using static MementoMori.Ortega.Share.Masters
 @using MementoMori.BlazorShared.Models
+@using MementoMori.Ortega.Share.Master.Data
 
 <PageTitle>@Tr("[CommonFooterHomeButtonLabel]")</PageTitle>
 
-<MudGrid>
 @if (!string.IsNullOrEmpty(alertMessage))
 {
-    <MudItem xs="12" md="12">
-        <MudAlert Severity="Severity.Warning">@alertMessage</MudAlert>
-    </MudItem>
+    <MudAlert Class="mb-6" Severity="Severity.Warning">@alertMessage</MudAlert>
 }
 @if (AccountSelection.CurrentUserId > 0)
 {
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="4">
-        <MudCard>
+    var status = Funcs.UserSyncData?.UserStatusDtoInfo;
+    var diamondIcon = Atlas.GetItemIcon(ItemType.CurrencyFree, 1);
+    <div class="home-cols">
+    <div class="col">
+        <MudCard Class="home-hero">
             <MudCardHeader Class="justify-space-between">
                 <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.Badge"/><span>@ResourceStrings.CharacterInfo</span></MudText>
                 <MudPaper Elevation="0" Class="d-flex justify-end gap-2">
-                    <MudButton Size="Size.Small" Variant="Variant.Filled" Disabled="Funcs.Logining" @onclick="ShowPlayerList">
+                    <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Sync" Disabled="Funcs.Logining" @onclick="Funcs.SyncUserData">@ResourceStrings.SyncUserInfo</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Login" Disabled="Funcs.Logining" @onclick="ShowPlayerList">
                         @ResourceStrings.Login
                         @if (Funcs.Logining)
                         {
-                            <MudProgressCircular Size="Size.Small"/>
+                            <MudProgressCircular Class="ml-2" Size="Size.Small" Indeterminate="true"/>
                         }
                     </MudButton>
-                    <MudButton Size="Size.Small" Variant="Variant.Filled" Disabled="Funcs.Logining" @onclick="Funcs.SyncUserData">@ResourceStrings.SyncUserInfo</MudButton>
                 </MudPaper>
             </MudCardHeader>
             <MudCardContent>
-                <MudSimpleTable Class="profile-table" Elevation="0" Dense="true">
-                    <tbody>
-                    <tr>
-                        <td colspan="2"><span class="profile-label">@Tr("[CommonPlayerNameFormat]", "")</span><span class="profile-value profile-player-name">@Funcs.UserSyncData?.UserStatusDtoInfo?.Name</span></td>
-                    </tr>
-                    <tr>
-                        <td colspan="2"><span class="profile-label">@Tr("[PlayerId]") : </span><span class="profile-value">@Funcs.UserSyncData?.UserStatusDtoInfo?.PlayerId</span></td>
-                    </tr>
-                    <tr>
-                        @{
-                            var createTime = "";
-                            if (Funcs.LoginOk)
-                            {
-                                createTime = (Funcs.UserSyncData?.UserStatusDtoInfo?.CreateAt.ToDateTimeOffset() - NetworkManager.TimeManager.DiffFromUtc).ToString();
-                            }
-                        }
-                        <td colspan="2"><span class="profile-label">@ResourceStrings.Account_Creation_Time : </span><span class="profile-value">@(createTime)</span></td>
-                    </tr>
-                    <tr>
-                        <td><span class="profile-label">@Tr("[CommonPlayerRankLabel]") : </span><span class="profile-value">@Funcs.UserSyncData?.UserStatusDtoInfo?.Rank</span></td>
-                        <td><span class="profile-value">@Tr("[CommonVipWithSpaceFormat]", Funcs.UserSyncData?.UserStatusDtoInfo?.Vip)</span></td>
-                    </tr>
-                    <tr>
-                        <td colspan="2"><span class="profile-label">@Tr("[MyPagePlayerInformationCommentLabel]") : </span><span class="profile-value">@Funcs.UserSyncData?.UserStatusDtoInfo?.Comment</span></td>
-                    </tr>
-                    <tr>
-                        @{
-                            var free = Funcs.UserSyncData.GetUserItemCount(ItemType.CurrencyFree, 1);
-                            var paid = Funcs.UserSyncData.GetUserItemCount(ItemType.CurrencyPaid, 0);
-                            <td colspan="2"><div class="profile-resources">
-                                <span>@Tr("[ItemName4]") : @(free + paid)</span>
-                                <span>@Tr("[CurrencyDetailCurrencyFree]") @free</span>
-                                <span>@Tr("[CurrencyDetailCurrencyPaid]") @paid</span>
-                            </div></td>
-                        }
-                    </tr>
-                    <tr>
-                        <td colspan="2"><div class="profile-resources">
-                            <span>@Tr("[ItemName9]") : @(Funcs.UserSyncData.GetUserItemCount(ItemType.FriendPoint, 1))</span>
-                            <span>@Tr("[ItemName11]") : @(Funcs.UserSyncData.GetUserItemCount(ItemType.CharacterTrainingMaterial, 2))</span>
-                        </div></td>
-                    </tr>
-                    <tr>
-                        <td colspan="2"><div class="profile-resources">
-                            <span>@Tr("[ItemName5]") : @(Funcs.UserSyncData.GetUserItemCount(ItemType.Gold, 1).ToString("N0"))</span>
-                            <span>@Tr("[ItemName10]") : @(Funcs.UserSyncData.GetUserItemCount(ItemType.CharacterTrainingMaterial, 1).ToString("N0"))</span>
-                        </div></td>
-                    </tr>
-                    <tr>
-                        <td colspan="2"><div class="profile-resources">
-                            <span>@Tr("[ItemName43]") : @(Funcs.UserSyncData.GetUserItemCount(ItemType.ExchangePlaceItem, 4).ToString("N0"))</span>
-                            <span>@Tr("[ItemName16]") : @(Funcs.UserSyncData.GetUserItemCount(ItemType.EquipmentRarityCrystal, 1).ToString("N0"))</span>
-                        </div></td>
-                    </tr>
-                    </tbody>
-                </MudSimpleTable>
+                <div class="hero-who">
+                    <PlayerAvatar IconId="@(status?.MainCharacterIconId ?? 0)" Name="@status?.Name" Size="76"/>
+                    <div class="hero-who-text">
+                        <div class="hero-name">@status?.Name</div>
+                        <div class="hero-badges">
+                            <span class="hero-badge is-accent" title="@Tr("[CommonPlayerRankLabel]")">@Tr("[CommonLevelFormat]", status?.Rank)</span>
+                            <span class="hero-badge">@Tr("[CommonVipWithSpaceFormat]", status?.Vip)</span>
+                        </div>
+                    </div>
+                </div>
+                @{
+                    var createTime = "";
+                    if (Funcs.LoginOk)
+                    {
+                        createTime = (status?.CreateAt.ToDateTimeOffset() - NetworkManager.TimeManager.DiffFromUtc).ToString();
+                    }
+                }
+                <div class="hero-idline">
+                    <span>@Tr("[PlayerId]") @status?.PlayerId</span>
+                    <span>@ResourceStrings.Account_Creation_Time @createTime</span>
+                </div>
+                <div class="hero-quote">@Tr("[MyPagePlayerInformationCommentLabel]") · <b>@status?.Comment</b></div>
+                @{
+                    var free = Funcs.UserSyncData.GetUserItemCount(ItemType.CurrencyFree, 1);
+                    var paid = Funcs.UserSyncData.GetUserItemCount(ItemType.CurrencyPaid, 0);
+                }
+                <div class="tiles">
+                    <div class="tile is-wide">
+                        <span class="tile-art">@if (diamondIcon != null) {<img src="@diamondIcon" @key="diamondIcon" width="44" height="44" loading="lazy" decoding="async" alt="" onerror="this.remove()">}</span>
+                        <span class="hero-tile-text"><span class="tile-label">@Tr("[ItemName4]")</span><span class="tile-value" title="@((free + paid).ToString("N0"))">@Compact(free + paid)</span></span>
+                        <span class="tile-split">@Tr("[CurrencyDetailCurrencyFree]") <b title="@free.ToString("N0")">@Compact(free)</b><br>@Tr("[CurrencyDetailCurrencyPaid]") <b title="@paid.ToString("N0")">@Compact(paid)</b></span>
+                    </div>
+                    @Tile(ItemType.Gold, 1, Tr("[ItemName5]"))
+                    @Tile(ItemType.CharacterTrainingMaterial, 1, Tr("[ItemName10]"))
+                    @Tile(ItemType.CharacterTrainingMaterial, 2, Tr("[ItemName11]"))
+                    @Tile(ItemType.ExchangePlaceItem, 4, Tr("[ItemName43]"))
+                    @Tile(ItemType.FriendPoint, 1, Tr("[ItemName9]"))
+                    @Tile(ItemType.EquipmentRarityCrystal, 1, Tr("[ItemName16]"))
+                </div>
             </MudCardContent>
         </MudCard>
-    </MudItem>
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="4">
-        <MudPaper Class="pa-4">
-            <MudPaper Elevation="0" Class="d-flex">
-                <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.Home"/><span>@Tr("[CommonFooterHomeButtonLabel]")</span></MudText>
-                <MudSpacer/>
-                <MudButton Variant="Variant.Filled" Size="Size.Small" @onclick="Funcs.GetMyPage" StartIcon="@Icons.Material.Filled.Sync">@ResourceStrings.Sync</MudButton>
-            </MudPaper>
-            <MudPaper Elevation="0">
-                <MudBadge Overlap="true" Bordered="true" Color="Color.Info" Visible="@(Funcs.Mypage?.ExistNewFriendPointTransfer ?? false)">
-                    <MudChip T="string">@Tr("[ItemName9]")</MudChip>
-                </MudBadge>
-                <MudBadge Overlap="true" Bordered="true" Color="Color.Info" Visible="@(Funcs.Mypage?.ExistNewPrivateChat ?? false)">
-                        <MudChip T="string">@Tr("[CommonHeaderChatLabel]")</MudChip>
-                </MudBadge>
-                <MudBadge Overlap="true" Bordered="true" Color="Color.Info" Visible="@(Funcs.Mypage?.ExistNotReceivedBountyQuestReward ?? false)">
-                        <MudChip T="string">@Tr("[CommonHeaderBountyQuestLabel]")</MudChip>
-                </MudBadge>
-                <MudBadge Overlap="true" Bordered="true" Color="Color.Info" Visible="@(Funcs.Mypage?.ExistNotReceivedMissionReward ?? false)">
-                        <MudChip T="string">@Tr("[MyPageMenuButtonMissionLabel]")</MudChip>
-                </MudBadge>
-                <MudBadge Overlap="true" Bordered="true" Color="Color.Info" Visible="@Funcs.IsNotClearDungeonBattleMap">
-                        <MudChip T="string">@Tr("[CommonHeaderDungeonBattleLabel]")</MudChip>
-                </MudBadge>
-                <MudBadge Overlap="true" Bordered="true" Color="Color.Info" Visible="@(Funcs.UserSyncData?.PresentCount > 0)">
-                        <MudChip T="string">@Tr("[MyPageMenuButtonPresentBoxLabel]")</MudChip>
-                </MudBadge>
-                @foreach (var info in Funcs.Mypage?.MypageInfo?.MypageIconInfos ?? new List<MypageIconInfo>())
-                {
-                    var name = Tr(info.IconNameKey);
-                    <MudBadge Overlap="true" Bordered="true" Color="Color.Info" Visible="@info.IsDisplayBadge">
-                            <MudChip T="string">@((MarkupString)name)</MudChip>
-                    </MudBadge>
-                }
-            </MudPaper>
-            <MudDivider Class="my-2"/>
-            <MudPaper Elevation="0" Class="d-flex flex-wrap align-center">
-                <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.Explore"/><span>@Tr("[CommonHeaderBountyQuestLabel]")</span></MudText>
-                <MudSpacer/>
-                @if (GameConfig.Value.BountyQuestAuto.TargetItems.Count > 0)
-                {
-                    <MudSwitch T="bool" Color="Color.Info" @bind-Value="@Funcs.BountyRequestForceAll" Label="@ResourceStrings.ForceDispatch"></MudSwitch>
-                }
-                <MudButton Size="Size.Small" Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.BountyQuestRewardAuto">@Tr("[BountyQuestAllReceive]")</MudButton>
-                <MudButton Size="Size.Small" Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.BountyQuestStartAuto">@Tr("[BountyQuestAutoPlacement]")</MudButton>
-                <MudButton Variant="Variant.Filled" Size="Size.Small" Disabled="@Funcs.IsQuickActionExecuting" @onclick="RemakeBounty" StartIcon="@Icons.Material.Filled.Refresh">
-                    @Tr("[CommonAlternativesItemFormat]", Tr("[CommonCurrencyName]"), 20)
-                </MudButton>
-                <MudButton Class="ml-2" Variant="Variant.Filled" Size="Size.Small" @onclick="Funcs.GetBountyRequestInfo" StartIcon="@Icons.Material.Filled.Sync">@ResourceStrings.Sync</MudButton>
-            </MudPaper>
-            <MudPaper Elevation="0">
-                @foreach (var info in Funcs.BountyQuestResponseInfo?.UserBountyQuestDtoInfos ?? new List<UserBountyQuestDtoInfo>())
-                {
-                    var bountyQuestInfo = Funcs.BountyQuestResponseInfo.BountyQuestInfos.ToList().Find(d => d.BountyQuestId == info.BountyQuestId);
-                    var name = Tr(bountyQuestInfo.BountyQuestNameKey);
-                    var rarityName = Tr(bountyQuestInfo.BountyQuestRarity);
-                    var itemNames = bountyQuestInfo.BountyQuestType == BountyQuestType.Guerrilla
-                        ? Tr("[ItemRewardDetailDialogLotteryRateLabel]")
-                        : string.Join(",", bountyQuestInfo.RewardItems.Select(d => $"{ItemUtil.GetItemName(d)}×{d.ItemCount}"));
-                    var status = ResourceStrings.NotStarted;
-                    if (info.BountyQuestEndTime > 0)
-                    {
-                        var nowMilli = DateTimeOffset.Now.Add(Funcs.TimeManager.DiffFromUtc).ToUnixTimeMilliseconds();
-                        if (nowMilli < info.BountyQuestEndTime)
-                        {
-                            status = ResourceStrings.OnGoing + " " + TimeSpan.FromMilliseconds(info.BountyQuestEndTime - nowMilli).ToString(@"hh\:mm\:ss");
-                        }
-                        else if (!info.IsReward)
-                        {
-                            status = ResourceStrings.NotReceived + " " + TimeSpan.FromMilliseconds(info.RewardEndTime - nowMilli).ToString(@"hh\:mm\:ss");
-                        }
-                        else
-                        {
-                            status = ResourceStrings.Received;
-                        }
-                    }
-                        <MudChip T="string">@rarityName @itemNames @status</MudChip>
-                }
-            </MudPaper>
-        </MudPaper>
-    </MudItem>
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="4">
-        <MudCard>
+        <MudCard Class="home-quick">
             <MudCardHeader Class="justify-space-between">
-                <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.TaskAlt"/><span>@Tr("[MyPageMenuButtonMissionLabel]")</span></MudText>
+                <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.Bolt"/><span>@ResourceStrings.QuickActions</span></MudText>
                 <MudPaper Elevation="0" Class="d-flex justify-end gap-2">
-                    <MudButton Size="Size.Small" Variant="Variant.Filled" @onclick="@Funcs.GetMissionInfo">@ResourceStrings.Sync</MudButton>
-                    <MudButton Size="Size.Small" Variant="Variant.Filled" @onclick="@Funcs.CompleteMissions">@Tr("[MissionAllReceiveButton]")</MudButton>
-                    <MudButton Size="Size.Small" Variant="Variant.Filled" @onclick="@Funcs.RewardMissonActivity">@ResourceStrings.RewardMissonActivity</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Text" Disabled="!Funcs.IsQuickActionExecuting" @onclick="Funcs.CancelQuickAction">@Tr("[CommonCancelLabel]")</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Bolt" Disabled="Funcs.IsQuickActionExecuting" @onclick="Funcs.ExecuteAllQuickAction">@ResourceStrings.ExecuteAllQuick</MudButton>
                 </MudPaper>
             </MudCardHeader>
             <MudCardContent>
-                <MudSimpleTable Class="mission-table" Elevation="0" Dense="true" Style="height: 400px; overflow: auto">
-                    <colgroup><col style="width:18%"/><col style="width:52%"/><col style="width:30%"/></colgroup>
-                    <tbody>
-                    @foreach (var missionInfo in Funcs.MissionInfoDict?.Values.SelectMany(d => d.UserMissionDtoInfoDict?.Values.SelectMany(x => x) ?? Array.Empty<UserMissionDtoInfo>()) ?? Array.Empty<UserMissionDtoInfo>())
-                    {
-                        var (missionId, status) = MissionRow(missionInfo);
-                        var missionMb = missionId is { } id ? MissionTable.GetById(id) : null;
-                        @if (missionMb != null)
-                        {
-                            <tr>
-                                <td>@MissionTypeName(missionInfo.MissionType)</td>
-                                <td>@Tr(missionMb.NameKey)</td>
-                                <td>@(status ?? $"{missionInfo.ProgressCount}/{missionMb.RequireValue}")</td>
-                            </tr>
-                        }
-                    }
-                    </tbody>
-                </MudSimpleTable>
-            </MudCardContent>
-        </MudCard>
-    </MudItem>
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="4">
-        <MudCard>
-            <MudCardHeader Class="">
-                <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.Bolt"/><span>@ResourceStrings.QuickActions</span></MudText>
-                <MudSpacer/>
-                <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" Disabled="Funcs.IsQuickActionExecuting" @onclick="Funcs.ExecuteAllQuickAction">@ResourceStrings.ExecuteAllQuick</MudButton>
-                <MudButton Class="ml-2" Size="Size.Small" Variant="Variant.Filled" Disabled="!Funcs.IsQuickActionExecuting" @onclick="Funcs.CancelQuickAction">@Tr("[CommonCancelLabel]")</MudButton>
-            </MudCardHeader>
-            <MudCardContent>
-                <MudTabs Class="quick-actions-tabs" Position="Position.Left" MinimumTabWidth="20px">
+                <MudTabs Class="quick-actions-tabs" Position="Position.Top" MinimumTabWidth="20px">
                     <MudTabPanel Text="@ResourceStrings.ExecuteAllQuick">
                         <div class="quick-action-content quick-action-list">
                             <MudButton Size="Size.Small" Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.GetLoginBonus">@Tr("[MyPageButtonLoginBonusLabel]")</MudButton>
@@ -321,67 +194,181 @@
                 </MudTabs>
             </MudCardContent>
         </MudCard>
-    </MudItem>
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="4">
+        <MudCard Class="home-debug">
+            <MudCardHeader>
+                <MudSwitch T="bool" Color="Color.Primary" @bind-Value="@Funcs.ShowDebugInfo" Label="@ResourceStrings.DebugInfo"></MudSwitch>
+            </MudCardHeader>
+            @if (Funcs.ShowDebugInfo)
+            {
+                <MudCardContent Style="max-height: 400px; overflow: auto">
+                    <pre>@Funcs.UserSyncData.ToJson(true)</pre>
+                </MudCardContent>
+            }
+        </MudCard>
+    </div>
+    <div class="col">
+        <MudCard Class="home-entries">
+            <MudCardHeader Class="justify-space-between">
+                <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.Home"/><span>@Tr("[CommonFooterHomeButtonLabel]")</span></MudText>
+                <MudButton Variant="Variant.Text" Size="Size.Small" @onclick="Funcs.GetMyPage" StartIcon="@Icons.Material.Filled.Sync">@ResourceStrings.Sync</MudButton>
+            </MudCardHeader>
+            <MudCardContent>
+                <div class="entries">
+                    @Entry(Atlas.GetItemIcon(ItemType.FriendPoint, 1), 0, Funcs.Mypage?.ExistNewFriendPointTransfer ?? false, Tr("[ItemName9]"))
+                    @Entry(Atlas.GetMypageIcon(16), 16, Funcs.Mypage?.ExistNewPrivateChat ?? false, Tr("[CommonHeaderChatLabel]"))
+                    @Entry(Atlas.GetMypageIcon(21), 21, Funcs.Mypage?.ExistNotReceivedBountyQuestReward ?? false, Tr("[CommonHeaderBountyQuestLabel]"))
+                    @Entry(Atlas.GetMypageIcon(1), 1, Funcs.Mypage?.ExistNotReceivedMissionReward ?? false, Tr("[MyPageMenuButtonMissionLabel]"))
+                    @Entry(Atlas.GetMypageIcon(13), 13, Funcs.IsNotClearDungeonBattleMap, Tr("[CommonHeaderDungeonBattleLabel]"))
+                    @Entry(Atlas.GetMypageIcon(4), 4, Funcs.UserSyncData?.PresentCount > 0, Tr("[MyPageMenuButtonPresentBoxLabel]"))
+                    @foreach (var info in Funcs.Mypage?.MypageInfo?.MypageIconInfos ?? new List<MypageIconInfo>())
+                    {
+                        @Entry(Atlas.GetMypageIcon(info.ImageId), info.ImageId, info.IsDisplayBadge, (MarkupString)Tr(info.IconNameKey))
+                    }
+                </div>
+                <MudDivider Class="my-4"/>
+                <div class="bq-head">
+                    <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.Explore"/><span>@Tr("[CommonHeaderBountyQuestLabel]")</span></MudText>
+                    @if (GameConfig.Value.BountyQuestAuto.TargetItems.Count > 0)
+                    {
+                        <MudSwitch T="bool" Color="Color.Primary" @bind-Value="@Funcs.BountyRequestForceAll" Label="@ResourceStrings.ForceDispatch"></MudSwitch>
+                    }
+                </div>
+                <div class="bq-actions">
+                    <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.BountyQuestRewardAuto">@Tr("[BountyQuestAllReceive]")</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.BountyQuestStartAuto">@Tr("[BountyQuestAutoPlacement]")</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="RemakeBounty">
+                        <span class="bq-cost">@if (diamondIcon != null) {<img src="@diamondIcon" @key="diamondIcon" width="18" height="18" loading="lazy" decoding="async" alt="" onerror="this.remove()">}</span>
+                        @Tr("[CommonAlternativesItemFormat]", Tr("[CommonCurrencyName]"), 20)
+                    </MudButton>
+                    <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Sync" title="@ResourceStrings.Sync" aria-label="@ResourceStrings.Sync" @onclick="Funcs.GetBountyRequestInfo"/>
+                </div>
+                <div class="bq-list">
+                    @foreach (var info in Funcs.BountyQuestResponseInfo?.UserBountyQuestDtoInfos ?? new List<UserBountyQuestDtoInfo>())
+                    {
+                        var bountyQuestInfo = Funcs.BountyQuestResponseInfo.BountyQuestInfos?.Find(d => d.BountyQuestId == info.BountyQuestId);
+                        if (bountyQuestInfo == null) continue;
+                        var guerrilla = bountyQuestInfo.BountyQuestType == BountyQuestType.Guerrilla;
+                        var itemNames = guerrilla
+                            ? Tr("[ItemRewardDetailDialogLotteryRateLabel]")
+                            : string.Join(",", (bountyQuestInfo.RewardItems ?? []).Select(d => $"{ItemUtil.GetItemName(d)}×{d.ItemCount}"));
+                        var reward = guerrilla ? null : bountyQuestInfo.RewardItems?.FirstOrDefault();
+                        var rewardIcon = reward == null ? null : Atlas.GetItemIcon(reward.ItemType, reward.ItemId);
+                        string? statusLabel = ResourceStrings.NotStarted;
+                        string? time = null;
+                        var statusClass = "";
+                        if (info.BountyQuestEndTime > 0)
+                        {
+                            var nowMilli = DateTimeOffset.Now.Add(Funcs.TimeManager.DiffFromUtc).ToUnixTimeMilliseconds();
+                            if (nowMilli < info.BountyQuestEndTime)
+                            {
+                                statusLabel = ResourceStrings.OnGoing;
+                                time = TimeSpan.FromMilliseconds(info.BountyQuestEndTime - nowMilli).ToString(@"hh\:mm\:ss");
+                                statusClass = "is-running";
+                            }
+                            else if (!info.IsReward)
+                            {
+                                statusLabel = ResourceStrings.NotReceived;
+                                time = TimeSpan.FromMilliseconds(info.RewardEndTime - nowMilli).ToString(@"hh\:mm\:ss");
+                                statusClass = "is-todo";
+                            }
+                            else
+                            {
+                                statusLabel = ResourceStrings.Received;
+                            }
+                        }
+                        <div class="bq-row" title="@Tr(bountyQuestInfo.BountyQuestNameKey)">
+                            <span class="bq-rarity is-@bountyQuestInfo.BountyQuestRarity.ToString().ToLowerInvariant()">@Tr(bountyQuestInfo.BountyQuestRarity)</span>
+                            <span class="bq-art">
+                                @if (guerrilla)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Outlined.HelpOutline" Size="Size.Small"/>
+                                }
+                                else if (rewardIcon != null)
+                                {
+                                    <img src="@rewardIcon" @key="rewardIcon" width="28" height="28" loading="lazy" decoding="async" alt="" onerror="this.remove()">
+                                }
+                            </span>
+                            <span class="bq-name">@itemNames</span>
+                            <span class="bq-status @statusClass">
+                                @if (statusClass == "is-running")
+                                {
+                                    <MudIcon Icon="@Icons.Material.Outlined.Schedule" Size="Size.Small" title="@statusLabel" aria-label="@statusLabel"/>
+                                }
+                                else
+                                {
+                                    <span>@statusLabel</span>
+                                }
+                                @if (time != null)
+                                {
+                                    <span class="bq-time">@time</span>
+                                }
+                            </span>
+                        </div>
+                    }
+                </div>
+            </MudCardContent>
+        </MudCard>
+        <GrowthCard/>
         <MudCard Class="dashboard-output">
             <MudCardHeader><MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.Terminal"/><span>@ResourceStrings.ExecutionOutput</span></MudText></MudCardHeader>
             <MudCardContent>
                 <MessageList/>
             </MudCardContent>
         </MudCard>
-    </MudItem>
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="4">
-        <MudPaper Class="dashboard-notices">
-            <MudTabs Class="notice-tabs" MinimumTabWidth="20px">
-                <ChildContent>
-                    <MudTabPanel Text="@Tr("[NoticeCategoryTypeEventTab]")">
-                        @if (Funcs.EventInfoList != null)
-                        {
-                            <MudTable Class="activity-list" Elevation="0" T="NoticeInfo" Items="@Funcs.EventInfoList" Virtualize="true" Dense="true" Height="400px">
-                                <RowTemplate>
-                                    <MudTd>@(context.Title)</MudTd>
-                                    <MudTd>
-                                        <MudButton Size="Size.Small" @onclick="() => ShowNotice(context)" StartIcon="@Icons.Material.Filled.ZoomIn"/>
-                                    </MudTd>
-                                </RowTemplate>
-                            </MudTable>
-                        }
-                    </MudTabPanel>
-                    <MudTabPanel Text="@Tr("[NoticeCategoryTypeNoticeTab]")">
-                        @if (Funcs.NoticeInfoList != null)
-                        {
-                            <MudTable Class="activity-list" Elevation="0" T="NoticeInfo" Items="@Funcs.NoticeInfoList" Virtualize="true" Dense="true" Height="400px">
-                                <RowTemplate>
-                                    <MudTd>@(context.Title)</MudTd>
-                                    <MudTd>
-                                        <MudButton Size="Size.Small" @onclick="() => ShowNotice(context)" StartIcon="@Icons.Material.Filled.ZoomIn"/>
-                                    </MudTd>
-                                </RowTemplate>
-                            </MudTable>
-                        }
-                    </MudTabPanel>
-                </ChildContent>
-            </MudTabs>
-            <MudButton Class="dashboard-notices-sync" Size="Size.Small" Variant="Variant.Filled" @onclick="@Funcs.GetNoticeInfoList">@ResourceStrings.Sync</MudButton>
-        </MudPaper>
-    </MudItem>
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="4">
-        <MudCard>
-            <MudCardHeader>
-                <MudSwitch T="bool" Color="Color.Info" @bind-Value="@Funcs.ShowDebugInfo" Label="Debug Info"></MudSwitch>
+    </div>
+    <div class="col">
+        <MudCard Class="home-missions">
+            <MudCardHeader Class="justify-space-between">
+                <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.TaskAlt"/><span>@Tr("[MyPageMenuButtonMissionLabel]")</span></MudText>
+                <MudPaper Elevation="0" Class="d-flex justify-end gap-2">
+                    <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Sync" @onclick="@Funcs.GetMissionInfo">@ResourceStrings.Sync</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Filled" @onclick="@Funcs.RewardMissonActivity">@ResourceStrings.RewardMissonActivity</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" @onclick="@Funcs.CompleteMissions">@Tr("[MissionAllReceiveButton]")</MudButton>
+                </MudPaper>
             </MudCardHeader>
-            <MudCardContent Style="max-height: 400px; overflow: scroll">
-                @if (Funcs.ShowDebugInfo)
+            <MudCardContent>
+                @{ var missionGroups = MissionGroups(); }
+                @if (missionGroups.Count > 0)
                 {
-                    <pre>
-                 @Funcs.UserSyncData.ToJson(true)
-                 </pre>
+                    <MudTabs Class="mission-tabs" MinimumTabWidth="20px">
+                        @foreach (var (group, rows) in missionGroups)
+                        {
+                            var done = rows.Count(r => r.Done);
+                            <MudTabPanel Text="@MissionGroupName(group)">
+                                <div class="mission-progress">
+                                    <span class="mission-progress-count"><b>@done</b> / @rows.Count @ResourceStrings.Finished</span>
+                                    <MudProgressLinear Color="Color.Primary" Rounded="true" Value="@(done * 100.0 / rows.Count)" aria-label="@($"{done} / {rows.Count} {ResourceStrings.Finished}")"/>
+                                </div>
+                                @foreach (var row in rows)
+                                {
+                                    <div class="mission-row @(row.Done ? "is-done" : null)">
+                                        <span class="mission-check">@if (row.Done) {<MudIcon Icon="@Icons.Material.Filled.Check"/>}</span>
+                                        <span class="mission-name">@Tr(row.Mb.NameKey)</span>
+                                        <span class="mission-status @(row.Todo ? "is-todo" : null)">@row.Status</span>
+                                    </div>
+                                }
+                            </MudTabPanel>
+                        }
+                    </MudTabs>
                 }
             </MudCardContent>
         </MudCard>
-    </MudItem>
+        <MudCard Class="home-notices">
+            <MudCardContent>
+                <MudTabs Class="notice-tabs" MinimumTabWidth="20px" HeaderPosition="TabHeaderPosition.After">
+                    <Header>
+                        <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Sync" @onclick="@Funcs.GetNoticeInfoList">@ResourceStrings.Sync</MudButton>
+                    </Header>
+                    <ChildContent>
+                        <MudTabPanel Text="@Tr("[NoticeCategoryTypeEventTab]")">@NoticeList(Funcs.EventInfoList)</MudTabPanel>
+                        <MudTabPanel Text="@Tr("[NoticeCategoryTypeNoticeTab]")">@NoticeList(Funcs.NoticeInfoList)</MudTabPanel>
+                    </ChildContent>
+                </MudTabs>
+            </MudCardContent>
+        </MudCard>
+    </div>
+    </div>
 }
-</MudGrid>
 
 @code {
     private long selectedTargetQuerstId;
@@ -398,7 +385,8 @@
         try
         {
             alertMessage = Funcs.LoginOk ? string.Empty : ResourceStrings.PleaseLogin;
-            TrackAccountSubscription(Funcs.WhenAnyPropertyChanged().Subscribe(_ => InvokeAsync(StateHasChanged)));
+            // Sample, not Throttle: Throttle starves while a job keeps changing properties; Sample renders the latest state at most 4x/s.
+            TrackAccountSubscription(Funcs.WhenAnyPropertyChanged().Sample(TimeSpan.FromMilliseconds(250)).Subscribe(_ => InvokeAsync(StateHasChanged)));
         }
         catch (Exception e)
         {
@@ -455,26 +443,94 @@
         }
     }
 
-    // Mission row to show: latest id of the first non-empty status bucket (null status = show progress). Groups may lack buckets and ids may be missing from the master.
-    private static (long? Id, string? Status) MissionRow(UserMissionDtoInfo m)
+    private sealed record MissionLine(MissionMB Mb, string Status, bool Done, bool Todo);
+
+    // Mission row to show: latest id of the first non-empty status bucket. Groups may lack buckets and ids may be missing from the master (row skipped).
+    private static MissionLine? MissionRow(UserMissionDtoInfo m)
     {
         long? Last(MissionStatusType t) => m.MissionStatusHistory != null && m.MissionStatusHistory.TryGetValue(t, out var l) && l.Count > 0 ? l[^1] : null;
-        if (Last(MissionStatusType.Progress) is { } progress) return (progress, null);
-        if (Last(MissionStatusType.NotReceived) is { } notReceived) return (notReceived, ResourceStrings.NotReceived);
-        if (Last(MissionStatusType.Locked) is { } locked) return (locked, ResourceStrings.NotUnlocked);
-        if (m.MissionType is MissionType.Daily or MissionType.Weekly && Last(MissionStatusType.Received) is { } received) return (received, ResourceStrings.Finished);
-        return (null, null);
+        MissionLine? Line(long id, Func<MissionMB, string> status, bool done, bool todo) => MissionTable.GetById(id) is { } mb ? new MissionLine(mb, status(mb), done, todo) : null;
+        if (Last(MissionStatusType.Progress) is { } progress) return Line(progress, mb => $"{m.ProgressCount}/{mb.RequireValue}", false, true);
+        if (Last(MissionStatusType.NotReceived) is { } notReceived) return Line(notReceived, _ => ResourceStrings.NotReceived, true, true);
+        if (Last(MissionStatusType.Locked) is { } locked) return Line(locked, _ => ResourceStrings.NotUnlocked, false, false);
+        if (m.MissionType is MissionType.Daily or MissionType.Weekly && Last(MissionStatusType.Received) is { } received) return Line(received, _ => ResourceStrings.Finished, true, false);
+        return null;
     }
 
-    private static string MissionTypeName(MissionType type) => type switch
+    private static readonly MissionGroupType[] MissionGroupOrder = [MissionGroupType.Daily, MissionGroupType.Weekly, MissionGroupType.Main, MissionGroupType.Guild, MissionGroupType.GuildTower, MissionGroupType.Panel];
+
+    // One tab per loaded group: fixed order first, then the rest in enum order; groups with nothing to show are left out.
+    private List<(MissionGroupType Group, List<MissionLine> Rows)> MissionGroups() =>
+        (Funcs.MissionInfoDict ?? [])
+        .OrderBy(p => Array.IndexOf(MissionGroupOrder, p.Key) is var i and >= 0 ? i : MissionGroupOrder.Length + (int) p.Key)
+        .Select(p => (p.Key, (p.Value?.UserMissionDtoInfoDict?.Values ?? Enumerable.Empty<List<UserMissionDtoInfo>>())
+            .SelectMany(x => x ?? []).Select(MissionRow).OfType<MissionLine>().ToList()))
+        .Where(g => g.Item2.Count > 0)
+        .ToList();
+
+    private string MissionGroupName(MissionGroupType group) => group switch
     {
-        MissionType.Main => Tr("[MissionTabName1]"),
-        MissionType.Daily => Tr("[MissionTabName2]"),
-        MissionType.Weekly => Tr("[MissionTabName3]"),
-        MissionType.Guild => Tr("[GuildMissionTitle]"),
-        MissionType.GuildTower => Tr("[GuildTowerMissionTitle]"),
-        MissionType.PanelSheet1 or MissionType.PanelSheet2 or MissionType.PanelSheet3 => Tr("[EventPortalBannerInsidePanelMission]"),
-        _ => type.ToString()
+        MissionGroupType.Main => Tr("[MissionTabName1]"),
+        MissionGroupType.Daily => Tr("[MissionTabName2]"),
+        MissionGroupType.Weekly => Tr("[MissionTabName3]"),
+        MissionGroupType.Guild => Tr("[GuildMissionTitle]"),
+        MissionGroupType.GuildTower => Tr("[GuildTowerMissionTitle]"),
+        MissionGroupType.Panel => Tr("[EventPortalBannerInsidePanelMission]"),
+        MissionGroupType.Beginner => Tr("[BeginnerMissionTitle]"),
+        MissionGroupType.Comeback => Tr("[ComebackMissionTitle]"),
+        MissionGroupType.PopularityVote => Tr("[PopularityVoteMissionTitle]"),
+        MissionGroupType.BookSort => Tr("[BookSortMissionTitle]"),
+        MissionGroupType.RentalRaid => Tr("[RentalRaidMissionTitle]"),
+        // Event/collab titles change per event: prefer the live MyPage button name, fall back to the generic game label.
+        MissionGroupType.Limited => IconName(TransferSpotType.EventMission) ?? Tr("[LimitedMissionTitle]"),
+        MissionGroupType.Collab => IconName(TransferSpotType.CollabMission) ?? Tr("[MyPageButtonCollabMissionLabel2]").Replace("<br>", " "),
+        MissionGroupType.NewCharacter => IconName(TransferSpotType.NewCharacterMission) ?? Tr("[MyPageButtonNewCharacterMissionLabel]").Replace("<br>", " "),
+        _ => group.ToString()
+    };
+
+    private string? IconName(TransferSpotType spot) =>
+        Funcs.Mypage?.MypageInfo?.MypageIconInfos?.FirstOrDefault(i => i.TransferDetailInfo?.TransferSpotType == spot) is { } icon
+            ? Tr(icon.IconNameKey).Replace("<br>", " ") : null;
+
+    private RenderFragment Tile(ItemType type, long id, string label) => __builder =>
+    {
+        var icon = Atlas.GetItemIcon(type, id);
+        var count = Funcs.UserSyncData.GetUserItemCount(type, id);
+        <div class="tile">
+            <span class="tile-art">@if (icon != null) {<img src="@icon" @key="icon" width="36" height="36" loading="lazy" decoding="async" alt="" onerror="this.remove()">}</span>
+            <span class="hero-tile-text"><span class="tile-label">@label</span><span class="tile-value" title="@count.ToString("N0")">@Compact(count)</span></span>
+        </div>
+    };
+
+    // MyPage entry: game icon in a fixed box, red dot inside that box. Name may be game markup (<br>).
+    // MYPAGE_ICON sprites carry uneven transparent margins (most sit high in the 128px canvas); shift by the
+    // opaque-bbox offset, in % of the icon, so the art is optically centred in its box.
+    // ponytail: measured for the icons seen on a real account; unknown ids stay geometric-centred, add them here if one looks off.
+    private static readonly Dictionary<long, (double X, double Y)> EntryNudge = new()
+    {
+        [1] = (-1.6, 2.7), [4] = (0.8, 7.4), [5] = (-7.4, 2), [6] = (0, 5.9), [13] = (-2, 14.5),
+        [16] = (0.4, 11.7), [20] = (0, 14.1), [21] = (-0.4, 10.2), [39] = (-0.8, 11.3),
+    };
+
+    private RenderFragment Entry(string? icon, long mypageId, bool dot, object name) => __builder =>
+    {
+        var nudge = EntryNudge.TryGetValue(mypageId, out var n) ? FormattableString.Invariant($"transform:translate({n.X}%,{n.Y}%)") : null;
+        <div class="entry">
+            <span class="entry-art">
+                @if (icon != null) {<img src="@icon" @key="icon" style="@nudge" width="44" height="44" loading="lazy" decoding="async" alt="" onerror="this.remove()">}
+                @if (dot) {<span class="entry-dot"></span>}
+            </span>
+            @{ var label = name.ToString()?.Replace("<br>", " ") ?? ""; }
+            <span title="@System.Text.RegularExpressions.Regex.Replace(label, "<[^>]*>", "")">@(name is MarkupString ? (MarkupString)label : label)</span>
+        </div>
+    };
+
+    private RenderFragment NoticeList(IEnumerable<NoticeInfo>? notices) => __builder =>
+    {
+        foreach (var notice in notices ?? [])
+        {
+            <button type="button" class="notice-row" @onclick="() => ShowNotice(notice)"><span>@notice.Title</span><MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small"/></button>
+        }
     };
 
 }

@@ -9,6 +9,7 @@ using Quartz;
 using ReactiveUI;
 using MementoMori.WebUI;
 using MementoMori.WebUI.UI;
+using MementoMori.WebUI.Services;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Options;
 using Microsoft.Net.Http.Headers;
@@ -51,7 +52,12 @@ internal class Program
         builder.Services.AddMudServices();
 
         builder.Services.AddRazorComponents()
-            .AddInteractiveServerComponents();
+            .AddInteractiveServerComponents(o =>
+            {
+                // Every reload/language switch leaves a disconnected circuit (~8 MiB); defaults keep up to 100 for 3 min.
+                o.DisconnectedCircuitRetentionPeriod = TimeSpan.FromSeconds(30);
+                o.DisconnectedCircuitMaxRetained = 10;
+            });
 
         builder.Services.AddMementoMori();
         builder.Services.AddMementoMoriBlazorShared();
@@ -93,6 +99,7 @@ internal class Program
         app.UseStaticFiles();
         app.MapStaticAssets();
         app.UseAntiforgery();
+        app.MapAssetCache(configDirectory);
         app.MapGet("/healthz", () => Results.Ok(new { status = "ready" }));
         app.MapRazorComponents<App>()
             .AddAdditionalAssemblies(typeof(Index).Assembly)

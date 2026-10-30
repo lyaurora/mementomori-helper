@@ -1,0 +1,153 @@
+@using System.Reactive.Linq
+@using MementoMori.Funcs
+@using MementoMori.Ortega.Share
+@using MementoMori.Ortega.Share.Enums
+@using MementoMori.Ortega.Common.Utils
+@using Microsoft.Extensions.Logging
+@inherits MementoMori.BlazorShared.Models.AccountComponent
+@inject IDialogService DialogService
+@inject MementoMori.WebUI.UI.AtlasManager Atlas
+
+<MudCard Class="growth-card">
+    <MudCardHeader Class="justify-space-between">
+        <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.TrendingUp"/><span>@ResourceStrings.GrowthRecent</span></MudText>
+        <MudButton Size="Size.Small" Variant="Variant.Text" Disabled="_events.Count == 0" @onclick="ShowAll">@ResourceStrings.GrowthViewAll</MudButton>
+    </MudCardHeader>
+    <MudCardContent>
+        @if (Funcs.UserId == 0)
+        {
+            <div class="growth-empty">@ResourceStrings.GrowthNotLoggedIn</div>
+        }
+        else if (_events.Count == 0)
+        {
+            <div class="growth-empty">@ResourceStrings.GrowthNoData</div>
+        }
+        else
+        {
+            var pills = Summary(_events, DateTimeOffset.UtcNow.AddDays(-1)).ToList();
+            var latest = _events.Where(e => e.Kind != "Snapshot").TakeLast(5).Reverse().ToList();
+            if (pills.Count > 0)
+            {
+                <div class="growth-summary">
+                    <span class="growth-summary-label">@ResourceStrings.GrowthLast24h</span>
+                    @foreach (var (label, value) in pills)
+                    {
+                        <span class="growth-pill">@label <b>@value</b></span>
+                    }
+                </div>
+            }
+            @if (latest.Count == 0)
+            {
+                <div class="growth-empty">@ResourceStrings.GrowthNoData</div>
+            }
+            <div class="growth-list">
+                @foreach (var e in latest)
+                {
+                    @Row(e, Atlas, true)
+                }
+            </div>
+        }
+    </MudCardContent>
+</MudCard>
+
+@code {
+    private List<GrowthEvent> _events = new();
+
+    protected override async Task AccountChanged()
+    {
+        TrackAccountSubscription(Funcs.Changed.Where(c => c.PropertyName == nameof(Funcs.UserSyncData))
+            .Throttle(TimeSpan.FromSeconds(3))
+            .Subscribe(_ => InvokeAsync(Load)));
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        var funcs = Funcs;
+        try
+        {
+            var events = funcs.UserId == 0 ? new() : await Task.Run(() => funcs.GetGrowthHistory());
+            if (funcs != Funcs) return;
+            _events = events;
+            StateHasChanged();
+        }
+        catch (Exception e) { Logger.LogWarning(e, "growth history load failed"); }
+    }
+
+    private Task ShowAll() => DialogService.ShowAsync<GrowthHistoryDialog>(ResourceStrings.GrowthHistoryTitle,
+        new DialogParameters { [nameof(GrowthHistoryDialog.Events)] = _events },
+        new DialogOptions { CloseButton = true, CloseOnEscapeKey = true, FullWidth = true, MaxWidth = MaxWidth.Small });
+
+    internal static string Category(GrowthEvent e) => e.Kind switch
+    {
+        "Reward" => "reward",
+        "CharacterLevel" or "CharacterRarity" => "character",
+        "EquipmentReinforce" or "EquipmentUpgrade" => "equipment",
+        _ => "progress"
+    };
+
+    internal static IEnumerable<(string Label, string Value)> Summary(List<GrowthEvent> events, DateTimeOffset since)
+    {
+        var recent = events.Where(e => e.Time >= since).ToList();
+        long Gain(string kind) => recent.Where(e => e.Kind == kind).Sum(e => e.To - e.From);
+        var rewards = recent.Count(e => e.Kind == "Reward");
+        if (rewards > 0) yield return (ResourceStrings.GrowthFilterRewards, rewards.ToString());
+        if (Gain("Tower") is > 0 and var tower) yield return (Tr("[CommonHeaderTowerBattleLabel]"), $"+{tower}");
+        if (Gain("MainQuest") is > 0 and var quest) yield return (ResourceStrings.GrowthMainQuest, $"+{quest}");
+        if (Gain("PlayerRank") is > 0 and var rank) yield return (Tr("[CommonPlayerRankLabel]"), $"+{rank}");
+        var snaps = recent.Where(e => e.Kind == "Snapshot" && e.Values?.ContainsKey("BattlePower") == true).ToList();
+        if (snaps.Count >= 2 && snaps[^1].Values!["BattlePower"] - snaps[0].Values!["BattlePower"] is not 0 and var bp)
+            yield return (Tr("[CommonBattlePowerLabel]"), (bp > 0 ? "+" : "−") + Compact(Math.Abs(bp)));
+    }
+
+    internal static string Ago(DateTimeOffset t)
+    {
+        var d = DateTimeOffset.UtcNow - t;
+        return d.TotalMinutes < 1 ? ResourceStrings.GrowthJustNow
+            : d.TotalHours < 1 ? string.Format(ResourceStrings.GrowthMinutesAgo, (int) d.TotalMinutes)
+            : d.TotalDays < 1 ? string.Format(ResourceStrings.GrowthHoursAgo, (int) d.TotalHours)
+            : string.Format(ResourceStrings.GrowthDaysAgo, (int) d.TotalDays);
+    }
+
+    private static string Quest(long id) => Masters.QuestTable.GetById(id)?.Memo ?? id.ToString();
+
+    internal static (string? Icon, string Text) Describe(GrowthEvent e, MementoMori.WebUI.UI.AtlasManager atlas)
+    {
+        try
+        {
+            return e.Kind switch
+            {
+                "Reward" => (atlas.GetItemIcon((ItemType) e.Type, e.Id), $"{ItemUtil.GetItemName((ItemType) e.Type, e.Id)} ×{e.To:N0}"),
+                "CharacterLevel" => (atlas.GetCharacterIcon(e.Id), $"{Masters.CharacterTable.GetCharacterName(e.Id)} Lv {e.From} → {e.To}"),
+                "CharacterRarity" => (atlas.GetCharacterIcon(e.Id), $"{Masters.CharacterTable.GetCharacterName(e.Id)} {(CharacterRarityFlags) e.From} → {(CharacterRarityFlags) e.To}"),
+                "EquipmentReinforce" => (atlas.GetItemIcon(ItemType.Equipment, e.Id), $"{ItemUtil.GetItemName(ItemType.Equipment, e.Id)} +{e.From} → +{e.To}"),
+                "EquipmentUpgrade" => (atlas.GetItemIcon(ItemType.Equipment, e.To), $"{ItemUtil.GetItemName(ItemType.Equipment, e.From)} → {ItemUtil.GetItemName(ItemType.Equipment, e.To)}"),
+                "PlayerRank" => (null, $"{Tr("[CommonPlayerRankLabel]")} {e.From} → {e.To}"),
+                "MainQuest" => (null, $"{ResourceStrings.GrowthMainQuest} {Quest(e.From)} → {Quest(e.To)}"),
+                "Tower" => (null, $"{((TowerType) e.Type == TowerType.Infinite ? Tr("[CommonHeaderTowerBattleLabel]") : Tr((TowerType) e.Type))} {e.From} → {e.To}"),
+                _ => (null, e.Kind)
+            };
+        }
+        catch { return (null, e.Kind); } // missing master rows must not break the page
+    }
+
+    internal static RenderFragment Row(GrowthEvent e, MementoMori.WebUI.UI.AtlasManager atlas, bool relative) => __builder =>
+    {
+        var (icon, text) = Describe(e, atlas);
+        var fallback = Category(e) switch { "reward" => Icons.Material.Outlined.Redeem, "character" => Icons.Material.Outlined.Person, "equipment" => Icons.Material.Outlined.Shield, _ => Icons.Material.Outlined.Flag };
+        <div class="growth-row">
+            <span class="growth-art is-@Category(e)">
+                @if (icon != null)
+                {
+                    <img src="@icon" @key="icon" width="32" height="32" loading="lazy" decoding="async" alt="" onerror="this.remove()">
+                }
+                else
+                {
+                    <MudIcon Icon="@fallback" Size="Size.Small"/>
+                }
+            </span>
+            <span class="growth-text" title="@text">@text</span>
+            <span class="growth-time" title="@e.Time.ToLocalTime().ToString("g")">@(relative ? Ago(e.Time) : e.Time.ToLocalTime().ToString("HH:mm"))</span>
+        </div>
+    };
+}

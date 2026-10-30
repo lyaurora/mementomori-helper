@@ -69,7 +69,7 @@
         @foreach (var channel in Channels)
         {
             <MudButton Variant="@(channel == _channel ? Variant.Filled : Variant.Outlined)" Color="Color.Primary"
-                       OnClick="() => ChangeChannel(channel)" Disabled="_busy" data-channel="@channel">@ChannelName(channel)
+                       OnClick="() => ChangeChannel(channel)" Disabled="_busy" data-channel="@channel" aria-pressed="@((channel == _channel).ToString().ToLowerInvariant())">@ChannelName(channel)
                 @if (channel == ChatType.Private && _snapshot.Contacts.Any(c => c.ExistUnread)) { <span class="chat-unread" aria-label="@ResourceStrings.UnreadPrivateMessages">●</span> }
             </MudButton>
         }

@@ -42,10 +42,10 @@
     .character-icon .icon-level {
         position: absolute;
         top: 2px;
-        right: 10px;
+        right: 6px;
         font-size: 24px;
         z-index: 11;
-        text-shadow: 0px 0px 5px black;
+        text-shadow: 0 0 2px #000, 0 0 2px #000, 0 1px 3px #000;
     }
 
     .character-icon .icon-deco {
@@ -68,9 +68,10 @@
 
     .character-icon .icon-rarity-star-container {
         position: absolute;
-        bottom: -3px;
+        bottom: 6px;
         z-index: 11;
         left: 20px;
+        line-height: 0;
     }
 
         .character-icon .icon-rarity-star-container .icon-rarity-star {

@@ -1,0 +1,26 @@
+@implements IDisposable
+@inject AccountSelection AccountSelection
+
+@* Game server clock for the top bar; hidden until the current account has logged in (no server offset before that). *@
+@if (Now() is { } now)
+{
+    <span class="server-clock" title="@ResourceStrings.ServerTimeLabel">
+        <span class="server-clock-label">@ResourceStrings.ServerTimeLabel</span>
+        <time class="server-clock-time">@now.ToString("HH:mm")<span class="server-clock-sec">@now.ToString(":ss")</span></time>
+    </span>
+}
+
+@code {
+    System.Threading.Timer? _timer;
+
+    DateTime? Now()
+    {
+        var funcs = AccountSelection.Current?.Funcs;
+        return funcs?.LoginOk == true ? funcs.TimeManager.ServerNow : null;
+    }
+
+    protected override void OnInitialized() =>
+        _timer = new System.Threading.Timer(_ => InvokeAsync(StateHasChanged), null, TimeSpan.FromMilliseconds(1000 - DateTime.UtcNow.Millisecond), TimeSpan.FromSeconds(1));
+
+    public void Dispose() => _timer?.Dispose();
+}

@@ -14,6 +14,7 @@
 @page "/Character"
 
 <PageTitle>@Masters.TextResourceTable.Get("[CommonFooterCharacterButtonLabel]")</PageTitle>
+<div class="character-page">
 @if (!string.IsNullOrEmpty(alertMessage))
 {
     <MudAlert Severity="Severity.Warning">@alertMessage</MudAlert>
@@ -25,7 +26,11 @@
         var name = Masters.TextResourceTable.Get(cmb.NameKey);
 
         <MudItem xs="12" sm="12" md="4">
-            <div class="character-selected-name">@name</div>
+            <MudPaper Class="character-panel" Elevation="0">
+            <div class="character-hero">
+                <CharacterIcon Size="64" UserCharacterInfo="@Funcs.UserSyncData.GetUserCharacterInfoByUserCharacterDtoInfo(_selectedCharactor)"/>
+                <div class="character-selected-name">@name</div>
+            </div>
             <MudTabs MinimumTabWidth="20px" HeaderPosition="TabHeaderPosition.Before">
                 <ChildContent>
                     <MudTabPanel Text="@Masters.TextResourceTable.Get("[CommonHeaderCharacterDetailLabel]")">
@@ -69,7 +74,7 @@
                     </MudTabPanel>
                     <MudTabPanel Text="@Masters.TextResourceTable.Get("[CommonEquipmentLabel]")">
                         <div class="character-equipment">
-                        <MudTabs Class="character-equipment-tabs" MinimumTabWidth="20px">
+                        <MudTabs @key="_selectedCharactor.Guid" Class="character-equipment-tabs" MinimumTabWidth="20px">
                             @foreach (var (slotType, equipmentDtoInfo) in ViewModel.UserSyncData.GetUserEquipmentDtoInfoSlotTypeDictionaryByCharacterGuid(_selectedCharactor.Guid))
                             {
                                 var slotName = Masters.TextResourceTable.Get(slotType);
@@ -94,19 +99,21 @@
                     @* <MudTabPanel Text="详细"></MudTabPanel> *@
                 </ChildContent>
             </MudTabs>
+            </MudPaper>
         </MudItem>
     }
     <MudItem xs="12" sm="12" md="8">
-        <MudPaper Class="d-flex gap-2 flex-wrap" Elevation="0">
+        <MudPaper Class="character-grid" Elevation="0">
             @foreach (var character in (_userSyncData?.UserCharacterDtoInfos ?? new List<UserCharacterDtoInfo>()).OrderByDescending(d => d.RarityFlags))
             {
-                <button type="button" class="character-choice" aria-pressed="@((_selectedCharactor?.Guid == character.Guid) ? "true" : "false")" aria-label="@Masters.CharacterTable.GetCharacterName(character.CharacterId)" @onclick="() => SelectCharacter(character)">
+                <button type="button" @key="character.Guid" class="character-choice" aria-pressed="@((_selectedCharactor?.Guid == character.Guid) ? "true" : "false")" aria-label="@Masters.CharacterTable.GetCharacterName(character.CharacterId)" @onclick="() => SelectCharacter(character)">
                     <CharacterIcon Size="72" UserCharacterInfo="@Funcs.UserSyncData.GetUserCharacterInfoByUserCharacterDtoInfo(character)"/>
                 </button>
             }
         </MudPaper>
     </MudItem>
 </MudGrid>
+</div>
 
 @code {
     private UserSyncData? _userSyncData;
@@ -123,7 +130,8 @@
             alertMessage = Funcs.LoginOk ? string.Empty : ResourceStrings.PleaseLogin;
             ViewModel = Funcs;
             _userSyncData = ViewModel.UserSyncData;
-            SelectCharacter(_userSyncData.UserCharacterDtoInfos?.MaxBy(d => d.Level));
+            // default to the first tile of the grid (same order as below)
+            SelectCharacter(_userSyncData.UserCharacterDtoInfos?.OrderByDescending(d => d.RarityFlags).FirstOrDefault());
             await InvokeAsync(StateHasChanged);
         }
         catch (Exception e)

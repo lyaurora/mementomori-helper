@@ -9,7 +9,7 @@
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Tune" aria-hidden="true" /><span>@ResourceStrings.AutoJobSwitchs <span class="panel-scope">(@ResourceStrings.AllAccounts)</span></span></MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Tune" aria-hidden="true" /><span>@ResourceStrings.AutoJobSwitchs <span class="panel-scope">@ResourceStrings.AllAccounts</span></span></MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent>
@@ -18,20 +18,28 @@
             @if (AccountManager.GetAccountInfo(UserId) is { } pauseAccount)
             {
                 var until = pauseAccount.PauseUntil > DateTimeOffset.UtcNow ? pauseAccount.PauseUntil : null;
-                <div class="d-flex flex-wrap align-center gap-1">
-                    <MudText Typo="Typo.body2">@ResourceStrings.PauseJobs (@pauseAccount.Name)</MudText>
+                var status = AccountManager.TryGet(UserId, out var pauseAcc) ? pauseAcc.Funcs?.UserSyncData?.UserStatusDtoInfo : null;
+                <div class="pause-row">
+                    <div class="pause-head">
+                        <span>@ResourceStrings.PauseJobs</span>
+                        <span class="panel-scope is-account"><PlayerAvatar IconId="@(status?.MainCharacterIconId ?? 0)" Name="@(status?.Name ?? pauseAccount.Name)" Size="16" />@(status?.Name ?? pauseAccount.Name)</span>
+                    </div>
                     @if (until == null)
                     {
-                        @foreach (var hours in new[] {1, 2, 4})
-                        {
-                            <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="() => Pause(DateTimeOffset.UtcNow.AddHours(hours))">@($"{hours}h")</MudButton>
-                        }
-                        <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="() => Pause(DateTimeOffset.MaxValue)">@ResourceStrings.UntilResumed</MudButton>
+                        <div class="pause-choices">
+                            @foreach (var hours in new[] {1, 2, 4})
+                            {
+                                <button type="button" class="app-choice" @onclick="() => Pause(DateTimeOffset.UtcNow.AddHours(hours))">@($"{hours}h")</button>
+                            }
+                            <button type="button" class="app-choice" @onclick="() => Pause(DateTimeOffset.MaxValue)">@ResourceStrings.UntilResumed</button>
+                        </div>
                     }
                     else
                     {
-                        <MudText Typo="Typo.body2" Color="Color.Warning">@(until == DateTimeOffset.MaxValue ? ResourceStrings.PausedUntilResumed : string.Format(ResourceStrings.PausedUntilFormat, until.Value.ToLocalTime().ToString("g")))</MudText>
-                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" OnClick="() => Pause(null)">@ResourceStrings.ResumeJobs</MudButton>
+                        <div class="pause-state">
+                            <span class="pause-until">@(until == DateTimeOffset.MaxValue ? ResourceStrings.PausedUntilResumed : string.Format(ResourceStrings.PausedUntilFormat, until.Value.ToLocalTime().ToString("g")))</span>
+                            <button type="button" class="app-choice" aria-pressed="true" @onclick="() => Pause(null)">@ResourceStrings.ResumeJobs</button>
+                        </div>
                     }
                 </div>
             }

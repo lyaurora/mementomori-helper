@@ -972,6 +972,7 @@ static async Task CheckChat()
                 var initial = (await renderer.RenderComponentAsync<MementoMori.BlazorShared.Pages.Chat>()).ToHtmlString();
                 Require(initial.Contains("chat-loading") && !initial.Contains("chat-messages"), "Prerender exposes a channel before browser preferences load");
                 var count = requests.Count;
+                await renderer.RenderComponentAsync<MudBlazor.MudPopoverProvider>();
                 var gacha = (await renderer.RenderComponentAsync<MementoMori.BlazorShared.Pages.Gacha>()).ToHtmlString();
                 var shop = (await renderer.RenderComponentAsync<MementoMori.BlazorShared.Pages.Shop>()).ToHtmlString();
                 Require(requests.Count == count && gacha.Contains("mud-progress-linear") && shop.Contains("mud-progress-linear"), "Shop/gacha make game requests during prerender");
@@ -980,7 +981,6 @@ static async Task CheckChat()
                 funcs.UserSyncData.UserLevelLinkMemberDtoInfos = [];
                 funcs.UserSyncData.UserCharacterDtoInfos = [new() { Guid = "character", CharacterId = 1, Level = 180 }];
                 funcs.UserSyncData.UserEquipmentDtoInfos = [new() { Guid = "equipment", CharacterGuid = "character", EquipmentId = 1 }];
-                await renderer.RenderComponentAsync<MudBlazor.MudPopoverProvider>();
                 await renderer.RenderComponentAsync<MementoMori.BlazorShared.Components.EquipmentTraining>();
                 Require(funcs.TrainingEquipmentGuid == "equipment" && funcs.EquipmentTrainingTargetType == BaseParameterType.Muscle,
                     "Initial training character does not populate equipment and target");

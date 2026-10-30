@@ -1,0 +1,232 @@
+﻿@using Quartz
+@using System.Globalization
+@using MementoMori.Common.Localization
+@inject AccountSelection AccountSelection
+
+@* Friendly editor for a Quartz cron: every N hours / daily / weekly; anything else stays raw text (custom). *@
+<div class="cron-picker">
+    <div class="cron-head">
+        <span class="cron-label">@Label</span>
+        <div class="cron-modes" role="radiogroup" aria-label="@Label">
+            @foreach (var m in Enum.GetValues<CronMode>())
+            {
+                <button type="button" role="radio" aria-checked="@(m == _mode ? "true" : "false")" class="app-choice cron-mode" @onclick="() => SetMode(m)">@ModeName(m)</button>
+            }
+        </div>
+        @if (!string.IsNullOrEmpty(Default))
+        {
+            <MudTooltip Text="@ResourceStrings.ResettoDefault">
+                <MudIconButton Icon="@Icons.Material.Rounded.Restore" Size="Size.Small" OnClick="() => Save(Default)" aria-label="@ResourceStrings.ResettoDefault"/>
+            </MudTooltip>
+        }
+    </div>
+
+    <div class="cron-body">
+        @switch (_mode)
+        {
+            case CronMode.Hours:
+                <MudNumericField T="int" Value="_every" ValueChanged="v => { _every = v; Save(Build()); }" Min="1" Max="23" Label="@ResourceStrings.CronIntervalHours" Variant="Variant.Outlined" Margin="Margin.Dense" Class="cron-num"/>
+                <MudNumericField T="int" Value="_minute" ValueChanged="v => { _minute = v; Save(Build()); }" Min="0" Max="59" Label="@ResourceStrings.CronAtMinute" Variant="Variant.Outlined" Margin="Margin.Dense" Class="cron-num"/>
+                break;
+            case CronMode.Daily:
+                <div class="cron-chips cron-hours" role="group" aria-label="@ResourceStrings.CronModeDaily">
+                    @for (var h = 0; h < 24; h++)
+                    {
+                        var hour = h;
+                        <button type="button" aria-pressed="@(_hours.Contains(hour) ? "true" : "false")" class="app-choice cron-chip" @onclick="() => ToggleHour(hour)">@($"{hour:00}:{_minute:00}")</button>
+                    }
+                </div>
+                <MudNumericField T="int" Value="_minute" ValueChanged="v => { _minute = v; Save(Build()); }" Min="0" Max="59" Label="@ResourceStrings.CronAtMinute" Variant="Variant.Outlined" Margin="Margin.Dense" Class="cron-num"/>
+                break;
+            case CronMode.Weekly:
+                <div class="cron-chips" role="group" aria-label="@ResourceStrings.CronModeWeekly">
+                    @foreach (var (code, name) in Days)
+                    {
+                        <button type="button" aria-pressed="@(_days.Contains(code) ? "true" : "false")" class="app-choice cron-chip" @onclick="() => ToggleDay(code)">@name</button>
+                    }
+                </div>
+                <MudTextField T="string" InputType="InputType.Time" Value="@($"{_hours[0]:00}:{_minute:00}")" ValueChanged="SetWeeklyTime" Variant="Variant.Outlined" Margin="Margin.Dense" Class="cron-time" aria-label="@Label"/>
+                break;
+            default:
+                <MudTextField T="string" Value="_customText" ValueChanged="SaveCustom" Immediate="true" DebounceInterval="400" Placeholder="0 0 4 ? * *"
+                              Variant="Variant.Outlined" Margin="Margin.Dense" Class="cron-custom" Validation="@CustomError"
+                              HelperText="sec min hour day month weekday [year]"/>
+                break;
+        }
+    </div>
+
+    @if (NextRuns() is { Count: > 0 } runs)
+    {
+        <div class="cron-next">
+            <span class="cron-next-label">@ResourceStrings.CronNextRuns</span>
+            @foreach (var r in runs)
+            {
+                <span class="cron-next-time">@r</span>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    /// <summary>Optional: shows a reset button that restores this cron.</summary>
+    [Parameter] public string? Default { get; set; }
+
+    enum CronMode { Hours, Daily, Weekly, Custom }
+
+    static readonly string[] DayCodes = { "MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN" };
+    static (string Code, string Name)[] Days => DayCodes
+        .Select((code, i) => (code, CultureInfo.CurrentUICulture.DateTimeFormat.GetAbbreviatedDayName((DayOfWeek)((i + 1) % 7)))).ToArray();
+
+    static string ModeName(CronMode m) => m switch
+    {
+        CronMode.Hours => ResourceStrings.CronModeHours, CronMode.Daily => ResourceStrings.CronModeDaily,
+        CronMode.Weekly => ResourceStrings.CronModeWeekly, _ => ResourceStrings.CronModeCustom,
+    };
+
+    CronMode _mode = CronMode.Custom;
+    int _every = 1, _minute;
+    List<int> _hours = new() { 4 };
+    List<string> _days = new() { "MON" };
+    string? _parsed;
+    string _customText = "";
+    bool _error;
+
+    protected override void OnParametersSet()
+    {
+        if (Value == _parsed) return;
+        _parsed = Value;
+        _customText = Value;
+        _error = false;
+        Parse(Value);
+    }
+
+    void Parse(string cron) => (_mode, _every, _minute, _hours, _days) = Shape(cron, _every, _minute, _hours, _days);
+
+    // Only shapes Build() reproduces exactly (same fire times) get a friendly mode; everything else is custom.
+    static (CronMode, int, int, List<int>, List<string>) Shape(string cron, int every, int minute, List<int> hours, List<string> days)
+    {
+        var custom = (CronMode.Custom, every, minute, hours, days);
+        var p = (cron ?? "").Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (p.Length is < 6 or > 7 || p[0] != "0" || p[4] != "*" || (p.Length == 7 && p[6] != "*")) return custom;
+        if (!int.TryParse(p[1], out var m) || m is < 0 or > 59) return custom;
+        var anyDom = p[3] is "?" or "*";
+        var anyDow = p[5] is "?" or "*";
+        var hs = p[2].Split(',').Select(h => int.TryParse(h, out var v) && v is >= 0 and <= 23 ? v : -1).ToList();
+        var ds = p[5].ToUpperInvariant().Split(',').ToList();
+
+        if (anyDom && anyDow && p[2] == "*") return (CronMode.Hours, 1, m, hours, days);
+        if (anyDom && anyDow && (p[2].StartsWith("*/") || p[2].StartsWith("0/")) && int.TryParse(p[2][2..], out var n) && n is >= 1 and <= 23)
+            return (CronMode.Hours, n, m, hours, days);
+        if (anyDom && anyDow && !hs.Contains(-1)) return (CronMode.Daily, every, m, hs.Distinct().ToList(), days);
+        if (p[3] == "?" && hs is [>= 0] && ds.All(DayCodes.Contains)) return (CronMode.Weekly, every, m, hs, ds.Distinct().ToList());
+        return custom;
+    }
+
+    /// <summary>One-line human summary of a cron ("每天 04:50", "每 4 小时 :30", "周一 06:00"); null when it is a custom expression.</summary>
+    public static string? Describe(string cron)
+    {
+        var (mode, every, minute, hours, days) = Shape(cron, 1, 0, new(), new());
+        return mode switch
+        {
+            CronMode.Hours => string.Format(ResourceStrings.CronEveryHoursFormat, every, minute.ToString("00")),
+            CronMode.Daily => $"{ResourceStrings.CronModeDaily} " + (hours.Count <= 3
+                ? string.Join(", ", hours.Order().Select(h => $"{h:00}:{minute:00}"))
+                : EvenStep(hours) is { } step
+                    ? string.Format(ResourceStrings.CronEveryHoursFromFormat, step, $"{hours.Min():00}:{minute:00}")
+                    : string.Format(ResourceStrings.CronTimesPerDayFormat, hours.Count, minute.ToString("00"))),
+            CronMode.Weekly => $"{string.Join(" ", Days.Where(d => days.Contains(d.Code)).Select(d => d.Name))} {hours[0]:00}:{minute:00}",
+            _ => null,
+        };
+    }
+
+    string Build() => _mode switch
+    {
+        CronMode.Hours => $"0 {_minute} {(_every == 1 ? "*" : $"*/{_every}")} ? * *",
+        CronMode.Daily => $"0 {_minute} {string.Join(",", _hours.Order())} ? * *",
+        CronMode.Weekly => $"0 {_minute} {_hours[0]} ? * {string.Join(",", DayCodes.Where(_days.Contains))}",
+        _ => Value,
+    };
+
+    void SetMode(CronMode mode)
+    {
+        if (mode == _mode) return;
+        var from = _mode;
+        _mode = mode;
+        _customText = Value;
+        _error = false;
+        if (mode == CronMode.Custom) return;
+        // Coming from a mode without a fixed hour, start at the game's 04:00 reset rather than midnight.
+        if (from is CronMode.Hours or CronMode.Custom || _hours.Count == 0) _hours = new() { 4 };
+        if (mode == CronMode.Weekly) _hours = new() { _hours[0] };
+        if (from == CronMode.Custom) _minute = Math.Clamp(_minute, 0, 59);
+        Save(Build());
+    }
+
+    void ToggleHour(int hour)
+    {
+        if (_hours.Contains(hour)) { if (_hours.Count > 1) _hours.Remove(hour); }
+        else _hours.Add(hour);
+        Save(Build());
+    }
+
+    void ToggleDay(string code)
+    {
+        if (_days.Contains(code)) { if (_days.Count > 1) _days.Remove(code); }
+        else _days.Add(code);
+        Save(Build());
+    }
+
+    void SetWeeklyTime(string hhmm)
+    {
+        if (!TimeSpan.TryParse(hhmm, CultureInfo.InvariantCulture, out var t)) return;
+        (_hours, _minute) = (new() { t.Hours }, t.Minutes);
+        Save(Build());
+    }
+
+    // MudBlazor re-validates after every change and would clear a plain Error flag, so the message comes from Validation.
+    static readonly Func<string, string?> CustomError = v => CronExpression.IsValidExpression((v ?? "").Trim()) ? null : ResourceStrings.InvalidCronExpression;
+
+    void SaveCustom(string cron)
+    {
+        _customText = cron ?? "";
+        var trimmed = _customText.Trim();
+        _error = !CronExpression.IsValidExpression(trimmed);
+        if (!_error) Save(trimmed, reparse: false);
+    }
+
+    // Only valid crons are ever emitted, so the bound setting never holds a broken schedule.
+    void Save(string cron, bool reparse = true)
+    {
+        if (reparse) Parse(cron);
+        _parsed = cron;
+        ValueChanged.InvokeAsync(cron);
+    }
+
+    List<string> NextRuns() => _error ? new() : NextRuns(_mode == CronMode.Custom ? _customText.Trim() : Value, AccountSelection, 3, true);
+
+    // Jobs fire in server time (TimeZoneAwareJobRegister uses the same offset); UTC until an account has logged in.
+    public static List<string> NextRuns(string cron, AccountSelection selection, int count, bool withZone)
+    {
+        if (!CronExpression.IsValidExpression(cron ?? "")) return new();
+        var funcs = selection.Current?.Funcs;
+        var offset = funcs?.LoginOk == true ? funcs.TimeManager.DiffFromUtc : TimeSpan.Zero;
+        var expr = new CronExpression(cron!) { TimeZone = TimeZoneInfo.CreateCustomTimeZone(offset.ToString(), offset, null, null) };
+        var runs = new List<string>();
+        for (DateTimeOffset? t = DateTimeOffset.UtcNow; runs.Count < count && (t = expr.GetTimeAfter(t.Value)) != null;)
+            runs.Add(t.Value.ToOffset(offset).ToString("ddd MM-dd HH:mm", CultureInfo.CurrentUICulture));
+        if (withZone && runs.Count > 0) runs[^1] += $" (UTC{(offset < TimeSpan.Zero ? "-" : "+")}{offset:hh\\:mm})";
+        return runs;
+    }
+
+    // 0,4,8,...,20 → 4: evenly spaced hours that wrap around the day read better as "every N h from HH:mm".
+    private static int? EvenStep(List<int> hours)
+    {
+        var h = hours.Order().ToList();
+        if (h.Count < 2 || 24 % h.Count != 0) return null;
+        var step = 24 / h.Count;
+        return h.Zip(h.Skip(1)).All(p => p.Second - p.First == step) ? step : null;
+    }
+}

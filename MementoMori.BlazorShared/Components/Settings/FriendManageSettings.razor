@@ -1,4 +1,5 @@
-﻿@using MementoMori.Ortega.Share
+﻿@using MementoMori.BlazorShared.Components
+@using MementoMori.Ortega.Share
 @using MementoMori.Common.Localization
 @using MementoMori.Option
 @using MementoMori.Ortega.Share.Data.ApiInterface.Friend
@@ -13,7 +14,7 @@
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Group" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[FriendTabFriend]") <span class="panel-scope">(@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name))</span></span></MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Group" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[FriendTabFriend]") <span class="panel-scope is-account"><PlayerAvatar IconId="@(Funcs?.UserSyncData?.UserStatusDtoInfo?.MainCharacterIconId ?? 0)" Name="@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name)" Size="16" />@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name)</span></span></MudText>
         </CardHeaderContent>
         <CardHeaderActions>
             <MudButton Class="setting-save-button" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Save" OnClick="SaveFriendManageConfig">@Masters.TextResourceTable.Get("[CommonSaveLabel]")</MudButton>

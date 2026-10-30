@@ -1,4 +1,5 @@
-﻿@inject ISnackbar Snackbar
+﻿@using MementoMori.BlazorShared.Components
+@inject ISnackbar Snackbar
 @inject IWritableOptions<PlayersOption> PlayersOptions
 @using MementoMori.Common.Localization
 @using MementoMori.Option
@@ -10,7 +11,7 @@
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.SportsKabaddi" aria-hidden="true" /><span>@name <span class="panel-scope">(@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name))</span></span></MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.SportsKabaddi" aria-hidden="true" /><span>@name <span class="panel-scope is-account"><PlayerAvatar IconId="@(Funcs?.UserSyncData?.UserStatusDtoInfo?.MainCharacterIconId ?? 0)" Name="@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name)" Size="16" />@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name)</span></span></MudText>
         </CardHeaderContent>
         <CardHeaderActions>
             <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" Class="setting-save-button" StartIcon="@Icons.Material.Filled.Save" OnClick="() => SavePlayerSetting()">@Masters.TextResourceTable.Get("[CommonSaveLabel]")</MudButton>
@@ -38,7 +39,7 @@
         <MudList T="CharacterFilter" ReadOnly="true" Class="setting-filter-list">
             <MudListSubheader Class="setting-filter-header">
                 <MudText Inline="true">@ResourceStrings.Character_Filter</MudText>
-                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="() => OpenCreateFilter()">@ResourceStrings.Add</MudButton>
+                <MudButton Class="setting-save-button" Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="() => OpenCreateFilter()">@ResourceStrings.Add</MudButton>
             </MudListSubheader>
             @foreach (var filter in pvpOption.CharacterFilters)
             {

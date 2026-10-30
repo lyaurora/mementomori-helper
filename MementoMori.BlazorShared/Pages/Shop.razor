@@ -1,6 +1,7 @@
 ﻿@inject IDialogService DialogService
 @inject IWritableOptions<GameConfig> WritableGameConfig
 @inject ISnackbar Snackbar
+@inject AtlasManager AtlasManager
 @using MementoMori.BlazorShared.Components
 @using MementoMori.Common.Localization
 @using MementoMori.Funcs
@@ -16,6 +17,7 @@
 @using MementoMori.Ortega.Share.Extensions
 @using MementoMori.Ortega.Share.Master.Data
 @using MementoMori.WebUI.Extensions
+@using MementoMori.WebUI.UI
 @inherits MementoMori.BlazorShared.Models.AccountComponent
 @page "/Shop"
 
@@ -29,41 +31,39 @@
 @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="@ResourceStrings.Loading" /> }
 @if (Funcs?.UserSyncData?.UserItemDtoInfo != null)
 {
-    <MudTabs MinimumTabWidth="20px" @bind-ActivePanelIndex="_selectedTabIndex">
+    @* Narrow screens: one compact picker instead of many rows of tabs. *@
+    <MudSelect T="int" Class="shop-tab-select" @bind-Value="_selectedTabIndex" Label="@Masters.TextResourceTable.Get("[CommonHeaderExchangeLabel]")" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" ToStringFunc="@(i => i >= 0 && i < _tradeShopTabInfoList.Count ? TabName(Masters.TradeShopTabTable.GetById(_tradeShopTabInfoList[i].TradeShopTabId)) : "")">
+        @foreach (var (tabInfo, index) in _tradeShopTabInfoList.Select((t, i) => (t, i)))
+        {
+            <MudSelectItem T="int" Value="index">@TabName(Masters.TradeShopTabTable.GetById(tabInfo.TradeShopTabId))</MudSelectItem>
+        }
+    </MudSelect>
+    <MudTabs Class="shop-tabs" MinimumTabWidth="20px" @bind-ActivePanelIndex="_selectedTabIndex">
         <ChildContent>
             @foreach (var tab in _tradeShopTabInfoList)
             {
                 var tradeShopTabMb = Masters.TradeShopTabTable.GetById(tab.TradeShopTabId);
-                var tabName = Masters.TextResourceTable.Get(tradeShopTabMb.TabNameKey);
-                if (tabName.IsNullOrEmpty())
-                {
-                    // Weekly topics tabs (36 free, 37 paid) have no TabNameKey; Memo is a Japanese developer note.
-                    tabName = tradeShopTabMb.Id switch
-                    {
-                        36 => $"{Masters.TextResourceTable.Get("[WeeklyTopicsShopHeadline]")} ({Masters.TextResourceTable.Get("[ShopProductFreeLabel]")})",
-                        37 => Masters.TextResourceTable.Get("[WeeklyTopicsShopHeadline]"),
-                        _ => tradeShopTabMb.Memo
-                    };
-                }
+                var tabName = TabName(tradeShopTabMb);
+                var tabConsume = tradeShopTabMb.ConsumeItemInfos?.FirstOrDefault();
                 <MudTabPanel Text="@(tabName)">
+                    <TabContent>
+                        <span class="shop-tab-label">@if (tabConsume != null) {@ItemIcon(tabConsume.ItemType, tabConsume.ItemId, 20)} else {<span class="shop-icon shop-icon-fallback"><MudIcon Icon="@Icons.Material.Outlined.Storefront" Size="Size.Small" /></span>}<span>@tabName</span></span>
+                    </TabContent>
+                    <ChildContent>
                     <MudPaper Elevation="0" Class="shop-balance-bar mb-4">
                         @foreach (var item in tradeShopTabMb.ConsumeItemInfos ?? [])
                         {
                             var itemMb = Masters.ItemTable.GetByItemTypeAndItemId(item.ItemType, item.ItemId);
                             var count = Funcs.UserSyncData.GetUserItemCount(item.ItemType, item.ItemId, true);
-                            var text = $"{Masters.TextResourceTable.Get(itemMb.NameKey)} × {count:N0}";
-                            <MudChip T="string" Text="@text"></MudChip>
+                            var itemName = Masters.TextResourceTable.Get(itemMb.NameKey);
+                            <MudChip T="string" Class="shop-balance-chip" title="@($"{itemName} × {count:N0}")">
+                                @ItemIcon(item.ItemType, item.ItemId, 22)<span class="shop-balance-text"><b>@Compact(count)</b><span class="shop-balance-name">@itemName</span></span>
+                            </MudChip>
                         }
 
                         @if (tab.ExpirationTimeStamp > 0)
                         {
-                            var span = TimeSpan.FromMilliseconds(tab.ExpirationTimeStamp - DateTimeOffset.Now.ToUnixTimeMilliseconds());
-                            var time = span.Days == 0
-                                ? Masters.TextResourceTable.Get("[CommonTimeFormatOnlyTime]", span.Hours, span.Minutes, span.Seconds)
-                                : Masters.TextResourceTable.Get("[CommonRemainTimeFull]", span.Days, span.Hours, span.Minutes, span.Seconds);
-                            var refreshTime = $"{Masters.TextResourceTable.Get("[ExchangeRemainingTimeLabel]")}: {time}";
-
-                            <MudChip T="string" Text="@refreshTime"></MudChip>
+                            <ShopRefreshCountdown ExpirationTimeStamp="tab.ExpirationTimeStamp" OnExpired="RefreshExpired" />
                         }
                     </MudPaper>
                     @if (tradeShopTabMb.TradeShopType != TradeShopType.Sphere)
@@ -97,6 +97,14 @@
                                     <MudCard Elevation="2" Class="shop-product-card">
                                         <MudCardHeader Class="shop-product-header">
                                             <CardHeaderContent>
+                                                @if (item.GiveItem.ItemType == ItemType.Sphere && Masters.SphereTable.GetById(item.GiveItem.ItemId) is { } giveSphere)
+                                                {
+                                                    <span class="shop-sphere-icon"><SphereIcon SphereMb="giveSphere" Size="48" /></span>
+                                                }
+                                                else
+                                                {
+                                                    @ItemIcon(item.GiveItem.ItemType, item.GiveItem.ItemId, 48)
+                                                }
                                                 <MudText Class="shop-product-title">@itemName</MudText>
 
                                             </CardHeaderContent>
@@ -115,7 +123,10 @@
                                             </div>
                                         </MudCardContent>
                                         <MudCardActions Class="shop-product-actions">
-                                            <MudButton Class="shop-buy-button" data-free="@(item.ConsumeItem1 == null)" Variant="Variant.Filled" Color="Color.Primary" Disabled="buyBtnDisabled" OnClick="() => BuyItem(tab, item)">@consumeText</MudButton>
+                                            <MudButton Class="shop-buy-button" data-free="@(item.ConsumeItem1 == null)" Variant="Variant.Filled" Color="Color.Primary" Disabled="buyBtnDisabled" OnClick="() => BuyItem(tab, item)">
+                                                @if (item.ConsumeItem1 != null) { @ItemIcon(item.ConsumeItem1.ItemType, item.ConsumeItem1.ItemId, 20) }
+                                                @consumeText
+                                            </MudButton>
                                             <MudIconButton Class="shop-auto-buy-button" Icon="@Icons.Material.Filled.AlarmAdd" Variant="Variant.Outlined" Color="Color.Primary" title="@ResourceStrings.AutoBuy" aria-label="@ResourceStrings.AutoBuy" OnClick="() => ShowAutoBuyDialog(tradeShopTabMb, item)"></MudIconButton>
                                         </MudCardActions>
                                     </MudCard>
@@ -131,11 +142,13 @@
                             @foreach (var sphere in listByLevel)
                             {
                                 <MudItem>
+                                    <span class="shop-sphere-icon"><SphereIcon SphereMb="sphere" Size="48" /></span>
                                     <ShopSphereItem SphereMb="sphere" Tab="tab"></ShopSphereItem>
                                 </MudItem>
                             }
                         </MudGrid>
                     }
+                    </ChildContent>
                 </MudTabPanel>
             }
 
@@ -218,6 +231,17 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender) { _interactive = true; await AccountChanged(); }
+    }
+
+    // Countdown hit zero: reload the list once, keeping the current tab.
+    private async Task RefreshExpired()
+    {
+        var token = CreateAccountCancellation();
+        try { await GetShopInfo(token); }
+        catch (Exception) when (token.IsCancellationRequested) { return; }
+        catch (Exception e) { _alertMessage = e.Message; }
+        _selectedTabIndex = Math.Clamp(_selectedTabIndex, 0, Math.Max(0, _tradeShopTabInfoList.Count - 1));
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task GetShopInfo(CancellationToken token)
@@ -354,6 +378,25 @@
         Snackbar.Add(ResourceStrings.Success, Severity.Success);
         _autoBuyDialogVisible = false;
     }
+
+    private static string TabName(TradeShopTabMB mb)
+    {
+        var name = Masters.TextResourceTable.Get(mb.TabNameKey);
+        if (!name.IsNullOrEmpty()) return name;
+        // Weekly topics tabs (36 free, 37 paid) have no TabNameKey; Memo is a Japanese developer note.
+        return mb.Id switch
+        {
+            36 => $"{Masters.TextResourceTable.Get("[WeeklyTopicsShopHeadline]")} ({Masters.TextResourceTable.Get("[ShopProductFreeLabel]")})",
+            37 => Masters.TextResourceTable.Get("[WeeklyTopicsShopHeadline]"),
+            _ => mb.Memo
+        };
+    }
+
+    // Fixed-size slot with a background; a failed image removes itself and leaves the block. No IconId = no icon.
+    private RenderFragment? ItemIcon(ItemType type, long itemId, int size) =>
+        AtlasManager.GetItemIcon(type, itemId) is { } url
+        ? @<span class="shop-icon" style="width:@(size)px;height:@(size)px"><img src="@url" @key="url" width="@size" height="@size" loading="lazy" decoding="async" alt="" onerror="this.remove()" /></span>
+        : null;
 
     private class UserItemComparer : IEqualityComparer<UserItem>
     {

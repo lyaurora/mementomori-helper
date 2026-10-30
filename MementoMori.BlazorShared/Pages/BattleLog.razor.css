@@ -10,11 +10,12 @@
 }
 
 .battle-log-controls {
-    padding: 1rem;
-    margin-bottom: 1rem;
-    border: 1px solid var(--mud-palette-lines-default);
-    border-radius: .75rem;
+    padding: 22px;
+    margin-bottom: 24px;
+    border: 1px solid var(--app-card-line);
+    border-radius: 20px;
     background: var(--mud-palette-surface);
+    box-shadow: var(--app-card-shadow);
 }
 
 .battle-log-cleanup {
@@ -22,8 +23,8 @@
     grid-template-columns: minmax(0, 15rem) 2.5rem;
     align-items: end;
     gap: .65rem;
-    padding-bottom: 1rem;
-    margin-bottom: .75rem;
+    padding-bottom: 18px;
+    margin-bottom: 18px;
     border-bottom: 1px solid var(--mud-palette-lines-default);
 }
 
@@ -86,19 +87,35 @@
 .battle-log-option-time { color: var(--mud-palette-text-secondary); font-size: .75rem; font-variant-numeric: tabular-nums; line-height: 1.5; }
 .battle-log-option-filename { font-size: .8125rem; line-height: 1.55; overflow-wrap: anywhere; }
 
-.battle-log-page ::deep .mud-icon-button {
+.battle-log-page ::deep .mud-icon-button.mud-icon-button {
     width: 2.5rem;
     height: 2.5rem;
     flex-shrink: 0;
+    border: 0;
+    border-radius: 10px;
+    background: var(--mud-palette-background-gray);
+    color: var(--mud-palette-text-secondary);
+}
+
+.battle-log-page ::deep .mud-icon-button:hover { background: var(--mud-palette-action-default-hover); color: var(--mud-palette-text-primary); }
+/* Delete stays recognisable by its red icon only, not a red box. */
+.battle-log-page ::deep .battle-log-cleanup > .mud-icon-button.mud-icon-button { color: var(--mud-palette-error); }
+
+/* The viewer is a third-party page: only its frame can follow the theme. */
+.battle-log-frame {
+    overflow: hidden;
+    border: 1px solid var(--app-card-line);
+    border-radius: 20px;
+    background: var(--mud-palette-surface);
+    box-shadow: var(--app-card-shadow);
 }
 
 .battle-log-viewer {
     display: block;
     width: 100%;
-    height: 800px;
-    border: 1px solid var(--mud-palette-lines-default);
-    border-radius: .75rem;
-    background: var(--mud-palette-surface);
+    /* Fit the viewport so the viewer scrolls inside itself, not page + frame. */
+    height: max(480px, calc(100dvh - 120px));
+    border: 0;
 }
 
 @media (max-width: 799.98px) {
@@ -119,7 +136,13 @@
 
 @media (max-width: 599.98px) {
     .battle-log-controls {
-        padding: .85rem;
+        padding: 16px;
+        margin-bottom: 14px;
+        border-radius: 16px;
+    }
+
+    .battle-log-frame {
+        border-radius: 16px;
     }
 
 }

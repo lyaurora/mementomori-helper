@@ -1,4 +1,5 @@
 ﻿@inject IDialogService DialogService
+@inject AtlasManager AtlasManager
 
 @inherits MementoMori.BlazorShared.Models.AccountComponent
 @page "/Items"
@@ -10,7 +11,9 @@
 @using MementoMori.Ortega.Share.Data.ApiInterface.Item
 @using MementoMori.Ortega.Share.Data.Item
 @using MementoMori.Ortega.Share.Enums
+@using MementoMori.Ortega.Share.Master.Data
 @using MementoMori.WebUI.Extensions
+@using MementoMori.WebUI.UI
 @using SortDirection = MudBlazor.SortDirection
 
 <PageTitle>@Masters.TextResourceTable.Get("[CommonFooterItemBoxButtonLabel]")</PageTitle>
@@ -63,7 +66,7 @@
                     </MudTh>
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd Class="item-name-column" DataLabel="@ResourceStrings.Name"><span class="item-name-value">@context.Name</span></MudTd>
+                    <MudTd Class="item-name-column" DataLabel="@ResourceStrings.Name">@ItemName(AtlasManager.GetEquipmentIcon(context.EquipmentMb), context.Name)</MudTd>
                     <MudTd Class="item-text-column" DataLabel="@ResourceStrings.Slot">@(Masters.TextResourceTable.Get(context.EquipmentMb.SlotType))</MudTd>
                     <MudTd Class="item-rarity-column" DataLabel="@Masters.TextResourceTable.Get("[CharacterSortTypeRarity]")">@(Masters.TextResourceTable.Get(context.EquipmentMb.RarityFlags))</MudTd>
                     <MudTd Class="item-number-column" DataLabel="@Masters.TextResourceTable.Get("[CommonEquipmentLevelLabel]")">@context.EquipmentMb.EquipmentLv</MudTd>
@@ -103,7 +106,7 @@
                     </MudTh>
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd Class="item-name-column" DataLabel="@ResourceStrings.Name"><span class="item-name-value">@context.Name</span></MudTd>
+                    <MudTd Class="item-name-column" DataLabel="@ResourceStrings.Name">@ItemName(IconOf(context.Item), context.Name)</MudTd>
                     <MudTd Class="item-action-column" DataLabel="@ResourceStrings.Operation">
                         @if (context.Item.ItemType == ItemType.QuestQuickTicket)
                         {
@@ -149,7 +152,7 @@
                     </MudTh>
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd Class="item-name-column" DataLabel="@ResourceStrings.Name"><span class="item-name-value">@context.Name</span></MudTd>
+                    <MudTd Class="item-name-column" DataLabel="@ResourceStrings.Name">@ItemName(IconOf(context.Item), context.Name)</MudTd>
                     <MudTd Class="item-rarity-column" DataLabel="@Masters.TextResourceTable.Get("[CharacterSortTypeRarity]")">@(context.ItemRarityFlags)</MudTd>
                     <MudTd Class="item-number-column" DataLabel="@ResourceStrings.ItemLimitCount">@context.MaxItemCount.ToString("N0")</MudTd>
                     <MudTd Class="item-number-column" DataLabel="@Masters.TextResourceTable.Get("[CommonOwnCurrencyLabel]")">@context.Count.ToString("N0")</MudTd>
@@ -190,7 +193,7 @@
                     </MudTh>
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd Class="item-name-column" DataLabel="@ResourceStrings.Name"><span class="item-name-value">@context.Name</span></MudTd>
+                    <MudTd Class="item-name-column" DataLabel="@ResourceStrings.Name">@ItemName(AtlasManager.GetSphereIcon(context.SphereMB), context.Name)</MudTd>
                     <MudTd Class="item-rarity-column" DataLabel="@Masters.TextResourceTable.Get("[CharacterSortTypeRarity]")">@(context.SphereMB.RarityFlags)</MudTd>
                     <MudTd Class="item-number-column" DataLabel="@Masters.TextResourceTable.Get("[EquipmentSphereSynthesisSphereLv]")">@(context.SphereMB.Lv)</MudTd>
                     <MudTd Class="item-text-column" DataLabel="@Masters.TextResourceTable.Get("[CharacterEquipmentBasicEffect]")">@(context.SphereMB.BaseParameterChangeInfo == null ? "" : Masters.TextResourceTable.Get(context.SphereMB.BaseParameterChangeInfo.BaseParameterType))</MudTd>
@@ -223,7 +226,7 @@
                     </MudTh>
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd Class="item-name-column" DataLabel="@ResourceStrings.Name"><span class="item-name-value">@context.Name</span></MudTd>
+                    <MudTd Class="item-name-column" DataLabel="@ResourceStrings.Name">@ItemName(IconOf(context.Item), context.Name)</MudTd>
                     <MudTd Class="item-rarity-column" DataLabel="@Masters.TextResourceTable.Get("[CharacterSortTypeRarity]")">@(context.ItemRarityFlags)</MudTd>
                     <MudTd Class="item-number-column" DataLabel="@ResourceStrings.ItemLimitCount">@context.MaxItemCount.ToString("N0")</MudTd>
                     <MudTd Class="item-number-column" DataLabel="@Masters.TextResourceTable.Get("[CommonOwnCurrencyLabel]")">@context.Count.ToString("N0")</MudTd>
@@ -258,6 +261,19 @@
         }
     }
 
+    private string? IconOf(IUserItem item) => AtlasManager.GetItemIcon(item.ItemType, item.ItemId);
+
+    private static RenderFragment ItemName(string? icon, string name) =>
+        @<span class="item-name-value">
+            <span class="item-icon">
+                @if (icon != null)
+                {
+                    <img src="@icon" @key="icon" width="32" height="32" loading="lazy" decoding="async" alt="" onerror="this.remove()">
+                }
+            </span>
+            <span class="item-name-text">@name</span>
+        </span>;
+
     private void UseAutoBattleRewardItem(string name, IUserItem userItem)
     {
         if (userItem.ItemType != ItemType.QuestQuickTicket)
@@ -270,6 +286,7 @@
         var dialogParameters = new DialogParameters<UseItemDialog>();
         dialogParameters.Add(d => d.Count, userItem.ItemCount);
         dialogParameters.Add(d => d.Name, name);
+        dialogParameters.Add(d => d.Icon, IconOf(userItem));
         dialogParameters.Add(d => d.ButtonText, Masters.TextResourceTable.Get("[ItemBoxButtonUse]"));
         dialogParameters.Add(d => d.UseItemFunc, async count =>
         {

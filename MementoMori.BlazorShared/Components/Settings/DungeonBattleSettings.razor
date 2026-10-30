@@ -5,11 +5,12 @@
 @using MementoMori.Ortega.Share.Data.Item
 @using MementoMori.Ortega.Share.Enums
 @inject IWritableOptions<GameConfig> WritableGameConfig
+@inject MementoMori.WebUI.UI.AtlasManager Atlas
 
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Map" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[CommonHeaderDungeonBattleLabel]") <span class="panel-scope">(@ResourceStrings.AllAccounts)</span></span></MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Map" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[CommonHeaderDungeonBattleLabel]") <span class="panel-scope">@ResourceStrings.AllAccounts</span></span></MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="settings-form">
@@ -22,14 +23,19 @@
                 @foreach (var item in DungeonBattleShopTargetItems)
                 {
                     var text = $"{ItemUtil.GetItemName(item.ItemType, item.ItemId)} {item.MinDiscountPercent}{Masters.TextResourceTable.Get("[ShopDiscountLabel]")}";
+                    var icon = Atlas.GetItemIcon(item.ItemType, item.ItemId);
                     <div class="setting-item-row">
+                        @if (icon != null)
+                        {
+                            <span class="setting-item-art"><img src="@icon" @key="icon" width="28" height="28" loading="lazy" decoding="async" alt="" onerror="this.remove()"></span>
+                        }
                         <span class="setting-item-text">@text</span>
                         <MudIconButton Class="setting-item-remove" Icon="@Icons.Material.Filled.Close" Size="Size.Small" aria-label="@($"{Masters.TextResourceTable.Get("[BulkBuyProductRemoveCartItemButtonLabel]")}: {text}")" OnClick="() => DungeonBattleRemoveItem(item)" />
                     </div>
                 }
             </div>
         </div>
-        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="ShowDungeonBattleSelectItemDialog">@ResourceStrings.Add</MudButton>
+        <MudButton Class="setting-save-button setting-add-button" Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="ShowDungeonBattleSelectItemDialog">@ResourceStrings.Add</MudButton>
     </MudCardContent>
 </MudCard>
 

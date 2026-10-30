@@ -1,0 +1,53 @@
+﻿@using MementoMori.Ortega.Share
+@using MementoMori.Ortega.Share.Enums
+<MudDialog Class="gacha-select-dialog">
+    <DialogContent>
+        <div class="gacha-select-count@(_picked.Count > Max ? " is-over" : "")" aria-live="polite">@_picked.Count / @Max</div>
+        <div class="gacha-select-grid">
+            @foreach (var (id, element) in _candidates)
+            {
+                var on = _picked.Contains(id);
+                var name = Masters.CharacterTable.GetCharacterName(id);
+                <button type="button" class="app-pick gacha-select-choice" aria-pressed="@(on ? "true" : "false")" disabled="@(!on && Max > 1 && IsFull(element))" @onclick="() => Toggle(id)">
+                    <PlayerAvatar IconId="id" Name="@name" Size="64" />
+                    <span>@name</span>
+                </button>
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => MudDialog.Cancel()">@Tr("[CommonCancelLabel]")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="_picked.Count < Min || _picked.Count > Max" OnClick="() => MudDialog.Close(DialogResult.Ok(_picked.ToList()))">@Tr("[GachaSelectListSettingOK]")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter] public IReadOnlyList<long> Candidates { get; set; } = [];
+    [Parameter] public IReadOnlyList<long> Selected { get; set; } = [];
+    [Parameter] public int Min { get; set; } = 1;
+    [Parameter] public int Max { get; set; } = 1;
+    [Parameter] public int MaxPerElement { get; set; } // 0 = no per-element limit
+
+    private (long Id, ElementType Element)[] _candidates = [];
+    private List<long> _picked = [];
+
+    protected override void OnInitialized()
+    {
+        _candidates = Candidates.Distinct()
+            .Select(id => (Id: id, Element: Masters.CharacterTable.GetById(id)?.ElementType ?? default))
+            .OrderBy(c => c.Element).ThenBy(c => c.Id).ToArray();
+        _picked = Selected.Where(Candidates.Contains).ToList();
+    }
+
+    private bool IsFull(ElementType element) =>
+        _picked.Count >= Max || MaxPerElement > 0 && _candidates.Count(c => c.Element == element && _picked.Contains(c.Id)) >= MaxPerElement;
+
+    private void Toggle(long id)
+    {
+        if (_picked.Remove(id)) return;
+        if (Max == 1) _picked.Clear(); // single pick behaves like a radio group
+        else if (IsFull(_candidates.First(c => c.Id == id).Element)) return;
+        _picked.Add(id);
+    }
+}

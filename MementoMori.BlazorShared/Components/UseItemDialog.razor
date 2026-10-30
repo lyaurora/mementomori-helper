@@ -5,36 +5,28 @@
 @using MementoMori.Ortega.Share
 
 <div class="use-item-dialog">
-<MudCard Class="use-item-card" Elevation="0">
-    <MudGrid Spacing="3">
-        <MudItem xs="12" md="12">
-            <MudText Class="use-item-name">@Name <span class="use-item-owned">× @Count</span></MudText>
-        </MudItem>
-        <MudItem xs="12" md="12">
-            <MudNumericField T="long" @ref="_countField" Class="use-item-count" Label="@ButtonText" Min="1L" Max="@Count" @bind-Value="_useCount" TextUpdateSuppression="false" Variant="Variant.Outlined" Margin="Margin.Dense" OnBlur="_ => StateHasChanged()" />
-        </MudItem>
-        <MudItem xs="12" md="12">
-            <MudSlider T="long" Min="1L" Max="@Count" ValueLabel="true" @bind-Value="_useCount">
-                @ButtonText @_useCount
-            </MudSlider>
-        </MudItem>
-        <MudItem xs="12" md="12">
-            <pre class="use-item-result">@message</pre>
-        </MudItem>
-        <MudItem xs="12" md="12">
-            <div class="use-item-actions">
-                <MudButton Variant="Variant.Outlined" OnClick="@Cancel">@Masters.TextResourceTable.Get("[CommonCloseLabel]")</MudButton>
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@UseItem" Disabled="_processing || _buyed || _countField?.HasErrors == true || _useCount < 1 || _useCount > Count">
-                    @if (_processing)
-                    {
-                        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
-                    }
-                    <MudText Class="ms-2">@ButtonText</MudText>
-                </MudButton>
-            </div>
-        </MudItem>
-    </MudGrid>
-</MudCard>
+    <div class="use-item-summary">
+        @if (Icon != null)
+        {
+            <span class="use-item-icon"><img src="@Icon" @key="Icon" width="44" height="44" loading="lazy" decoding="async" alt="" onerror="this.remove()"></span>
+        }
+        <div class="use-item-name">@Name <span class="use-item-owned">× @Count.ToString("N0")</span></div>
+    </div>
+    <MudNumericField T="long" @ref="_countField" Class="use-item-count" Label="@ButtonText" Min="1L" Max="@Count" @bind-Value="_useCount" TextUpdateSuppression="false" Variant="Variant.Outlined" Margin="Margin.Dense" OnBlur="_ => StateHasChanged()" />
+    <MudSlider T="long" Class="use-item-slider" Min="1L" Max="@Count" ValueLabel="true" @bind-Value="_useCount">
+        @ButtonText @_useCount
+    </MudSlider>
+    <pre class="use-item-result">@message</pre>
+    <div class="use-item-actions">
+        <MudButton Variant="Variant.Outlined" OnClick="@Cancel">@Masters.TextResourceTable.Get("[CommonCloseLabel]")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@UseItem" Disabled="_processing || _buyed || _countField?.HasErrors == true || _useCount < 1 || _useCount > Count">
+            @if (_processing)
+            {
+                <MudProgressCircular Class="ms-n1 me-2" Size="Size.Small" Indeterminate="true"/>
+            }
+            @ButtonText
+        </MudButton>
+    </div>
 </div>
 
 @code {
@@ -47,6 +39,9 @@
 
     [Parameter]
     public string ButtonText { get; set; }
+
+    [Parameter]
+    public string? Icon { get; set; }
 
     [Parameter]
     public Func<long, Task<IList<IUserItem>>> UseItemFunc { get; set; }

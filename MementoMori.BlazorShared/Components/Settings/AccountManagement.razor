@@ -1,4 +1,5 @@
-﻿@inject ISnackbar Snackbar
+﻿@using MementoMori.BlazorShared.Components
+@inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject IWritableOptions<AuthOption> authOption
 @using MementoMori.Common.Localization
@@ -10,10 +11,10 @@
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.ManageAccounts" aria-hidden="true" /><span>@ResourceStrings.AccountManagement <span class="panel-scope">(@ResourceStrings.AllAccounts)</span></span></MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.ManageAccounts" aria-hidden="true" /><span>@ResourceStrings.AccountManagement <span class="panel-scope">@ResourceStrings.AllAccounts</span></span></MudText>
         </CardHeaderContent>
         <CardHeaderActions>
-            <MudButton Variant="Variant.Outlined" Disabled="_accountDoingAction" OnClick="AddAccountClick">@ResourceStrings.Add</MudButton>
+            <MudButton Class="setting-save-button" Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" Disabled="_accountDoingAction" OnClick="AddAccountClick">@ResourceStrings.Add</MudButton>
         </CardHeaderActions>
     </MudCardHeader>
     <MudCardContent Class="pa-0">
@@ -23,24 +24,22 @@
                 var funcs = AccountManager.Get(accountInfo.UserId).Funcs;
                 <MudListItem Value="accountInfo" Dense="true">
                     <MudStack Row="true" Spacing="1" Class="account-row align-content-center align-center">
-                        <MudPaper Elevation="0" Class="account-name d-flex align-content-center align-center" Style="min-width:0;">
-                            <MudText Style="overflow-wrap:anywhere;">@accountInfo.Name</MudText>
-                        </MudPaper>
+                        @{
+                            var status = funcs.UserSyncData?.UserStatusDtoInfo;
+                            var state = funcs.LoginOk ? (accountInfo.AutoLogin ? ResourceStrings.AutoLogin : ResourceStrings.LoggedIn)
+                                : accountInfo.AutoLogin ? ResourceStrings.AutoLogin : ResourceStrings.NotLoggedIn;
+                        }
+                        @* Player name + avatar once synced; the saved account name is the fallback and the secondary line. *@
+                        <PlayerAvatar IconId="@(status?.MainCharacterIconId ?? 0)" Name="@(status?.Name ?? accountInfo.Name)" Size="32" />
+                        <div class="account-name">
+                            <span class="account-player" title="@(status?.Name ?? accountInfo.Name)">@(status?.Name ?? accountInfo.Name)</span>
+                            <span class="account-meta">@(status?.Name != null ? $"{accountInfo.Name} · " : "")<span class="account-state @(funcs.LoginOk ? "is-ok" : "is-off")">@state</span></span>
+                        </div>
                         <MudSpacer/>
-                        @if (funcs.LoginOk)
-                        {
-                            var text = accountInfo.AutoLogin ? ResourceStrings.AutoLogin : ResourceStrings.LoggedIn;
-                            <MudChip T="string" Color="Color.Success" Size="Size.Small">@text</MudChip>
-                        }
-                        else
-                        {
-                            var text = accountInfo.AutoLogin ? ResourceStrings.AutoLogin : ResourceStrings.NotLoggedIn;
-                            <MudChip T="string" Color="Color.Warning" Size="Size.Small">@text</MudChip>
-                        }
                         <MudIconButton title="@ResourceStrings.Login" aria-label="@ResourceStrings.Login" Icon="@Icons.Material.Filled.Login" Disabled="_accountDoingAction" OnClick="() => LoginAccount(accountInfo.UserId)" Size="Size.Small"></MudIconButton>
                         <MudIconButton title="@ResourceStrings.Exit" aria-label="@ResourceStrings.Exit" Icon="@Icons.Material.Filled.Logout" Disabled="_accountDoingAction" OnClick="() => LogoutAccount(accountInfo.UserId)" Size="Size.Small"></MudIconButton>
                         <MudIconButton title="@ResourceStrings.Settings" aria-label="@ResourceStrings.Settings" Icon="@Icons.Material.Filled.Settings" Disabled="_accountDoingAction" OnClick="() => ShowAccountSetting(accountInfo.UserId)" Size="Size.Small"></MudIconButton>
-                        <MudIconButton title="@Tr("[MyPagePresentDetailDeleteButton]")" aria-label="@Tr("[MyPagePresentDetailDeleteButton]")" Icon="@Icons.Material.Filled.Delete" Disabled="_accountDoingAction" OnClick="() => DeleteAccount(accountInfo.UserId)" Size="Size.Small"></MudIconButton>
+                        <MudIconButton title="@Tr("[MyPagePresentDetailDeleteButton]")" aria-label="@Tr("[MyPagePresentDetailDeleteButton]")" Class="account-delete" Icon="@Icons.Material.Outlined.Delete" Disabled="_accountDoingAction" OnClick="() => DeleteAccount(accountInfo.UserId)" Size="Size.Small"></MudIconButton>
                     </MudStack>
                 </MudListItem>
             }

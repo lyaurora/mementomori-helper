@@ -11,80 +11,58 @@
 @inherits MementoMori.BlazorShared.Models.AccountComponent
 @page "/settings"
 
-<MudGrid>
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
-        <AccountManagement/>
-    </MudItem>
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
-        <AutoJobSwitch UserId="AccountSelection.CurrentUserId" OnJobsChanged="RefreshJobs"/>
-    </MudItem>
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
-        <AutoJobCron OnJobsChanged="RefreshJobs"/>
-    </MudItem>
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
-        <AutoJobNextExecution @ref="_autoJobNextExecution"/>
-    </MudItem>
-    @if (PlayerReady)
-    {
-        <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
-            <GachaSettings @key="NetworkManager.PlayerId"/>
-        </MudItem>
-        <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
-            <BountyQuest @key="NetworkManager.PlayerId"/>
-        </MudItem>
-    }
-    else
-    {
-        @* per-character cards are hidden until login so defaults can't overwrite saved settings *@
-        <MudItem xs="12">
-            <MudAlert Severity="Severity.Info">@ResourceStrings.PleaseLogin</MudAlert>
-        </MudItem>
-    }
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
-        <DungeonBattleSettings />
-    </MudItem>
-    @if (PlayerReady)
-    {
-        <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
-            <LocalRaidSettings @key="NetworkManager.PlayerId"/>
-        </MudItem>
-    }
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
-        <ShopSettings />
-    </MudItem>
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
-        <ItemsSetting/>
-    </MudItem>
-    @if (PlayerReady)
-    {
-        <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
-            <PvpSettings LeagueType="0" @key="NetworkManager.PlayerId"/>
-        </MudItem>
-        <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
-            <PvpSettings LeagueType="1" @key="NetworkManager.PlayerId"/>
-        </MudItem>
-        <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
-            <FriendManageSettings @key="NetworkManager.PlayerId"/>
-        </MudItem>
-        <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
-            <GuildTowerSettings @key="NetworkManager.PlayerId"/>
-        </MudItem>
-    }
-    <MudItem xs="12" sm="12" md="6" lg="4" xl="3">
-        <MudCard>
-            <MudCardHeader>
-                <CardHeaderContent>
-                    <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.Tune" aria-hidden="true" /><span>@ResourceStrings.Others <span class="panel-scope">(@ResourceStrings.AllAccounts)</span></span></MudText>
-                </CardHeaderContent>
-            </MudCardHeader>
-            <MudCardContent Class="settings-form">
-                <MudNumericField Label="@ResourceStrings.AutoRequestDelay" @bind-Value="AutoRequestDelay" Min="0" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
-                <MudTextField T="string" @bind-Value="AssetsUrl" Label="@ResourceStrings.ResourceManager.GetString("ResourceServer")" Validation="@(new Func<string, string?>(ValidateHttpUrl))" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                <MudTextField T="string" @bind-Value="BattleLogViewerUrl" Label="@ResourceStrings.ResourceManager.GetString("BattleLogViewer")" Validation="@(new Func<string, string?>(ValidateHttpUrl))" Variant="Variant.Outlined" Margin="Margin.Dense" />
-            </MudCardContent>
-        </MudCard>
-    </MudItem>
-</MudGrid>
+@if (!PlayerReady)
+{
+    @* per-character cards are hidden until login so defaults can't overwrite saved settings *@
+    <MudAlert Class="mb-6" Severity="Severity.Info">@ResourceStrings.PleaseLogin</MudAlert>
+}
+@* order:N keeps the original mobile single-column reading order (and orders cards within each desktop column). *@
+<div class="settings-cols">
+    @* Owner-fixed tops (account / auto-job switches / cron); the rest balanced by measured height at 1707 zh-CN. *@
+    <div class="col">
+        <div style="order:1"><AccountManagement/></div>
+        <div style="order:4"><AutoJobNextExecution @ref="_autoJobNextExecution"/></div>
+        <div style="order:7"><DungeonBattleSettings/></div>
+        @if (PlayerReady)
+        {
+            <div style="order:8"><LocalRaidSettings @key="NetworkManager.PlayerId"/></div>
+            <div style="order:13"><FriendManageSettings @key="NetworkManager.PlayerId"/></div>
+        }
+    </div>
+    <div class="col">
+        <div style="order:2"><AutoJobSwitch UserId="AccountSelection.CurrentUserId" OnJobsChanged="RefreshJobs"/></div>
+        @if (PlayerReady)
+        {
+            <div style="order:11"><PvpSettings LeagueType="0" @key="NetworkManager.PlayerId"/></div>
+            <div style="order:12"><PvpSettings LeagueType="1" @key="NetworkManager.PlayerId"/></div>
+            <div style="order:14"><GuildTowerSettings @key="NetworkManager.PlayerId"/></div>
+        }
+        <div style="order:15">
+            <MudCard>
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.Tune" aria-hidden="true" /><span>@ResourceStrings.Others <span class="panel-scope">@ResourceStrings.AllAccounts</span></span></MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent Class="settings-form">
+                    <MudNumericField Label="@ResourceStrings.AutoRequestDelay" @bind-Value="AutoRequestDelay" Min="0" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                    <MudTextField T="string" @bind-Value="AssetsUrl" Label="@ResourceStrings.ResourceManager.GetString("ResourceServer")" Validation="@(new Func<string, string?>(ValidateHttpUrl))" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudTextField T="string" @bind-Value="BattleLogViewerUrl" Label="@ResourceStrings.ResourceManager.GetString("BattleLogViewer")" Validation="@(new Func<string, string?>(ValidateHttpUrl))" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudCardContent>
+            </MudCard>
+        </div>
+    </div>
+    <div class="col">
+        <div style="order:3"><AutoJobCron OnJobsChanged="RefreshJobs"/></div>
+        @if (PlayerReady)
+        {
+            <div style="order:5"><GachaSettings @key="NetworkManager.PlayerId"/></div>
+            <div style="order:6"><BountyQuest @key="NetworkManager.PlayerId"/></div>
+        }
+        <div style="order:9"><ShopSettings/></div>
+        <div style="order:10"><ItemsSetting/></div>
+    </div>
+</div>
 
 
 @code {

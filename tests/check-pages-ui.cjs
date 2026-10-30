@@ -37,13 +37,15 @@ const assert = require('node:assert/strict');
         }
 
         for (const path of ['Items', 'Shop']) {
-            await go(path, '.app-content .mud-tab');
-            const tabs = page.locator('.app-content .mud-tab');
+            // Scope to this page's tabs: a bare .mud-tab still matches the previous page's tabs mid-navigation.
+            const scope = `.app-content .${path.toLowerCase()}-tabs .mud-tab`;
+            await go(path, scope);
+            const tabs = page.locator(scope);
             result[path].tabs = await tabs.count();
             assert(result[path].tabs > 0, `${path} tabs are missing`);
             for (let index = 0; index < result[path].tabs; index++) {
                 await tabs.nth(index).click();
-                await page.waitForFunction(i => document.querySelectorAll('.app-content .mud-tab')[i]?.classList.contains('mud-tab-active'), index);
+                await page.waitForFunction(([s, i]) => document.querySelectorAll(s)[i]?.classList.contains('mud-tab-active'), [scope, index]);
                 if (path === 'Shop' && !result.Shop.quantityDialog) {
                     const free = page.locator('.shop-buy-button[data-free]:not(:disabled)').first();
                     const buy = await free.count() ? free : page.locator('.shop-buy-button:not(:disabled)').first();
@@ -87,7 +89,7 @@ const assert = require('node:assert/strict');
 
         await go('Gacha', '.gacha-page .gacha-card');
         result.Gacha.cases = await page.locator('.app-content .mud-card').count();
-        await page.locator('.app-content .mud-card-header button').first().click();
+        await page.locator('.gacha-detail-button').first().click();
         await page.waitForSelector('.mud-dialog, .gacha-page .mud-alert-text-warning');
         if (await page.locator('.mud-dialog').count()) {
             assert(await page.locator('.mud-dialog tbody tr').count(), 'Draw details are empty');

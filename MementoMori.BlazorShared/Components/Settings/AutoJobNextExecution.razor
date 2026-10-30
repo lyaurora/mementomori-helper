@@ -1,10 +1,13 @@
-@using Quartz
+﻿@using Quartz
 @using Quartz.Impl.Matchers
 @using System.Reactive.Linq
 @using Microsoft.Extensions.Logging
 @using MementoMori.Common.Localization
 @inherits MementoMori.BlazorShared.Models.AccountComponent
 @inject ISchedulerFactory SchedulerFactory
+@using MementoMori.Option
+@using MementoMori.Ortega.Share
+@inject IWritableOptions<GameConfig> WritableGameConfig
 
 <MudCard>
     <MudCardHeader>
@@ -17,10 +20,18 @@
             <MudAlert Severity="Severity.Warning">@Funcs.LastLoginError
                 @if (Funcs.NextAutoLoginAttempt > DateTimeOffset.UtcNow)
                 {
-                    <div>@ResourceStrings.ResourceManager.GetString("RetryAt"): @Funcs.NextAutoLoginAttempt.LocalDateTime.ToString("yyyy-MM-dd HH:mm:ss")</div>
+                    <div>@ResourceStrings.ResourceManager.GetString("RetryAt"): @ServerTime(Funcs.NextAutoLoginAttempt, "yyyy-MM-dd HH:mm:ss")</div>
                 }
             </MudAlert>
         }
+        @if (JobInfos.Count == 0)
+        {
+            <MudText Class="job-runs-empty">@(NetworkManager.PlayerId <= 0 ? ResourceStrings.PleaseLogin
+                : WritableGameConfig.Value.AutoJob.DisableAll ? ResourceStrings.DisableAllJobs
+                : ResourceStrings.NoScheduledJobs)</MudText>
+        }
+        else
+        {
         <MudSimpleTable Class="job-runs-table" Dense="true" Style="overflow-x: auto;">
             <thead><tr>
                 <th>@ResourceStrings.Name</th>
@@ -42,20 +53,21 @@
                                     : run.Cancelled ? ResourceStrings.TaskCancelled
                                     : run.Error == null ? ResourceStrings.Success : ResourceStrings.ResourceManager.GetString("TaskFailed"))</div>
                                 <details class="job-run-details">
-                                    <summary>@run.StartedAt.LocalDateTime.ToString("HH:mm:ss")</summary>
-                                    <div class="job-run-time">@ResourceStrings.ResourceManager.GetString("TaskStarted"): @run.StartedAt.LocalDateTime.ToString("yyyy-MM-dd HH:mm:ss")</div>
+                                    <summary>@ServerTime(run.StartedAt, "HH:mm:ss")</summary>
+                                    <div class="job-run-time">@ResourceStrings.ResourceManager.GetString("TaskStarted"): @ServerTime(run.StartedAt, "yyyy-MM-dd HH:mm:ss")</div>
                                     @if (run.FinishedAt.HasValue)
                                     {
-                                        <div class="job-run-time">@ResourceStrings.ResourceManager.GetString("TaskFinished"): @run.FinishedAt.Value.LocalDateTime.ToString("yyyy-MM-dd HH:mm:ss")</div>
+                                        <div class="job-run-time">@ResourceStrings.ResourceManager.GetString("TaskFinished"): @ServerTime(run.FinishedAt.Value, "yyyy-MM-dd HH:mm:ss")</div>
                                     }
                                 </details>
-                                @if (run.Error != null && !run.Cancelled) { <MudText Color="Color.Error">@run.Error</MudText> }
+                                @if (run.Error != null && !run.Cancelled) { <MudTooltip Text="@run.Error" RootClass="job-run-error-tip"><div class="job-run-error" aria-label="@run.Error">@run.Error</div></MudTooltip> }
                             }
                         </td>
                     </tr>
                 }
             </tbody>
         </MudSimpleTable>
+        }
     </MudCardContent>
 </MudCard>
 
@@ -105,10 +117,14 @@
             if (trigger == null || !trigger.JobKey.Name.StartsWith($"{userId}-", StringComparison.Ordinal)) continue;
             var detail = await scheduler.GetJobDetail(trigger.JobKey);
             if (detail != null) jobs.Add(new(trigger.JobKey.Name, detail.Description ?? trigger.JobKey.Name,
-                trigger.GetNextFireTimeUtc()?.LocalDateTime.ToString("yyyy-MM-dd HH:mm:ss")));
+                trigger.GetNextFireTimeUtc() is { } next ? ServerTime(next, "yyyy-MM-dd HH:mm:ss") : null));
         }
         if (funcs != Funcs) return;
         JobInfos = jobs;
         await InvokeAsync(StateHasChanged);
     }
+
+    // Same clock as the cron editor and the top-bar ServerClock: game server time once logged in, local time before.
+    private string ServerTime(DateTimeOffset t, string format) =>
+        (Funcs?.LoginOk == true ? t.UtcDateTime + Funcs.TimeManager.DiffFromUtc : t.LocalDateTime).ToString(format);
 }

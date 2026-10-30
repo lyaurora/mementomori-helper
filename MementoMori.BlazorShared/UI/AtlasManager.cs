@@ -12,7 +12,9 @@ namespace MementoMori.WebUI.UI
     public partial class AtlasManager
     {
         private readonly IWritableOptions<GameConfig> _config;
-        public string AssetsUrl => _config.Value.AssetsUrl.TrimEnd('/');
+        /// <summary>Set by the WebUI host to its /assets disk-cache proxy; null (MAUI) = load straight from the resource server.</summary>
+        public static string? LocalAssetsUrl { get; set; }
+        public string AssetsUrl => LocalAssetsUrl ?? _config.Value.AssetsUrl.TrimEnd('/');
 
         public string GetCharacterIcon(long characterId)
         {
@@ -72,6 +74,31 @@ namespace MementoMori.WebUI.UI
         {
             return $"{AssetsUrl}/AddressableLocalAssets/Atlas/icon_element_{(int) elementType}.png";
         }
+
+        public string? GetEquipmentIcon(EquipmentMB? mb) => mb == null ? null : $"{AssetsUrl}/AddressableConvertAssets/Icon/Equipment/EQP_{mb.IconId:000000}.png";
+
+        // Paths verified with HEAD requests (2026-10-29); EquipmentSetMaterial has no known icon path, so it stays null.
+        public string? GetItemIcon(ItemType type, long itemId) => type switch
+        {
+            ItemType.CharacterFragment => GetCharacterIcon(itemId),
+            ItemType.Equipment => GetEquipmentIcon(MementoMori.Ortega.Share.Masters.EquipmentTable.GetById(itemId)),
+            ItemType.EquipmentFragment => MementoMori.Ortega.Share.Masters.EquipmentCompositeTable.GetById(itemId) is { } composite
+                ? GetEquipmentIcon(MementoMori.Ortega.Share.Masters.EquipmentTable.GetById(composite.EquipmentId)) : null,
+            // Unidentified spheres, sealed chests, witch letters/heart shards and gift boxes are all TreasureChest.
+            ItemType.TreasureChest => MementoMori.Ortega.Share.Masters.TreasureChestTable.GetById(itemId) is { IconId: > 0 } chest
+                ? $"{AssetsUrl}/AddressableConvertAssets/Icon/Item/Item_{chest.IconId:0000}.png" : null,
+            ItemType.EquipmentSetMaterialBox => MementoMori.Ortega.Share.Masters.EquipmentSetMaterialBoxTable.GetById(itemId) is { IconId: > 0 } box
+                ? $"{AssetsUrl}/AddressableConvertAssets/Icon/Item/Item_{box.IconId:0000}.png" : null,
+            _ => MementoMori.Ortega.Share.Masters.ItemTable.GetByItemTypeAndItemId(type, itemId) is { IconId: > 0 } mb
+                ? $"{AssetsUrl}/AddressableConvertAssets/Icon/Item/Item_{mb.IconId:0000}.png" : null
+        };
+
+        // Banner 1 only exists under LocalAssets (ConvertAssets returns 500); all other numbers are the reverse.
+        public string GetGachaBanner(int n) => n == 1
+            ? $"{AssetsUrl}/AddressableLocalAssets/Banner/Gacha/GACHA_BANNER_000001.png"
+            : $"{AssetsUrl}/AddressableConvertAssets/Banner/Gacha/GACHA_BANNER_{n:000000}.png";
+
+        public string GetMypageIcon(long imageId) => $"{AssetsUrl}/AddressableConvertAssets/Icon/MyPage/MYPAGE_ICON_{imageId:000000}.png";
 
         public string GetSphereIcon(SphereMB sphereMb, bool isMini = false)
         {

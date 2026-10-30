@@ -6,7 +6,7 @@
     {
         var count = Entry.ChatReactionCountMap?.GetValueOrDefault(reaction) ?? 0;
         if (count <= 0) continue;
-        <button type="button" class="@(Entry.MyChatReactionType == reaction ? "selected" : "")"
+        <button type="button" class="app-choice"
                 aria-label="@string.Format(ResourceStrings.ReactionCountFormat, Name(reaction), count)" aria-pressed="@(Entry.MyChatReactionType == reaction ? "true" : "false")"
                 disabled="@Disabled" @onclick="() => OnReact.InvokeAsync(reaction)">
             <img class="chat-reaction-icon" src="@ChatEmoticons.ReactionUrl(reaction)" alt="@Name(reaction)" /> @count

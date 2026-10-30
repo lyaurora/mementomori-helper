@@ -3,9 +3,11 @@
 }
 
 .items-page ::deep .items-table {
-    border: 1px solid var(--mud-palette-lines-default);
-    border-radius: .65rem;
-    box-shadow: none;
+    overflow: hidden;
+    border: 1px solid var(--app-card-line);
+    border-radius: 20px;
+    background: var(--mud-palette-surface);
+    box-shadow: var(--app-card-shadow);
 }
 
 .items-page ::deep .items-table .mud-table-container {
@@ -13,7 +15,7 @@
 }
 
 .items-page ::deep .items-table .mud-table-cell {
-    padding: .55rem 1rem;
+    padding: .45rem 1rem;
     font-size: .875rem;
     line-height: 1.55;
     vertical-align: middle;
@@ -48,11 +50,36 @@
 }
 
 .items-page ::deep .items-table .item-name-value {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 10px;
     min-width: 0;
     max-width: 28rem;
     overflow-wrap: anywhere;
     font-weight: 500;
+}
+
+.items-page ::deep .items-table .item-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 32px;
+    height: 32px;
+    overflow: hidden;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--mud-palette-text-primary) 7%, var(--mud-palette-surface));
+    box-shadow: inset 0 0 0 1px var(--mud-palette-lines-default);
+}
+
+
+.items-page ::deep .items-table .item-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.items-page ::deep .items-table .item-name-text {
+    min-width: 0;
 }
 
 .items-page ::deep .items-table .item-number-column {
@@ -96,6 +123,14 @@
 }
 
 @media (min-width: 600px) {
+    .items-page ::deep .items-table .mud-table-cell:first-child {
+        padding-inline-start: 22px;
+    }
+
+    .items-page ::deep .items-table .mud-table-cell:last-child {
+        padding-inline-end: 22px;
+    }
+
     .items-page ::deep .items-equipment-table .mud-table-root,
     .items-page ::deep .items-sphere-table .mud-table-root {
         min-width: 1040px;

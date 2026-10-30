@@ -4,43 +4,43 @@
 @using MementoMori.Common.Localization
 @inject IWritableOptions<GameConfig> WritableGameConfig
 @inject TimeZoneAwareJobRegister TimeZoneAwareJobRegister
+@inject AccountSelection AccountSelection
 
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Schedule" aria-hidden="true" /><span>@ResourceStrings.AutoJobCrons <span class="panel-scope">(@ResourceStrings.AllAccounts)</span></span></MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Schedule" aria-hidden="true" /><span>@ResourceStrings.AutoJobCrons <span class="panel-scope">@ResourceStrings.AllAccounts</span></span></MudText>
         </CardHeaderContent>
         <CardHeaderActions>
             <MudButton Href="https://www.freeformatter.com/cron-expression-generator-quartz.html"
                        Target="_blank"
-                       Size="Size.Small"
+                       Size="Size.Small" Class="setting-save-button"
                        Variant="Variant.Outlined"
                        Style="text-transform:none"
                        StartIcon="@Icons.Material.Filled.Help"
                        Color="Color.Primary">@ResourceStrings.CronExpression</MudButton>
         </CardHeaderActions>
     </MudCardHeader>
-    <MudCardContent Class="settings-form cron-fields">
-        <MudTextField Class="cron-field" Margin="Margin.Dense" Label="@($"{ResourceStrings.DailyJob}")" @bind-Value="AutoJob__DailyJobCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined" Validation="@CronError"
-                      Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Restore" OnAdornmentClick="() => ResetCron(() => AutoJob__DailyJobCron = defaultValue.DailyJobCron)"></MudTextField>
-            <MudTextField Class="cron-field" Margin="Margin.Dense" Label="@($"{ResourceStrings.RewardClaimJob}")" @bind-Value="AutoJob__HourlyJobCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined" Validation="@CronError"
-                          Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Restore" OnAdornmentClick="() => ResetCron(() => AutoJob__HourlyJobCron = defaultValue.HourlyJobCron)"></MudTextField>
-            <MudTextField Class="cron-field" Margin="Margin.Dense" Label="@($"{Masters.TextResourceTable.Get("[CommonHeaderLocalPvpLabel]")}")" @bind-Value="AutoJob__PvpJobCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined" Validation="@CronError"
-                          Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Restore" OnAdornmentClick="() => ResetCron(() => AutoJob__PvpJobCron = defaultValue.PvpJobCron)"></MudTextField>
-            <MudTextField Class="cron-field" Margin="Margin.Dense" Label="@($"{Masters.TextResourceTable.Get("[CommonHeaderGlobalPvpLabel]")}")" @bind-Value="AutoJob__LegendLeagueJobCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined" Validation="@CronError"
-                          Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Restore" OnAdornmentClick="() => ResetCron(() => AutoJob__LegendLeagueJobCron = defaultValue.LegendLeagueJobCron)"></MudTextField>
-            <MudTextField Class="cron-field" Margin="Margin.Dense" Label="@($"{Masters.TextResourceTable.Get("[GuildRaidReleaseConfirmTitle]")}")" @bind-Value="AutoJob__GuildRaidBossReleaseCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined" Validation="@CronError"
-                          Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Restore" OnAdornmentClick="() => ResetCron(() => AutoJob__GuildRaidBossReleaseCron = defaultValue.GuildRaidBossReleaseCron)"></MudTextField>
-            <MudTextField Class="cron-field" Margin="Margin.Dense" Label="@($"{ResourceStrings.ShopAutoBuyItems}")" @bind-Value="AutoJob__AutoBuyShopItemJobCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined" Validation="@CronError"
-                          Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Restore" OnAdornmentClick="() => ResetCron(() => AutoJob__AutoBuyShopItemJobCron = defaultValue.AutoBuyShopItemJobCron)"></MudTextField>
-            <MudTextField Class="cron-field" Margin="Margin.Dense" Label="@($"{Masters.TextResourceTable.Get("[CommonHeaderLocalRaidLabel]")}")" @bind-Value="AutoJob__AutoLocalRaidJobCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined" Validation="@CronError"
-                          Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Restore" OnAdornmentClick="() => ResetCron(() => AutoJob__AutoLocalRaidJobCron = defaultValue.AutoLocalRaidJobCron)"></MudTextField>
-            @* <MudTextField Margin="Margin.Dense" Label="@($"{ResourceStrings.Deploy_defense}")" @bind-Value="AutoJob__AutoDeployGuildDefenseJobCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined" *@
-            @*               Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Restore" OnAdornmentClick="() => ResetCron(() => AutoJob__AutoDeployGuildDefenseJobCron = defaultValue.AutoDeployGuildDefenseJobCron)"></MudTextField> *@
-            <MudTextField Class="cron-field" Margin="Margin.Dense" Label="@($"{Tr("[GachaRelicChangeTitle]")}")" @bind-Value="AutoJob__AutoChangeGachaRelicJobCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined" Validation="@CronError"
-                          Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Restore" OnAdornmentClick="() => ResetCron(() => AutoJob__AutoChangeGachaRelicJobCron = defaultValue.AutoChangeGachaRelicJobCron)"></MudTextField>
-            <MudTextField Class="cron-field" Margin="Margin.Dense" Label="@($"{ResourceStrings.Auto_draw_10_times__up_to_3_draws_}")" @bind-Value="AutoJob__AutoDrawGachaRelicJobCron" @bind-Value:after="RegisterAllJobs" Variant="Variant.Outlined" Validation="@CronError"
-                          Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Restore" OnAdornmentClick="() => ResetCron(() => AutoJob__AutoDrawGachaRelicJobCron = defaultValue.AutoDrawGachaRelicJobCron)"></MudTextField>
+    <MudCardContent Class="cron-list">
+        @* One row per job; the editor opens inline for a single job at a time. *@
+        @foreach (var job in Jobs)
+        {
+            var open = _open == job.Label;
+            var cron = job.Get();
+            var summary = CronPicker.Describe(cron);
+            <div class="cron-row @(open ? "is-open" : null)">
+                <button type="button" class="cron-row-head" aria-expanded="@(open ? "true" : "false")" title="@ResourceStrings.EditSchedule" @onclick="() => _open = open ? null : job.Label">
+                    <span class="cron-row-name">@job.Label</span>
+                    <span class="cron-row-sum @(summary == null ? "is-raw" : null)">@(summary ?? cron)</span>
+                    <span class="cron-row-next">@CronPicker.NextRuns(cron, AccountSelection, 1, false).FirstOrDefault()</span>
+                    <MudIcon Class="cron-row-icon" Icon="@(open ? Icons.Material.Rounded.ExpandLess : Icons.Material.Rounded.Edit)" Size="Size.Small" aria-hidden="true" />
+                </button>
+                @if (open)
+                {
+                    <CronPicker Label="@job.Label" Value="@cron" ValueChanged="v => Changed(job, v)" Default="@job.Default"/>
+                }
+            </div>
+        }
     </MudCardContent>
 </MudCard>
 
@@ -48,6 +48,29 @@
     [Parameter] public EventCallback OnJobsChanged { get; set; }
 
     GameConfig.AutoJobModel defaultValue = new();
+    string? _open;
+
+    record Job(string Label, Func<string> Get, Action<string> Set, string Default);
+
+    IEnumerable<Job> Jobs =>
+    [
+        new(ResourceStrings.DailyJob, () => AutoJob__DailyJobCron, v => AutoJob__DailyJobCron = v, defaultValue.DailyJobCron),
+        new(ResourceStrings.RewardClaimJob, () => AutoJob__HourlyJobCron, v => AutoJob__HourlyJobCron = v, defaultValue.HourlyJobCron),
+        new(Masters.TextResourceTable.Get("[CommonHeaderLocalPvpLabel]"), () => AutoJob__PvpJobCron, v => AutoJob__PvpJobCron = v, defaultValue.PvpJobCron),
+        new(Masters.TextResourceTable.Get("[CommonHeaderGlobalPvpLabel]"), () => AutoJob__LegendLeagueJobCron, v => AutoJob__LegendLeagueJobCron = v, defaultValue.LegendLeagueJobCron),
+        new(Masters.TextResourceTable.Get("[GuildRaidReleaseConfirmTitle]"), () => AutoJob__GuildRaidBossReleaseCron, v => AutoJob__GuildRaidBossReleaseCron = v, defaultValue.GuildRaidBossReleaseCron),
+        new(ResourceStrings.ShopAutoBuyItems, () => AutoJob__AutoBuyShopItemJobCron, v => AutoJob__AutoBuyShopItemJobCron = v, defaultValue.AutoBuyShopItemJobCron),
+        new(Masters.TextResourceTable.Get("[CommonHeaderLocalRaidLabel]"), () => AutoJob__AutoLocalRaidJobCron, v => AutoJob__AutoLocalRaidJobCron = v, defaultValue.AutoLocalRaidJobCron),
+        new(Tr("[GachaRelicChangeTitle]"), () => AutoJob__AutoChangeGachaRelicJobCron, v => AutoJob__AutoChangeGachaRelicJobCron = v, defaultValue.AutoChangeGachaRelicJobCron),
+        new(ResourceStrings.Auto_draw_10_times__up_to_3_draws_, () => AutoJob__AutoDrawGachaRelicJobCron, v => AutoJob__AutoDrawGachaRelicJobCron = v, defaultValue.AutoDrawGachaRelicJobCron),
+    ];
+
+    // Stays open while editing: daily hours / weekdays are multi-select, so collapsing after each valid change would fight the user.
+    async Task Changed(Job job, string cron)
+    {
+        job.Set(cron);
+        await RegisterAllJobs();
+    }
 
     // Invalid text is shown as an error and never saved, so the running schedule keeps its last valid cron.
     static readonly Func<string, string?> CronError = value => !string.IsNullOrWhiteSpace(value) && Quartz.CronExpression.IsValidExpression(value) ? null : ResourceStrings.InvalidCronExpression;
@@ -56,12 +79,6 @@
     {
         await TimeZoneAwareJobRegister.RegisterAllJobs();
         await OnJobsChanged.InvokeAsync();
-    }
-
-    private async Task ResetCron(Action reset)
-    {
-        reset();
-        await RegisterAllJobs();
     }
 
     public string AutoJob__DailyJobCron

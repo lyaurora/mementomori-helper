@@ -1,10 +1,12 @@
 ﻿@inject AccountSelection AccountSelection
 @using MementoMori.Common.Localization
+@using MementoMori.BlazorShared.Components
 @using static MementoMori.Ortega.Share.Masters
 @using System.Globalization
 @using DynamicData.Binding
 @using MementoMori.Option
 @using ReactiveUI
+@using System.Reactive.Linq
 @inherits LayoutComponentBase
 @implements IDisposable
 @inject AccountManager AccountManager
@@ -28,34 +30,60 @@
             aria-label="@Tr("[MenuTitle]")"
             @onclick="e => DrawerToggle()">
         </MudIconButton>
-        <MudSelect T="long" Label="@ResourceStrings.SwitchAccount" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" Class="app-account-select" @bind-Value="AccountSelection.CurrentUserId">
-            @foreach (var account in AuthOption.Value.Accounts)
-            {
-                <MudSelectItem T="long" Value="account.UserId">@account.Name</MudSelectItem>
-            }
-        </MudSelect>
+        <MudMenu AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Class="app-account-menu" PopoverClass="app-account-popover">
+            <ActivatorContent>
+                @{ AccountManager.TryGet(AccountSelection.CurrentUserId, out var current); var status = current?.Funcs?.UserSyncData?.UserStatusDtoInfo; var accountName = current?.AccountInfo?.Name ?? AuthOption.Value.Accounts.FirstOrDefault(a => a.UserId == AccountSelection.CurrentUserId)?.Name; var name = status?.Name ?? accountName; }
+                <button type="button" class="app-account-pill" aria-haspopup="menu" aria-label="@string.Format(ResourceStrings.AppearanceTitleFormat, ResourceStrings.SwitchAccount, name)">
+                    <PlayerAvatar IconId="@(status?.MainCharacterIconId ?? 0)" Name="@name" Size="34" />
+                    <span class="app-account-who">
+                        <b>@name</b>
+                        @if (status != null)
+                        {
+                            <small>@accountName · @Tr("[CommonLevelFormat]", status.Rank)</small>
+                        }
+                    </span>
+                    <MudIcon Icon="@Icons.Material.Filled.ExpandMore" Size="Size.Small" />
+                </button>
+            </ActivatorContent>
+            <ChildContent>
+                @foreach (var account in AuthOption.Value.Accounts)
+                {
+                    <MudMenuItem Class="@(account.UserId == AccountSelection.CurrentUserId ? "mud-selected-item" : null)" aria-current="@(account.UserId == AccountSelection.CurrentUserId ? "true" : null)" OnClick="() => AccountSelection.CurrentUserId = account.UserId">
+                        @{ AccountManager.TryGet(account.UserId, out var acc); var st = acc?.Funcs?.UserSyncData?.UserStatusDtoInfo; var nm = st?.Name ?? account.Name; }
+                        <span class="app-account-option">
+                        <PlayerAvatar IconId="@(st?.MainCharacterIconId ?? 0)" Name="@nm" Size="28" />
+                        <span class="app-account-who">
+                            <b>@nm</b>
+                            @if (st != null)
+                            {
+                                <small>@account.Name · @Tr("[CommonLevelFormat]", st.Rank)</small>
+                            }
+                        </span>
+                        </span>
+                    </MudMenuItem>
+                }
+            </ChildContent>
+        </MudMenu>
         <MudSpacer />
-        <MudSelect T="string" Label="@Tr("[GameSettingTextLanguage]")" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" Class="app-language-select" @bind-Value="SelectedLanguage" ToStringFunc="@(name => Languages.FirstOrDefault(x => x.Name == name).Label ?? name)">
+        <ServerClock />
+        <MudSelect T="string" Label="@Tr("[GameSettingTextLanguage]")" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" Class="app-language-select" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Outlined.Language" @bind-Value="SelectedLanguage" ToStringFunc="@(name => Languages.FirstOrDefault(x => x.Name == name).Label ?? name)">
             @foreach (var (name, label) in Languages)
             {
                 <MudSelectItem Value="@name">@label</MudSelectItem>
             }
         </MudSelect>
-        <MudMenu Disabled="@(!_themeReady)" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-            <ActivatorContent>
-                <MudIconButton Icon="@ThemeIcon" Color="Color.Inherit" title="@string.Format(ResourceStrings.AppearanceTitleFormat, ResourceStrings.Appearance, ThemeName)" aria-label="@ResourceStrings.Appearance" data-testid="theme-toggle" Disabled="@(!_themeReady)" />
-            </ActivatorContent>
-            <ChildContent>
-                <MudMenuItem Icon="@(_themeMode == "system" ? Icons.Material.Filled.Check : Icons.Material.Filled.BrightnessAuto)" OnClick='() => SetThemeMode("system")'>@ResourceStrings.ThemeSystem</MudMenuItem>
-                <MudMenuItem Icon="@(_themeMode == "light" ? Icons.Material.Filled.Check : Icons.Material.Filled.LightMode)" OnClick='() => SetThemeMode("light")'>@ResourceStrings.ThemeLight</MudMenuItem>
-                <MudMenuItem Icon="@(_themeMode == "dark" ? Icons.Material.Filled.Check : Icons.Material.Filled.DarkMode)" OnClick='() => SetThemeMode("dark")'>@ResourceStrings.ThemeDark</MudMenuItem>
-            </ChildContent>
-        </MudMenu>
+        <div class="app-segment" role="group" aria-label="@ResourceStrings.Appearance">
+            @foreach (var (mode, label, icon) in ThemeModes)
+            {
+                var title = string.Format(ResourceStrings.AppearanceTitleFormat, ResourceStrings.Appearance, label);
+                <MudIconButton Icon="@icon" Size="Size.Small" title="@title" aria-label="@title" aria-pressed="@(_themeReady && _themeMode == mode ? "true" : "false")" data-testid="@(mode == "system" ? "theme-toggle" : null)" Disabled="@(!_themeReady)" OnClick="() => SetThemeMode(mode)" />
+            }
+        </div>
         <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Target="_blank" Color="Color.Inherit" Href="https://github.com/lyaurora/mementomori-helper/" aria-label="GitHub" />
     </MudAppBar>
     <MudDrawer @bind-Open="_drawerOpen" Elevation="0" Class="app-nav">
         <MudDrawerHeader>
-            <MudText Typo="Typo.h5" Class="mt-1">@ResourceStrings.GameAssistant</MudText>
+            <MudText Typo="Typo.h5">@ResourceStrings.GameAssistant<small>MementoMori</small></MudText>
         </MudDrawerHeader>
         <NavMenu />
     </MudDrawer>
@@ -74,11 +102,12 @@
     bool _themeReady, _disposed;
     string _themeMode = "system";
     IDisposable? _accountManagerSubscription;
-    string ThemeName => _themeMode switch { "light" => ResourceStrings.ThemeLight, "dark" => ResourceStrings.ThemeDark, _ => ResourceStrings.ThemeSystem };
-    string ThemeIcon => _themeMode switch { "light" => Icons.Material.Filled.LightMode, "dark" => Icons.Material.Filled.DarkMode, _ => Icons.Material.Filled.BrightnessAuto };
+    IDisposable? _accountSubscription;
+    static (string Mode, string Label, string Icon)[] ThemeModes =>
+        [("system", ResourceStrings.ThemeSystem, Icons.Material.Outlined.BrightnessAuto), ("light", ResourceStrings.ThemeLight, Icons.Material.Outlined.LightMode), ("dark", ResourceStrings.ThemeDark, Icons.Material.Outlined.DarkMode)];
     static readonly MudTheme _theme = new()
     {
-        LayoutProperties = new() { DefaultBorderRadius = "12px" },
+        LayoutProperties = new() { DefaultBorderRadius = "12px", DrawerWidthLeft = "232px", AppbarHeight = "64px" },
         Typography = new()
         {
             Default = new() { FontFamily = ["system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "PingFang SC", "Microsoft YaHei UI", "Microsoft JhengHei", "Noto Sans CJK SC", "Noto Sans CJK TC", "WenQuanYi Zen Hei", "sans-serif"], FontSize = ".875rem", LineHeight = 1.6, LetterSpacing = "0" },
@@ -86,80 +115,80 @@
             Body2 = new() { FontSize = ".8125rem", LineHeight = 1.6, LetterSpacing = "0" },
             Subtitle1 = new() { FontSize = ".875rem", LineHeight = 1.6, LetterSpacing = "0" },
             Subtitle2 = new() { FontSize = ".8125rem", FontWeight = 600, LineHeight = 1.6, LetterSpacing = "0" },
-            H5 = new() { FontSize = "1.25rem", FontWeight = 600, LineHeight = 1.5, LetterSpacing = "0" },
-            H6 = new() { FontSize = "1.125rem", FontWeight = 600, LineHeight = 1.5, LetterSpacing = "0" },
+            H5 = new() { FontSize = "1.5rem", FontWeight = 700, LineHeight = 1.25, LetterSpacing = "0" },
+            H6 = new() { FontSize = ".9375rem", FontWeight = 650, LineHeight = 1.5, LetterSpacing = ".01em" },
             Button = new() { FontSize = ".875rem", FontWeight = 500, LineHeight = 1.5, LetterSpacing = "0", TextTransform = "none" },
             Input = new() { FontSize = ".875rem", LineHeight = 1.5, LetterSpacing = "0" },
             Caption = new() { FontSize = ".75rem", LineHeight = 1.6, LetterSpacing = "0" }
         },
         PaletteLight = new()
         {
-            Primary = "#363636",
+            Primary = "#A9530F",
             PrimaryContrastText = "#FFFFFF",
-            Secondary = "#616161",
-            Info = "#526874",
-            Success = "#397257",
-            Warning = "#8A641F",
-            Error = "#AD4B43",
-            Background = "#F5F5F5",
-            BackgroundGray = "#F7F7F7",
-            Surface = "#FFFFFF",
-            AppbarBackground = "#FFFFFF",
-            AppbarText = "#242424",
-            DrawerBackground = "#FFFFFF",
-            DrawerText = "#454545",
-            DrawerIcon = "#777777",
-            TextPrimary = "#242424",
-            TextSecondary = "#686868",
-            TextDisabled = "#929292",
-            ActionDefault = "#696969",
-            ActionDisabled = "#A0A0A0",
-            ActionDisabledBackground = "#EFEFEF",
-            LinesDefault = "#E4E4E4",
-            LinesInputs = "#919191",
-            TableLines = "#EAEAEA",
-            TableStriped = "#FAFAFA",
-            TableHover = "#F1F1F1",
-            Divider = "#E4E4E4",
-            DividerLight = "#EFEFEF",
-            HoverOpacity = .07
+            Secondary = "#62574A",
+            Info = "#4F6670",
+            Success = "#2F7A4B",
+            Warning = "#8A5A0B",
+            Error = "#B23A2E",
+            Background = "#F3EEE7",
+            BackgroundGray = "#F6F0E8",
+            Surface = "#FFFDFA",
+            AppbarBackground = "#F3EEE7",
+            AppbarText = "#2A231C",
+            DrawerBackground = "#FBF8F3",
+            DrawerText = "#62574A",
+            DrawerIcon = "#76695B",
+            TextPrimary = "#2A231C",
+            TextSecondary = "#62574A",
+            TextDisabled = "#A89B8C",
+            ActionDefault = "#62574A",
+            ActionDisabled = "#A89B8C",
+            ActionDisabledBackground = "#EDE5DA",
+            LinesDefault = "#E7DDD0",
+            LinesInputs = "#D9CCBC",
+            TableLines = "#E7DDD0",
+            TableStriped = "#FBF8F3",
+            TableHover = "#F6F0E8",
+            Divider = "#E7DDD0",
+            DividerLight = "#E7DDD0",
+            HoverOpacity = .06
         },
         PaletteDark = new()
         {
-            Primary = "#E3E3E3",
-            PrimaryContrastText = "#1A1A1A",
-            Secondary = "#B8B8B8",
-            SecondaryContrastText = "#1A1A1A",
-            Info = "#B0C4CC",
+            Primary = "#F0A35E",
+            PrimaryContrastText = "#2B1704",
+            Secondary = "#BDB2A3",
+            SecondaryContrastText = "#1A1612",
+            Info = "#A9C2CC",
             InfoContrastText = "#192629",
-            Success = "#99C8AC",
-            SuccessContrastText = "#1C2A21",
-            Warning = "#D6BC87",
-            WarningContrastText = "#2E271A",
-            Error = "#E2A39C",
-            ErrorContrastText = "#301C1A",
-            Background = "#161616",
-            BackgroundGray = "#252525",
-            Surface = "#212121",
-            AppbarBackground = "#1C1C1C",
-            AppbarText = "#ECECEC",
-            DrawerBackground = "#1C1C1C",
-            DrawerText = "#D4D4D4",
-            DrawerIcon = "#A4A4A4",
-            TextPrimary = "#ECECEC",
-            TextSecondary = "#B6B6B6",
-            TextDisabled = "#838383",
-            ActionDefault = "#C4C4C4",
-            ActionDisabled = "#838383",
-            ActionDisabledBackground = "#333333",
-            LinesDefault = "#3D3D3D",
-            LinesInputs = "#7F7F7F",
-            TableLines = "#373737",
-            TableStriped = "#272727",
-            TableHover = "#333333",
-            Divider = "#3D3D3D",
-            DividerLight = "#303030",
-            HoverOpacity = .1
+            Success = "#7FC79A",
+            SuccessContrastText = "#13261A",
+            Warning = "#E7B65C",
+            WarningContrastText = "#2E2210",
+            Error = "#F08A7E",
+            ErrorContrastText = "#301A17",
+            Background = "#15120F",
+            BackgroundGray = "#2A2520",
+            Surface = "#221E1A",
+            AppbarBackground = "#15120F",
+            AppbarText = "#F2EBE1",
+            DrawerBackground = "#191612",
+            DrawerText = "#BDB2A3",
+            DrawerIcon = "#A39788",
+            TextPrimary = "#F2EBE1",
+            TextSecondary = "#BDB2A3",
+            TextDisabled = "#6F655A",
+            ActionDefault = "#BDB2A3",
+            ActionDisabled = "#6F655A",
+            ActionDisabledBackground = "#352F28",
+            LinesDefault = "#38332D",
+            LinesInputs = "#4A433C",
+            TableLines = "#38332D",
+            TableStriped = "#262119",
+            TableHover = "#2A2520",
+            Divider = "#38332D",
+            DividerLight = "#38332D",
+            HoverOpacity = .08
         }
     };
     // Both palettes are available during prerender; theme.js selects one before the first paint.
@@ -192,12 +221,29 @@
     protected override void OnInitialized()
     {
         _accountManagerSubscription = AccountManager.WhenAnyPropertyChanged().Subscribe(_ => InvokeAsync(StateHasChanged));
+        // Re-render the account pill when the selected account changes or its synced name/rank/icon updates.
+        _accountSubscription = AccountSelection.WhenAnyValue(x => x.CurrentUserId)
+            .Select(WatchAccountStatus)
+            .Switch()
+            .DistinctUntilChanged()
+            .Subscribe(_ => InvokeAsync(StateHasChanged));
+    }
+
+    // Same Get() as AccountSelection.Current, so the account exists before its first login; projected so item-only syncs don't re-render the layout.
+    IObservable<(long, string?, long, long)> WatchAccountStatus(long id)
+    {
+        if (id == 0) return Observable.Return((id, (string?)null, 0L, 0L));
+        var funcs = AccountManager.Get(id).Funcs;
+        return funcs.WhenAnyPropertyChanged(nameof(funcs.UserSyncData)).Select(_ => 0).StartWith(0)
+            .Select(_ => funcs.UserSyncData?.UserStatusDtoInfo)
+            .Select(s => (id, s?.Name, s?.Rank ?? 0L, s?.MainCharacterIconId ?? 0L));
     }
 
     public void Dispose()
     {
         _disposed = true;
         _accountManagerSubscription?.Dispose();
+        _accountSubscription?.Dispose();
     }
 
     void DrawerToggle()

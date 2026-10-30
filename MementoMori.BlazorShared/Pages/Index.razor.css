@@ -1,0 +1,97 @@
+/* Profile hero */
+.home-cols ::deep .hero-who { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.home-cols ::deep .hero-who .player-avatar { border: 3px solid var(--mud-palette-surface); border-radius: 22px; box-shadow: 0 6px 16px -8px rgb(0 0 0 / .45); font-size: 1.75rem; }
+.home-cols ::deep .hero-who-text { min-width: 0; }
+.home-cols ::deep .hero-name { margin-bottom: 6px; font-size: 1.3125rem; font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; }
+.home-cols ::deep .hero-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.home-cols ::deep .hero-badge { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; background: var(--mud-palette-background-gray); color: var(--mud-palette-text-secondary); font-size: .75rem; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.home-cols ::deep .hero-badge.is-accent { background: var(--app-selected-background); color: var(--mud-palette-primary); }
+.home-cols ::deep .hero-idline { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 12px; color: var(--app-text-3); font-size: .78125rem; font-variant-numeric: tabular-nums; }
+.home-cols ::deep .hero-quote { margin: 12px 0 16px; padding: 10px 14px; border-radius: 12px; background: var(--mud-palette-background-gray); color: var(--mud-palette-text-secondary); font-size: .8125rem; overflow-wrap: anywhere; }
+.home-cols ::deep .hero-quote b { color: var(--mud-palette-text-primary); font-weight: 500; }
+.home-cols ::deep .hero-tile-text { min-width: 0; }
+.home-cols ::deep .tile-split b { color: var(--mud-palette-text-primary); font-variant-numeric: tabular-nums; }
+
+/* Bounty quests */
+.home-cols ::deep .bq-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.home-cols ::deep .bq-head .mud-switch { margin-inline-end: 0; }
+.home-cols ::deep .bq-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 12px 0 6px; }
+.home-cols ::deep .bq-cost { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-inline-end: 4px; }
+.home-cols ::deep .bq-cost img { width: 100%; height: 100%; object-fit: contain; }
+.home-cols ::deep .bq-row { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 4px; border-bottom: 1px dashed var(--mud-palette-lines-default); }
+.home-cols ::deep .bq-row:last-child { border-bottom: 0; }
+.home-cols ::deep .bq-rarity { display: grid; place-items: center; flex: none; min-width: 38px; height: 22px; padding: 0 4px; border-radius: 7px; background: var(--mud-palette-background-gray); color: var(--mud-palette-text-secondary); font-size: .6875rem; font-weight: 800; letter-spacing: .04em; }
+.home-cols ::deep .bq-rarity:is(.is-ssr, .is-ur) { background: color-mix(in srgb, var(--mud-palette-warning) 14%, transparent); color: var(--mud-palette-warning); }
+.home-cols ::deep .bq-rarity.is-lr { background: rgb(214 92 140 / .14); color: #A8325F; }
+html[data-theme="dark"] .home-cols ::deep .bq-rarity.is-lr { color: #F08DB5; }
+.home-cols ::deep .bq-art { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 8px; background: var(--mud-palette-background-gray); color: var(--app-text-3); }
+.home-cols ::deep .bq-art img { width: 100%; height: 100%; object-fit: contain; }
+.home-cols ::deep .bq-name { flex: 1; min-width: 0; font-size: .84375rem; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.home-cols ::deep .bq-status { display: flex; flex: none; align-items: center; gap: 5px; color: var(--app-text-3); font-size: .75rem; white-space: nowrap; }
+.home-cols ::deep .bq-status.is-todo { color: var(--mud-palette-primary); font-weight: 600; }
+.home-cols ::deep .bq-status .mud-icon-root { width: 15px; height: 15px; }
+.home-cols ::deep .bq-time { color: var(--mud-palette-text-secondary); font-family: var(--app-mono); font-size: .8125rem; font-variant-numeric: tabular-nums; }
+.home-cols ::deep .bq-status.is-todo .bq-time { color: inherit; }
+
+/* Missions */
+.home-cols ::deep .mission-progress { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; padding: 12px 14px; border-radius: 14px; background: var(--mud-palette-background-gray); }
+.home-cols ::deep .mission-progress-count { flex: none; color: var(--app-text-3); font-size: .75rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.home-cols ::deep .mission-progress-count b { color: var(--mud-palette-text-primary); font-size: 1.125rem; }
+.home-cols ::deep .mission-progress .mud-progress-linear { flex: 1; min-width: 40px; }
+
+/* Activity / notice: segmented tabs on the left, sync in the tab bar header on the right. */
+.home-cols ::deep .home-notices .notice-tabs > .mud-tabs-tabbar { width: 100%; }
+.home-cols ::deep .home-notices .notice-tabs > .mud-tabs-tabbar > .mud-tabs-tabbar-inner { display: flex; align-items: center; gap: 8px; padding: 0; border-radius: 0; background: transparent; }
+.home-cols ::deep .home-notices .notice-tabs > .mud-tabs-tabbar .mud-tabs-tabbar-content { flex: 0 1 auto; width: max-content; padding: 3px; border-radius: 12px; background: var(--mud-palette-background-gray); }
+.home-cols ::deep .home-notices .notice-tabs > .mud-tabs-tabbar .mud-tabs-tabbar-wrapper { width: max-content; gap: 2px; }
+.home-cols ::deep .home-notices .notice-tabs > .mud-tabs-tabbar .mud-tab { min-height: 30px; padding: .2rem 14px; border-radius: 9px; }
+.home-cols ::deep .home-notices .notice-tabs > .mud-tabs-tabbar .mud-tab.mud-tab-active { background: var(--mud-palette-surface); color: var(--mud-palette-text-primary); box-shadow: 0 1px 3px rgb(0 0 0 / .12); }
+.home-cols ::deep .home-notices .mud-tabs-header-after { margin-inline-start: auto; }
+
+/* Notices: cap at ~10 rows with an internal scroll so the right column doesn't run ~1900px below the others. */
+.home-cols ::deep .home-notices .mud-tabs-panels { max-height: 480px; overflow-y: auto; overscroll-behavior: contain; }
+/* Narrow: one column, cards back in today's row order; quick tabs scroll sideways instead of wrapping. */
+@media (max-width: 899.98px) {
+    .home-cols { align-items: stretch; }
+    .home-cols ::deep .mud-card { min-width: 0; }
+    .home-cols ::deep .home-hero { order: 1; }
+    .home-cols ::deep .home-entries { order: 2; }
+    .home-cols ::deep .home-missions { order: 3; }
+    .home-cols ::deep .home-quick { order: 4; }
+    .home-cols ::deep .dashboard-output { order: 5; }
+    .home-cols ::deep .home-notices { order: 6; }
+    .home-cols ::deep .home-debug { order: 7; }
+    .home-cols ::deep .home-quick .quick-actions-tabs > .mud-tabs-tabbar { width: 100%; }
+    .home-cols ::deep .home-quick .quick-actions-tabs > .mud-tabs-tabbar .mud-tabs-tabbar-content { overflow-x: auto; scrollbar-width: none; }
+    .home-cols ::deep .home-quick .quick-actions-tabs > .mud-tabs-tabbar .mud-tabs-tabbar-wrapper { flex-wrap: nowrap; width: max-content; }
+    .home-cols ::deep .home-quick .quick-actions-tabs > .mud-tabs-tabbar .mud-tab { flex: none; white-space: nowrap; }
+    .home-cols ::deep .hero-name { font-size: 1.1875rem; }
+}
+/* Keep the badge dot fully inside the icon box. */
+.home-cols ::deep .entry-dot { top: 3px; right: 3px; }
+/* Bounty is a sub-section of the MyPage card: lighter title than the card header (mockup hierarchy). */
+.home-cols ::deep .bq-head .panel-title { gap: 6px; font-size: .9375rem; }
+.home-cols ::deep .bq-head .panel-title-icon { width: 20px; height: 20px; padding: 0; background: transparent; }
+/* Quick-action tabs: hairline between tab bar and buttons. */
+.home-cols ::deep .home-quick .quick-actions-tabs > .mud-tabs-tabbar { padding-bottom: 10px; border-bottom: 1px solid var(--mud-palette-lines-default); }
+/* Debug card has no content under its header while collapsed: match the top padding so the switch row is centred. */
+.home-cols ::deep .home-debug .mud-card-header { padding-bottom: 18px; }
+/* Wide (diamond) tile has a 44px icon vs 36px: shift it so all tile icons share one centre axis (12px pad - 4px). */
+/* ...and close the gap by the same 4px so tile text left edges line up too (8+44+6 = 12+36+10). */
+.home-cols ::deep .tile.is-wide { padding-inline-start: 8px; gap: 6px; }
+/* Bounty sync: same tonal chip as the buttons beside it, not a bare icon. */
+.home-cols ::deep .bq-actions .mud-icon-button { background: var(--mud-palette-background-gray); border-radius: var(--mud-default-borderradius); }
+/* MyPage grid, denser: 6 columns in the ~411px desktop card (11 entries = 6/5), fewer when narrower; 56px tile, 44px sprite,
+   one-line 12px label with ellipsis (full name in title). */
+.home-cols ::deep .entries { grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); gap: 8px 6px; }
+.home-cols ::deep .entry { gap: 6px; padding: 2px; font-size: .75rem; }
+.home-cols ::deep .entry-art { width: 56px; height: 56px; padding: 6px; }
+.home-cols ::deep .entry > span:last-child { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+@media (max-width: 599.98px) { .home-cols ::deep .entries { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+/* Wide diamond tile at 390: let the free/paid split shrink, not the big number (it clipped by ~2px in en). */
+.home-cols ::deep .tile.is-wide .hero-tile-text { flex: none; }
+.home-cols ::deep .tile.is-wide .tile-split { min-width: 0; }
+@media (min-width: 900px) {
+    /* en: Missions header actions dropped under the title by a few px; trim button side padding so they stay on one line. */
+    .home-cols ::deep .mud-card-header > .mud-paper .mud-button-root { padding-inline: 10px; }
+}

@@ -7,14 +7,24 @@
 @using MementoMori.Ortega.Share.Enums
 @using MementoMori.Ortega.Share.Master.Data
 @using MementoMori.Ortega.Share.Utils
+@using MementoMori.WebUI.UI
+@inject AtlasManager AtlasManager
 
 <div class="equipment-info @(MiniMode ? "equipment-info-compact" : "")">
     <section class="equipment-section">
         <h3 class="equipment-section-title">@ResourceStrings.Name</h3>
-        <div class="equipment-name">
-            <strong>@equipmentName</strong>
-            <span>@(Tr(equipmentMb.RarityFlags))</span>
-            <span class="equipment-number">@(EquipmentDtoInfo.ReinforcementLv)/@(equipmentMb.EquipmentLv)</span>
+        <div class="equipment-name-row">
+            <span class="equipment-icon">
+                @if (AtlasManager.GetEquipmentIcon(equipmentMb) is { } icon)
+                {
+                    <img src="@icon" @key="icon" width="44" height="44" loading="lazy" decoding="async" alt="" onerror="this.remove()">
+                }
+            </span>
+            <div class="equipment-name">
+                <strong>@equipmentName</strong>
+                <span>@(Tr(equipmentMb.RarityFlags))</span>
+                <span class="equipment-number">@(EquipmentDtoInfo.ReinforcementLv)/@(equipmentMb.EquipmentLv)</span>
+            </div>
         </div>
     </section>
     <section class="equipment-section">

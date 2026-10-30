@@ -8,10 +8,8 @@ const assert = require('node:assert/strict');
     const errors = [];
     const checkScheme = (page, expected) => page.waitForFunction(value =>
         getComputedStyle(document.documentElement).getPropertyValue('--mud-native-html-color-scheme').trim() === value, expected);
-    const choose = async (page, name) => {
-        await page.getByTestId('theme-toggle').click();
-        await page.locator('.mud-popover-open').getByText(name, { exact: true }).click();
-    };
+    const pressed = (page, name) => page.locator(`.app-segment button[aria-pressed="true"][title="外观：${name}"]`).waitFor();
+    const choose = (page, name) => page.locator(`.app-segment button[title="外观：${name}"]`).click();
     try {
         // Sidebar navigation before the server circuit connects patches <html> attributes.
         // Stored dark mode must survive that patch, including later interactive navigation.
@@ -35,7 +33,7 @@ const assert = require('node:assert/strict');
                 assert.equal(await navigating.evaluate(() => document.documentElement.dataset.theme), 'dark');
             }
         } finally { releaseConnection(); }
-        await navigating.getByTitle('外观：深色', { exact: true }).waitFor();
+        await pressed(navigating, '深色');
         await navigating.locator('.app-nav a[href$="Chat" i]').click();
         await navigating.waitForSelector('.chat-channels');
         await checkScheme(navigating, 'dark');
@@ -59,7 +57,7 @@ const assert = require('node:assert/strict');
         page.on('pageerror', e => errors.push(e.message));
         await page.goto(`${url}/Settings`);
         await checkScheme(page, 'dark');
-        await page.getByTitle('外观：跟随系统', { exact: true }).waitFor();
+        await pressed(page, '跟随系统');
         const contrast = await page.evaluate(() => {
             const style = getComputedStyle(document.documentElement);
             const luminance = key => {
@@ -83,7 +81,7 @@ const assert = require('node:assert/strict');
         await page.waitForTimeout(200);
         await checkScheme(page, 'light');
         await page.reload();
-        await page.getByTitle('外观：浅色', { exact: true }).waitFor();
+        await pressed(page, '浅色');
         await checkScheme(page, 'light');
 
         await choose(page, '深色');
@@ -92,7 +90,7 @@ const assert = require('node:assert/strict');
         await page.waitForTimeout(200);
         await checkScheme(page, 'dark');
         await page.reload();
-        await page.getByTitle('外观：深色', { exact: true }).waitFor();
+        await pressed(page, '深色');
         await checkScheme(page, 'dark');
 
         await choose(page, '跟随系统');
@@ -100,7 +98,7 @@ const assert = require('node:assert/strict');
         await page.emulateMedia({ colorScheme: 'dark' });
         await checkScheme(page, 'dark');
         await page.reload();
-        await page.getByTitle('外观：跟随系统', { exact: true }).waitFor();
+        await pressed(page, '跟随系统');
         await checkScheme(page, 'dark');
         await page.emulateMedia({ colorScheme: 'light' });
         await checkScheme(page, 'light');
