@@ -87,7 +87,7 @@ namespace MementoMori.Ortega.Share.Data.Character
 
         public override int GetHashCode()
         {
-            throw new NotImplementedException();
+            return HashCode.Combine(Energy, Health, Intelligence, Muscle);
         }
 
         public long GetValue(BaseParameterType type)

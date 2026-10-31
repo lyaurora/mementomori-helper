@@ -20,29 +20,16 @@
             var dateData = TimeUtil.UtcEpoch.AddMilliseconds(timestamp) - TimeUtil.ChangeDayTime;
             return (dateData.Year * 100 + dateData.Month) * 100 + dateData.Day;
         }
-//
-// 		public static int GetDateIntYearMonthDayAtMidnight(long timestamp)
-// 		{
-// 			DateTime UtcEpoch = TimeUtil.UtcEpoch;
-// 			int num2;
-// 			long num = (long)(num2 * (int)((uint)100));
-// 			int num3;
-// 			num += (long)num3;
-// 			long num4 = num * (long)((uint)100);
-// 			int num5 = (int)((long)num5 + num4);
-// 			return num5;
-// 		}
-//
-// 		public static int GetDateIntYearMonthDay(DateTime dateTime)
-// 		{
-// 			int num2;
-// 			long num = (long)(num2 * (int)((uint)100));
-// 			int num3;
-// 			num += (long)num3;
-// 			long num4 = num * (long)((uint)100);
-// 			int num5 = (int)((long)num5 + num4);
-// 			return num5;
-// 		}
+
+        public static int GetDateIntYearMonthDayAtMidnight(long timestamp)
+        {
+            return GetDateIntYearMonthDay(TimeUtil.UtcEpoch.AddMilliseconds(timestamp));
+        }
+
+        public static int GetDateIntYearMonthDay(DateTime dateTime)
+        {
+            return (dateTime.Year * 100 + dateTime.Month) * 100 + dateTime.Day;
+        }
 //
 // 		public static int GetDateIntYearMonth(long timestamp)
 // 		{
@@ -131,38 +118,23 @@
 // 			return num6;
 // 		}
 //
-// 		public static int GetHoursAndMinutes(long timestamp)
-// 		{
-// 			DateTime UtcEpoch = TimeUtil.UtcEpoch;
-// 			int num2;
-// 			long num = (long)(num2 * (int)((uint)100));
-// 			int num3 = (int)((long)num3 + num);
-// 			return num3;
-// 		}
-//
-// 		public static int GetHoursMinutesAndSeconds(long timestamp)
-// 		{
-// 			DateTime UtcEpoch = TimeUtil.UtcEpoch;
-// 			int num2;
-// 			long num = (long)(num2 * (int)((uint)100));
-// 			int num3;
-// 			num += (long)num3;
-// 			long num4 = num * (long)((uint)100);
-// 			int num5 = (int)((long)num5 + num4);
-// 			return num5;
-// 		}
-//
-// 		public static int GetDateIntMonthDay(long timestamp)
-// 		{
-// 			DateTime UtcEpoch = TimeUtil.UtcEpoch;
-// 			TimeSpan ChangeDayTime = TimeUtil.ChangeDayTime;
-// 			DateTime dateTime2;
-// 			DateTime dateTime = dateTime2 - ChangeDayTime;
-// 			int num2;
-// 			long num = (long)(num2 * (int)((uint)100));
-// 			int num3 = (int)((long)num3 + num);
-// 			return num3;
-// 		}
+        public static int GetHoursAndMinutes(long timestamp)
+        {
+            DateTime dateTime = TimeUtil.UtcEpoch.AddMilliseconds(timestamp);
+            return dateTime.Hour * 100 + dateTime.Minute;
+        }
+
+        public static int GetHoursMinutesAndSeconds(long timestamp)
+        {
+            DateTime dateTime = TimeUtil.UtcEpoch.AddMilliseconds(timestamp);
+            return (dateTime.Hour * 100 + dateTime.Minute) * 100 + dateTime.Second;
+        }
+
+        public static int GetDateIntMonthDay(long timestamp)
+        {
+            DateTime dateTime = TimeUtil.UtcEpoch.AddMilliseconds(timestamp) - TimeUtil.ChangeDayTime;
+            return dateTime.Month * 100 + dateTime.Day;
+        }
 //
 // 		public static bool ValidDate(int date)
 // 		{

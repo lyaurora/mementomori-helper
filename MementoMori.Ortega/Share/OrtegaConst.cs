@@ -1,5 +1,6 @@
 ﻿using MementoMori.Ortega.Share.Data.Equipment;
 using MementoMori.Ortega.Share.Data.Item;
+using MementoMori.Ortega.Share.Data.Item.Model;
 using MementoMori.Ortega.Share.Enums;
 using MementoMori.Ortega.Share.Enums.Battle.Skill;
 
@@ -97,8 +98,7 @@ namespace MementoMori.Ortega.Share
 			// Note: this type is marked as 'beforefieldinit'.
 			static Guild()
 			{
-				// uint num;
-				// OrtegaConst.Guild.ItemRequiredToCreateGuild = new UserCurrencyFree((long)num);
+				ItemRequiredToCreateGuild = new UserCurrencyFree(500);
 			}
 		}
 
@@ -129,31 +129,13 @@ namespace MementoMori.Ortega.Share
 			// Note: this type is marked as 'beforefieldinit'.
 			static HttpHeaderRequest()
 			{
-				/*
-An exception occurred when decompiling this method
-
-ICSharpCode.Decompiler.DecompilerException: Error decompiling System.Void Ortega.Share.OrtegaConst/HttpHeaderRequest::.cctor()
-
- ---> System.Exception: Basic block has to end with unconditional control flow. 
-{
-	Block_0:
-	callreadonlysetter:string(HttpHeaderRequest::get_HeaderAccessTokenKey, ldstr:string("OrtegaAccessToken"))
-	callreadonlysetter:string(HttpHeaderRequest::get_HeaderAppVersionKey, ldstr:string("OrtegaAppVersion"))
-	callreadonlysetter:string(HttpHeaderRequest::get_HeaderDeviceType, ldstr:string("OrtegaDeviceType"))
-	callreadonlysetter:string(HttpHeaderRequest::get_HeaderDmmOneTimeToken, ldstr:string("OrtegaDmmOneTimeToken"))
-	callreadonlysetter:string(HttpHeaderRequest::get_HeaderFlagDmmUpdateOneTimeToken, ldstr:string("OrtegaFlagDmmUpdateOneTimeToken"))
-	callreadonlysetter:string(HttpHeaderRequest::get_HeaderUUID, ldstr:string("OrtegaUUID"))
-	callreadonlysetter:string(HttpHeaderRequest::get_HeaderIpAddress, ldstr:string("X-Forwarded-For"))
-}
-
-   at ICSharpCode.Decompiler.ILAst.ILAstOptimizer.FlattenBasicBlocks(ILNode node) in D:\a\dnSpy\dnSpy\Extensions\ILSpy.Decompiler\ICSharpCode.Decompiler\ICSharpCode.Decompiler\ILAst\ILAstOptimizer.cs:line 1813
-   at ICSharpCode.Decompiler.ILAst.ILAstOptimizer.Optimize(DecompilerContext context, ILBlock method, AutoPropertyProvider autoPropertyProvider, StateMachineKind& stateMachineKind, MethodDef& inlinedMethod, AsyncMethodDebugInfo& asyncInfo, ILAstOptimizationStep abortBeforeStep) in D:\a\dnSpy\dnSpy\Extensions\ILSpy.Decompiler\ICSharpCode.Decompiler\ICSharpCode.Decompiler\ILAst\ILAstOptimizer.cs:line 347
-   at ICSharpCode.Decompiler.Ast.AstMethodBodyBuilder.CreateMethodBody(IEnumerable`1 parameters, MethodDebugInfoBuilder& builder) in D:\a\dnSpy\dnSpy\Extensions\ILSpy.Decompiler\ICSharpCode.Decompiler\ICSharpCode.Decompiler\Ast\AstMethodBodyBuilder.cs:line 123
-   at ICSharpCode.Decompiler.Ast.AstMethodBodyBuilder.CreateMethodBody(MethodDef methodDef, DecompilerContext context, AutoPropertyProvider autoPropertyProvider, IEnumerable`1 parameters, Boolean valueParameterIsKeyword, StringBuilder sb, MethodDebugInfoBuilder& stmtsBuilder) in D:\a\dnSpy\dnSpy\Extensions\ILSpy.Decompiler\ICSharpCode.Decompiler\ICSharpCode.Decompiler\Ast\AstMethodBodyBuilder.cs:line 99
-   --- End of inner exception stack trace ---
-   at ICSharpCode.Decompiler.Ast.AstMethodBodyBuilder.CreateMethodBody(MethodDef methodDef, DecompilerContext context, AutoPropertyProvider autoPropertyProvider, IEnumerable`1 parameters, Boolean valueParameterIsKeyword, StringBuilder sb, MethodDebugInfoBuilder& stmtsBuilder) in D:\a\dnSpy\dnSpy\Extensions\ILSpy.Decompiler\ICSharpCode.Decompiler\ICSharpCode.Decompiler\Ast\AstMethodBodyBuilder.cs:line 99
-   at ICSharpCode.Decompiler.Ast.AstBuilder.AddMethodBody(EntityDeclaration methodNode, EntityDeclaration& updatedNode, MethodDef method, IEnumerable`1 parameters, Boolean valueParameterIsKeyword, MethodKind methodKind) in D:\a\dnSpy\dnSpy\Extensions\ILSpy.Decompiler\ICSharpCode.Decompiler\ICSharpCode.Decompiler\Ast\AstBuilder.cs:line 1627
-*/;
+				HeaderAccessTokenKey = "OrtegaAccessToken";
+				HeaderAppVersionKey = "OrtegaAppVersion";
+				HeaderDeviceType = "OrtegaDeviceType";
+				HeaderDmmOneTimeToken = "OrtegaDmmOneTimeToken";
+				HeaderFlagDmmUpdateOneTimeToken = "OrtegaFlagDmmUpdateOneTimeToken";
+				HeaderUUID = "OrtegaUUID";
+				HeaderIpAddress = "X-Forwarded-For";
 			}
 		}
 
@@ -180,29 +162,11 @@ ICSharpCode.Decompiler.DecompilerException: Error decompiling System.Void Ortega
 			// Note: this type is marked as 'beforefieldinit'.
 			static HttpHeaderResponse()
 			{
-				/*
-An exception occurred when decompiling this method
-
-ICSharpCode.Decompiler.DecompilerException: Error decompiling System.Void Ortega.Share.OrtegaConst/HttpHeaderResponse::.cctor()
-
- ---> System.Exception: Basic block has to end with unconditional control flow. 
-{
-	Block_0:
-	callreadonlysetter:string(HttpHeaderResponse::get_HeaderAssetVersion, ldstr:string("OrtegaAssetVersion"))
-	callreadonlysetter:string(HttpHeaderResponse::get_HeaderMasterVersion, ldstr:string("OrtegaMasterVersion"))
-	callreadonlysetter:string(HttpHeaderResponse::get_HeaderNextAccessTokenKey, ldstr:string("OrtegaNextAccessToken"))
-	callreadonlysetter:string(HttpHeaderResponse::get_HeaderStatusCodeKey, ldstr:string("OrtegaStatusCode"))
-	callreadonlysetter:string(HttpHeaderResponse::get_HeaderUtcNowTimeStamp, ldstr:string("OrtegaUtcNowTimeStamp"))
-}
-
-   at ICSharpCode.Decompiler.ILAst.ILAstOptimizer.FlattenBasicBlocks(ILNode node) in D:\a\dnSpy\dnSpy\Extensions\ILSpy.Decompiler\ICSharpCode.Decompiler\ICSharpCode.Decompiler\ILAst\ILAstOptimizer.cs:line 1813
-   at ICSharpCode.Decompiler.ILAst.ILAstOptimizer.Optimize(DecompilerContext context, ILBlock method, AutoPropertyProvider autoPropertyProvider, StateMachineKind& stateMachineKind, MethodDef& inlinedMethod, AsyncMethodDebugInfo& asyncInfo, ILAstOptimizationStep abortBeforeStep) in D:\a\dnSpy\dnSpy\Extensions\ILSpy.Decompiler\ICSharpCode.Decompiler\ICSharpCode.Decompiler\ILAst\ILAstOptimizer.cs:line 347
-   at ICSharpCode.Decompiler.Ast.AstMethodBodyBuilder.CreateMethodBody(IEnumerable`1 parameters, MethodDebugInfoBuilder& builder) in D:\a\dnSpy\dnSpy\Extensions\ILSpy.Decompiler\ICSharpCode.Decompiler\ICSharpCode.Decompiler\Ast\AstMethodBodyBuilder.cs:line 123
-   at ICSharpCode.Decompiler.Ast.AstMethodBodyBuilder.CreateMethodBody(MethodDef methodDef, DecompilerContext context, AutoPropertyProvider autoPropertyProvider, IEnumerable`1 parameters, Boolean valueParameterIsKeyword, StringBuilder sb, MethodDebugInfoBuilder& stmtsBuilder) in D:\a\dnSpy\dnSpy\Extensions\ILSpy.Decompiler\ICSharpCode.Decompiler\ICSharpCode.Decompiler\Ast\AstMethodBodyBuilder.cs:line 99
-   --- End of inner exception stack trace ---
-   at ICSharpCode.Decompiler.Ast.AstMethodBodyBuilder.CreateMethodBody(MethodDef methodDef, DecompilerContext context, AutoPropertyProvider autoPropertyProvider, IEnumerable`1 parameters, Boolean valueParameterIsKeyword, StringBuilder sb, MethodDebugInfoBuilder& stmtsBuilder) in D:\a\dnSpy\dnSpy\Extensions\ILSpy.Decompiler\ICSharpCode.Decompiler\ICSharpCode.Decompiler\Ast\AstMethodBodyBuilder.cs:line 99
-   at ICSharpCode.Decompiler.Ast.AstBuilder.AddMethodBody(EntityDeclaration methodNode, EntityDeclaration& updatedNode, MethodDef method, IEnumerable`1 parameters, Boolean valueParameterIsKeyword, MethodKind methodKind) in D:\a\dnSpy\dnSpy\Extensions\ILSpy.Decompiler\ICSharpCode.Decompiler\ICSharpCode.Decompiler\Ast\AstBuilder.cs:line 1627
-*/;
+				HeaderAssetVersion = "OrtegaAssetVersion";
+				HeaderMasterVersion = "OrtegaMasterVersion";
+				HeaderNextAccessTokenKey = "OrtegaNextAccessToken";
+				HeaderStatusCodeKey = "OrtegaStatusCode";
+				HeaderUtcNowTimeStamp = "OrtegaUtcNowTimeStamp";
 			}
 		}
 
@@ -317,57 +281,52 @@ ICSharpCode.Decompiler.DecompilerException: Error decompiling System.Void Ortega
 			// Note: this type is marked as 'beforefieldinit'.
 			static Battle()
 			{
-				// ulong num;
-				// OrtegaConst.Battle.NpcPlayerId = num;
-				// ulong num2;
-				// OrtegaConst.Battle.OneDarkElementBonus = new BattleParameterChangeInfo
-				// {
-				// 	BattleParameterType = (BattleParameterType)((ulong)13L),
-				// 	Value = (double)num2,
-				// 	ChangeParameterType = (ChangeParameterType)((ulong)2L)
-				// };
-				// OrtegaConst.Battle.ResultAnimationKeyLoseAnnihilationStart = "Lose-Annihilation-Start";
-				// OrtegaConst.Battle.ResultAnimationKeyLoseOutOfTurnsStart = "Lose-OutOfTurns-Start";
-				// OrtegaConst.Battle.ResultAnimationKeyWin = "Win-Start";
-				// ulong num3;
-				// OrtegaConst.Battle.ThreeDarkElementBonus = new BattleParameterChangeInfo
-				// {
-				// 	BattleParameterType = (BattleParameterType)((ulong)2L),
-				// 	Value = (double)num3,
-				// 	ChangeParameterType = (ChangeParameterType)((ulong)2L)
-				// };
-				// OrtegaConst.Battle.ThreeDefaultElementAndAnotherTwoElementBonus1 = new BattleParameterChangeInfo
-				// {
-				// 	BattleParameterType = (BattleParameterType)((ulong)2L),
-				// 	ChangeParameterType = (ChangeParameterType)((ulong)2L),
-				// 	Value = (double)num3
-				// };
-				// OrtegaConst.Battle.ThreeDefaultElementAndAnotherTwoElementBonus2 = new BattleParameterChangeInfo
-				// {
-				// 	BattleParameterType = (BattleParameterType)((ulong)1L),
-				// 	ChangeParameterType = (ChangeParameterType)((ulong)2L),
-				// 	Value = (double)num3
-				// };
-				// OrtegaConst.Battle.ThreeDefaultElementBonus1 = new BattleParameterChangeInfo
-				// {
-				// 	BattleParameterType = (BattleParameterType)((ulong)2L),
-				// 	ChangeParameterType = (ChangeParameterType)((ulong)2L),
-				// 	Value = (double)num3
-				// };
-				// OrtegaConst.Battle.ThreeDefaultElementBonus2 = new BattleParameterChangeInfo
-				// {
-				// 	BattleParameterType = (BattleParameterType)((ulong)1L),
-				// 	ChangeParameterType = (ChangeParameterType)((ulong)2L),
-				// 	Value = (double)num3
-				// };
-				// ulong num4;
-				// OrtegaConst.Battle.TwoDarkElementBonus = new BattleParameterChangeInfo
-				// {
-				// 	BattleParameterType = (BattleParameterType)((ulong)7L),
-				// 	Value = (double)num4,
-				// 	ChangeParameterType = (ChangeParameterType)((ulong)2L)
-				// };
-				// throw new NullReferenceException();
+				NpcPlayerId = 128000000000;
+				OneDarkElementBonus = new BattleParameterChangeInfo
+				{
+					BattleParameterType = (BattleParameterType)13,
+					ChangeParameterType = (ChangeParameterType)2,
+					Value = 30,
+				};
+				ResultAnimationKeyLoseAnnihilationStart = "Lose-Annihilation-Start";
+				ResultAnimationKeyLoseOutOfTurnsStart = "Lose-OutOfTurns-Start";
+				ResultAnimationKeyWin = "Win-Start";
+				ThreeDarkElementBonus = new BattleParameterChangeInfo
+				{
+					BattleParameterType = (BattleParameterType)2,
+					ChangeParameterType = (ChangeParameterType)2,
+					Value = 10,
+				};
+				ThreeDefaultElementAndAnotherTwoElementBonus1 = new BattleParameterChangeInfo
+				{
+					BattleParameterType = (BattleParameterType)2,
+					ChangeParameterType = (ChangeParameterType)2,
+					Value = 10,
+				};
+				ThreeDefaultElementAndAnotherTwoElementBonus2 = new BattleParameterChangeInfo
+				{
+					BattleParameterType = (BattleParameterType)1,
+					ChangeParameterType = (ChangeParameterType)2,
+					Value = 10,
+				};
+				ThreeDefaultElementBonus1 = new BattleParameterChangeInfo
+				{
+					BattleParameterType = (BattleParameterType)2,
+					ChangeParameterType = (ChangeParameterType)2,
+					Value = 10,
+				};
+				ThreeDefaultElementBonus2 = new BattleParameterChangeInfo
+				{
+					BattleParameterType = (BattleParameterType)1,
+					ChangeParameterType = (ChangeParameterType)2,
+					Value = 10,
+				};
+				TwoDarkElementBonus = new BattleParameterChangeInfo
+				{
+					BattleParameterType = (BattleParameterType)7,
+					ChangeParameterType = (ChangeParameterType)2,
+					Value = 15,
+				};
 			}
 
 			public static int MaxSkillTurn;
@@ -757,7 +716,7 @@ ICSharpCode.Decompiler.DecompilerException: Error decompiling System.Void Ortega
 
 			public static int DisplayBattleDialogPartyCount { get; }
 
-			public static double ValidJoinedGuildSeconds = (double)((ulong)4680673776000565248L);
+			public static double ValidJoinedGuildSeconds = 86400.0;
 		}
 
 		public static class LocalGvg
@@ -836,43 +795,19 @@ ICSharpCode.Decompiler.DecompilerException: Error decompiling System.Void Ortega
 			// Note: this type is marked as 'beforefieldinit'.
 			static GlobalGvg()
 			{
-				// string[] array2;
-				// for (;;)
-				// {
-				// 	string[] array = new string[4];
-				// 	if ("[GvgGroup1NameLabel]" == 0 || "[GvgGroup1NameLabel]" != 0)
-				// 	{
-				// 		array[0] = "[GvgGroup1NameLabel]";
-				// 		if ("[GvgGroup2NameLabel]" == 0 || "[GvgGroup2NameLabel]" != 0)
-				// 		{
-				// 			array[1] = "[GvgGroup2NameLabel]";
-				// 			if ("[GvgGroup3NameLabel]" == 0 || "[GvgGroup3NameLabel]" != 0)
-				// 			{
-				// 				array[2] = "[GvgGroup3NameLabel]";
-				// 				if ("[GvgGroup4NameLabel]" == 0 || "[GvgGroup4NameLabel]" != 0)
-				// 				{
-				// 					array[3] = "[GvgGroup4NameLabel]";
-				// 					OrtegaConst.GlobalGvg.GroupNameKey = array;
-				// 					array2 = new string[3];
-				// 					if ("[GvgGroupLevelNameBronzeLabel]" == 0 || "[GvgGroupLevelNameBronzeLabel]" != 0)
-				// 					{
-				// 						array2[0] = "[GvgGroupLevelNameBronzeLabel]";
-				// 						if ("[GvgGroupLevelNameSilverLabel]" == 0 || "[GvgGroupLevelNameSilverLabel]" != 0)
-				// 						{
-				// 							array2[1] = "[GvgGroupLevelNameSilverLabel]";
-				// 							if ("[GvgGroupLevelNameGoldenLabel]" == 0 || "[GvgGroupLevelNameGoldenLabel]" != 0)
-				// 							{
-				// 								break;
-				// 							}
-				// 						}
-				// 					}
-				// 				}
-				// 			}
-				// 		}
-				// 	}
-				// }
-				// array2[2] = "[GvgGroupLevelNameGoldenLabel]";
-				// OrtegaConst.GlobalGvg.GlobalGvgGroupTypeNameKey = array2;
+				GroupNameKey = new[]
+				{
+					"[GvgGroup1NameLabel]",
+					"[GvgGroup2NameLabel]",
+					"[GvgGroup3NameLabel]",
+					"[GvgGroup4NameLabel]",
+				};
+				GlobalGvgGroupTypeNameKey = new[]
+				{
+					"[GvgGroupLevelNameBronzeLabel]",
+					"[GvgGroupLevelNameSilverLabel]",
+					"[GvgGroupLevelNameGoldenLabel]",
+				};
 			}
 
 			public static readonly string[] GroupNameKey;
@@ -968,8 +903,9 @@ ICSharpCode.Decompiler.DecompilerException: Error decompiling System.Void Ortega
 			// Note: this type is marked as 'beforefieldinit'.
 			static Shop()
 			{
-				// ulong num;
-				// OrtegaConst.Shop.PaidDMMCurrencyLimitDateTime = num;
+				// IL comment says 0. V2: (long)TimeSpan.FromDays(3).TotalMilliseconds.
+				CanBuyPrePurchasedMonthlyBoostTime = 0;
+				// No UserExchangePlaceItem type in this project, so these two members stay commented out:
 				// uint num2;
 				// OrtegaConst.Shop.RequiredItemForExchangeInProduct = new UserExchangePlaceItem(ExchangePlaceItemType.CastingValue, (long)num2);
 				// List<UserExchangePlaceItem> list = new();
@@ -980,7 +916,6 @@ ICSharpCode.Decompiler.DecompilerException: Error decompiling System.Void Ortega
 				// UserExchangePlaceItem userExchangePlaceItem2 = new UserExchangePlaceItem(ExchangePlaceItemType.CastingValue, (long)num4);
 				// list.Add(userExchangePlaceItem2);
 				// OrtegaConst.Shop.RequiredItemsForExchangeInFame = list;
-				// OrtegaConst.Shop.CanBuyPrePurchasedMonthlyBoostTime = 0;
 			}
 
 			public const string AndroidAuthTokenUrl = "https://accounts.google.com/o/oauth2/token";
@@ -1029,48 +964,22 @@ ICSharpCode.Decompiler.DecompilerException: Error decompiling System.Void Ortega
 			// Note: this type is marked as 'beforefieldinit'.
 			static BountyQuest()
 			{
-				// uint num;
-				// TimeSpan timeSpan;
-				// uint num2;
-				// TimeSpan timeSpan2;
-				// uint num3;
-				// TimeSpan timeSpan3;
-				// uint num4;
-				// TimeSpan timeSpan4;
-				// uint num5;
-				// TimeSpan timeSpan5;
-				// uint num6;
-				// TimeSpan timeSpan6;
-				// uint num7;
-				// TimeSpan timeSpan7;
-				// uint num8;
-				// TimeSpan timeSpan8;
-				// uint num9;
-				// TimeSpan timeSpan9;
-				// uint num10;
-				// TimeSpan timeSpan10;
-				// uint num11;
-				// TimeSpan timeSpan11;
-				// uint num12;
-				// TimeSpan timeSpan12;
-				// uint num13;
-				// TimeSpan timeSpan13;
-				// OrtegaConst.BountyQuest.GuerrillaQuestTime = new Dictionary
-				// {
-				// 	{ num, timeSpan },
-				// 	{ num2, timeSpan2 },
-				// 	{ num3, timeSpan3 },
-				// 	{ num4, timeSpan4 },
-				// 	{ num5, timeSpan5 },
-				// 	{ num6, timeSpan6 },
-				// 	{ num7, timeSpan7 },
-				// 	{ num8, timeSpan8 },
-				// 	{ num9, timeSpan9 },
-				// 	{ num10, timeSpan10 },
-				// 	{ num11, timeSpan11 },
-				// 	{ num12, timeSpan12 },
-				// 	{ num13, timeSpan13 }
-				// };
+				GuerrillaQuestTime = new Dictionary<int, TimeSpan>
+				{
+					[3] = TimeSpan.FromHours(1),
+					[4] = TimeSpan.FromHours(1),
+					[5] = TimeSpan.FromHours(1),
+					[6] = TimeSpan.FromHours(2),
+					[7] = TimeSpan.FromHours(4),
+					[8] = TimeSpan.FromHours(4),
+					[9] = TimeSpan.FromHours(6),
+					[10] = TimeSpan.FromHours(8),
+					[11] = TimeSpan.FromHours(8),
+					[12] = TimeSpan.FromHours(10),
+					[13] = TimeSpan.FromHours(12),
+					[14] = TimeSpan.FromHours(12),
+					[15] = TimeSpan.FromHours(14),
+				};
 			}
 		}
 
@@ -1107,9 +1016,8 @@ ICSharpCode.Decompiler.DecompilerException: Error decompiling System.Void Ortega
 			// Note: this type is marked as 'beforefieldinit'.
 			static GuildRaid()
 			{
-				// double num;
-				// TimeSpan timeSpan = TimeSpan.FromHours(num);
-				// OrtegaConst.GuildRaid.GuildRaidOpeningTime = 0;
+				// IL: TimeSpan.FromHours(num) feeds this store (the printed `= 0` is a decompiler artefact); hours from V2.
+				GuildRaidOpeningTime = (long)TimeSpan.FromHours(24).TotalMilliseconds;
 			}
 		}
 
@@ -1148,14 +1056,11 @@ ICSharpCode.Decompiler.DecompilerException: Error decompiling System.Void Ortega
 			// Note: this type is marked as 'beforefieldinit'.
 			static Map()
 			{
-				// List<UserItem> list = new();
-				// uint num;
-				// UserItem userItem = new UserGold((long)num).ToUserItem();
-				// list.Add(userItem);
-				// UserCharacterTrainingMaterial userCharacterTrainingMaterial;
-				// UserItem userItem2 = userCharacterTrainingMaterial.ToUserItem();
-				// list.Add(userItem2);
-				// OrtegaConst.Map.FirstMapBuildingRewardItems = list;
+				FirstMapBuildingRewardItems = new List<UserItem>
+				{
+					new UserItem { ItemType = ItemType.Gold, ItemId = 1, ItemCount = 10000 },
+					new UserItem { ItemType = ItemType.CharacterTrainingMaterial, ItemId = 2, ItemCount = 10 },
+				};
 			}
 		}
 
@@ -1230,9 +1135,7 @@ ICSharpCode.Decompiler.DecompilerException: Error decompiling System.Void Ortega
 			// Note: this type is marked as 'beforefieldinit'.
 			static Sns()
 			{
-				// UserCurrencyFree userCurrencyFree;
-				// OrtegaConst.Sns.FirstSnsShareReward = userCurrencyFree;
-				// throw new NullReferenceException();
+				FirstSnsShareReward = new UserCurrencyFree(200);
 			}
 
 			public static IUserItem FirstSnsShareReward;
@@ -1250,26 +1153,19 @@ ICSharpCode.Decompiler.DecompilerException: Error decompiling System.Void Ortega
 			// Note: this type is marked as 'beforefieldinit'.
 			static Common()
 			{
-				/*
-An exception occurred when decompiling this method
-
-ICSharpCode.Decompiler.DecompilerException: Error decompiling System.Void Ortega.Share.OrtegaConst/Common::.cctor()
-
- ---> System.Exception: Basic block has to end with unconditional control flow. 
-{
-	IL_735:
-	stelem:string([mscorlib]System.String, ldloc:string[](var_13_640), ldc.i4:int32(7), ldstr:string("Z"))
-	stsfld:string[](Common::NumberUnitEsMX, ldloc:string[](var_13_640))
-}
-
-   at ICSharpCode.Decompiler.ILAst.ILAstOptimizer.FlattenBasicBlocks(ILNode node) in D:\a\dnSpy\dnSpy\Extensions\ILSpy.Decompiler\ICSharpCode.Decompiler\ICSharpCode.Decompiler\ILAst\ILAstOptimizer.cs:line 1813
-   at ICSharpCode.Decompiler.ILAst.ILAstOptimizer.Optimize(DecompilerContext context, ILBlock method, AutoPropertyProvider autoPropertyProvider, StateMachineKind& stateMachineKind, MethodDef& inlinedMethod, AsyncMethodDebugInfo& asyncInfo, ILAstOptimizationStep abortBeforeStep) in D:\a\dnSpy\dnSpy\Extensions\ILSpy.Decompiler\ICSharpCode.Decompiler\ICSharpCode.Decompiler\ILAst\ILAstOptimizer.cs:line 347
-   at ICSharpCode.Decompiler.Ast.AstMethodBodyBuilder.CreateMethodBody(IEnumerable`1 parameters, MethodDebugInfoBuilder& builder) in D:\a\dnSpy\dnSpy\Extensions\ILSpy.Decompiler\ICSharpCode.Decompiler\ICSharpCode.Decompiler\Ast\AstMethodBodyBuilder.cs:line 123
-   at ICSharpCode.Decompiler.Ast.AstMethodBodyBuilder.CreateMethodBody(MethodDef methodDef, DecompilerContext context, AutoPropertyProvider autoPropertyProvider, IEnumerable`1 parameters, Boolean valueParameterIsKeyword, StringBuilder sb, MethodDebugInfoBuilder& stmtsBuilder) in D:\a\dnSpy\dnSpy\Extensions\ILSpy.Decompiler\ICSharpCode.Decompiler\ICSharpCode.Decompiler\Ast\AstMethodBodyBuilder.cs:line 99
-   --- End of inner exception stack trace ---
-   at ICSharpCode.Decompiler.Ast.AstMethodBodyBuilder.CreateMethodBody(MethodDef methodDef, DecompilerContext context, AutoPropertyProvider autoPropertyProvider, IEnumerable`1 parameters, Boolean valueParameterIsKeyword, StringBuilder sb, MethodDebugInfoBuilder& stmtsBuilder) in D:\a\dnSpy\dnSpy\Extensions\ILSpy.Decompiler\ICSharpCode.Decompiler\ICSharpCode.Decompiler\Ast\AstMethodBodyBuilder.cs:line 99
-   at ICSharpCode.Decompiler.Ast.AstBuilder.AddMethodBody(EntityDeclaration methodNode, EntityDeclaration& updatedNode, MethodDef method, IEnumerable`1 parameters, Boolean valueParameterIsKeyword, MethodKind methodKind) in D:\a\dnSpy\dnSpy\Extensions\ILSpy.Decompiler\ICSharpCode.Decompiler\ICSharpCode.Decompiler\Ast\AstBuilder.cs:line 1627
-*/;
+				NumberUnitEnUS = new[] { "", "K", "M", "B", "T", "q", "Q", "s" };
+				NumberUnitJaJP = new[] { "", "万", "億", "兆", "京", "垓", "秭", "穣" };
+				NumberUnitKoKR = new[] { "", "만", "억", "조", "경", "해", "자", "양" };
+				NumberUnitZhTW = new[] { "", "萬", "億", "兆", "京", "垓", "秭", "穣" };
+				// NumberUnitFrFR stays null: V2's [6] "Tr" is not in the 5.1.1 literal table.
+				NumberUnitZhCN = new[] { "", "万", "亿", "兆", "京", "垓", "秭", "穰" };
+				NumberUnitEsMX = new[] { "", "k", "M", "G", "T", "P", "E", "Z" };
+				NumberUnitPtBR = new[] { "", "m", "M", "B", "T", "q", "Q", "s" };
+				NumberUnitThTH = new[] { "", "K", "M", "B", "T", "q", "Q", "s" };
+				NumberUnitIdID = new[] { "", "rb", "jt", "M", "T", "K", "ku", "S" };
+				NumberUnitViVN = new[] { "", "K", "M", "B", "T", "q", "Q", "s" };
+				NumberUnitRuRU = new[] { "", "K", "M", "B", "T", "q", "Q", "s" };
+				NumberUnitDeDE = new[] { "", "k", "M", "m", "B", "b", "T", "t" };
 			}
 
 			public const long GB = 1073741824L;

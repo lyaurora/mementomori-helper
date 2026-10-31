@@ -82,6 +82,8 @@ namespace MementoMori.Ortega.Common.Utils
                 case ItemType.TreasureChest:
                     return Name(Masters.TreasureChestTable.GetById(itemId)?.NameKey);
                     break;
+                case ItemType.EquipmentSetMaterialBox:
+                    return Name(Masters.EquipmentSetMaterialBoxTable.GetById(itemId)?.NameKey);
                 case ItemType.LevelLinkExp:
                     return Masters.LevelLinkTable.GetById(itemId)?.Memo ?? missing;
                     break;
@@ -449,7 +451,6 @@ namespace MementoMori.Ortega.Common.Utils
             // 	return <TextResourceTable>k__BackingField2.Get(DisplayNameKey);
             // }
             // return string.Empty;
-            throw new NotImplementedException();
         }
 
         public static string GetItemExpirationDate(ItemType itemType, long itemId)
@@ -652,8 +653,7 @@ namespace MementoMori.Ortega.Common.Utils
 
         public static bool IsPossibleShowingSimpleDescription(IUserItem userItem)
         {
-            // return userItem != 0;
-            throw new NotImplementedException();
+            return userItem != null;
         }
 
         // public static bool IsPossibleShowingSimpleDescription(ItemAcquisitionData itemAcquisitionData)

@@ -40,10 +40,7 @@ namespace MementoMori.Ortega.Share.Data.BookSortAssistance
 
 		public long GetRewardItemCount(long grade)
 		{
-			// int size = this.<ItemCountList>k__BackingField._size;
-			// long num = grade - 1L;
-			// return this.<ItemCountList>k__BackingField[(int)num];
-            throw new NotImplementedException();
+			return ItemCountList[(int)(grade - 1L)];
         }
 	}
 }

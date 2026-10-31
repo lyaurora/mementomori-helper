@@ -25,72 +25,29 @@ namespace MementoMori.Ortega.Share.Utils
 
 		public static string FromGzip(Stream archiveStream, [Optional] Encoding encoding, bool seekFirst = true)
 		{
-			// int num = 0;
-			// if (archiveStream.CanRead)
-			// {
-			// 	long length = archiveStream.Length;
-			// 	if (encoding == 0)
-			// 	{
-			// 	}
-			// 	if (seekFirst && archiveStream.CanSeek)
-			// 	{
-			// 		int num2 = 0;
-			// 		int num3 = 0;
-			// 		long num4 = archiveStream.Seek((long)num3, (SeekOrigin)num2);
-			// 	}
-			// 	int num5;
-			// 	GZipStream gzipStream = new GZipStream(archiveStream, (CompressionMode)num5, true);
-			// 	num5 = 0;
-			// 	StreamReader streamReader = new StreamReader(gzipStream, encoding);
-			// 	string text = streamReader.ReadToEnd();
-			// 	if (streamReader != 0)
-			// 	{
-			// 	}
-			// 	if (gzipStream != 0)
-			// 	{
-			// 	}
-			// 	if (streamReader != 0)
-			// 	{
-			// 	}
-			// 	if (num == 0)
-			// 	{
-			// 		if (gzipStream != 0)
-			// 		{
-			// 		}
-			// 		if (num == 0)
-			// 		{
-			// 			return text;
-			// 		}
-			// 	}
-			// 	throw new NullReferenceException();
-			// }
-			// ArgumentException ex = new ArgumentException("cannot read stream", "archiveStream");
-			// throw new NullReferenceException();
-			throw new NotImplementedException();
+			if (!archiveStream.CanRead)
+			{
+				throw new ArgumentException("cannot read stream", "archiveStream");
+			}
+			_ = archiveStream.Length; // read by the client (throws on non-seekable streams)
+			encoding ??= ByteConvertEncoding;
+			if (seekFirst && archiveStream.CanSeek)
+			{
+				archiveStream.Seek(0L, SeekOrigin.Begin);
+			}
+			using GZipStream gzipStream = new GZipStream(archiveStream, CompressionMode.Decompress, true);
+			using StreamReader streamReader = new StreamReader(gzipStream, encoding);
+			return streamReader.ReadToEnd();
 		}
 
 		public static string FromGzip(byte[] archiveBinary, [Optional] Encoding encoding)
 		{
-			// while (archiveBinary.Length != 0)
-			// {
-			// 	MemoryStream memoryStream = new MemoryStream(archiveBinary);
-			// 	int num = 0;
-			// 	Encoding encoding2 = StringUtil.<ByteConvertEncoding>k__BackingField;
-			// 	string text = StringUtil.FromGzip(memoryStream, encoding2, num != 0);
-			// 	if (memoryStream != 0)
-			// 	{
-			// 	}
-			// 	if (memoryStream != 0)
-			// 	{
-			// 	}
-			// 	ulong num2;
-			// 	if (num2 == (ulong)0L)
-			// 	{
-			// 		return text;
-			// 	}
-			// }
-			// return string.Empty;
-			throw new NotImplementedException();
+			if (archiveBinary.Length == 0)
+			{
+				return string.Empty;
+			}
+			using MemoryStream memoryStream = new MemoryStream(archiveBinary);
+			return FromGzip(memoryStream, ByteConvertEncoding, false);
 		}
 
 		public static string RemoveSpace(string str)

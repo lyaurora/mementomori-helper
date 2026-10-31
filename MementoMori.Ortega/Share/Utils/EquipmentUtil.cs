@@ -378,9 +378,11 @@ namespace MementoMori.Ortega.Share.Utils
 
 		public static bool IsMaxLevelSacredTreasure(UserEquipmentDtoInfo userEquipmentDtoInfo)
 		{
-			long sacredMaxLevel = EquipmentUtil.GetSacredMaxLevel(SacredTreasureType.Matchless);
-			long sacredMaxLevel2 = EquipmentUtil.GetSacredMaxLevel(SacredTreasureType.Legend);
-			return true;
+			// The decompiler lost the level comparison: both maxima are computed, then "return true".
+			// long sacredMaxLevel = EquipmentUtil.GetSacredMaxLevel(SacredTreasureType.Matchless);
+			// long sacredMaxLevel2 = EquipmentUtil.GetSacredMaxLevel(SacredTreasureType.Legend);
+			// return true;
+			throw new NotImplementedException();
 		}
 
 		public static BattleParameterChangeInfo GetEquipmentReinforcementBaseParameter(long equipmentId, long reinforcementLv)

@@ -83,23 +83,11 @@ namespace MementoMori.Ortega.Share.Data.TreasureChest
 
 		public bool IsSameItem(TreasureChestReward reward)
 		{
-			// UserItem userItem = reward.<Item>k__BackingField;
-			// ItemType <ItemType>k__BackingField = this.<Item>k__BackingField.<ItemType>k__BackingField;
-			// if (userItem.<ItemType>k__BackingField == <ItemType>k__BackingField)
-			// {
-			// 	long <ItemId>k__BackingField = this.<Item>k__BackingField.<ItemId>k__BackingField;
-			// 	if (userItem.<ItemId>k__BackingField == <ItemId>k__BackingField)
-			// 	{
-			// 		CharacterRarityFlags characterRarityFlags = this.<RarityFlags>k__BackingField;
-			// 		if (reward.<RarityFlags>k__BackingField == characterRarityFlags)
-			// 		{
-			// 			SacredTreasureType sacredTreasureType = this.<SacredTreasureType>k__BackingField;
-			// 			return reward.<SacredTreasureType>k__BackingField == sacredTreasureType;
-			// 		}
-			// 	}
-			// }
-			// throw new NullReferenceException();
-			throw new NotImplementedException();
+			UserItem userItem = reward.Item;
+			return userItem.ItemType == Item.ItemType
+				&& userItem.ItemId == Item.ItemId
+				&& reward.RarityFlags == RarityFlags
+				&& reward.SacredTreasureType == SacredTreasureType;
 		}
 	}
 }

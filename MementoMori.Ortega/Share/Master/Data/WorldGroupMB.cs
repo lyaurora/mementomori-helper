@@ -106,20 +106,18 @@ namespace MementoMori.Ortega.Share.Master.Data
 
 		public bool IsOpenedLegendLeague(DateTime localDateTime)
 		{
-			// bool flag = this.<StartLegendLeagueDateTime>k__BackingField.ToDateTime() <= localDateTime;
-			// if (!flag)
-			// {
-			// 	return flag;
-			// }
-			// DateTime dateTime = this.<EndLegendLeagueDateTime>k__BackingField.ToDateTime();
-			// return localDateTime < dateTime;
-			throw new NotImplementedException();
+			bool flag = this.StartLegendLeagueDateTime.ToDateTime() <= localDateTime;
+			if (!flag)
+			{
+				return flag;
+			}
+			DateTime dateTime = this.EndLegendLeagueDateTime.ToDateTime();
+			return localDateTime < dateTime;
 		}
 
         public bool IsAfterStartLegendLeague(DateTime localDateTime)
 		{
-			// return this.<StartLegendLeagueDateTime>k__BackingField.ToDateTime() <= localDateTime;
-            throw new NotImplementedException();
+			return this.StartLegendLeagueDateTime.ToDateTime() <= localDateTime;
 		}
 
         public bool IsAfterStartGrandBattle(DateTime localDateTime)

@@ -31,7 +31,7 @@ namespace MementoMori.Ortega.Share.Master.Table
             // 	GachaSelectListTable.<>c.<>9__0_0 = func;
             // }
             // return Enumerable.FirstOrDefault<GachaSelectListMB>(Enumerable.ToList<GachaSelectListMB>(Enumerable.OrderByDescending<GachaSelectListMB, int>(list, func)));
-            throw new NotImplementedException();
+            return null;
         }
 
         public GachaSelectListTable()

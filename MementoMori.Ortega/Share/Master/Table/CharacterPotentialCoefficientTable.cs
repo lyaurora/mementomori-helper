@@ -24,7 +24,6 @@ namespace MementoMori.Ortega.Share.Master.Table
 			// }
 			// CharacterPotentialCoefficientMB characterPotentialCoefficientMB;
 			// return characterPotentialCoefficientMB;
-			throw new NotImplementedException();
 		}
 
 		public CharacterPotentialCoefficientTable()

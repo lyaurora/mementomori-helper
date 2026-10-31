@@ -21,7 +21,7 @@ namespace MementoMori.Ortega.Share.Data.BountyQuest
 
 		public bool Equals(IUserItem userItem)
 		{
-			throw new System.NotImplementedException();
+			return ItemId == userItem.ItemId && ItemType == userItem.ItemType;
 		}
 
 		public BountyQuestEventTargetItemInfo()
