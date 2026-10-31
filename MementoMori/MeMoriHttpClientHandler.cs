@@ -18,6 +18,12 @@ public partial class MeMoriHttpClientHandler : HttpClientHandler
         set => _managedHeaders["ortegaappversion"] = value;
     }
 
+    public string OrtegaUuid
+    {
+        get => _managedHeaders["ortegauuid"];
+        set => _managedHeaders["ortegauuid"] = value;
+    }
+
     public MeMoriHttpClientHandler()
     {
         _managedHeaders["ortegaaccesstoken"] = "";

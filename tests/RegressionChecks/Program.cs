@@ -65,6 +65,7 @@ var checks = new (string Name, Func<Task> Run)[]
     ("logout invalidates queued jobs and waits for active work", CheckLogout),
     ("configuration permissions and contents", CheckPermissions),
     ("login preferences, retry backoff and deletion", CheckAccountLifecycle),
+    ("device id is stored per account and survives restarts", CheckDeviceId),
     ("HTTP cancellation and bounded version negotiation", CheckTransport),
     ("manual quick-action batch stops after cancellation", CheckBatchCancellation),
     ("fountain reward fallback, fresh refresh data and cancellation", CheckBountyQuest),
@@ -372,6 +373,36 @@ static async Task CheckAccountLifecycle()
         Require(!ran, "A deleted account ran another scheduled action");
     }
     finally { release.TrySetResult(); await scheduler.Shutdown(); }
+}
+
+static Task CheckDeviceId()
+{
+    var auth = new Writable<AuthOption>(new() { Accounts = [new AccountInfo { UserId = 1 }, new AccountInfo { UserId = 2 }] });
+    var config = new Writable<GameConfig>(new());
+    AccountManager manager = null!;
+    // the container disposes the transient managers it creates
+    using var services = new ServiceCollection().AddLogging()
+        .AddSingleton<IWritableOptions<AuthOption>>(auth).AddSingleton<IWritableOptions<GameConfig>>(config)
+        .AddTransient<MementoNetworkManager>()
+        .AddTransient(_ => Construct<MementoMoriFuncs>(manager, auth, config, NullLogger<MementoMoriFuncs>.Instance))
+        .BuildServiceProvider();
+    string Uuid(long userId) => manager.Get(userId).NetworkManager.MoriHttpClientHandler.OrtegaUuid;
+    manager = Construct<AccountManager>(auth, config, NullLogger<AccountManager>.Instance, services);
+    var first = Uuid(1);
+    Require(!string.IsNullOrEmpty(first) && first != Uuid(2), "Accounts share one device id");
+    Require(auth.Value.Accounts.All(a => a.OrtegaUuid == Uuid(a.UserId)) && auth.Updates == 2, "Device ids are not saved once per account");
+    manager = Construct<AccountManager>(auth, config, NullLogger<AccountManager>.Instance, services);
+    Require(Uuid(1) == first, "Device id changes after a restart");
+    manager.UpdateAccountInfo(1);
+    Require(auth.Updates == 2, "A saved device id is written again");
+    // the add-account dialog fetches the client key before the account is saved
+    var signedIn = Uuid(3);
+    manager.AddAccountInfo(3, "key", "added", false);
+    Require(manager.GetAccountInfo(3).OrtegaUuid == signedIn, "An added account loses the device id it signed in with");
+    auth.Value.Accounts.Add(new AccountInfo { UserId = 4 });
+    auth.RejectUpdates = true;
+    Require(!string.IsNullOrEmpty(Uuid(4)), "An unwritable config blocks the account");
+    return Task.CompletedTask;
 }
 
 static async Task CheckTransport()

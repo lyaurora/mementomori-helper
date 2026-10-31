@@ -54,10 +54,33 @@ public partial class AccountManager : ReactiveObject
             account.Funcs.NetworkManager = account.NetworkManager;
             account.Funcs.UserId = userId;
             account.NetworkManager.UserId = userId;
+            if (!string.IsNullOrEmpty(account.AccountInfo?.OrtegaUuid)) account.NetworkManager.MoriHttpClientHandler.OrtegaUuid = account.AccountInfo.OrtegaUuid;
             _accounts[userId] = account;
+            SaveOrtegaUuid(account);
         }
 
         return _accounts[userId];
+    }
+
+    // A new random id on every start looks like a new device each restart; store the id this account's requests use.
+    private void SaveOrtegaUuid(Account account)
+    {
+        if (account.AccountInfo is not { OrtegaUuid: null or "" } info) return;
+        var uuid = account.NetworkManager.MoriHttpClientHandler.OrtegaUuid;
+        try
+        {
+            _authOption.Update(opt =>
+            {
+                if (opt.Accounts.FirstOrDefault(a => a.UserId == info.UserId) is { } saved) saved.OrtegaUuid = uuid;
+            });
+        }
+        catch (Exception e)
+        {
+            // best effort: Get() runs on every page and job, so an unwritable config must not block the account
+            _logger.LogWarning(e, "Failed to save the device id of account {UserId}", info.UserId);
+            return;
+        }
+        account.AccountInfo = GetAccountInfo(info.UserId);
     }
 
     public bool Contains(long userId)
@@ -145,7 +168,10 @@ public partial class AccountManager : ReactiveObject
 
     public void UpdateAccountInfo(long userId)
     {
-        Get(userId).AccountInfo = GetAccountInfo(userId);
+        var account = Get(userId);
+        account.AccountInfo = GetAccountInfo(userId);
+        // an added account keeps the id it already used to fetch its client key
+        SaveOrtegaUuid(account);
         this.RaisePropertyChanged(nameof(AccountInfos));
     }
 

@@ -10,4 +10,7 @@ public class AccountInfo
 
     // null = not paused, DateTimeOffset.MaxValue = until resumed; blocks scheduled jobs and auto-login
     public DateTimeOffset? PauseUntil { get; set; }
+
+    // ortegauuid device id, kept per account like the client's stored UUID (the server never issues one)
+    public string OrtegaUuid { get; set; }
 }
