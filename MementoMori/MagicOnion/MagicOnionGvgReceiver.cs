@@ -22,8 +22,12 @@ public class MagicOnionGvgReceiver : IMagicOnionGvgReceiver, IMagicOnionErrorRec
     public OnUpdateDeployCharacterResponse OnUpdateDeployCharacterResponse { get; private set; }
     public bool IsDeployCharacterUpdated { get; set; }
 
+    public ErrorCode? Error { get; private set; }
+
     public void OnError(ErrorCode errorCode)
     {
+        Error = errorCode;
+        _log($"OnError: {TextResourceTable.GetErrorCodeMessage(errorCode)}");
     }
 
     public void OnAuthenticateSuccess()

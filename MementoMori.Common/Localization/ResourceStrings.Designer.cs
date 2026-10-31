@@ -3103,5 +3103,14 @@ namespace MementoMori.Common.Localization {
                 return ResourceManager.GetString("CronEveryHoursFromFormat", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to This dialog hit an error and was closed..
+        /// </summary>
+        public static string DialogError {
+            get {
+                return ResourceManager.GetString("DialogError", resourceCulture);
+            }
+        }
     }
 }

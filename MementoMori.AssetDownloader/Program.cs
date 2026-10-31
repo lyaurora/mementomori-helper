@@ -16,6 +16,8 @@ internal class Program
         }));
         builder.Services.AddOptions();
         builder.Services.Configure<DownloaderOption>(builder.Configuration);
+        // WritableOptions resolves IFileProvider via GetRequiredService; same CWD root as its null fallback
+        builder.Services.AddSingleton<Microsoft.Extensions.FileProviders.IFileProvider>(new Microsoft.Extensions.FileProviders.PhysicalFileProvider(Directory.GetCurrentDirectory()));
         builder.Services.ConfigureWritable<AuthOption>(builder.Configuration.GetSection("Auth"));
         builder.Services.ConfigureWritable<GameConfig>(builder.Configuration.GetSection("GameConfig"));
         builder.Services.AddSingleton<TimeManager>();

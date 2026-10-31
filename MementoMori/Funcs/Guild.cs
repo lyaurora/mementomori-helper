@@ -51,14 +51,25 @@ public partial class MementoMoriFuncs
                 timeout.CancelAfter(TimeSpan.FromMinutes(1));
                 while (client.GetState() != HubClientState.Ready) await Task.Delay(1000, timeout.Token);
                 keepaliveTask = client.KeepAlive(keepaliveCts.Token);
-                client.SendGvgOpenMap(BattleType.GuildBattle, 0);
-                while (!localGvgReceiver.IsCastleInfoUpdated)
+                // net-1: stop on hub OnError or after 1 minute instead of waiting forever
+                async Task<bool> WaitGvg(Func<bool> done, string waitingMessage)
                 {
-                    if (token.IsCancellationRequested) return;
-                    log(ResourceStrings.GvgWaitingCastleInfo);
-                    await Task.Delay(1000, token);
-                            if (keepaliveTask.IsFaulted) await keepaliveTask;
+                    var deadline = DateTime.UtcNow.AddMinutes(1);
+                    while (!done())
+                    {
+                        if (token.IsCancellationRequested) return false;
+                        if (localGvgReceiver.Error is { } error) throw new Exceptions.ApiErrorException(error);
+                        if (DateTime.UtcNow > deadline) throw new TimeoutException(waitingMessage);
+                        log(waitingMessage);
+                        await Task.Delay(1000, token);
+                        if (keepaliveTask.IsFaulted) await keepaliveTask;
+                    }
+
+                    return true;
                 }
+
+                client.SendGvgOpenMap(BattleType.GuildBattle, 0);
+                if (!await WaitGvg(() => localGvgReceiver.IsCastleInfoUpdated, ResourceStrings.GvgWaitingCastleInfo)) return;
 
                 var castleInfos = localGvgReceiver.CastleInfos
                     .Where(d => d.GvgCastleState is GvgCastleState.None or GvgCastleState.InBattle && d.GuildId == response1.GuildId)
@@ -82,13 +93,7 @@ public partial class MementoMoriFuncs
                         // open deploy dialog to update character list
                         localGvgReceiver.IsDeployCharacterUpdated = false;
                         client.SendGvgOpenPartyDeployDialog(BattleType.GuildBattle, castleInfo.CastleId);
-                        while (!localGvgReceiver.IsDeployCharacterUpdated)
-                        {
-                            if (token.IsCancellationRequested) return;
-                            log(ResourceStrings.GvgWaitingDeployDialog);
-                            await Task.Delay(1000, token);
-                            if (keepaliveTask.IsFaulted) await keepaliveTask;
-                        }
+                        if (!await WaitGvg(() => localGvgReceiver.IsDeployCharacterUpdated, ResourceStrings.GvgWaitingDeployDialog)) return;
 
                         // calculate character count
                         var characterCount = queue.TryDequeue(out var i) ? i : 1;
@@ -106,13 +111,7 @@ public partial class MementoMoriFuncs
                         localGvgReceiver.IsDeployCharacterUpdated = false;
                         // deploy
                         client.SendGvgAddCastleParty(BattleType.GuildBattle, castleInfo.CastleId, characterIds, characterInfos.Count);
-                        while (!localGvgReceiver.IsDeployCharacterUpdated)
-                        {
-                            if (token.IsCancellationRequested) return;
-                            log(ResourceStrings.GvgWaitingDeploy);
-                            await Task.Delay(1000, token);
-                            if (keepaliveTask.IsFaulted) await keepaliveTask;
-                        }
+                        if (!await WaitGvg(() => localGvgReceiver.IsDeployCharacterUpdated, ResourceStrings.GvgWaitingDeploy)) return;
 
                         // log
                         var name = TextResourceTable.Get(LocalGvgCastleTable.GetById(castleInfo.CastleId).NameKey);

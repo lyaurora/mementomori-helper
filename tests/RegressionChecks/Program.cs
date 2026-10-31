@@ -25,6 +25,8 @@ using MementoMori.Ortega.Network.MagicOnion.Client;
 using MementoMori.Ortega.Network.MagicOnion.Interface;
 using MementoMori.Ortega.Share.Data.ApiInterface.Chat;
 using BountyQuest = MementoMori.Ortega.Share.Data.ApiInterface.BountyQuest;
+using ItemApi = MementoMori.Ortega.Share.Data.ApiInterface.Item;
+using PresentApi = MementoMori.Ortega.Share.Data.ApiInterface.Present;
 using MementoMori.MagicOnion;
 using MementoMori.Ortega.Share.MagicOnionShare.Interfaces.Receiver;
 using MementoMori.Ortega.Share.MagicOnionShare.Interfaces.Sender;
@@ -69,6 +71,7 @@ var checks = new (string Name, Func<Task> Run)[]
     ("HTTP cancellation and bounded version negotiation", CheckTransport),
     ("manual quick-action batch stops after cancellation", CheckBatchCancellation),
     ("fountain reward fallback, fresh refresh data and cancellation", CheckBountyQuest),
+    ("presents make room for waiting tickets and name what stays stuck", CheckPresents),
     ("temple matching times out without treating attempts as exhausted", CheckLocalRaidTimeout),
     ("temple retries stop after connection cancellation or joining a room", CheckLocalRaidRetries),
     ("chat routing, history, reactions, delivery confirmation and cancellation", CheckChat),
@@ -559,6 +562,64 @@ static async Task CheckBountyQuest()
     paths.Clear();
     await funcs.RemakeBountyRequest();
     Require(paths.Count == 0, "A locked fountain sent a refresh request");
+
+    static HttpResponseMessage Reply<T>(T response) => new(HttpStatusCode.OK)
+    {
+        Content = new ByteArrayContent(MessagePackSerializer.Serialize(response))
+    };
+}
+
+static async Task CheckPresents()
+{
+    var auth = new Writable<AuthOption>(new() { AuthUrl = "https://offline.invalid/api/" });
+    var config = new Writable<GameConfig>(new() { AutoRequestDelay = 0 });
+    using var network = Construct<MementoNetworkManager>(auth, config, NullLogger<MementoNetworkManager>.Instance);
+    Field(network, "_apiHost").SetValue(network, new Uri("https://offline.invalid/api/"));
+    using var funcs = Construct<MementoMoriFuncs>(auth, config, NullLogger<MementoMoriFuncs>.Instance);
+    funcs.NetworkManager = network;
+    Masters.ItemTable.Load(MessagePackSerializer.ConvertFromJson(
+        $"[{{\"ItemType\":{(int)ItemType.QuestQuickTicket},\"ItemId\":1,\"MaxItemCount\":299,\"NameKey\":\"ticket\"}},{{\"ItemType\":{(int)ItemType.ExchangePlaceItem},\"ItemId\":1,\"MaxItemCount\":500000,\"NameKey\":\"coin\"}}]"));
+    funcs.UserSyncData.UserItemDtoInfo = [new() { ItemType = ItemType.QuestQuickTicket, ItemId = 1, ItemCount = 290 }, new() { ItemType = ItemType.ExchangePlaceItem, ItemId = 1, ItemCount = 500000 }];
+    static MementoMori.Ortega.Share.Data.DtoInfo.UserPresentDtoInfo Gift(string guid, bool received, long tickets, long coins = 0)
+    {
+        var gift = new MementoMori.Ortega.Share.Data.DtoInfo.UserPresentDtoInfo
+        {
+            Guid = guid, Title = $"gift {guid}", IsReceived = received,
+            ItemList = [new() { Item = new() { ItemType = ItemType.QuestQuickTicket, ItemId = 1, ItemCount = tickets } }]
+        };
+        if (coins > 0) gift.ItemList.Add(new() { Item = new() { ItemType = ItemType.ExchangePlaceItem, ItemId = 1, ItemCount = coins } });
+        return gift;
+    }
+    var used = new List<int>();
+    var received = new List<string?>();
+    ReplaceClient(network, "_httpClient", new HttpClient(new Handler(async (request, token) =>
+    {
+        var path = request.RequestUri!.AbsolutePath;
+        if (path.EndsWith("/present/getList"))
+            return Reply(new PresentApi.GetListResponse { userPresentDtoInfos = [Gift("old", true, 100), Gift("stuck", false, 120), Gift("small", false, 1), Gift("coins", false, 300, 10)] });
+        if (path.EndsWith("/item/useAutoBattleRewardItem"))
+        {
+            used.Add(MessagePackSerializer.Deserialize<ItemApi.UseAutoBattleRewardItemRequest>(await request.Content!.ReadAsByteArrayAsync(token)).UseCount);
+            return Reply(new ItemApi.UseAutoBattleRewardItemResponse { RewardItemList = [] });
+        }
+        Require(path.EndsWith("/present/receiveItem"), "Unexpected present request");
+        var guid = MessagePackSerializer.Deserialize<PresentApi.ReceiveItemRequest>(await request.Content!.ReadAsByteArrayAsync(token)).PresentGuid;
+        received.Add(guid);
+        if (guid is null or "stuck" or "coins")
+        {
+            var response = Reply(new ApiErrorResponse { ErrorCode = ErrorCode.PresentReceiveOverLimitCountPresent });
+            response.Headers.Add("ortegastatuscode", "1");
+            return response;
+        }
+        return Reply(new PresentApi.ReceiveItemResponse { ResultItems = [] });
+    })));
+
+    await funcs.PresentReceiveItem();
+    // 290 held + 121 waiting > 299: use the 112 over the cap (more than the usual 30%), counting neither
+    // the 100 already received nor the 300 in a present that full coins hold back (using tickets cannot free it)
+    Require(used.SequenceEqual([112]), "Presents below the cap are not made room for, or received or otherwise blocked presents are counted");
+    Require(received.SequenceEqual([null, "stuck", "small", "coins"]), "Blocked presents are not retried one by one");
+    Require(funcs.MesssageList.Any(m => m.Contains("gift stuck")) && funcs.MesssageList.Any(m => m.Contains("gift coins")), "A present that stays stuck is not named");
 
     static HttpResponseMessage Reply<T>(T response) => new(HttpStatusCode.OK)
     {

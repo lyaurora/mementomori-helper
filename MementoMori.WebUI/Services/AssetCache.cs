@@ -31,12 +31,21 @@ public static partial class AssetCache
 
             if (!File.Exists(file))
             {
-                using var resp = await http.CreateClient().GetAsync($"{config.Value.AssetsUrl.TrimEnd('/')}/{path}", ct);
-                if (!resp.IsSuccessStatusCode) return Results.StatusCode((int)resp.StatusCode);
-                Directory.CreateDirectory(Path.GetDirectoryName(file)!);
                 var tmp = $"{file}.{Guid.NewGuid():N}.tmp";
-                await using (var fs = File.Create(tmp)) await resp.Content.CopyToAsync(fs, ct);
-                File.Move(tmp, file, true);
+                try
+                {
+                    using var resp = await http.CreateClient().GetAsync($"{config.Value.AssetsUrl.TrimEnd('/')}/{path}", ct);
+                    if (!resp.IsSuccessStatusCode) return Results.StatusCode((int)resp.StatusCode);
+                    Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+                    await using (var fs = File.Create(tmp)) await resp.Content.CopyToAsync(fs, ct);
+                    File.Move(tmp, file, true);
+                }
+                catch (Exception e) when (e is HttpRequestException or IOException && !ct.IsCancellationRequested)
+                {
+                    // resource server dropped the connection: answer 502 instead of an unhandled 500, and leave no partial file behind
+                    File.Delete(tmp);
+                    return Results.StatusCode(StatusCodes.Status502BadGateway);
+                }
                 _ = Task.Run(() => Evict(root));
             }
             else

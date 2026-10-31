@@ -201,7 +201,7 @@
             @if (Funcs.ShowDebugInfo)
             {
                 <MudCardContent Style="max-height: 400px; overflow: auto">
-                    <pre>@Funcs.UserSyncData.ToJson(true)</pre>
+                    <pre>@DebugJson()</pre>
                 </MudCardContent>
             }
         </MudCard>
@@ -387,6 +387,8 @@
             alertMessage = Funcs.LoginOk ? string.Empty : ResourceStrings.PleaseLogin;
             // Sample, not Throttle: Throttle starves while a job keeps changing properties; Sample renders the latest state at most 4x/s.
             TrackAccountSubscription(Funcs.WhenAnyPropertyChanged().Sample(TimeSpan.FromMilliseconds(250)).Subscribe(_ => InvokeAsync(StateHasChanged)));
+            // Bounty quest countdowns are computed at render; tick once a second while any quest is still running.
+            TrackAccountSubscription(Observable.Interval(TimeSpan.FromSeconds(1)).Where(_ => HasRunningBountyQuest()).Subscribe(_ => InvokeAsync(StateHasChanged)));
         }
         catch (Exception e)
         {
@@ -398,6 +400,25 @@
         }
         // Don't block the account-switch queue on network I/O; LoadNotices is account-scoped and catches everything.
         if (_interactive) _ = LoadNotices();
+    }
+
+    private bool HasRunningBountyQuest()
+    {
+        var infos = Funcs.BountyQuestResponseInfo?.UserBountyQuestDtoInfos;
+        if (infos == null) return false;
+        var nowMilli = DateTimeOffset.Now.Add(Funcs.TimeManager.DiffFromUtc).ToUnixTimeMilliseconds();
+        return infos.Any(d => d.BountyQuestEndTime > 0 && (nowMilli < d.BountyQuestEndTime || (!d.IsReward && nowMilli < d.RewardEndTime)));
+    }
+
+    private (UserSyncData Data, DateTime At, string Json) _debugJson;
+
+    // Home re-renders up to 4x/s while jobs run; serializing the whole sync data each time costs CPU and circuit traffic.
+    // ponytail: at most one refresh per 5 s (or account switch), a manual refresh button if ever needed.
+    private string DebugJson()
+    {
+        if (_debugJson.Data != Funcs.UserSyncData || DateTime.UtcNow - _debugJson.At > TimeSpan.FromSeconds(5))
+            _debugJson = (Funcs.UserSyncData, DateTime.UtcNow, Funcs.UserSyncData.ToJson(true));
+        return _debugJson.Json;
     }
 
     // Paid action: drop clicks while another action runs instead of queueing a second 20-diamond remake.

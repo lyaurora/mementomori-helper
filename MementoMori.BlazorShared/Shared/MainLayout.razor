@@ -18,7 +18,11 @@
 <MudThemeProvider Theme="_theme" IsDarkMode="false" ObserveSystemThemeChange="false" DefaultScrollbar="true"/>
 <MudThemeProvider Theme="DarkTheme" IsDarkMode="true" ObserveSystemThemeChange="false" DefaultScrollbar="true"/>
 <MudPopoverProvider/>
-<MudDialogProvider/>
+@* Dialogs render here, outside the page ErrorBoundary; without this one a dialog exception ends the circuit. *@
+<ErrorBoundary @ref="_dialogBoundary">
+    <ChildContent><MudDialogProvider/></ChildContent>
+    <ErrorContent>@{ RecoverDialogs(); }</ErrorContent>
+</ErrorBoundary>
 <MudSnackbarProvider/>
 
 <MudLayout>
@@ -217,6 +221,25 @@
     ErrorBoundary? _errorBoundary;
 
     protected override void OnParametersSet() => _errorBoundary?.Recover();
+
+    ErrorBoundary? _dialogBoundary;
+    bool _dialogRecovering;
+    int _dialogFailures;
+
+    // Called while the boundary renders its error state: drop the broken dialog and bring back a fresh provider afterwards.
+    // After 5 failures stop recovering, so a provider that throws on every render cannot loop; dialogs then stay unavailable until reload.
+    void RecoverDialogs()
+    {
+        if (_dialogRecovering || ++_dialogFailures > 5) return;
+        _dialogRecovering = true;
+        _ = InvokeAsync(async () =>
+        {
+            await Task.Yield();
+            _dialogRecovering = false;
+            _dialogBoundary?.Recover();
+            Snackbar.Add(ResourceStrings.DialogError, Severity.Error);
+        });
+    }
 
     protected override void OnInitialized()
     {

@@ -168,6 +168,8 @@ namespace MementoMori.Ortega.Common.Utils
                 case ItemType.TreasureChest:
                     return Masters.TreasureChestTable.GetById(itemId)?.ItemRarityFlags.ToString() ?? missing;
                     break;
+                case ItemType.EquipmentSetMaterialBox:
+                    return Masters.EquipmentSetMaterialBoxTable.GetById(itemId)?.ItemRarityFlags.ToString() ?? missing;
                 case ItemType.LevelLinkExp:
                     return "None";
                     break;
@@ -407,9 +409,11 @@ namespace MementoMori.Ortega.Common.Utils
                     return ItemUtil.GetItemName(userItem.ItemType, userItem.ItemId);
                 case ItemType.EquipmentSetMaterial:
                     var equipmentSetMaterialMb = Masters.EquipmentSetMaterialTable.GetById(userItem.ItemId);
+                    if (equipmentSetMaterialMb == null) return GetItemName(userItem.ItemType, userItem.ItemId);
                     return Masters.TextResourceTable.Get(equipmentSetMaterialMb.NameKey);
                 case ItemType.Sphere:
                     var sphereMb = Masters.SphereTable.GetById(userItem.ItemId);
+                    if (sphereMb == null) return GetItemName(userItem.ItemType, userItem.ItemId);
                     if (sphereMb.BaseParameterChangeInfo != null)
                     {
                         return Masters.TextResourceTable.Get(sphereMb.BaseParameterChangeInfo.BaseParameterType);
@@ -423,12 +427,15 @@ namespace MementoMori.Ortega.Common.Utils
                     return string.Empty;
                 case ItemType.TreasureChest:
                     var treasureChestMb = Masters.TreasureChestTable.GetById(userItem.ItemId);
+                    if (treasureChestMb == null) return GetItemName(userItem.ItemType, userItem.ItemId);
                     return Masters.TextResourceTable.Get(treasureChestMb.NameKey);
                 case ItemType.EquipmentSetMaterialBox:
                     var equipmentSetMaterialBoxMb = Masters.EquipmentSetMaterialBoxTable.GetById(userItem.ItemId);
+                    if (equipmentSetMaterialBoxMb == null) return GetItemName(userItem.ItemType, userItem.ItemId);
                     return Masters.TextResourceTable.Get(equipmentSetMaterialBoxMb.NameKey);
                 default:
                     var itemMb = Masters.ItemTable.GetByItemTypeAndItemId(userItem.ItemType, userItem.ItemId);
+                    if (itemMb == null) return GetItemName(userItem.ItemType, userItem.ItemId);
                     return Masters.TextResourceTable.Get(itemMb.DisplayName);
             }
 

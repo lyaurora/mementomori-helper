@@ -32,7 +32,7 @@
         <dl class="equipment-stat-grid">
             <div class="equipment-stat">
                 <dt>@(Tr(baseEffect.BattleParameterType))</dt>
-                <dd>@(Math.Round(baseEffect.Value).ToString("N0"))</dd>
+                <dd>@(ParameterUtil.GetBattleParameterValueText(baseEffect))</dd>
             </div>
         </dl>
     </section>
@@ -55,12 +55,8 @@
             <dl class="equipment-effect-list">
                 @if (sacredType == SacredTreasureType.DualStatus || sacredType == SacredTreasureType.Legend)
                 {
-                    var info = @EquipmentUtil.GetSacredParameter(equipmentMb.SlotType, EquipmentDtoInfo.LegendSacredTreasureLv, SacredTreasureType.Legend);
-                    var value = info.Value.ToString();
-                    if (info.ChangeParameterType == ChangeParameterType.AdditionPercent)
-                    {
-                        value = $"{info.Value / 100}%";
-                    }
+                    var info = EquipmentUtil.GetSacredParameter(equipmentMb.SlotType, EquipmentDtoInfo.LegendSacredTreasureLv, SacredTreasureType.Legend);
+                    var value = ParameterUtil.GetBattleParameterValueText(info);
 
                     <div class="equipment-effect">
                         <dt>@Tr("[CommonItemLegendGenialLevelFormat]", EquipmentDtoInfo.LegendSacredTreasureLv)</dt>
@@ -70,11 +66,7 @@
                 @if (sacredType == SacredTreasureType.DualStatus || sacredType == SacredTreasureType.Matchless)
                 {
                     var info = EquipmentUtil.GetSacredParameter(equipmentMb.SlotType, EquipmentDtoInfo.MatchlessSacredTreasureLv, SacredTreasureType.Matchless);
-                    var value = info.Value.ToString();
-                    if (info.ChangeParameterType == ChangeParameterType.AdditionPercent)
-                    {
-                        value = $"{info.Value / 100}%";
-                    }
+                    var value = ParameterUtil.GetBattleParameterValueText(info);
 
                     <div class="equipment-effect">
                         <dt>@Tr("[CommonItemMatchlessGenialLevelFormat]", EquipmentDtoInfo.MatchlessSacredTreasureLv)</dt>
@@ -99,7 +91,7 @@
                     if (info.BattleParameterChangeInfo != null)
                     {
                         key = Tr(info.BattleParameterChangeInfo.BattleParameterType);
-                        value = ParameterUtil.GetBaseParameterValueText(info.BattleParameterChangeInfo.ChangeParameterType, info.BattleParameterChangeInfo.Value);
+                        value = ParameterUtil.GetBattleParameterValueText(info.BattleParameterChangeInfo);
                     }
                     else
                     {
@@ -153,7 +145,7 @@
                 @foreach (var info in effectMb.BattleParameterChangeInfoList ?? Array.Empty<BattleParameterChangeInfo>())
                 {
                     var key = Tr(info.BattleParameterType);
-                    var value = ParameterUtil.GetBaseParameterValueText(info.ChangeParameterType, info.Value);
+                    var value = ParameterUtil.GetBattleParameterValueText(info);
                     <div class="equipment-stat"><dt>@key</dt><dd>@value</dd></div>
                 }
             </dl>

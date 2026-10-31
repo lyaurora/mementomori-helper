@@ -764,4 +764,5 @@
   <data name="GrowthHoursAgo" xml:space="preserve"><value>{0} 小時前</value></data>
   <data name="GrowthDaysAgo" xml:space="preserve"><value>{0} 天前</value></data>
   <data name="CronEveryHoursFromFormat" xml:space="preserve"><value>每 {0} 小時（{1} 起）</value></data>
+  <data name="DialogError" xml:space="preserve"><value>對話框出錯，已關閉。</value></data>
 </root>

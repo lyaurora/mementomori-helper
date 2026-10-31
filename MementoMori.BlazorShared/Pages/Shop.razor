@@ -250,9 +250,12 @@
         var listResponse = await funcs.GetResponse<GetListRequest, GetListResponse>(new GetListRequest(), token);
         var weeklyTopicInfo = await funcs.GetResponse<GetWeeklyTopicsInfoRequest, GetWeeklyTopicsInfoResponse>(new GetWeeklyTopicsInfoRequest(), token);
         token.ThrowIfCancellationRequested();
-        _tradeShopTabInfoList = listResponse.TradeShopTabInfoList.OrderBy(d => Masters.TradeShopTabTable.GetById(d.TradeShopTabId).SortOrder).ToList();
+        _tradeShopTabInfoList = listResponse.TradeShopTabInfoList
+            .Where(d => Masters.TradeShopTabTable.GetById(d.TradeShopTabId) != null) // a tab newer than our master data: hide it until the hourly refresh
+            .OrderBy(d => Masters.TradeShopTabTable.GetById(d.TradeShopTabId).SortOrder).ToList();
         foreach (var tradeShopItems in weeklyTopicInfo.ShopData.TradeShopItemList.GroupBy(d => d.TradeShopItemId / 10000))
         {
+            if (Masters.TradeShopTabTable.GetById(tradeShopItems.Key) == null) continue;
             _tradeShopTabInfoList.Add(new TradeShopTabInfo
             {
                 TradeShopTabId = tradeShopItems.Key,
@@ -297,8 +300,16 @@
         if (item.ItemType == ItemType.CharacterFragment)
         {
             var characterMb = Masters.CharacterTable.GetById(item.ItemId);
-            characterMb.GetCharacterName(out var name1, out _);
-            itemName = Masters.TextResourceTable.Get("[CommonItemCharacterFragment]", name1);
+            // Rows can be missing until the local master refreshes (new item after a game update).
+            if (characterMb == null)
+            {
+                itemName = ItemUtil.GetItemName(item);
+            }
+            else
+            {
+                characterMb.GetCharacterName(out var name1, out _);
+                itemName = Masters.TextResourceTable.Get("[CommonItemCharacterFragment]", name1);
+            }
         }
         else
         {
@@ -308,11 +319,11 @@
         if (item.ItemType == ItemType.EquipmentFragment)
         {
             var equipmentCompositeMb = Masters.EquipmentCompositeTable.GetById(item.ItemId);
-            var equipmentMb = Masters.EquipmentTable.GetById(equipmentCompositeMb.EquipmentId);
-            if (equipmentMb.ExclusiveEffectId > 0)
+            var equipmentMb = equipmentCompositeMb == null ? null : Masters.EquipmentTable.GetById(equipmentCompositeMb.EquipmentId);
+            if (equipmentMb?.ExclusiveEffectId > 0)
             {
                 var equipmentExclusiveEffectMb = Masters.EquipmentExclusiveEffectTable.GetById(equipmentMb.ExclusiveEffectId);
-                subName = Masters.CharacterTable.GetById(equipmentExclusiveEffectMb.CharacterId).GetCombinedName("");
+                subName = Masters.CharacterTable.GetById(equipmentExclusiveEffectMb?.CharacterId ?? 0)?.GetCombinedName("") ?? "";
             }
         }
 

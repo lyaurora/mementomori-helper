@@ -32,7 +32,8 @@
                 var equips = ViewModel.UserSyncData.UserItemDtoInfo
                     ?.Where(d => d.ItemType == ItemType.Equipment && d.ItemCount > 0)
                     .Select(d => d.ToEquipmentInfo())
-                    .Union(equips1);
+                    .Union(equips1)
+                    .Where(d => d.EquipmentMb != null);
             }
             <MudTable Class="items-table items-equipment-table" Dense="true" HorizontalScrollbar="true" Virtualize="true" Striped="true"
                       Items="@equips">
@@ -73,7 +74,7 @@
                     <MudTd Class="item-number-column" DataLabel="@Masters.TextResourceTable.Get("[CommonOwnCurrencyLabel]")">@context.Count.ToString("N0")</MudTd>
                     <MudTd Class="item-number-column" DataLabel="@Masters.TextResourceTable.Get("[EquipmentUniquePowerLabel]")">@context.EquipmentMb.PerformancePoint.ToString("N0")</MudTd>
                     <MudTd Class="item-text-column" DataLabel="@Masters.TextResourceTable.Get("[CharacterEquipmentBasicEffect]")">@(Masters.TextResourceTable.Get(context.EquipmentMb.BattleParameterChangeInfo.BattleParameterType))</MudTd>
-                    <MudTd Class="item-number-column" DataLabel="@Masters.TextResourceTable.Get("[CommonBaseParameterLabel]")">@(ParameterUtil.GetBaseParameterValueText(context.EquipmentMb.BattleParameterChangeInfo.ChangeParameterType, context.EquipmentMb.BattleParameterChangeInfo.Value))</MudTd>
+                    <MudTd Class="item-number-column" DataLabel="@Masters.TextResourceTable.Get("[CommonBaseParameterLabel]")">@(ParameterUtil.GetBattleParameterValueText(context.EquipmentMb.BattleParameterChangeInfo))</MudTd>
                     <MudTd Class="item-number-column" DataLabel="@Masters.TextResourceTable.Get("[CommonGrantParameterLabel]")">@context.EquipmentMb.AdditionalParameterTotal.ToString("N0")</MudTd>
                 </RowTemplate>
             </MudTable>
@@ -165,7 +166,7 @@
                    ItemType.Sphere
                }; }
             <MudTable Class="items-table items-sphere-table" Dense="true" HorizontalScrollbar="true" Virtualize="true"
-                      Items="@(ViewModel.UserSyncData.UserItemDtoInfo.Where(d => types.Contains(d.ItemType) && d.ItemCount > 0).Select(d => d.ToSphereInfo()))">
+                      Items="@(ViewModel.UserSyncData.UserItemDtoInfo.Where(d => types.Contains(d.ItemType) && d.ItemCount > 0).Select(d => d.ToSphereInfo()).Where(d => d.SphereMB != null))">
                 <HeaderContent>
                     <MudTh Class="item-name-column">
                         <MudTableSortLabel SortBy="new Func<UserItemExtensions.SphereInfo, object>(x => x.Name)">@ResourceStrings.Name</MudTableSortLabel>
@@ -199,7 +200,7 @@
                     <MudTd Class="item-text-column" DataLabel="@Masters.TextResourceTable.Get("[CharacterEquipmentBasicEffect]")">@(context.SphereMB.BaseParameterChangeInfo == null ? "" : Masters.TextResourceTable.Get(context.SphereMB.BaseParameterChangeInfo.BaseParameterType))</MudTd>
                     <MudTd Class="item-number-column" DataLabel="@Masters.TextResourceTable.Get("[CommonBaseParameterLabel]")">@(context.SphereMB.BaseParameterChangeInfo == null ? "" : ParameterUtil.GetBaseParameterValueText(context.SphereMB.BaseParameterChangeInfo.ChangeParameterType, context.SphereMB.BaseParameterChangeInfo.Value))</MudTd>
                     <MudTd Class="item-text-column" DataLabel="@Masters.TextResourceTable.Get("[CharacterDetailTabBattleParameter]")">@(context.SphereMB.BattleParameterChangeInfo == null ? "" : Masters.TextResourceTable.Get(context.SphereMB.BattleParameterChangeInfo.BattleParameterType))</MudTd>
-                    <MudTd Class="item-number-column" DataLabel="@Masters.TextResourceTable.Get("[CommonBaseParameterLabel]")">@(context.SphereMB.BattleParameterChangeInfo == null ? "" : ParameterUtil.GetBaseParameterValueText(context.SphereMB.BattleParameterChangeInfo.ChangeParameterType, context.SphereMB.BattleParameterChangeInfo.Value))</MudTd>
+                    <MudTd Class="item-number-column" DataLabel="@Masters.TextResourceTable.Get("[CommonBaseParameterLabel]")">@(context.SphereMB.BattleParameterChangeInfo == null ? "" : ParameterUtil.GetBattleParameterValueText(context.SphereMB.BattleParameterChangeInfo))</MudTd>
                     <MudTd Class="item-number-column" DataLabel="@Masters.TextResourceTable.Get("[CommonOwnCurrencyLabel]")">@context.Count.ToString("N0")</MudTd>
                 </RowTemplate>
             </MudTable>

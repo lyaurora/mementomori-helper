@@ -97,9 +97,8 @@ public partial class MementoMoriFuncs
 
                     async Task UseCode()
                     {
-                        var networkManager = _serviceProvider.GetService<MementoNetworkManager>();
-                        var funcs = _serviceProvider.GetService<MementoMoriFuncs>();
-                        funcs.NetworkManager = networkManager;
+                        // created outside the container: the root provider would keep every disposed throwaway manager until exit
+                        using var networkManager = ActivatorUtilities.CreateInstance<MementoNetworkManager>(_serviceProvider);
 
                         var timeserverId = _lastPlayerDataInfo.WorldId / 1000;
                         var timeServerMb = TimeServerTable.GetById(timeserverId);
@@ -119,7 +118,6 @@ public partial class MementoMoriFuncs
                             AuthToken = await GetAuthToken()
                         });
 
-                        funcs.UserId = createUserResponse.UserId;
                         networkManager.UserId = createUserResponse.UserId;
 
                         var createWorldPlayerResponse = await networkManager.GetResponse<CreateWorldPlayerRequest, CreateWorldPlayerResponse>(

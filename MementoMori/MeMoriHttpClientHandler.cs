@@ -31,6 +31,8 @@ public partial class MeMoriHttpClientHandler : HttpClientHandler
         _managedHeaders["ortegadevicetype"] = "2";
         _managedHeaders["ortegauuid"] = Guid.NewGuid().ToString("N");
         _managedHeaders["accept-encoding"] = "gzip";
+        // we advertise gzip, so decode it if the server ever honours it (base handler skips re-adding gzip to accept-encoding)
+        AutomaticDecompression = System.Net.DecompressionMethods.GZip;
         _managedHeaders["user-agent"] = "BestHTTP/2 v2.3.0";
     }
 

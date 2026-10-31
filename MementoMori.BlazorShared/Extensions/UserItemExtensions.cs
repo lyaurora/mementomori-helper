@@ -24,7 +24,7 @@ public static class UserItemExtensions
         {
             Count = userItem.ItemCount,
             EquipmentMb = equipmentMb,
-            Name = Masters.TextResourceTable.Get(equipmentMb.NameKey)
+            Name = ItemUtil.GetItemName(ItemType.Equipment, userItem.ItemId)
         };
     }
 
@@ -35,7 +35,7 @@ public static class UserItemExtensions
         {
             Count = 1,
             EquipmentMb = equipmentMb,
-            Name = Masters.TextResourceTable.Get(equipmentMb.NameKey),
+            Name = ItemUtil.GetItemName(ItemType.Equipment, userItem.EquipmentId),
             Info = userItem
         };
     }
@@ -52,9 +52,13 @@ public static class UserItemExtensions
 
     public static UserItemInfo ToUserItemInfo(this IUserItem userItem)
     {
+        // Rows can be missing until the local master refreshes (new item after a game update).
+        UserItemInfo Missing() => new() {Name = ItemUtil.GetItemName(userItem), Count = userItem.ItemCount, Item = userItem};
+
         if (userItem.ItemType == ItemType.TreasureChest)
         {
             var treasureChestMb = Masters.TreasureChestTable.GetById(userItem.ItemId);
+            if (treasureChestMb == null) return Missing();
             return new UserItemInfo
             {
                 Name = Masters.TextResourceTable.Get(treasureChestMb.NameKey),
@@ -68,6 +72,7 @@ public static class UserItemExtensions
         else if (userItem.ItemType == ItemType.CharacterFragment)
         {
             var characterMb = Masters.CharacterTable.GetById(userItem.ItemId);
+            if (characterMb == null) return Missing();
             var characterName = Masters.TextResourceTable.Get(characterMb.NameKey);
             return new UserItemInfo()
             {
@@ -82,6 +87,7 @@ public static class UserItemExtensions
         else if (userItem.ItemType == ItemType.EquipmentSetMaterial)
         {
             var equipmentSetMaterialMb = Masters.EquipmentSetMaterialTable.GetById(userItem.ItemId);
+            if (equipmentSetMaterialMb == null) return Missing();
             var name = $"{Masters.TextResourceTable.Get(equipmentSetMaterialMb.NameKey)} Lv{equipmentSetMaterialMb.Lv}";
             return new UserItemInfo()
             {
@@ -96,7 +102,8 @@ public static class UserItemExtensions
         else if (userItem.ItemType == ItemType.EquipmentFragment)
         {
             var equipmentCompositeMb = Masters.EquipmentCompositeTable.GetById(userItem.ItemId);
-            var equipmentMb = Masters.EquipmentTable.GetById(equipmentCompositeMb.EquipmentId);
+            var equipmentMb = equipmentCompositeMb == null ? null : Masters.EquipmentTable.GetById(equipmentCompositeMb.EquipmentId);
+            if (equipmentMb == null) return Missing();
             var equipmentName = Masters.TextResourceTable.Get(equipmentMb.NameKey);
             return new UserItemInfo()
             {
@@ -111,6 +118,7 @@ public static class UserItemExtensions
         else
         {
             var itemMb = Masters.ItemTable.GetByItemTypeAndItemId(userItem.ItemType, userItem.ItemId);
+            if (itemMb == null) return Missing();
             return new UserItemInfo
             {
                 Name = Masters.TextResourceTable.Get(itemMb.NameKey),
@@ -137,8 +145,8 @@ public static class UserItemExtensions
         var sphereMb = Masters.SphereTable.GetById(userItem.ItemId);
         return new SphereInfo
         {
-            Name = Masters.TextResourceTable.Get(sphereMb.NameKey),
-            Description = Masters.TextResourceTable.Get(sphereMb.DescriptionKey),
+            Name = ItemUtil.GetItemName(ItemType.Sphere, userItem.ItemId),
+            Description = Masters.TextResourceTable.Get(sphereMb?.DescriptionKey),
             Count = userItem.ItemCount,
             SphereMB = sphereMb,
             MaxItemCount = 0
@@ -146,36 +154,37 @@ public static class UserItemExtensions
     }
 
 
+    // Rows can be missing until the local master refreshes (new item after a game update); ItemUtil returns "type:id" for those.
     public static string GetItemName(this IUserItem item)
     {
         if (item.ItemType == ItemType.Equipment)
         {
             var equipmentMb = Masters.EquipmentTable.GetById(item.ItemId);
+            if (equipmentMb == null) return ItemUtil.GetItemName(item);
             return $"{Masters.TextResourceTable.Get(equipmentMb.NameKey)} Lv{equipmentMb.EquipmentLv}";
         }
         if (item.ItemType == ItemType.TreasureChest)
         {
-            var treasureChestMb = Masters.TreasureChestTable.GetById(item.ItemId);
-            return Masters.TextResourceTable.Get(treasureChestMb.NameKey);
+            return ItemUtil.GetItemName(item);
         }
 
         if (item.ItemType == ItemType.CharacterFragment)
         {
             var characterMb = Masters.CharacterTable.GetById(item.ItemId);
+            if (characterMb == null) return ItemUtil.GetItemName(item);
             var characterName = Masters.TextResourceTable.Get(characterMb.NameKey);
             return Masters.TextResourceTable.Get("[CommonItemCharacterFragment]", characterName);
         }
 
         if (item.ItemType == ItemType.EquipmentFragment)
         {
-            var equipmentMb = Masters.EquipmentTable.GetById(item.ItemId);
-            var equipmentName = $"{Masters.TextResourceTable.Get(equipmentMb.NameKey)} Lv{equipmentMb.EquipmentLv}";
-            return Masters.TextResourceTable.Get("[CommonItemEquipmentFragmentFormat]", equipmentName);
+            return ItemUtil.GetItemName(item);
         }
 
         if (item.ItemType == ItemType.EquipmentSetMaterial)
         {
             var equipmentSetMaterialMb = Masters.EquipmentSetMaterialTable.GetById(item.ItemId);
+            if (equipmentSetMaterialMb == null) return ItemUtil.GetItemName(item);
             var name = $"{Masters.TextResourceTable.Get(equipmentSetMaterialMb.NameKey)} Lv{equipmentSetMaterialMb.Lv}";
             return name;
         }
@@ -183,16 +192,19 @@ public static class UserItemExtensions
         if (item.ItemType == ItemType.Sphere)
         {
             var sphereMb = Masters.SphereTable.GetById(item.ItemId);
+            if (sphereMb == null) return ItemUtil.GetItemName(item);
             return $"{Masters.TextResourceTable.Get(sphereMb.NameKey)} Lv{sphereMb.Lv}";
         }
 
         if (item.ItemType == ItemType.Character)
         {
             var characterMb = Masters.CharacterTable.GetById(item.ItemId);
+            if (characterMb == null) return ItemUtil.GetItemName(item);
             return Masters.TextResourceTable.Get(characterMb.NameKey);
         }
 
         var itemMb = Masters.ItemTable.GetByItemTypeAndItemId(item.ItemType, item.ItemId);
+        if (itemMb == null) return ItemUtil.GetItemName(item);
         return Masters.TextResourceTable.Get(itemMb.NameKey);
     }
 }

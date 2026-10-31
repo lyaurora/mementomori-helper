@@ -169,17 +169,25 @@
     private async Task GetGachaLottery()
     {
         var gachaCaseUiMb = GachaCaseUiTable.GetById(GachaCaseInfo.GachaCaseUiId);
-        AddRewardList = gachaCaseUiMb.AddRewardItems;
+        AddRewardList = gachaCaseUiMb?.AddRewardItems;
         var gachaCaseMb = GachaCaseTable.GetById(GachaCaseInfo.GachaCaseId);
-        var startTime = DateTimeOffset.Parse(gachaCaseMb.StartTimeFixJST + " +09:00").ToLocalTime();
-        var startTimeTime = TextResourceTable.Get("[CommonTimeFormatOnlyTime]", startTime.Hour, startTime.Minute, startTime.Second);
-        var endTime = DateTimeOffset.Parse(gachaCaseMb.EndTimeFixJST + " +09:00").ToLocalTime();
-        var endTimeTime = TextResourceTable.Get("[CommonTimeFormatOnlyTime]", endTime.Hour, endTime.Minute, endTime.Second);
-        var periodTime = TextResourceTable.Get("[GachaLotteryPeriodFormat]", startTime.Year, startTime.Month, startTime.Day, startTimeTime, endTime.Year, endTime.Month, endTime.Day, endTimeTime);
+        var periodTime = string.Empty;
+        if (gachaCaseMb != null)
+        {
+            var startTime = DateTimeOffset.Parse(gachaCaseMb.StartTimeFixJST + " +09:00").ToLocalTime();
+            var startTimeTime = TextResourceTable.Get("[CommonTimeFormatOnlyTime]", startTime.Hour, startTime.Minute, startTime.Second);
+            var endTime = DateTimeOffset.Parse(gachaCaseMb.EndTimeFixJST + " +09:00").ToLocalTime();
+            var endTimeTime = TextResourceTable.Get("[CommonTimeFormatOnlyTime]", endTime.Hour, endTime.Minute, endTime.Second);
+            periodTime = TextResourceTable.Get("[GachaLotteryPeriodFormat]", startTime.Year, startTime.Month, startTime.Day, startTimeTime, endTime.Year, endTime.Month, endTime.Day, endTimeTime);
+        }
 
-        detailHeader = TextResourceTable.Get(gachaCaseUiMb.DetailDialogHeadingKey, periodTime);
-        detailBody = TextResourceTable.Get(gachaCaseUiMb.DetailDialogDetailKey, GachaCaseInfo.GachaDrawCount);
-        detailFooter = TextResourceTable.Get(gachaCaseUiMb.DetailDialogNotesKey);
+        // Get(null) returns "", so the detail* fields stay non-null for the markup when the UI row is missing.
+        // Pick-up texts also take the character name ({2} in the heading, {1} in the detail); string.Format ignores extra arguments elsewhere.
+        // ponytail: select-list gachas have no PickUpCharacterId, so their name stays blank; fill it from the selected character if it matters.
+        var pickUpName = TextResourceTable.Get(CharacterTable.GetById(gachaCaseUiMb?.PickUpCharacterId ?? 0)?.NameKey);
+        detailHeader = TextResourceTable.Get(gachaCaseUiMb?.DetailDialogHeadingKey, periodTime, string.Empty, pickUpName);
+        detailBody = TextResourceTable.Get(gachaCaseUiMb?.DetailDialogDetailKey, GachaCaseInfo.GachaDrawCount, pickUpName);
+        detailFooter = TextResourceTable.Get(gachaCaseUiMb?.DetailDialogNotesKey);
     }
 
 }

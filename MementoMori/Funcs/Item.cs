@@ -32,6 +32,8 @@ public partial class MementoMoriFuncs
                 foreach (var userItemDtoInfo in UserSyncData.UserItemDtoInfo.Where(d => d.ItemCount > 0 && d.ItemType == ItemType.TreasureChest).ToList())
                 {
                     var treasureChestMb = TreasureChestTable.GetById(userItemDtoInfo.ItemId);
+                    // a chest newer than the local master is left for the next run instead of aborting every chest
+                    if (treasureChestMb == null) continue;
                     if (treasureChestMb.TreasureChestLotteryType == TreasureChestLotteryType.Fix ||
                         treasureChestMb.TreasureChestLotteryType == TreasureChestLotteryType.Random)
                     {
@@ -44,7 +46,8 @@ public partial class MementoMoriFuncs
                             {
                                 var keyCount = UserSyncData.GetUserItemCount(ItemType.TreasureChestKey, treasureChestMb.ChestKeyItemId);
                                 var available = Math.Min(userItemDtoInfo.ItemCount, keyCount);
-                                if (available > 0)
+                                // fewer keys than MinOpenCount would request 0 and, if accepted, loop forever
+                                if (available >= treasureChestMb.MinOpenCount)
                                 {
                                     var openCount = available / treasureChestMb.MinOpenCount * treasureChestMb.MinOpenCount;
                                     await OpenTreasure(openCount, treasureChestMb, log);

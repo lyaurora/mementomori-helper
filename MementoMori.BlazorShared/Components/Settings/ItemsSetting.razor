@@ -15,7 +15,8 @@
         <MudSelect Label="@ResourceStrings.AutoUseTargetItems" MultiSelection="true" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                    @bind-SelectedValues="AutoUseItemTypes" 
                    MultiSelectionTextFunc="list => string.Format(ResourceStrings.SelectedXItems, list.Count)">
-            @foreach (var item in Enum.GetValues<GameConfig.AutoUseItemType>())
+            @* 命运盒是 SelectItem 宝箱，需要选择奖励，无法自动使用；只在界面隐藏 *@
+            @foreach (var item in Enum.GetValues<GameConfig.AutoUseItemType>().Where(x => x != GameConfig.AutoUseItemType.ChestOfChance))
             {
                 <MudSelectItem  Value="@item">@(ResourceStrings.ResourceManager.GetEnumString(item))</MudSelectItem>
             }

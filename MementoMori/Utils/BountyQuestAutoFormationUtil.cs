@@ -30,6 +30,7 @@ public static class BountyQuestAutoFormationUtil
             // characters to be used
             var userCharacterDtoInfos = userSyncData.UserCharacterDtoInfos
                 .Where(d => !usedCharacterGuids.Contains(d.Guid)) // exclude used characters
+                .Where(d => CharacterTable.GetById(d.CharacterId) != null) // RL-6: skip characters missing from master data
                 .OrderBy(d => d.RarityFlags) // sort by rarity
                 .ToList();
             // if guerrilla, sort by rarity and element type
@@ -63,7 +64,8 @@ public static class BountyQuestAutoFormationUtil
                 // if team quest, get support members
                 if (bountyQuestData.QuestInfo.BountyQuestType == BountyQuestType.Team)
                 {
-                    var userBountyQuestMemberDtoInfos = GetReadySupportMemberDtoInfos(getListResponse);
+                    // a support character already picked for another team quest in this run would be rejected by the server
+                    var userBountyQuestMemberDtoInfos = GetReadySupportMemberDtoInfos(getListResponse).Where(d => !selectedCharacterGuids.Contains(d.UserCharacterGuid)).ToList();
                     var supportMember = GetSupportMember(userBountyQuestMemberDtoInfos, bountyQuestData);
                     // if no support member found, skip  
                     if (supportMember != null)
@@ -169,6 +171,7 @@ public static class BountyQuestAutoFormationUtil
             if (bountyQuestData.RarityRequireCount > 0 && info.RarityFlags < bountyQuestData.Rarity) continue;
 
             var characterMb = CharacterTable.GetById(info.CharacterId);
+            if (characterMb == null) continue; // RL-6: missing master row
             if (bountyQuestData.ElementTypes.Contains(characterMb.ElementType)) return info;
         }
 

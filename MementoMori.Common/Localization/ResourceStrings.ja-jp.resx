@@ -658,4 +658,5 @@
   <data name="GrowthHoursAgo" xml:space="preserve"><value>{0} 時間前</value></data>
   <data name="GrowthDaysAgo" xml:space="preserve"><value>{0} 日前</value></data>
   <data name="CronEveryHoursFromFormat" xml:space="preserve"><value>{1} から {0} 時間ごと</value></data>
+  <data name="DialogError" xml:space="preserve"><value>ダイアログでエラーが発生したため閉じました。</value></data>
 </root>

@@ -56,7 +56,8 @@ public partial class MementoMoriFuncs
 
                     if (info.IsExistWorldDamageReward)
                     {
-                        var bossMb = GuildRaidBossTable.GetByGuildRaidBossType(info.GuildRaidDtoInfo.BossType);
+                        // boss Start/EndTime are server-local, like the client's GetByGuildRaidBossTypeAndDateTime(type, localDateTime)
+                        var bossMb = GuildRaidBossTable.GetArray().FirstOrDefault(d => d.GuildRaidBossType == info.GuildRaidDtoInfo.BossType && TimeManager.IsInTime(d));
                         if (bossMb != null)
                         {
                             var worldRewardInfoResponse =

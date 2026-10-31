@@ -764,4 +764,5 @@
   <data name="GrowthHoursAgo" xml:space="preserve"><value>{0} h ago</value></data>
   <data name="GrowthDaysAgo" xml:space="preserve"><value>{0} d ago</value></data>
   <data name="CronEveryHoursFromFormat" xml:space="preserve"><value>Every {0} h from {1}</value></data>
+  <data name="DialogError" xml:space="preserve"><value>This dialog hit an error and was closed.</value></data>
 </root>

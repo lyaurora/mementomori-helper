@@ -52,7 +52,7 @@
             var gachaCaseUiMb = Masters.GachaCaseUiTable.GetById(gachaCaseInfo.GachaCaseUiId);
             var explanation = gachaCaseUiMb?.PickUpCharacterId > 0
                 ? Masters.TextResourceTable.Get(gachaCaseUiMb.ExplanationKey,
-                    Masters.TextResourceTable.Get(Masters.CharacterTable.GetById(gachaCaseUiMb.PickUpCharacterId).NameKey))
+                    Masters.TextResourceTable.Get(Masters.CharacterTable.GetById(gachaCaseUiMb.PickUpCharacterId)?.NameKey))
                 : Masters.TextResourceTable.Get(gachaCaseUiMb?.ExplanationKey);
             var banner = gachaCaseUiMb?.BannerImageNumber > 0 ? Atlas.GetGachaBanner(gachaCaseUiMb.BannerImageNumber) : null;
             var buttons = gachaCaseInfo.GachaButtonInfoList;

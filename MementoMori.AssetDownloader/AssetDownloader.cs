@@ -169,6 +169,7 @@ internal class AssetDownloader : BackgroundService
     {
         _logger.LogInformation("Start to download assets");
         var isDownloaded = false;
+        var attempt = 0;
         while (true)
         {
             try
@@ -182,9 +183,10 @@ internal class AssetDownloader : BackgroundService
                 isDownloaded = true;
                 break;
             }
-            catch (TaskCanceledException e)
+            catch (TaskCanceledException) when (!stoppingToken.IsCancellationRequested && ++attempt < 3)
             {
                 _logger.LogInformation("Download assets timeout, retry");
+                await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
             }
             catch (Exception e)
             {

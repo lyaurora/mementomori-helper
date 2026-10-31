@@ -261,7 +261,7 @@ public partial class MementoNetworkManager : IDisposable
 
         var content = await _unityHttpClient.GetStringAsync(assetCatalogUrl, cancellationToken);
         var catalog = AddressablesJsonParser.FromString(content);
-        var locations = catalog.Resources.SelectMany(d => d.Value).Where(d => d.ProviderId == "Ortega.Common.OrtegaAssestBundleProvider").ToList();
+        var locations = catalog.Resources.SelectMany(d => d.Value).Where(d => d.ProviderId == "Ortega.Common.OrtegaAssestBundleProvider").DistinctBy(d => d.PrimaryKey).ToList();
 
         Directory.CreateDirectory(assetsPath);
         Directory.CreateDirectory(assetsTmpPath);
@@ -271,6 +271,11 @@ public partial class MementoNetworkManager : IDisposable
             if (cancellationToken.IsCancellationRequested) return;
 
             var bundleId = location.PrimaryKey;
+            if (Path.GetFileName(bundleId) != bundleId) // catalog entries are plain file names; never write outside assetsPath
+            {
+                _logger.LogWarning($"skip bundle with a path in its name: {bundleId}");
+                return;
+            }
             var localPath = Path.Combine(assetsPath, bundleId);
             if (location.Data is ClassJsonObject classJsonObject)
             {
@@ -284,7 +289,7 @@ public partial class MementoNetworkManager : IDisposable
                 if (File.Exists(localPath)) return;
             }
 
-            var bundleUrl = string.Format(AssetCatalogFixedUriFormat, $"{GameOs}/{bundleId}");
+            var bundleUrl = string.Format(AssetCatalogFixedUriFormat, $"{gameOs}/{bundleId}");
             _logger.LogInformation($"download {bundleUrl}");
             var bytes = await ExecWithRetry(async () => await _unityHttpClient.GetByteArrayAsync(bundleUrl, cancellationToken), cancellationToken: cancellationToken);
             var localTmpPath = Path.Combine(assetsTmpPath, bundleId);

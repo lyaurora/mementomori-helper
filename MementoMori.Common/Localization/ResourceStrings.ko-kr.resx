@@ -658,4 +658,5 @@
   <data name="GrowthHoursAgo" xml:space="preserve"><value>{0}시간 전</value></data>
   <data name="GrowthDaysAgo" xml:space="preserve"><value>{0}일 전</value></data>
   <data name="CronEveryHoursFromFormat" xml:space="preserve"><value>{1}부터 {0}시간마다</value></data>
+  <data name="DialogError" xml:space="preserve"><value>대화 상자에서 오류가 발생해 닫았습니다.</value></data>
 </root>

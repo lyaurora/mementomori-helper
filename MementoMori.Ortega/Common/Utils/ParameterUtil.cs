@@ -28,7 +28,7 @@ namespace MementoMori.Ortega.Common.Utils
         {
             if (battleParameterChangeInfo != null)
             {
-                return (Masters.TextResourceTable.Get(battleParameterChangeInfo.BattleParameterType), GetBaseParameterValueText(battleParameterChangeInfo.ChangeParameterType, (long) battleParameterChangeInfo.Value));
+                return (Masters.TextResourceTable.Get(battleParameterChangeInfo.BattleParameterType), GetBattleParameterValueText(battleParameterChangeInfo));
             }
 
             if (baseParameterChangeInfo != null)
