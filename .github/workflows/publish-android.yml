@@ -15,8 +15,8 @@ jobs:
   android:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
       - run: dotnet workload install maui
@@ -32,7 +32,7 @@ jobs:
           BUILD_NUMBER: ${{ github.run_number }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: dotnet publish MementoMori.Maui/MementoMori.Maui.csproj -c Release -f net10.0-android -p:AndroidSigningStorePass=env:KEYSTORE_PASSWORD -p:AndroidSigningKeyPass=env:KEYSTORE_PASSWORD -p:ApplicationDisplayVersion=$env:DISPLAY_VERSION -p:ApplicationVersion=$env:BUILD_NUMBER -o publish-android
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: android
           path: publish-android/*-Signed.apk

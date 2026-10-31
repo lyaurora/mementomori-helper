@@ -19,7 +19,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <EnableDefaultCssItems>false</EnableDefaultCssItems>
         <Nullable>enable</Nullable>
-        <MauiVersion>10.0.101</MauiVersion>
+        <MauiVersion>10.0.120</MauiVersion>
 
         <!-- Display name -->
         <ApplicationTitle>MementoMori.Maui</ApplicationTitle>
@@ -98,9 +98,9 @@
         <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.12" />
-        <PackageReference Include="Quartz" Version="3.13.1" />
-        <PackageReference Include="Quartz.AspNetCore" Version="3.13.1" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.14" />
+        <PackageReference Include="Quartz" Version="3.22.9" />
+        <PackageReference Include="Quartz.AspNetCore" Version="3.22.9" />
         <PackageReference Include="Injectio" Version="4.0.0" PrivateAssets="all" />
     </ItemGroup>
 

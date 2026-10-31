@@ -36,7 +36,6 @@ internal class Program
             catch (OperationCanceledException) { Environment.ExitCode = 1; }
             return;
         }
-        PlatformRegistrationManager.SetRegistrationNamespaces(RegistrationNamespace.Blazor);
         var builder = WebApplication.CreateBuilder(args);
 
         var configDirectory = Path.GetFullPath(builder.Configuration["ConfigDirectory"] ?? Directory.GetCurrentDirectory());
