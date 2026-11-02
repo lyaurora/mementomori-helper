@@ -8,7 +8,7 @@
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Inventory2" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[CommonFooterItemBoxButtonLabel]") <span class="panel-scope">@ResourceStrings.AllAccounts</span></span></MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Inventory2" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[CommonFooterItemBoxButtonLabel]") <span class="panel-scope">@ResourceStrings.AllAccounts</span></span><SettingSaved @ref="_saved"/></MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="settings-form">
@@ -25,12 +25,13 @@
 </MudCard>
 
 @code {
+    SettingSaved _saved = null!;
 
 
-    IEnumerable<GameConfig.AutoUseItemType> AutoUseItemTypes
+    IReadOnlyCollection<GameConfig.AutoUseItemType> AutoUseItemTypes
     {
         get => WritableGameConfig.Value.Items.AutoUseItemTypes;
-        set => WritableGameConfig.Update(x => x.Items.AutoUseItemTypes = value.ToList());
+        set => _saved.Run(() => WritableGameConfig.Update(x => x.Items.AutoUseItemTypes = value.ToList()));
     }
 
 }

@@ -729,6 +729,7 @@
   <data name="ResumeJobs" xml:space="preserve"><value>恢復</value></data>
   <data name="UnionMissionPointMsg" xml:space="preserve"><value>團結任務：+{0} 點（個人累計 {1}）</value></data>
   <data name="NumberUnitLarge" xml:space="preserve"><value>億</value></data>
+  <data name="NumberUnitMedium" xml:space="preserve"><value>萬</value></data>
   <data name="NotEnoughFormat" xml:space="preserve"><value>{0}不足</value></data>
   <data name="DebugInfo" xml:space="preserve"><value>除錯資訊</value></data>
   <data name="CronModeHours" xml:space="preserve"><value>每隔 N 小時</value></data>

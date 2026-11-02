@@ -22,7 +22,7 @@
 </MudDialog>
 
 @code {
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
     [Parameter] public IReadOnlyList<long> Candidates { get; set; } = [];
     [Parameter] public IReadOnlyList<long> Selected { get; set; } = [];
     [Parameter] public int Min { get; set; } = 1;

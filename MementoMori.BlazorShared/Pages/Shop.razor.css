@@ -23,7 +23,7 @@
 .shop-page ::deep .shop-sphere-products > .mud-grid-item { position: relative; }
 .shop-page ::deep .shop-sphere-products > .mud-grid-item > .shop-sphere-icon { position: absolute; top: 14px; left: 16px; z-index: 1; pointer-events: none; }
 .shop-page ::deep .shop-products,
-.shop-page ::deep .shop-sphere-products { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr)); gap: .75rem; width: 100%; margin: 0; }
+.shop-page ::deep .shop-sphere-products { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr)); gap: .75rem; width: 100%; margin: 0; }
 .shop-page ::deep .shop-product-item { min-width: 0; max-width: 100%; width: 100%; padding: 0; }
 .shop-page ::deep .shop-product-card { display: flex; flex-direction: column; height: 100%; width: 100%; }
 .shop-page ::deep .shop-product-header { min-height: 4.5rem; padding: .85rem 1rem .4rem; border-bottom: 0; }
@@ -38,7 +38,10 @@
 .shop-page ::deep .shop-product-actions { gap: .5rem; padding: .75rem; border-top: 1px solid var(--mud-palette-lines-default); }
 .shop-page ::deep .shop-buy-button { border-radius: 10px; font-weight: 500; flex: 1; min-width: 0; max-width: 100%; padding-inline: 10px; font-size: .8125rem; font-variant-numeric: tabular-nums; }
 .shop-page ::deep .shop-buy-button .mud-button-label { white-space: normal; overflow-wrap: anywhere; }
-.shop-page ::deep .shop-product-actions .shop-buy-button:disabled { color: var(--mud-palette-text-secondary) !important; background: var(--mud-palette-background-gray); }
+/* Disabled (sold out / not enough currency) must read differently from the tonal enabled button: outline only, dimmed icon. */
+.shop-page ::deep .shop-buy-button:disabled { color: var(--mud-palette-text-disabled) !important; background: transparent !important; box-shadow: inset 0 0 0 1px var(--mud-palette-lines-default); }
+.shop-page ::deep .shop-buy-button:disabled .shop-icon { opacity: .45; }
+.shop-page ::deep .shop-cost { display: inline-flex; align-items: center; gap: .25rem; white-space: nowrap; }
 .shop-page ::deep .shop-auto-buy-button { flex-shrink: 0; border-color: var(--mud-palette-lines-default); }
 .shop-page ::deep .shop-sphere-products > .mud-grid-item { min-width: 0; width: 100%; padding: 0; }
 .shop-page ::deep .shop-sphere-products .mud-card { display: flex; flex-direction: column; height: 100%; width: 100%; container-type: inline-size; }
@@ -65,7 +68,11 @@
 .shop-page ::deep .shop-icon-fallback .mud-icon-root { font-size: 15px; }
 .shop-page ::deep .shop-refresh-chip .mud-chip-icon { margin: 0 .3rem 0 0; font-size: 18px; color: var(--mud-palette-text-secondary); }
 .shop-page ::deep .shop-tab-select { display: none; }
-@media (max-width: 599.98px) {
+@media (pointer: coarse) {
+    .shop-auto-buy-fields ::deep .mud-input-clear-button { min-width: 36px; min-height: 36px; }
+}
+/* Phones and landscape phones: 17 tabs would wrap into 3 rows, so use the picker. */
+@media (max-width: 599.98px), (max-height: 500px) {
     .shop-page ::deep .shop-tab-select { display: block; margin-bottom: .75rem; }
     .shop-page ::deep .mud-tabs.shop-tabs > .mud-tabs-tabbar { display: none; }
 }

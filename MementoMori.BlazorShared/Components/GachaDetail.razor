@@ -9,6 +9,9 @@
 @using MementoMori.Ortega.Share.Data.Item
 @using MementoMori.Ortega.Share.Extensions
 
+@* MudDialog root: its focus trap takes focus, keeps Tab inside and lets Esc reach the dialog. *@
+<MudDialog ContentClass="pa-0 ma-0">
+<DialogContent>
 <section class="gacha-detail">
 <MudPaper Class="gacha-detail-surface" Elevation="0">
     <MudGrid>
@@ -145,6 +148,8 @@
     </MudGrid>
 </MudPaper>
 </section>
+</DialogContent>
+</MudDialog>
 
 
 @code {

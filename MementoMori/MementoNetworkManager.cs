@@ -386,7 +386,6 @@ public partial class MementoNetworkManager : IDisposable
         using var releaser = await asyncSemaphore.EnterAsync(token);
         apiHost ??= _apiHost;
         apiAuth ??= _apiAuth;
-        log ??= Console.WriteLine;
         var authAttr = typeof(TReq).GetCustomAttribute<OrtegaAuthAttribute>();
         var apiAttr = typeof(TReq).GetCustomAttribute<OrtegaApiAttribute>();
         var uri = authAttr != null ? new Uri(apiAuth, authAttr.Uri)
@@ -413,8 +412,8 @@ public partial class MementoNetworkManager : IDisposable
                         await GetLatestAvailableVersion(token);
                         continue;
                     }
-                    log($"{uri.AbsolutePath}: {TextResourceTable.GetErrorCodeMessage(error.ErrorCode)}");
-                    throw new ApiErrorException(error.ErrorCode);
+                    // Not logged here: handled sites log the message themselves, ExecuteQuickAction logs the rest with the path.
+                    throw new ApiErrorException(error.ErrorCode, uri.AbsolutePath);
                 }
                 var response = await MessagePackSerializer.DeserializeAsync<TResp>(stream, cancellationToken: token);
                 if (response is IUserSyncApiResponse sync) userData?.Invoke(sync.UserSyncData);

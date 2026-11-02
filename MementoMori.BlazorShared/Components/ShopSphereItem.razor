@@ -22,7 +22,7 @@
         </MudSlider>
     </MudCardContent>
     <MudCardActions>
-        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Disabled="!BuyBtnEnabled || _buying" OnClick="BuySphere">@ConsumeText</MudButton>
+        <MudButton Class="shop-buy-button" Variant="Variant.Filled" Color="Color.Primary" Disabled="!BuyBtnEnabled || _buying" OnClick="BuySphere">@ConsumeText</MudButton>
     </MudCardActions>
 </MudCard>
 
@@ -130,15 +130,15 @@
                 TradeShopSphereId = Masters.SphereTable.GetByCategoryIdAndLevel(SphereMb.CategoryId, _buyLv).Id,
                 TradeSphereCount = _buyCount
             };
-            if (await DialogService.ShowMessageBox(Masters.TextResourceTable.Get("[PurchaseConfirmationTitle]"), $"{Masters.TextResourceTable.Get("[PurchaseConfirmationMessage]")} {ResourceStrings.ConsumeItem}: {ConsumeText}",
+            if (await DialogService.ShowMessageBoxAsync(Masters.TextResourceTable.Get("[PurchaseConfirmationTitle]"), $"{Masters.TextResourceTable.Get("[PurchaseConfirmationMessage]")} {ResourceStrings.ConsumeItem}: {ConsumeText}",
                     Masters.TextResourceTable.Get("[CommonOkLabel]"), cancelText: Masters.TextResourceTable.Get("[CommonCancelLabel]")) != true) return;
             await funcs.GetResponse<BuyItemRequest, BuyItemResponse>(request, token);
             token.ThrowIfCancellationRequested();
-            await DialogService.ShowMessageBox(Masters.TextResourceTable.Get("[PurchaseConfirmationTitle]"), Masters.TextResourceTable.Get("[ShopDialogResultSucceed]"), Masters.TextResourceTable.Get("[CommonOkLabel]"));
+            await DialogService.ShowMessageBoxAsync(Masters.TextResourceTable.Get("[PurchaseConfirmationTitle]"), Masters.TextResourceTable.Get("[ShopDialogResultSucceed]"), Masters.TextResourceTable.Get("[CommonOkLabel]"));
             StateHasChanged();
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-        catch (Exception e) { if (!token.IsCancellationRequested) await DialogService.ShowMessageBox(Masters.TextResourceTable.Get("[CommonErrorLabel]"), e.Message, Masters.TextResourceTable.Get("[CommonOkLabel]")); }
+        catch (Exception e) { if (!token.IsCancellationRequested) await DialogService.ShowMessageBoxAsync(Masters.TextResourceTable.Get("[CommonErrorLabel]"), e.Message, Masters.TextResourceTable.Get("[CommonOkLabel]")); }
         finally { _buying = false; }
     }
 

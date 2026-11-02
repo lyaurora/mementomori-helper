@@ -623,6 +623,7 @@
   <data name="ResumeJobs" xml:space="preserve"><value>再開</value></data>
   <data name="UnionMissionPointMsg" xml:space="preserve"><value>団結ミッション：+{0}pt（個人累計 {1}）</value></data>
   <data name="NumberUnitLarge" xml:space="preserve"><value>億</value></data>
+  <data name="NumberUnitMedium" xml:space="preserve"><value>万</value></data>
   <data name="NotEnoughFormat" xml:space="preserve"><value>{0}不足</value></data>
   <data name="DebugInfo" xml:space="preserve"><value>デバッグ情報</value></data>
   <data name="CronModeHours" xml:space="preserve"><value>N 時間ごと</value></data>

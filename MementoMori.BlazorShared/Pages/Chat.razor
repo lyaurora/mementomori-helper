@@ -22,7 +22,7 @@
 
     @if (!Funcs.LoginOk)
     {
-        <MudAlert Severity="Severity.Info">@ResourceStrings.PleaseLogin <MudLink Href="/">@Tr("[CommonFooterHomeButtonLabel]")</MudLink></MudAlert>
+        <MudAlert Severity="Severity.Info">@ResourceStrings.PleaseLogin <MudLink Href="/" Typo="Typo.body1">@Tr("[CommonFooterHomeButtonLabel]")</MudLink></MudAlert>
     }
     @if (!string.IsNullOrEmpty(_error ?? _snapshot.Error))
     {
@@ -75,7 +75,7 @@
         }
     </nav>
 
-    <div class="chat-workspace @(_channel == ChatType.Private ? "with-contacts" : "")">
+    <div class="chat-workspace @(_channel == ChatType.Private ? "with-contacts" : "") @(_channel == ChatType.Private && _target > 0 && !_showPlayers ? "has-target" : "")">
         @if (_channel == ChatType.Private)
         {
             <aside class="chat-contacts" aria-label="@ResourceStrings.PrivateConversations">
@@ -204,8 +204,8 @@
                                 <ChatReactions Entry="entry" Disabled="@(_busy || !_snapshot.Connected)" OnReact="reaction => React(message, reaction)" OnDetails="() => ReactionDetails(message)" />
                                 @if (entry.IsAnnounced ? CanDeleteAnnouncement(message) : CanAnnounce(message))
                                 {
-                                    <MudMenu>
-                                        <ActivatorContent><MudIconButton Icon="@Icons.Material.Filled.MoreHoriz" Size="Size.Small" aria-label="@ResourceStrings.MessageActions" title="@ResourceStrings.MessageActions" /></ActivatorContent>
+                                    <MudMenu Modal="true">
+                                        <ActivatorContent><MudIconButton Icon="@Icons.Material.Filled.MoreHoriz" Size="Size.Small" OnClick="context.OpenAsync" aria-label="@ResourceStrings.MessageActions" /></ActivatorContent>
                                         <ChildContent>
                                             <MudMenuItem OnClick="() => SetAnnouncement(message, !entry.IsAnnounced)" Disabled="@(_busy || !_snapshot.Connected)">@(entry.IsAnnounced ? ResourceStrings.RemoveAnnouncement : ResourceStrings.SetAsAnnouncement)</MudMenuItem>
                                         </ChildContent>
@@ -234,7 +234,7 @@
                     <MudButton OnClick="() => _shareBattle = null">@Tr("[CommonCancelLabel]")</MudButton>
                 </div>
             }
-            <div class="chat-composer">
+            <div class="chat-composer @(_channel == ChatType.Private && _target == 0 ? "no-target" : "")">
                 <label for="chat-message-input">@string.Format(ResourceStrings.SendToFormat, ConversationName)</label>
                 <textarea id="chat-message-input" @ref="_inputElement" @bind="Draft" @bind:event="oninput" @onkeydown="MessageKeyDown" maxlength="80" rows="2"
                           placeholder="@Tr("[ChatInputTextPlaceHolderLabel]")" disabled="@(!_snapshot.Connected || _busy || (_channel == ChatType.Private && _target == 0))"></textarea>
@@ -243,11 +243,11 @@
                     <div class="chat-draft-preview" style="font-size: @(_textSize)px"><span class="chat-muted">@ResourceStrings.Preview</span><ChatText Text="@Draft" StickerSize="_stickerSize" /></div>
                 }
                 <div class="chat-compose-actions">
-                    <span class="chat-muted">Ctrl+Enter @Tr("[ChatSendButton]") · @Draft.Length/80</span>
+                    <span class="chat-muted"><span class="chat-ctrl-hint">Ctrl+Enter @Tr("[ChatSendButton]") · </span>@Draft.Length/80</span>
                     <span class="chat-result" role="status">@_result</span>
                     <MudSpacer />
                     <div class="chat-send-actions" @onkeydown="EmoticonKeyDown">
-                        <MudButton @ref="_emoticonButton" Class="chat-emoticon-toggle" StartIcon="@Icons.Material.Filled.SentimentSatisfiedAlt" OnClick="ToggleEmoticons" Disabled="@(_busy || !_snapshot.Connected)"
+                        <MudButton @ref="_emoticonButton" Class="chat-emoticon-toggle" StartIcon="@Icons.Material.Filled.SentimentSatisfiedAlt" OnClick="ToggleEmoticons" Disabled="@(_busy || !_snapshot.Connected || (_channel == ChatType.Private && _target == 0))" aria-label="@Tr("[HelpHeadLine5302]")"
                                    aria-expanded="@_showEmoticons.ToString().ToLowerInvariant()" aria-controls="chat-emoticon-picker" data-testid="chat-emoticons-toggle">@Tr("[HelpHeadLine5302]")</MudButton>
                         <MudButton OnClick="Send" Color="Color.Primary" Variant="Variant.Filled" Disabled="@(!CanSend)" StartIcon="@Icons.Material.Filled.Send" data-testid="chat-send">@(_busy ? ResourceStrings.Processing : Tr("[ChatSendButton]"))</MudButton>
                     </div>
@@ -263,14 +263,14 @@
                                 <button type="button" class="@(_emoticonTab == 2 ? "selected" : "")" aria-pressed="@((_emoticonTab == 2).ToString().ToLowerInvariant())" @onclick="() => _emoticonTab = 2">@Tr("[CommonHeaderCharacterListLabel]")</button>
                             </div>
                             <MudSpacer />
-                            <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="CloseEmoticons" aria-label="@Tr("[CommonCloseLabel]")" title="@Tr("[CommonCloseLabel]")" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="CloseEmoticons" aria-label="@Tr("[CommonCloseLabel]")" />
                         </div>
                         <p class="chat-muted">@ResourceStrings.StickerPickerHint</p>
                         <div class="chat-emoticon-grid">
                             @foreach (var id in EmoticonIds)
                             {
                                 var unlocked = _chat.IsEmoticonUnlocked(id);
-                                <button type="button" @onclick="() => InsertEmoticon(id)" disabled="@(!unlocked || _busy)" aria-label="@string.Format(ResourceStrings.InsertStickerFormat, id)" title="@(unlocked ? string.Format(ResourceStrings.StickerFormat, id) : ResourceStrings.NotUnlocked)">
+                                <button type="button" @onclick="() => InsertEmoticon(id)" disabled="@(!unlocked || _busy)" aria-label="@string.Format(ResourceStrings.InsertStickerFormat, id)" title="@(unlocked ? null : ResourceStrings.NotUnlocked)">
                                     <span style="@ChatEmoticons.Style(id, 64)" role="img" aria-label="@string.Format(ResourceStrings.StickerFormat, id)"></span>
                                 </button>
                             }
@@ -286,14 +286,14 @@
 </div>
 
 
-<MudDialog @ref="_guildDialog" @bind-Visible="_showGuildInfo" Options="GuildDialogOptions" Class="chat-guild-dialog" ContentClass="pa-0 ma-0" ContentStyle="overflow: hidden;">
+<MudDialog @ref="_guildDialog" @bind-Visible="_showGuildInfo" Options="GuildDialogOptions" Class="chat-guild-dialog" ContentClass="pa-0 ma-0 rounded-0">
     <TitleContent>
         <div class="chat-guild-title" @onkeydown="GuildInfoKeyDown">
             <div>
                 <h2 id="chat-guild-dialog-title">@ResourceStrings.GuildActivity</h2>
                 <p>@GuildInfoTabs</p>
             </div>
-            <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="() => _showGuildInfo = false" aria-label="@Tr("[CommonCloseLabel]")" title="@Tr("[CommonCloseLabel]")" />
+            <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="() => _showGuildInfo = false" aria-label="@Tr("[CommonCloseLabel]")" />
         </div>
     </TitleContent>
     <DialogContent>
@@ -334,12 +334,12 @@
                                     @if (CanDeleteAnnouncement(message))
                                     {
                                         <div @onkeydown="args => AnnouncementMenuKeyDown(args, menuKey)" @onkeydown:stopPropagation="_announcementMenuOpen">
-                                            <MudMenu @ref="_announcementMenus[menuKey]" OpenChanged="open => _announcementMenuOpen = open">
+                                            <MudMenu @ref="_announcementMenus[menuKey]" Modal="true" OpenChanged="open => _announcementMenuOpen = open">
                                                 <ActivatorContent>
-                                                    <MudIconButton @ref="_announcementMenuButtons[menuKey]" Icon="@Icons.Material.Filled.MoreHoriz" Size="Size.Small" OnClick="() => _announcementMenuOpen = true" aria-label="@ResourceStrings.MessageActions" title="@ResourceStrings.MessageActions" />
+                                                    <MudIconButton @ref="_announcementMenuButtons[menuKey]" Icon="@Icons.Material.Filled.MoreHoriz" Size="Size.Small" OnClick="args => { _announcementMenuOpen = true; return context.OpenAsync(args); }" aria-label="@ResourceStrings.MessageActions" />
                                                 </ActivatorContent>
                                                 <ChildContent>
-                                                    <div @onkeydown="args => AnnouncementMenuKeyDown(args, menuKey)" @onkeydown:stopPropagation="_announcementMenuOpen">
+                                                    <div @onkeydown="args => AnnouncementMenuKeyDown(args, menuKey)">
                                                         <MudMenuItem OnClick="() => SetAnnouncement(message, false)" Disabled="@(_busy || !_snapshot.Connected)">@ResourceStrings.RemoveAnnouncement</MudMenuItem>
                                                     </div>
                                                 </ChildContent>
@@ -426,7 +426,6 @@
                         <div class="chat-compose-actions">
                             <span class="chat-muted">@_guildNotes.Count/@OrtegaConst.GuildNote.MaxGuildNoteCount</span>
                             <MudSpacer />
-                            <MudButton Size="Size.Small" OnClick="LoadGuildNotes" Disabled="@(_busy || !_snapshot.Connected)">@Tr("[BountyQuestUpdateExecution]")</MudButton>
                             @if (CanManageGuildNotes)
                             {
                                 <MudButton Size="Size.Small" OnClick="() => BeginGuildNote()" data-testid="chat-note-new" Disabled="@(_busy || !_snapshot.Connected || _guildNotes.Count >= OrtegaConst.GuildNote.MaxGuildNoteCount)">@Tr("[GuildNoteAdd]")</MudButton>
@@ -480,8 +479,8 @@
                                     }
                                     @if (CanSortGuildNotes)
                                     {
-                                        <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward" Size="Size.Small" aria-label="@ResourceStrings.MoveNoteUp" title="@ResourceStrings.MoveNoteUp" OnClick="() => MoveGuildNote(note, -1)" Disabled="@(_busy || !_snapshot.Connected || index == 0)" />
-                                        <MudIconButton Icon="@Icons.Material.Filled.ArrowDownward" Size="Size.Small" aria-label="@ResourceStrings.MoveNoteDown" title="@ResourceStrings.MoveNoteDown" OnClick="() => MoveGuildNote(note, 1)" Disabled="@(_busy || !_snapshot.Connected || index == _guildNotes.Count - 1)" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward" Size="Size.Small" aria-label="@ResourceStrings.MoveNoteUp" OnClick="() => MoveGuildNote(note, -1)" Disabled="@(_busy || !_snapshot.Connected || index == 0)" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.ArrowDownward" Size="Size.Small" aria-label="@ResourceStrings.MoveNoteDown" OnClick="() => MoveGuildNote(note, 1)" Disabled="@(_busy || !_snapshot.Connected || index == _guildNotes.Count - 1)" />
                                     }
                                 </div>
                             </article>

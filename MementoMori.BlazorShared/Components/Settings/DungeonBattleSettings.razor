@@ -10,13 +10,13 @@
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Map" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[CommonHeaderDungeonBattleLabel]") <span class="panel-scope">@ResourceStrings.AllAccounts</span></span></MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Map" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[CommonHeaderDungeonBattleLabel]") <span class="panel-scope">@ResourceStrings.AllAccounts</span></span><SettingSaved @ref="_saved"/></MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent Class="settings-form">
-        <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@ResourceStrings.PreferTreasureChest" @bind-Value="DungeonBattlePreferTreasureChest" Color="Color.Primary"/>
-        <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@ResourceStrings.Auto_unequip_gear_during_events" @bind-Value="AutoRemoveEquipment" Color="Color.Primary"/>
-        <MudNumericField Label="@ResourceStrings.MaxUseRecoveryItem" @bind-Value="DungeonBattleMaxUseFruitOfHealing" Min="0" Max="99" Variant="Variant.Outlined" Margin="Margin.Dense"/>
+        <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@ResourceStrings.PreferTreasureChest" @bind-Value="DungeonBattlePreferTreasureChest" Color="Color.Primary"/>
+        <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@ResourceStrings.Auto_unequip_gear_during_events" @bind-Value="AutoRemoveEquipment" Color="Color.Primary"/>
+        <MudNumericField InputMode="InputMode.numeric" T="int?" Label="@ResourceStrings.MaxUseRecoveryItem" @bind-Value="DungeonBattleMaxUseFruitOfHealing" Min="0" Max="99" DebounceInterval="500" Variant="Variant.Outlined" Margin="Margin.Dense"/>
         <div class="setting-section">
             <MudText Class="setting-field-label">@ResourceStrings.DungeonBattleTargetItems</MudText>
             <div class="setting-item-list">
@@ -39,13 +39,13 @@
     </MudCardContent>
 </MudCard>
 
-<MudDialog Class="app-form-dialog" @bind-Visible="_dungeonBattleSelectItemDialog" Options="@(new DialogOptions {CloseButton = true, FullWidth = true, MaxWidth = MaxWidth.Small})">
+<MudDialog Class="app-form-dialog" @bind-Visible="_dungeonBattleSelectItemDialog" Options="@(new DialogOptions {CloseButton = true, CloseOnEscapeKey = true, FullWidth = true, MaxWidth = MaxWidth.Small})">
     <TitleContent>
-        <MudText Typo="Typo.h6">@ResourceStrings.DungeonBattleTargetItems</MudText>
+        <MudText Typo="Typo.h6">@ResourceStrings.Add</MudText>
     </TitleContent>
     <DialogContent>
         <div class="setting-dialog-fields">
-        <MudSelect T="UserItem" Label="@ResourceStrings.DungeonBattleTargetItems" @bind-Value="_dungeonBattleSelectedItem" Variant="Variant.Outlined" Margin="Margin.Dense">
+        <MudSelect T="UserItem" Label="@ResourceStrings.DungeonBattleTargetItems" @bind-Value="_dungeonBattleSelectedItem" Placeholder="@ResourceStrings.NotSelected" Variant="Variant.Outlined" Margin="Margin.Dense">
             @foreach (var item in _dungeonBattleShopItems)
             {
                 <MudSelectItem T="UserItem" Value="item">@(ItemUtil.GetItemName(item))</MudSelectItem>
@@ -55,11 +55,13 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="ConfirmDungeonBattleSelectItem">@Masters.TextResourceTable.Get("[CommonDecisionLabel]")</MudButton>
+        <MudButton OnClick="() => _dungeonBattleSelectItemDialog = false">@Masters.TextResourceTable.Get("[CommonCancelLabel]")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ConfirmDungeonBattleSelectItem">@Masters.TextResourceTable.Get("[CommonDecisionLabel]")</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
+    SettingSaved _saved = null!;
 
     #region DungeonBattle
 
@@ -124,25 +126,26 @@
     IEnumerable<GameConfig.ShopDiscountItem> DungeonBattleShopTargetItems
     {
         get => WritableGameConfig.Value.DungeonBattle.ShopTargetItems;
-        set => WritableGameConfig.Update(x => x.DungeonBattle.ShopTargetItems = value.ToList());
+        set => _saved.Run(() => WritableGameConfig.Update(x => x.DungeonBattle.ShopTargetItems = value.ToList()));
     }
 
     bool DungeonBattlePreferTreasureChest
     {
         get => WritableGameConfig.Value.DungeonBattle.PreferTreasureChest;
-        set => WritableGameConfig.Update(x => x.DungeonBattle.PreferTreasureChest = value);
+        set => _saved.Run(() => WritableGameConfig.Update(x => x.DungeonBattle.PreferTreasureChest = value));
     }
 
     bool AutoRemoveEquipment
     {
         get => WritableGameConfig.Value.DungeonBattle.AutoRemoveEquipment;
-        set => WritableGameConfig.Update(x => x.DungeonBattle.AutoRemoveEquipment = value);
+        set => _saved.Run(() => WritableGameConfig.Update(x => x.DungeonBattle.AutoRemoveEquipment = value));
     }
 
-    int DungeonBattleMaxUseFruitOfHealing
+    // Nullable so an emptied field (mid-typing) is not saved as 0.
+    int? DungeonBattleMaxUseFruitOfHealing
     {
         get => WritableGameConfig.Value.DungeonBattle.MaxUseRecoveryItem;
-        set => WritableGameConfig.Update(x => x.DungeonBattle.MaxUseRecoveryItem = value);
+        set { if (value is { } v) _saved.Run(() => WritableGameConfig.Update(x => x.DungeonBattle.MaxUseRecoveryItem = v)); }
     }
 
     #endregion

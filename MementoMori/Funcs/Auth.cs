@@ -30,6 +30,9 @@ public partial class MementoMoriFuncs
         LoginOk = true;
         _sessionLost = false;
         _loginGameDay = GameDay;
+        // The cached character list keeps its old LastLoginTime; mark this world as the latest so "most recent" picks it.
+        if (_playerDataInfos?.Find(d => d.WorldId == playerDataInfo.WorldId) is { } cached)
+            cached.LastLoginTime = _playerDataInfos.Max(d => d.LastLoginTime) + 1;
         await _timeZoneAwareJobRegister.RegisterJobs(UserId);
         _chat?.Resume();
     }
@@ -47,7 +50,7 @@ public partial class MementoMoriFuncs
             try
             {
                 LastLoginError = null;
-                AddLog(ResourceStrings.AutoLoginonStartup);
+                AddLog(manual ? ResourceStrings.Login : ResourceStrings.AutoLoginonStartup);
                 var playerDataInfos = await GetPlayerDataInfo();
                 var playerDataInfo = accountInfo.AutoLoginWorldId > 0
                     ? playerDataInfos.Find(d => d.WorldId == accountInfo.AutoLoginWorldId)
@@ -65,7 +68,7 @@ public partial class MementoMoriFuncs
                 _autoLoginStopped = e is ApiErrorException { ErrorCode: ErrorCode.AuthNotFoundUserAccountDto or ErrorCode.AuthLoginInvalidRequest
                     or ErrorCode.AuthLoginAlreadyDeletedUser };
                 _logger.LogError(e, "Auto login failed");
-                AddLog(e.Message);
+                AddError(ErrorText(e));
             }
             finally
             {
@@ -137,7 +140,7 @@ public partial class MementoMoriFuncs
             LastLoginError = e.Message;
             _operationError = e.Message;
             _logger.LogError(e, "Login failed");
-            AddLog(e.Message);
+            AddError(ErrorText(e));
             return;
         }
         finally
@@ -156,18 +159,27 @@ public partial class MementoMoriFuncs
     private async Task<string> GetClientKeyCore(string password)
     {
         var authToken = await GetAuthToken();
-        var createUserResponse = await GetResponse<CreateUserRequest, CreateUserResponse>(new CreateUserRequest
+        CreateUserResponse createUserResponse;
+        try
         {
-            AdverisementId = Guid.NewGuid().ToString("D"),
-            AppVersion = AuthOption.AppVersion,
-            CountryCode = "CN",
-            DeviceToken = "",
-            ModelName = AuthOption.ModelName,
-            DisplayLanguage = NetworkManager.LanguageType,
-            OSVersion = AuthOption.OSVersion,
-            SteamTicket = "",
-            AuthToken = authToken
-        });
+            createUserResponse = await GetResponse<CreateUserRequest, CreateUserResponse>(new CreateUserRequest
+            {
+                AdverisementId = Guid.NewGuid().ToString("D"),
+                AppVersion = AuthOption.AppVersion,
+                CountryCode = "CN",
+                DeviceToken = "",
+                ModelName = AuthOption.ModelName,
+                DisplayLanguage = NetworkManager.LanguageType,
+                OSVersion = AuthOption.OSVersion,
+                SteamTicket = "",
+                AuthToken = authToken
+            });
+        }
+        // GetAuthToken fell back to a token cached for an older game version: the rejection is most likely that token, say so.
+        catch (ApiErrorException e) when (_usedStaleAuthToken)
+        {
+            throw new InvalidOperationException($"{ResourceStrings.AuthTokenLoadFailed} ({e.Message})", e);
+        }
         var getComebackUserDataResponse = await GetResponse<GetComebackUserDataRequest, GetComebackUserDataResponse>(new GetComebackUserDataRequest
         {
             FromUserId = createUserResponse.UserId, Password = password, SnsType = SnsType.OrtegaId, UserId = UserId, AuthToken = authToken
@@ -179,8 +191,12 @@ public partial class MementoMoriFuncs
         return comebackUserResponse.ClientKey;
     }
 
+    // Set when GetAuthToken fell back to a token cached for an older game version.
+    private bool _usedStaleAuthToken;
+
     private async Task<int> GetAuthToken()
     {
+        _usedStaleAuthToken = false;
         try
         {
             using var client = _httpClientFactory.CreateClient();
@@ -198,9 +214,20 @@ public partial class MementoMoriFuncs
         catch (OperationCanceledException) when (OperationCancellation.IsCancellationRequested) { throw; }
         catch (Exception e)
         {
-            if (AuthOption.CachedAuthToken.HasValue && AuthOption.CachedAuthTokenVersion == AuthOption.AppVersion)
+            if (AuthOption.CachedAuthToken.HasValue)
             {
-                _logger.LogWarning(e, "Using cached public AuthToken for game version {Version}", AuthOption.AppVersion);
+                if (AuthOption.CachedAuthTokenVersion == AuthOption.AppVersion)
+                {
+                    _logger.LogWarning(e, "Using cached public AuthToken for game version {Version}", AuthOption.AppVersion);
+                }
+                else
+                {
+                    // the asset server may be gone for good; an older token is still worth a try, the server rejects it if it no longer fits
+                    _logger.LogWarning(e, "Using public AuthToken cached for older game version {CachedVersion} (current {Version})",
+                        AuthOption.CachedAuthTokenVersion, AuthOption.AppVersion);
+                    AddLog(ResourceStrings.AuthTokenLoadFailed);
+                    _usedStaleAuthToken = true;
+                }
                 return AuthOption.CachedAuthToken.Value;
             }
             throw new InvalidOperationException(ResourceStrings.AuthTokenLoadFailed, e);

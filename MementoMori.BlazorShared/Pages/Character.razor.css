@@ -1,4 +1,4 @@
-.character-page {
+﻿.character-page {
     min-width: 0;
 }
 
@@ -65,7 +65,7 @@
 
 .character-stat-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
     gap: 6px;
     margin: 0;
 }
@@ -151,8 +151,32 @@
 
     .character-page ::deep .character-grid {
         justify-content: center;
-        padding: 10px;
-        gap: 2px;
+        padding: 8px 6px;
+        gap: 0;
+    }
+}
+
+/* Side by side: keep the detail in view while the long grid scrolls. */
+@media (min-width: 960px) {
+    .character-page ::deep .character-side {
+        position: sticky;
+        top: 68px; /* the column's own resting offset, so it doesn't drop 12px when the page starts scrolling */
+        align-self: flex-start;
+        max-height: calc(100dvh - 84px);
+        overflow: auto;
+    }
+}
+
+/* Stacked: a compact scrolling picker first, so a tap visibly changes the detail right below it. */
+@media (max-width: 959.98px) {
+    .character-page ::deep .character-list {
+        order: -1;
+    }
+
+    .character-page ::deep .character-grid {
+        max-height: 42vh;
+        max-height: 42dvh;
+        overflow-y: auto;
     }
 }
 

@@ -134,7 +134,7 @@
 }
 
 .training-actions ::deep .mud-button {
-    min-width: 5rem;
+    width: 100%;
     min-height: 40px;
     padding: .5rem 1rem;
     font-size: .875rem;

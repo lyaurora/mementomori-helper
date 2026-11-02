@@ -460,6 +460,20 @@ static async Task CheckTransport()
     })));
     await Throws<ApiErrorException>(() => network.GetResponse<GetDataUriRequest, GetDataUriResponse>(new()).WaitAsync(TimeSpan.FromSeconds(2)));
     Require(calls == 2 && versionRequests == 1 && auth.Value.AppVersion == "4.22.0", "Version negotiation retries indefinitely or fails to update the version");
+
+    ReplaceClient(network, "_httpClient", new HttpClient(new Handler((_, _) =>
+    {
+        var response = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new ByteArrayContent(MessagePackSerializer.Serialize(new ApiErrorResponse { ErrorCode = ErrorCode.FriendAlreadyMaxReceived }))
+        };
+        response.Headers.Add("ortegastatuscode", "1");
+        return Task.FromResult(response);
+    })));
+    funcs.MesssageList.Clear();
+    await funcs.ExecuteQuickAction(async (_, _) => await funcs.GetResponse<GetDataUriRequest, GetDataUriResponse>(new()));
+    Require(funcs.MesssageList is [{ IsError: true } entry] && entry.Message.StartsWith("/api/auth/getDataUri: "),
+        "An unhandled API error is not logged exactly once as an error with its path");
 }
 
 static async Task CheckBatchCancellation()
@@ -619,7 +633,7 @@ static async Task CheckPresents()
     // the 100 already received nor the 300 in a present that full coins hold back (using tickets cannot free it)
     Require(used.SequenceEqual([112]), "Presents below the cap are not made room for, or received or otherwise blocked presents are counted");
     Require(received.SequenceEqual([null, "stuck", "small", "coins"]), "Blocked presents are not retried one by one");
-    Require(funcs.MesssageList.Any(m => m.Contains("gift stuck")) && funcs.MesssageList.Any(m => m.Contains("gift coins")), "A present that stays stuck is not named");
+    Require(funcs.MesssageList.Any(m => m.Message.Contains("gift stuck")) && funcs.MesssageList.Any(m => m.Message.Contains("gift coins")), "A present that stays stuck is not named");
 
     static HttpResponseMessage Reply<T>(T response) => new(HttpStatusCode.OK)
     {

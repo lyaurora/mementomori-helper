@@ -28,12 +28,16 @@ namespace MementoMori.BlazorShared.Extensions
             return Masters.TextResourceTable.Get(enumValue, param);
         }
 
-        // Full N0 below 1e8 (zh/ja/ko) or 1e9 (others); above that truncate to one decimal so balances are never overstated.
+        // Full N0 below a million so small balances stay exact; above that 万/亿 (zh/ja/ko) or M/B, truncated to one decimal
+        // so balances are never overstated. A million is where 7+ digit numbers stop fitting the home tiles.
         public static string Compact(long n)
         {
-            var unit = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName is "zh" or "ja" or "ko" ? 100_000_000L : 1_000_000_000L;
-            return Math.Abs(n) < unit ? n.ToString("N0")
-                : (Math.Truncate(n * 10.0 / unit) / 10).ToString("0.#") + ResourceStrings.NumberUnitLarge;
+            var cjk = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName is "zh" or "ja" or "ko";
+            var (large, medium) = cjk ? (100_000_000L, 10_000L) : (1_000_000_000L, 1_000_000L);
+            string Scaled(long unit, string suffix) => (Math.Truncate(n * 10.0 / unit) / 10).ToString("0.#") + suffix;
+            return Math.Abs(n) >= large ? Scaled(large, ResourceStrings.NumberUnitLarge)
+                : Math.Abs(n) >= 1_000_000 ? Scaled(medium, ResourceStrings.NumberUnitMedium)
+                : n.ToString("N0");
         }
     }
 }

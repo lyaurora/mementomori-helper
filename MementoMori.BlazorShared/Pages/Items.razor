@@ -15,11 +15,14 @@
 @using MementoMori.WebUI.Extensions
 @using MementoMori.WebUI.UI
 @using SortDirection = MudBlazor.SortDirection
+@using ReactiveUI
+@using System.Reactive.Linq
 
 <PageTitle>@Masters.TextResourceTable.Get("[CommonFooterItemBoxButtonLabel]")</PageTitle>
 
 <div class="items-page">
-@if (!string.IsNullOrEmpty(alertMessage))
+@* Login state is read live so the banner goes away as soon as a login succeeds. *@
+@if (Funcs is { LoginOk: false, Logining: false })
 {
     <MudAlert Severity="Severity.Warning">@ResourceStrings.PleaseLogin</MudAlert>
 }
@@ -177,17 +180,12 @@
                     <MudTh Class="item-number-column">
                         <MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="new Func<UserItemExtensions.SphereInfo, object>(x => x.SphereMB.Lv)">@Masters.TextResourceTable.Get("[EquipmentSphereSynthesisSphereLv]")</MudTableSortLabel>
                     </MudTh>
+                    @* Type and value share one column per group: two separate value columns were both titled 能力数值. *@
                     <MudTh Class="item-text-column">
-                        <MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="new Func<UserItemExtensions.SphereInfo, object>(x => x.SphereMB.BaseParameterChangeInfo?.BaseParameterType)">@Masters.TextResourceTable.Get("[CharacterEquipmentBasicEffect]")</MudTableSortLabel>
-                    </MudTh>
-                    <MudTh Class="item-number-column">
-                        <MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="new Func<UserItemExtensions.SphereInfo, object>(x => x.SphereMB.BaseParameterChangeInfo?.Value)">@Masters.TextResourceTable.Get("[CommonBaseParameterLabel]")</MudTableSortLabel>
+                        <MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="new Func<UserItemExtensions.SphereInfo, object>(x => (x.SphereMB.BaseParameterChangeInfo?.BaseParameterType, x.SphereMB.BaseParameterChangeInfo?.Value))">@Masters.TextResourceTable.Get("[CharacterEquipmentBasicEffect]")</MudTableSortLabel>
                     </MudTh>
                     <MudTh Class="item-text-column">
-                        <MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="new Func<UserItemExtensions.SphereInfo, object>(x => x.SphereMB.BattleParameterChangeInfo?.BattleParameterType)">@Masters.TextResourceTable.Get("[CharacterDetailTabBattleParameter]")</MudTableSortLabel>
-                    </MudTh>
-                    <MudTh Class="item-number-column">
-                        <MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="new Func<UserItemExtensions.SphereInfo, object>(x => x.SphereMB.BattleParameterChangeInfo?.Value)">@Masters.TextResourceTable.Get("[CommonBaseParameterLabel]")</MudTableSortLabel>
+                        <MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="new Func<UserItemExtensions.SphereInfo, object>(x => (x.SphereMB.BattleParameterChangeInfo?.BattleParameterType, x.SphereMB.BattleParameterChangeInfo?.Value))">@Masters.TextResourceTable.Get("[CharacterDetailTabBattleParameter]")</MudTableSortLabel>
                     </MudTh>
                     <MudTh Class="item-number-column">
                         <MudTableSortLabel SortBy="new Func<UserItemExtensions.SphereInfo, object>(x => x.Count)">@Masters.TextResourceTable.Get("[CommonOwnCurrencyLabel]")</MudTableSortLabel>
@@ -197,10 +195,8 @@
                     <MudTd Class="item-name-column" DataLabel="@ResourceStrings.Name">@ItemName(AtlasManager.GetSphereIcon(context.SphereMB), context.Name)</MudTd>
                     <MudTd Class="item-rarity-column" DataLabel="@Masters.TextResourceTable.Get("[CharacterSortTypeRarity]")">@(context.SphereMB.RarityFlags)</MudTd>
                     <MudTd Class="item-number-column" DataLabel="@Masters.TextResourceTable.Get("[EquipmentSphereSynthesisSphereLv]")">@(context.SphereMB.Lv)</MudTd>
-                    <MudTd Class="item-text-column" DataLabel="@Masters.TextResourceTable.Get("[CharacterEquipmentBasicEffect]")">@(context.SphereMB.BaseParameterChangeInfo == null ? "" : Masters.TextResourceTable.Get(context.SphereMB.BaseParameterChangeInfo.BaseParameterType))</MudTd>
-                    <MudTd Class="item-number-column" DataLabel="@Masters.TextResourceTable.Get("[CommonBaseParameterLabel]")">@(context.SphereMB.BaseParameterChangeInfo == null ? "" : ParameterUtil.GetBaseParameterValueText(context.SphereMB.BaseParameterChangeInfo.ChangeParameterType, context.SphereMB.BaseParameterChangeInfo.Value))</MudTd>
-                    <MudTd Class="item-text-column" DataLabel="@Masters.TextResourceTable.Get("[CharacterDetailTabBattleParameter]")">@(context.SphereMB.BattleParameterChangeInfo == null ? "" : Masters.TextResourceTable.Get(context.SphereMB.BattleParameterChangeInfo.BattleParameterType))</MudTd>
-                    <MudTd Class="item-number-column" DataLabel="@Masters.TextResourceTable.Get("[CommonBaseParameterLabel]")">@(context.SphereMB.BattleParameterChangeInfo == null ? "" : ParameterUtil.GetBattleParameterValueText(context.SphereMB.BattleParameterChangeInfo))</MudTd>
+                    <MudTd Class="item-text-column" DataLabel="@Masters.TextResourceTable.Get("[CharacterEquipmentBasicEffect]")">@(context.SphereMB.BaseParameterChangeInfo is { } baseChange ? $"{Masters.TextResourceTable.Get(baseChange.BaseParameterType)} {ParameterUtil.GetBaseParameterValueText(baseChange.ChangeParameterType, baseChange.Value)}" : "")</MudTd>
+                    <MudTd Class="item-text-column" DataLabel="@Masters.TextResourceTable.Get("[CharacterDetailTabBattleParameter]")">@(context.SphereMB.BattleParameterChangeInfo is { } battleChange ? $"{Masters.TextResourceTable.Get(battleChange.BattleParameterType)} {ParameterUtil.GetBattleParameterValueText(battleChange)}" : "")</MudTd>
                     <MudTd Class="item-number-column" DataLabel="@Masters.TextResourceTable.Get("[CommonOwnCurrencyLabel]")">@context.Count.ToString("N0")</MudTd>
                 </RowTemplate>
             </MudTable>
@@ -242,24 +238,13 @@
 @code {
 
     private MementoMoriFuncs ViewModel;
-    string alertMessage = "";
 
     protected override async Task AccountChanged()
     {
-        try
-        {
-            alertMessage = Funcs.LoginOk ? string.Empty : ResourceStrings.PleaseLogin;
-            ViewModel = Funcs;
-            // Funcs.WhenAnyPropertyChanged().Subscribe(_ => InvokeAsync(StateHasChanged));
-        }
-        catch (Exception e)
-        {
-            alertMessage = e.Message;
-        }
-        finally
-        {
-            await InvokeAsync(StateHasChanged);
-        }
+        ViewModel = Funcs;
+        // Re-render on login/logout so the banner and the item tabs follow the login without a page refresh.
+        TrackAccountSubscription(Funcs.WhenAnyValue(f => f.LoginOk, f => f.Logining).Skip(1).Subscribe(_ => InvokeAsync(StateHasChanged)));
+        await InvokeAsync(StateHasChanged);
     }
 
     private string? IconOf(IUserItem item) => AtlasManager.GetItemIcon(item.ItemType, item.ItemId);
@@ -296,7 +281,7 @@
             return useAutoBattleRewardItemResponse.RewardItemList.Cast<IUserItem>().ToList();
         });
 
-        DialogService.Show<UseItemDialog>(Masters.TextResourceTable.Get("[ItemBoxItemUseTitle]"), dialogParameters);
+        _ = DialogService.ShowAsync<UseItemDialog>(Masters.TextResourceTable.Get("[ItemBoxItemUseTitle]"), dialogParameters);
     }
 
 

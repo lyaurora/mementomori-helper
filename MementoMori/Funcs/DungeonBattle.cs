@@ -76,9 +76,10 @@ public partial class MementoMoriFuncs
                     }
                     catch (Exception e)
                     {
-                        restoreException ??= e;
                         _logger.LogError(e, "Failed to restore equipment");
-                        log(e.Message);
+                        // the first failure is rethrown below and logged by the caller, unless the operation itself already failed
+                        if (restoreException != null || operationException != null) log(e.Message);
+                        restoreException ??= e;
                     }
                 }
 
@@ -631,10 +632,10 @@ public partial class MementoMoriFuncs
                 await AutoDungeonBattle(log, token);
                 log($"{TextResourceTable.Get("[CommonHeaderDungeonBattleLabel]")}{ResourceStrings.Finished}");
             }
-            catch (Exception e)
+            catch (Exception e) when (!token.IsCancellationRequested)
             {
                 _logger.LogError(e, "Dungeon battle failed");
-                log(e.Message);
+                AddError(ErrorText(e));
             }
         });
     }

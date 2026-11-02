@@ -381,7 +381,7 @@ public partial class Chat
         var name = ConversationName;
         return Run(async (chat, token) =>
         {
-            if (await DialogService.ShowMessageBox(Tr("[ChatPlayerListRemoveDialogTitle]"), Tr("[ChatPlayerListRemoveDialogMessage]", name), yesText: Tr("[DialogCommonFormationRemoveButton]"), cancelText: Tr("[CommonCancelLabel]")) != true) return false;
+            if (await DialogService.ShowMessageBoxAsync(Tr("[ChatPlayerListRemoveDialogTitle]"), Tr("[ChatPlayerListRemoveDialogMessage]", name), yesText: Tr("[DialogCommonFormationRemoveButton]"), cancelText: Tr("[CommonCancelLabel]")) != true) return false;
             token.ThrowIfCancellationRequested();
             await chat.RequestAsync<DeletePrivateChatLogPlayerRequest, DeletePrivateChatLogPlayerResponse>(new() { TargetPlayerId = target }, token);
             await chat.RefreshContactsAsync(token);
@@ -441,9 +441,6 @@ public partial class Chat
         _guildNotes = data.notes.GuildNoteInfoList?.OrderBy(n => n.Order).ThenBy(n => n.GuildNoteId).ToList() ?? [];
     });
 
-    private Task LoadGuildNotes() => Run((chat, token) => chat.RequestAsync<GetGuildNoteListRequest, GetGuildNoteListResponse>(new(), token), response =>
-        _guildNotes = response.GuildNoteInfoList?.OrderBy(n => n.Order).ThenBy(n => n.GuildNoteId).ToList() ?? []);
-
     private void BeginGuildNote(GuildNoteInfo? note = null)
     {
         if (_busy || !_snapshot.Connected) return;
@@ -494,7 +491,7 @@ public partial class Chat
         return Run(async (chat, token) =>
         {
             if (!before.Contains(note.GuildNoteId) || !CanDeleteGuildNote(note)) throw new InvalidOperationException(ResourceStrings.GuildNoteChangedOrNoPermission);
-            if (await DialogService.ShowMessageBox(Tr("[GuildNoteConfirmationTitle]"), string.Format(ResourceStrings.DeleteGuildNoteConfirm, note.Title), yesText: Tr("[DialogCommonFormationRemoveButton]"), cancelText: Tr("[CommonCancelLabel]")) != true) return null;
+            if (await DialogService.ShowMessageBoxAsync(Tr("[GuildNoteConfirmationTitle]"), string.Format(ResourceStrings.DeleteGuildNoteConfirm, note.Title), yesText: Tr("[DialogCommonFormationRemoveButton]"), cancelText: Tr("[CommonCancelLabel]")) != true) return null;
             token.ThrowIfCancellationRequested();
             return await chat.RequestAsync<UpdateGuildNoteListRequest, UpdateGuildNoteListResponse>(new()
             { BeforeUpdateGuildNoteIdList = before, AfterUpdateGuildNoteIdList = before.Where(id => id != note.GuildNoteId).ToList() }, token);
@@ -573,7 +570,7 @@ public partial class Chat
 
     private async Task AnnouncementMenuKeyDown(KeyboardEventArgs args, (long, long) key)
     {
-        if (args.Key != "Escape" || !_announcementMenus.TryGetValue(key, out var menu) || !menu.Open) return;
+        if (args.Key != "Escape" || !_announcementMenus.TryGetValue(key, out var menu) || !_announcementMenuOpen) return;
         await menu.CloseMenuAsync();
         if (_announcementMenuButtons.TryGetValue(key, out var button)) await button.FocusAsync();
     }

@@ -87,6 +87,7 @@ namespace MementoMori.WebUI.UI
             // Unidentified spheres, sealed chests, witch letters/heart shards and gift boxes are all TreasureChest.
             ItemType.TreasureChest => MementoMori.Ortega.Share.Masters.TreasureChestTable.GetById(itemId) is { IconId: > 0 } chest
                 ? $"{AssetsUrl}/AddressableConvertAssets/Icon/Item/Item_{chest.IconId:0000}.png" : null,
+            ItemType.Sphere => MementoMori.Ortega.Share.Masters.SphereTable.GetById(itemId) is { } sphere ? GetSphereIcon(sphere) : null,
             ItemType.EquipmentSetMaterialBox => MementoMori.Ortega.Share.Masters.EquipmentSetMaterialBoxTable.GetById(itemId) is { IconId: > 0 } box
                 ? $"{AssetsUrl}/AddressableConvertAssets/Icon/Item/Item_{box.IconId:0000}.png" : null,
             _ => MementoMori.Ortega.Share.Masters.ItemTable.GetByItemTypeAndItemId(type, itemId) is { IconId: > 0 } mb

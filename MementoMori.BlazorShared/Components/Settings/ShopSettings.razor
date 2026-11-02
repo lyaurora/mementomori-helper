@@ -5,6 +5,7 @@
 @using MementoMori.Ortega.Share.Data.Item
 @using MementoMori.Ortega.Share.Enums
 @inject IWritableOptions<GameConfig> WritableGameConfig
+@inject IDialogService DialogService
 
 @inject MementoMori.WebUI.UI.AtlasManager Atlas
 @inherits MementoMori.BlazorShared.Models.AccountComponent
@@ -14,7 +15,7 @@
     <MudCardHeader>
         <CardHeaderContent>
             <!--商城-->
-            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Storefront" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[CommonHeaderExchangeLabel]") <span class="panel-scope">@ResourceStrings.AllAccounts</span></span></MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Storefront" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[CommonHeaderExchangeLabel]") <span class="panel-scope">@ResourceStrings.AllAccounts</span></span><SettingSaved @ref="_saved"/></MudText>
         </CardHeaderContent>
         <CardHeaderActions>
             <MudButton Class="setting-save-button" Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Restore" OnClick="ShopAutoBuyRestoreDefault">@ResourceStrings.ResettoDefault</MudButton>
@@ -46,11 +47,12 @@
 
 
 @code {
+    SettingSaved _saved = null!;
 
     public List<GameConfig.ShopAutoBuyItem> ShopAutoBuyItems
     {
         get => WritableGameConfig.Value.Shop.AutoBuyItems;
-        set => WritableGameConfig.Update(x => x.Shop.AutoBuyItems = value);
+        set => _saved.Run(() => WritableGameConfig.Update(x => x.Shop.AutoBuyItems = value));
     }
 
     private void RemoveShopAutoBuyItem(GameConfig.ShopAutoBuyItem item)
@@ -60,8 +62,10 @@
         ShopAutoBuyItems = tmp;
     }
 
-    private void ShopAutoBuyRestoreDefault()
+    private async Task ShopAutoBuyRestoreDefault()
     {
+        // Replaces the whole auto-buy list, so ask first.
+        if (await DialogService.ShowMessageBoxAsync(ResourceStrings.ResettoDefault, ResourceStrings.ShopAutoBuyItems, Tr("[CommonOkLabel]"), cancelText: Tr("[CommonCancelLabel]"), options: new DialogOptions {CloseButton = true, CloseOnEscapeKey = true}) != true) return;
         ShopAutoBuyItems = new List<GameConfig.ShopAutoBuyItem>()
         {
             new() {BuyItem = new UserItem() {ItemType = ItemType.EquipmentRarityCrystal, ItemId = 1, ItemCount = 5}, ShopTabId = 1, MinDiscountPercent = 20},

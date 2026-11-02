@@ -26,8 +26,11 @@
     }
     function enter(e) {
         if (e.pointerType === 'touch') return;
+        // Focus only counts when it comes from the keyboard: a dialog handing focus back to its button must not pop the tip again.
+        if (e.type === 'focusin' && !e.target.matches?.(':focus-visible')) return;
         const el = e.target.closest?.('[title]');
-        if (!el || el === cur) return;
+        // An iframe's title is its accessible name, not a tip (the battle-log viewer would get one over its content).
+        if (!el || el === cur || el.tagName === 'IFRAME') return;
         const text = el.getAttribute('title');
         hide();
         if (!text?.trim()) return;
@@ -45,5 +48,7 @@
     document.addEventListener('pointerout', leave);
     document.addEventListener('focusout', leave);
     document.addEventListener('keydown', e => { if (e.key === 'Escape') hide(); });
+    // A press opens whatever the control does: drop the pending/shown bubble but keep title off until leave, so no native tip either.
+    document.addEventListener('pointerdown', () => { clearTimeout(timer); if (tip) tip.hidden = true; }, true);
     addEventListener('scroll', hide, true);
 })();

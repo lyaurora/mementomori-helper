@@ -28,9 +28,11 @@
 
 <PageTitle>@Tr("[CommonFooterHomeButtonLabel]")</PageTitle>
 
-@if (!string.IsNullOrEmpty(alertMessage))
+@* Login state is read live so the banner goes away as soon as a login succeeds; other errors only show once logged in. *@
+@{ var alert = Funcs.LoginOk ? alertMessage : Funcs.Logining ? null : ResourceStrings.PleaseLogin; }
+@if (!string.IsNullOrEmpty(alert))
 {
-    <MudAlert Class="mb-6" Severity="Severity.Warning">@alertMessage</MudAlert>
+    <MudAlert Class="mb-6" Severity="Severity.Warning">@alert</MudAlert>
 }
 @if (AccountSelection.CurrentUserId > 0)
 {
@@ -42,7 +44,7 @@
             <MudCardHeader Class="justify-space-between">
                 <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.Badge"/><span>@ResourceStrings.CharacterInfo</span></MudText>
                 <MudPaper Elevation="0" Class="d-flex justify-end gap-2">
-                    <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Sync" Disabled="Funcs.Logining" @onclick="Funcs.SyncUserData">@ResourceStrings.SyncUserInfo</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Sync" Disabled="@(Funcs.Logining || Funcs.IsQuickActionExecuting)" @onclick="Funcs.SyncUserData">@ResourceStrings.SyncUserInfo</MudButton>
                     <MudButton Size="Size.Small" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Login" Disabled="Funcs.Logining" @onclick="ShowPlayerList">
                         @ResourceStrings.Login
                         @if (Funcs.Logining)
@@ -58,8 +60,13 @@
                     <div class="hero-who-text">
                         <div class="hero-name">@status?.Name</div>
                         <div class="hero-badges">
-                            <span class="hero-badge is-accent" title="@Tr("[CommonPlayerRankLabel]")">@Tr("[CommonLevelFormat]", status?.Rank)</span>
+                            <span class="hero-badge is-accent">@Tr("[CommonLevelFormat]", status?.Rank)</span>
                             <span class="hero-badge">@Tr("[CommonVipWithSpaceFormat]", status?.Vip)</span>
+                            @if (Funcs.WorldId > 0)
+                            {
+                                @* Same wording as the game: time server name, then the world number within it *@
+                                <span class="hero-badge">@Tr($"[TimeServerName{Funcs.WorldId / 1000}]") @Tr("[CommonWorldFormat]", Funcs.WorldId % 1000)</span>
+                            }
                         </div>
                     </div>
                 </div>
@@ -82,8 +89,8 @@
                 <div class="tiles">
                     <div class="tile is-wide">
                         <span class="tile-art">@if (diamondIcon != null) {<img src="@diamondIcon" @key="diamondIcon" width="44" height="44" loading="lazy" decoding="async" alt="" onerror="this.remove()">}</span>
-                        <span class="hero-tile-text"><span class="tile-label">@Tr("[ItemName4]")</span><span class="tile-value" title="@((free + paid).ToString("N0"))">@Compact(free + paid)</span></span>
-                        <span class="tile-split">@Tr("[CurrencyDetailCurrencyFree]") <b title="@free.ToString("N0")">@Compact(free)</b><br>@Tr("[CurrencyDetailCurrencyPaid]") <b title="@paid.ToString("N0")">@Compact(paid)</b></span>
+                        <span class="hero-tile-text"><span class="tile-label">@Tr("[ItemName4]")</span><span class="tile-value" title="@ExactIfCompact(free + paid)">@Compact(free + paid)</span></span>
+                        <span class="tile-split">@Tr("[CurrencyDetailCurrencyFree]") <b title="@ExactIfCompact(free)">@Compact(free)</b><br>@Tr("[CurrencyDetailCurrencyPaid]") <b title="@ExactIfCompact(paid)">@Compact(paid)</b></span>
                     </div>
                     @Tile(ItemType.Gold, 1, Tr("[ItemName5]"))
                     @Tile(ItemType.CharacterTrainingMaterial, 1, Tr("[ItemName10]"))
@@ -98,13 +105,24 @@
             <MudCardHeader Class="justify-space-between">
                 <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.Bolt"/><span>@ResourceStrings.QuickActions</span></MudText>
                 <MudPaper Elevation="0" Class="d-flex justify-end gap-2">
-                    <MudButton Size="Size.Small" Variant="Variant.Text" Disabled="!Funcs.IsQuickActionExecuting" @onclick="Funcs.CancelQuickAction">@Tr("[CommonCancelLabel]")</MudButton>
-                    <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Bolt" Disabled="Funcs.IsQuickActionExecuting" @onclick="Funcs.ExecuteAllQuickAction">@ResourceStrings.ExecuteAllQuick</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Stop" Disabled="!Funcs.IsQuickActionExecuting" @onclick="Funcs.CancelQuickAction">@Tr("[CommonCancelLabel]")</MudButton>
+                    @* While any action runs this button turns into the running indicator (same pattern as Login). *@
+                    <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@(Funcs.IsQuickActionExecuting ? null : Icons.Material.Filled.Bolt)" Disabled="Funcs.IsQuickActionExecuting" @onclick="Funcs.ExecuteAllQuickAction">
+                        @if (Funcs.IsQuickActionExecuting)
+                        {
+                            <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true"/>
+                            @ResourceStrings.ResourceManager.GetString("TaskRunning")
+                        }
+                        else
+                        {
+                            @ResourceStrings.ExecuteAllQuick
+                        }
+                    </MudButton>
                 </MudPaper>
             </MudCardHeader>
             <MudCardContent>
                 <MudTabs Class="quick-actions-tabs" Position="Position.Top" MinimumTabWidth="20px">
-                    <MudTabPanel Text="@ResourceStrings.ExecuteAllQuick">
+                    <MudTabPanel Text="@Tr("[MissionTabName2]")">
                         <div class="quick-action-content quick-action-list">
                             <MudButton Size="Size.Small" Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.GetLoginBonus">@Tr("[MyPageButtonLoginBonusLabel]")</MudButton>
                             <MudButton Size="Size.Small" Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.GetVipGift">@Tr("[VipDailyRewardLabelFormat]", Funcs.UserSyncData?.UserStatusDtoInfo?.Vip)</MudButton>
@@ -161,7 +179,7 @@
                     </MudTabPanel>
                     <MudTabPanel Text="@Tr("[CommonHeaderTowerBattleLabel]")">
                         <div class="quick-action-content quick-action-form">
-                            <MudSelect T="TowerType" Label="@ResourceStrings.TowerType" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="@Funcs.SelectedAutoTowerType">
+                            <MudSelect T="TowerType" Label="@ResourceStrings.TowerType" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="@Funcs.SelectedAutoTowerType" ToStringFunc="@(t => t == TowerType.None ? ResourceStrings.NotSelected : Tr(t))">
                                 @foreach (var type in Funcs.GetAvailableTower())
                                 {
                                     <MudSelectItem T="TowerType" Value="@type">@(Tr(type))</MudSelectItem>
@@ -179,18 +197,22 @@
                                     }
                                 </MudSelect>
                             }
-                            <MudButton Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" OnClick="() => Funcs.AutoInfiniteTowerRequest(selectedTargetTowerLayer)">@Tr("[CommonHeaderTowerBattleLabel]") @Tr("[BattleTypeAuto]")</MudButton>
+                            <MudButton Variant="Variant.Filled" Disabled="@(Funcs.IsQuickActionExecuting || Funcs.SelectedAutoTowerType == TowerType.None)" OnClick="() => Funcs.AutoInfiniteTowerRequest(selectedTargetTowerLayer)">@Tr("[CommonHeaderTowerBattleLabel]") @Tr("[BattleTypeAuto]")</MudButton>
                         </div>
                     </MudTabPanel>
                     <MudTabPanel Text="@Tr("[CommonForgedLabel]")">
                         <div class="quick-action-content"><EquipmentTraining /></div>
                     </MudTabPanel>
-                    <MudTabPanel Text="Debug">
-                        <div class="quick-action-content quick-action-list">
-                            <MudButton Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.Debug">Debug</MudButton>
-                            <MudButton Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.LogDebug">LogTest</MudButton>
-                        </div>
-                    </MudTabPanel>
+                    @* Debug runs a real guild-tower action and LogTest loops until cancelled: only with the debug-info switch on. *@
+                    @if (Funcs.ShowDebugInfo)
+                    {
+                        <MudTabPanel Text="Debug">
+                            <div class="quick-action-content quick-action-list">
+                                <MudButton Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.Debug">Debug</MudButton>
+                                <MudButton Variant="Variant.Filled" Disabled="@Funcs.IsQuickActionExecuting" @onclick="@Funcs.LogDebug">LogTest</MudButton>
+                            </div>
+                        </MudTabPanel>
+                    }
                 </MudTabs>
             </MudCardContent>
         </MudCard>
@@ -240,7 +262,7 @@
                         <span class="bq-cost">@if (diamondIcon != null) {<img src="@diamondIcon" @key="diamondIcon" width="18" height="18" loading="lazy" decoding="async" alt="" onerror="this.remove()">}</span>
                         @Tr("[CommonAlternativesItemFormat]", Tr("[CommonCurrencyName]"), 20)
                     </MudButton>
-                    <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Sync" title="@ResourceStrings.Sync" aria-label="@ResourceStrings.Sync" @onclick="Funcs.GetBountyRequestInfo"/>
+                    <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Sync" aria-label="@ResourceStrings.Sync" @onclick="Funcs.GetBountyRequestInfo"/>
                 </div>
                 <div class="bq-list">
                     @foreach (var info in Funcs.BountyQuestResponseInfo?.UserBountyQuestDtoInfos ?? new List<UserBountyQuestDtoInfo>())
@@ -322,8 +344,7 @@
                 <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.TaskAlt"/><span>@Tr("[MyPageMenuButtonMissionLabel]")</span></MudText>
                 <MudPaper Elevation="0" Class="d-flex justify-end gap-2">
                     <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Sync" @onclick="@Funcs.GetMissionInfo">@ResourceStrings.Sync</MudButton>
-                    <MudButton Size="Size.Small" Variant="Variant.Filled" @onclick="@Funcs.RewardMissonActivity">@ResourceStrings.RewardMissonActivity</MudButton>
-                    <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" @onclick="@Funcs.CompleteMissions">@Tr("[MissionAllReceiveButton]")</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" Disabled="@Funcs.IsQuickActionExecuting" @onclick="CompleteMissionsAndMedals">@Tr("[MissionAllReceiveButton]")</MudButton>
                 </MudPaper>
             </MudCardHeader>
             <MudCardContent>
@@ -384,11 +405,13 @@
         selectedTargetTowerLayer = 0;
         try
         {
-            alertMessage = Funcs.LoginOk ? string.Empty : ResourceStrings.PleaseLogin;
+            alertMessage = string.Empty;
             // Sample, not Throttle: Throttle starves while a job keeps changing properties; Sample renders the latest state at most 4x/s.
             TrackAccountSubscription(Funcs.WhenAnyPropertyChanged().Sample(TimeSpan.FromMilliseconds(250)).Subscribe(_ => InvokeAsync(StateHasChanged)));
             // Bounty quest countdowns are computed at render; tick once a second while any quest is still running.
             TrackAccountSubscription(Observable.Interval(TimeSpan.FromSeconds(1)).Where(_ => HasRunningBountyQuest()).Subscribe(_ => InvokeAsync(StateHasChanged)));
+            // Notices fail while logged out (no API host yet); load them again once a login succeeds.
+            TrackAccountSubscription(Funcs.WhenAnyValue(f => f.LoginOk).Skip(1).Where(ok => ok && _interactive).Subscribe(_ => InvokeAsync(LoadNotices)));
         }
         catch (Exception e)
         {
@@ -421,6 +444,18 @@
         return _debugJson.Json;
     }
 
+    // Claim missions, then the activity-medal tiers they unlock (as the jobs do). One outer action: an error in the first
+    // step is logged by its own nested action and the second still runs; 取消 cancels the shared token and stops both.
+    private Task CompleteMissionsAndMedals()
+    {
+        var funcs = Funcs; // the selected account may change while this runs
+        return funcs.ExecuteQuickAction(async (_, _) =>
+        {
+            await funcs.CompleteMissions();
+            await funcs.RewardMissonActivity();
+        });
+    }
+
     // Paid action: drop clicks while another action runs instead of queueing a second 20-diamond remake.
     private Task RemakeBounty() => Funcs.IsQuickActionExecuting ? Task.CompletedTask : Funcs.RemakeBountyRequest();
 
@@ -431,6 +466,8 @@
 
     private async Task LoadNotices()
     {
+        alertMessage = string.Empty;
+        if (!Funcs.LoginOk) return; // reloaded by the LoginOk subscription once logged in
         var token = CreateAccountCancellation();
         try { await Funcs.GetNoticeInfoList(token); }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
@@ -446,13 +483,18 @@
         {
             CloseOnEscapeKey = true
         };
-        DialogService.ShowMessageBox(context.Title, (MarkupString) context.MainText, Tr("[CommonOkLabel]"));
+        DialogService.ShowMessageBoxAsync(context.Title, (MarkupString) context.MainText, Tr("[CommonOkLabel]"), options: options);
     }
 
     private async Task ShowPlayerList()
     {
         var funcs = Funcs; // the selected account may change while the dialog is open
-        playerDataInfos = await funcs.GetPlayerDataInfo();
+        try { playerDataInfos = await funcs.GetPlayerDataInfo(); }
+        catch (Exception e)
+        {
+            await DialogService.ShowMessageBoxAsync(ResourceStrings.Login, e.Message, Tr("[CommonOkLabel]"));
+            return;
+        }
         var parameters = new DialogParameters<SelectPlayer>();
         parameters.Add(d => d.PlayerDataInfos, playerDataInfos);
         var dialog = await DialogService.ShowAsync<SelectPlayer>(ResourceStrings.SelectPlayer, parameters, new DialogOptions() {CloseButton = true});
@@ -513,13 +555,16 @@
         Funcs.Mypage?.MypageInfo?.MypageIconInfos?.FirstOrDefault(i => i.TransferDetailInfo?.TransferSpotType == spot) is { } icon
             ? Tr(icon.IconNameKey).Replace("<br>", " ") : null;
 
+    // Exact value as a tip only when Compact() abbreviated it; otherwise the tip would just repeat the number.
+    private static string? ExactIfCompact(long n) => Compact(n) == n.ToString("N0") ? null : n.ToString("N0");
+
     private RenderFragment Tile(ItemType type, long id, string label) => __builder =>
     {
         var icon = Atlas.GetItemIcon(type, id);
         var count = Funcs.UserSyncData.GetUserItemCount(type, id);
         <div class="tile">
             <span class="tile-art">@if (icon != null) {<img src="@icon" @key="icon" width="36" height="36" loading="lazy" decoding="async" alt="" onerror="this.remove()">}</span>
-            <span class="hero-tile-text"><span class="tile-label">@label</span><span class="tile-value" title="@count.ToString("N0")">@Compact(count)</span></span>
+            <span class="hero-tile-text"><span class="tile-label">@label</span><span class="tile-value" title="@ExactIfCompact(count)">@Compact(count)</span></span>
         </div>
     };
 

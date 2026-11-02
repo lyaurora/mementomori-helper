@@ -729,6 +729,7 @@
   <data name="ResumeJobs" xml:space="preserve"><value>恢复</value></data>
   <data name="UnionMissionPointMsg" xml:space="preserve"><value>团结任务：+{0} 点（个人累计 {1}）</value></data>
   <data name="NumberUnitLarge" xml:space="preserve"><value>亿</value></data>
+  <data name="NumberUnitMedium" xml:space="preserve"><value>万</value></data>
   <data name="NotEnoughFormat" xml:space="preserve"><value>{0}不足</value></data>
   <data name="DebugInfo" xml:space="preserve"><value>调试信息</value></data>
   <data name="CronModeHours" xml:space="preserve"><value>每隔 N 小时</value></data>

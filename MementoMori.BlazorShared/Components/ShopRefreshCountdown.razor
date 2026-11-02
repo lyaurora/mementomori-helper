@@ -43,7 +43,8 @@
         var time = span.Days == 0
             ? Masters.TextResourceTable.Get("[CommonTimeFormatOnlyTime]", span.Hours, span.Minutes, span.Seconds)
             : Masters.TextResourceTable.Get("[CommonRemainTimeFull]", span.Days, span.Hours, span.Minutes, span.Seconds);
-        return $"{Masters.TextResourceTable.Get("[ExchangeRemainingTimeLabel]")}: {time}";
+        // Some languages already end the label with a colon (en "Refreshes in:"); add ours only once.
+        return $"{Masters.TextResourceTable.Get("[ExchangeRemainingTimeLabel]").TrimEnd(':', '：', ' ')}: {time}";
     }
 
     public void Dispose() { _cts.Cancel(); _cts.Dispose(); }

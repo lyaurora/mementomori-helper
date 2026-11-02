@@ -41,6 +41,7 @@ public partial class MementoMoriFuncs
                     }
                     catch (ApiErrorException e) when (e.ErrorCode == ErrorCode.GachaHaveMaxCharacter)
                     {
+                        log(e.Message);
                         ignoredButtonId.Add(buttonInfo.GachaButtonId);
                     }
 

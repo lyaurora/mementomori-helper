@@ -5,8 +5,8 @@
 @using MementoMori.Ortega.Common.Utils
 @using MementoMori.Ortega.Share.Enums
 @using MementoMori.Ortega.Share.Extensions
+@using Microsoft.AspNetCore.Components.Forms
 
-@inject ISnackbar Snackbar
 @inject IWritableOptions<PlayersOption> PlayersOptions
 @inject IWritableOptions<GameConfig> WritableGameConfig
 @inject MementoMori.WebUI.UI.AtlasManager Atlas
@@ -15,17 +15,26 @@
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Groups" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[CommonHeaderLocalRaidLabel]") <span class="panel-scope is-account"><PlayerAvatar IconId="@(Funcs?.UserSyncData?.UserStatusDtoInfo?.MainCharacterIconId ?? 0)" Name="@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name)" Size="16" />@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name)</span></span></MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Groups" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[CommonHeaderLocalRaidLabel]") <span class="panel-scope is-account"><PlayerAvatar IconId="@(Funcs?.UserSyncData?.UserStatusDtoInfo?.MainCharacterIconId ?? 0)" Name="@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name)" Size="16" />@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name)</span></span><SettingSaved @ref="_saved"/></MudText>
         </CardHeaderContent>
-        <CardHeaderActions>
-            <MudButton Class="setting-save-button" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Save" OnClick="SaveLocalRaidConfig">@Masters.TextResourceTable.Get("[CommonSaveLabel]")</MudButton>
-        </CardHeaderActions>
     </MudCardHeader>
     <MudCardContent Class="settings-form">
-        <MudSwitch T="bool" Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@(selfCreateRoom ? Masters.TextResourceTable.Get("[LocalRaidRoomSearchButtonCreateRoom]") : Masters.TextResourceTable.Get("[LocalRaidRoomSearchButtonJoinRandomRoom]"))" @bind-Value="selfCreateRoom" Color="Color.Primary"></MudSwitch>
+        @* Two named choices: a switch whose label flips with its state never said what ON meant. *@
+        <fieldset class="setting-choice-group" aria-label="@Tr("[CommonHeaderLocalRaidLabel]")">
+            <InputRadioGroup TValue="bool" Name="local-raid-room" @bind-Value="selfCreateRoom" @bind-Value:after="Save">
+                <label class="setting-choice">
+                    <InputRadio TValue="bool" Value="false" />
+                    <span>@Tr("[LocalRaidRoomSearchButtonJoinRandomRoom]")</span>
+                </label>
+                <label class="setting-choice">
+                    <InputRadio TValue="bool" Value="true" />
+                    <span>@Tr("[LocalRaidRoomSearchButtonCreateRoom]")</span>
+                </label>
+            </InputRadioGroup>
+        </fieldset>
         @if (selfCreateRoom)
         {
-            <MudTextField T="int" Label="@ResourceStrings.Seconds_of_pre_battle_wait_time" @bind-Value="waitSeconds" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+            <MudNumericField InputMode="InputMode.numeric" T="int?" Label="@ResourceStrings.Seconds_of_pre_battle_wait_time" @bind-Value="waitSeconds" @bind-Value:after="Save" Min="0" DebounceInterval="500" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
         }
         <div class="setting-section setting-weight-list">
             <MudText Class="setting-field-label">@ResourceStrings.Select_tasks_based_on_reward_quantity_and_weight</MudText>
@@ -37,7 +46,7 @@
                     {
                         <span class="setting-item-art"><img src="@icon" @key="icon" width="22" height="22" loading="lazy" decoding="async" alt="" onerror="this.remove()"></span>
                     }
-                    <MudNumericField Label="@ItemUtil.GetItemName(reward.ItemType, reward.ItemId)" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="reward.Weight"/>
+                    <MudNumericField T="double?" Label="@ItemUtil.GetItemName(reward.ItemType, reward.ItemId)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" DebounceInterval="500" Value="reward.Weight" ValueChanged="v => WeightChanged(reward, v)"/>
                 </div>
             }
         </div>
@@ -46,10 +55,11 @@
 
 
 @code {
+    SettingSaved _saved = null!;
     List<GameConfig.WeightedItem> _localRaidRewardItems;
 
     bool selfCreateRoom;
-    int waitSeconds;
+    int? waitSeconds; // null while the field is empty: keep the stored value
 
     protected override Task AccountChanged()
     {
@@ -57,7 +67,8 @@
         _localRaidRewardItems = playerOpt.LocalRaid.RewardItems;
         if (_localRaidRewardItems.Count == 0)
         {
-            _localRaidRewardItems = WritableGameConfig.Value.LocalRaid.RewardItems;
+            // Copy: editing weights here must not change the list shared by every account.
+            _localRaidRewardItems = WritableGameConfig.Value.LocalRaid.RewardItems.Select(d => new GameConfig.WeightedItem(d.ItemType, d.ItemId, d.Weight)).ToList();
             if (_localRaidRewardItems.Count == 0)
             {
                 _localRaidRewardItems.AddRange(new[]
@@ -78,18 +89,20 @@
     }
 
 
-    private void SaveLocalRaidConfig()
+    // An emptied weight field (mid-typing) keeps the old weight instead of saving 0.
+    private void WeightChanged(GameConfig.WeightedItem reward, double? weight)
     {
-        PlayersOptions.Update(opt =>
-        {
-            var playerOpt = opt.GetOrAdd(NetworkManager.PlayerId, (id) => new PlayerOption() {PlayerId = id});
-            playerOpt.LocalRaid.RewardItems = _localRaidRewardItems;
-            playerOpt.LocalRaid.SelfCreateRoom = selfCreateRoom;
-            playerOpt.LocalRaid.WaitSeconds = waitSeconds;
-        });
-        Snackbar.Clear();
-        Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
-        Snackbar.Add(ResourceStrings.Save_successful, Severity.Success);
+        if (weight is not { } w) return;
+        reward.Weight = w;
+        Save();
     }
+
+    private void Save() => _saved.Run(() => PlayersOptions.Update(opt =>
+    {
+        var playerOpt = opt.GetOrAdd(NetworkManager.PlayerId, (id) => new PlayerOption() {PlayerId = id});
+        playerOpt.LocalRaid.RewardItems = _localRaidRewardItems;
+        playerOpt.LocalRaid.SelfCreateRoom = selfCreateRoom;
+        if (waitSeconds is { } wait) playerOpt.LocalRaid.WaitSeconds = wait;
+    }));
 
 }

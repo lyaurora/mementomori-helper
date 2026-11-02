@@ -7,12 +7,11 @@
 @inject ISchedulerFactory SchedulerFactory
 @using MementoMori.Option
 @using MementoMori.Ortega.Share
-@inject IWritableOptions<GameConfig> WritableGameConfig
 
 <MudCard>
     <MudCardHeader>
-        <CardHeaderContent><MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.EventRepeat" aria-hidden="true" /><span>@ResourceStrings.AutoJobStatus</span></MudText></CardHeaderContent>
-        <CardHeaderActions><MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="Refresh" title="@ResourceStrings.Sync" aria-label="@ResourceStrings.Sync" /></CardHeaderActions>
+        <CardHeaderContent><MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.EventRepeat" aria-hidden="true" /><span>@ResourceStrings.AutoJobStatus @if ((Funcs?.UserSyncData?.UserStatusDtoInfo?.Name ?? AccountInfo?.Name) is { } jobAccount) { <span class="panel-scope is-account"><PlayerAvatar IconId="@(Funcs?.UserSyncData?.UserStatusDtoInfo?.MainCharacterIconId ?? 0)" Name="@jobAccount" Size="16" />@jobAccount</span> }</span></MudText></CardHeaderContent>
+        <CardHeaderActions><MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="Refresh" aria-label="@ResourceStrings.Sync" /></CardHeaderActions>
     </MudCardHeader>
     <MudCardContent Class="settings-form">
         @if (!string.IsNullOrEmpty(Funcs.LastLoginError))
@@ -26,9 +25,8 @@
         }
         @if (JobInfos.Count == 0)
         {
-            <MudText Class="job-runs-empty">@(NetworkManager.PlayerId <= 0 ? ResourceStrings.PleaseLogin
-                : WritableGameConfig.Value.AutoJob.DisableAll ? ResourceStrings.DisableAllJobs
-                : ResourceStrings.NoScheduledJobs)</MudText>
+            @* A state, not the "disable all jobs" command label. *@
+            <MudText Class="job-runs-empty">@(NetworkManager.PlayerId <= 0 ? ResourceStrings.PleaseLogin : ResourceStrings.NoScheduledJobs)</MudText>
         }
         else
         {
@@ -117,7 +115,7 @@
             if (trigger == null || !trigger.JobKey.Name.StartsWith($"{userId}-", StringComparison.Ordinal)) continue;
             var detail = await scheduler.GetJobDetail(trigger.JobKey);
             if (detail != null) jobs.Add(new(trigger.JobKey.Name, detail.Description ?? trigger.JobKey.Name,
-                trigger.GetNextFireTimeUtc() is { } next ? ServerTime(next, "yyyy-MM-dd HH:mm:ss") : null));
+                trigger.GetNextFireTimeUtc() is { } next ? ServerTime(next, "MM-dd HH:mm") : null));
         }
         if (funcs != Funcs) return;
         JobInfos = jobs;

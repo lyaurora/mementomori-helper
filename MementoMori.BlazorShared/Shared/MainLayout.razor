@@ -15,12 +15,12 @@
 @inject IJSRuntime JS
 @inject ISnackbar Snackbar
 
-<MudThemeProvider Theme="_theme" IsDarkMode="false" ObserveSystemThemeChange="false" DefaultScrollbar="true"/>
-<MudThemeProvider Theme="DarkTheme" IsDarkMode="true" ObserveSystemThemeChange="false" DefaultScrollbar="true"/>
+<MudThemeProvider Theme="_theme" IsDarkMode="false" ObserveSystemDarkModeChange="false" DefaultScrollbar="true"/>
+<MudThemeProvider Theme="DarkTheme" IsDarkMode="true" ObserveSystemDarkModeChange="false" DefaultScrollbar="true"/>
 <MudPopoverProvider/>
 @* Dialogs render here, outside the page ErrorBoundary; without this one a dialog exception ends the circuit. *@
 <ErrorBoundary @ref="_dialogBoundary">
-    <ChildContent><MudDialogProvider/></ChildContent>
+    <ChildContent><MudDialogProvider CloseOnEscapeKey="true"/></ChildContent>
     <ErrorContent>@{ RecoverDialogs(); }</ErrorContent>
 </ErrorBoundary>
 <MudSnackbarProvider/>
@@ -37,7 +37,7 @@
         <MudMenu AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Class="app-account-menu" PopoverClass="app-account-popover">
             <ActivatorContent>
                 @{ AccountManager.TryGet(AccountSelection.CurrentUserId, out var current); var status = current?.Funcs?.UserSyncData?.UserStatusDtoInfo; var accountName = current?.AccountInfo?.Name ?? AuthOption.Value.Accounts.FirstOrDefault(a => a.UserId == AccountSelection.CurrentUserId)?.Name; var name = status?.Name ?? accountName; }
-                <button type="button" class="app-account-pill" aria-haspopup="menu" aria-label="@string.Format(ResourceStrings.AppearanceTitleFormat, ResourceStrings.SwitchAccount, name)">
+                <button type="button" class="app-account-pill" aria-haspopup="menu" @onclick="context.OpenAsync" @onkeydown="@(e => e.Key == "Escape" ? context.CloseAsync() : Task.CompletedTask)" aria-label="@string.Format(ResourceStrings.AppearanceTitleFormat, ResourceStrings.SwitchAccount, name)">
                     <PlayerAvatar IconId="@(status?.MainCharacterIconId ?? 0)" Name="@name" Size="34" />
                     <span class="app-account-who">
                         <b>@name</b>
@@ -70,7 +70,7 @@
         </MudMenu>
         <MudSpacer />
         <ServerClock />
-        <MudSelect T="string" Label="@Tr("[GameSettingTextLanguage]")" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" Class="app-language-select" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Outlined.Language" @bind-Value="SelectedLanguage" ToStringFunc="@(name => Languages.FirstOrDefault(x => x.Name == name).Label ?? name)">
+        <MudSelect T="string" Label="@Tr("[GameSettingTextLanguage]")" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" Class="app-language-select" PopoverClass="app-language-popover" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Outlined.Language" @bind-Value="SelectedLanguage" ToStringFunc="@(name => Languages.FirstOrDefault(x => x.Name == name).Label ?? name)">
             @foreach (var (name, label) in Languages)
             {
                 <MudSelectItem Value="@name">@label</MudSelectItem>
@@ -87,14 +87,15 @@
     </MudAppBar>
     <MudDrawer @bind-Open="_drawerOpen" Elevation="0" Class="app-nav">
         <MudDrawerHeader>
-            <MudText Typo="Typo.h5">@ResourceStrings.GameAssistant<small>MementoMori</small></MudText>
+            <img class="app-brand-icon" src="_content/MementoMori.BlazorShared/app-icon.png" alt="" width="36" height="36" /><MudText Typo="Typo.h5">@ResourceStrings.GameAssistant<small>MementoMori</small></MudText>
         </MudDrawerHeader>
         <NavMenu />
     </MudDrawer>
     <MudMainContent>
         <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="app-content">
             <ErrorBoundary @ref="_errorBoundary">
-                <ChildContent>@Body</ChildContent>
+                @* Fallback tab title for pages without their own; a page's PageTitle renders later and wins. *@
+                <ChildContent><PageTitle>@ResourceStrings.GameAssistant</PageTitle>@Body</ChildContent>
                 <ErrorContent><MudAlert Severity="Severity.Error">@ResourceStrings.PageRenderError</MudAlert></ErrorContent>
             </ErrorBoundary>
         </MudContainer>
@@ -114,18 +115,17 @@
         LayoutProperties = new() { DefaultBorderRadius = "12px", DrawerWidthLeft = "232px", AppbarHeight = "64px" },
         Typography = new()
         {
-            Default = new() { FontFamily = ["system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "PingFang SC", "Microsoft YaHei UI", "Microsoft JhengHei", "Noto Sans CJK SC", "Noto Sans CJK TC", "WenQuanYi Zen Hei", "sans-serif"], FontSize = ".875rem", LineHeight = 1.6, LetterSpacing = "0" },
-            Body1 = new() { FontSize = ".875rem", LineHeight = 1.6, LetterSpacing = "0" },
-            Body2 = new() { FontSize = ".8125rem", LineHeight = 1.6, LetterSpacing = "0" },
-            Subtitle1 = new() { FontSize = ".875rem", LineHeight = 1.6, LetterSpacing = "0" },
-            Subtitle2 = new() { FontSize = ".8125rem", FontWeight = 600, LineHeight = 1.6, LetterSpacing = "0" },
-            H5 = new() { FontSize = "1.5rem", FontWeight = 700, LineHeight = 1.25, LetterSpacing = "0" },
-            H6 = new() { FontSize = ".9375rem", FontWeight = 650, LineHeight = 1.5, LetterSpacing = ".01em" },
-            Button = new() { FontSize = ".875rem", FontWeight = 500, LineHeight = 1.5, LetterSpacing = "0", TextTransform = "none" },
-            Input = new() { FontSize = ".875rem", LineHeight = 1.5, LetterSpacing = "0" },
-            Caption = new() { FontSize = ".75rem", LineHeight = 1.6, LetterSpacing = "0" }
+            Default = new DefaultTypography() { FontFamily = ["system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "PingFang SC", "Microsoft YaHei UI", "Microsoft JhengHei", "Noto Sans CJK SC", "Noto Sans CJK TC", "WenQuanYi Zen Hei", "sans-serif"], FontSize = ".875rem", LineHeight = "1.6", LetterSpacing = "0" },
+            Body1 = new Body1Typography() { FontSize = ".875rem", LineHeight = "1.6", LetterSpacing = "0" },
+            Body2 = new Body2Typography() { FontSize = ".8125rem", LineHeight = "1.6", LetterSpacing = "0" },
+            Subtitle1 = new Subtitle1Typography() { FontSize = ".875rem", LineHeight = "1.6", LetterSpacing = "0" },
+            Subtitle2 = new Subtitle2Typography() { FontSize = ".8125rem", FontWeight = "600", LineHeight = "1.6", LetterSpacing = "0" },
+            H5 = new H5Typography() { FontSize = "1.5rem", FontWeight = "700", LineHeight = "1.25", LetterSpacing = "0" },
+            H6 = new H6Typography() { FontSize = ".9375rem", FontWeight = "650", LineHeight = "1.5", LetterSpacing = ".01em" },
+            Button = new ButtonTypography() { FontSize = ".875rem", FontWeight = "500", LineHeight = "1.5", LetterSpacing = "0", TextTransform = "none" },
+            Caption = new CaptionTypography() { FontSize = ".75rem", LineHeight = "1.6", LetterSpacing = "0" }
         },
-        PaletteLight = new()
+        PaletteLight = new PaletteLight()
         {
             Primary = "#A9530F",
             PrimaryContrastText = "#FFFFFF",
@@ -157,7 +157,7 @@
             DividerLight = "#E7DDD0",
             HoverOpacity = .06
         },
-        PaletteDark = new()
+        PaletteDark = new PaletteDark() // dark: page, card and inset tile are one step apart each so cards read as raised
         {
             Primary = "#F0A35E",
             PrimaryContrastText = "#2B1704",
@@ -171,12 +171,12 @@
             WarningContrastText = "#2E2210",
             Error = "#F08A7E",
             ErrorContrastText = "#301A17",
-            Background = "#15120F",
-            BackgroundGray = "#2A2520",
-            Surface = "#221E1A",
-            AppbarBackground = "#15120F",
+            Background = "#0F0D0B",
+            BackgroundGray = "#302922",
+            Surface = "#252019",
+            AppbarBackground = "#0F0D0B",
             AppbarText = "#F2EBE1",
-            DrawerBackground = "#191612",
+            DrawerBackground = "#13110E",
             DrawerText = "#BDB2A3",
             DrawerIcon = "#A39788",
             TextPrimary = "#F2EBE1",
@@ -184,14 +184,14 @@
             TextDisabled = "#6F655A",
             ActionDefault = "#BDB2A3",
             ActionDisabled = "#6F655A",
-            ActionDisabledBackground = "#352F28",
-            LinesDefault = "#38332D",
-            LinesInputs = "#4A433C",
-            TableLines = "#38332D",
-            TableStriped = "#262119",
-            TableHover = "#2A2520",
-            Divider = "#38332D",
-            DividerLight = "#38332D",
+            ActionDisabledBackground = "#3A332B",
+            LinesDefault = "#3B342C",
+            LinesInputs = "#4D453C",
+            TableLines = "#3B342C",
+            TableStriped = "#29231D",
+            TableHover = "#302922",
+            Divider = "#3B342C",
+            DividerLight = "#3B342C",
             HoverOpacity = .08
         }
     };
@@ -281,6 +281,8 @@
         {
             try
             {
+                // The prerendered page ignores clicks; html.app-booting shows that until this first interactive render.
+                await JS.InvokeVoidAsync("document.documentElement.classList.remove", "app-booting");
                 var saved = await JS.InvokeAsync<string?>("mementoTheme.getMode");
                 if (saved is "light" or "dark") _themeMode = saved;
             }

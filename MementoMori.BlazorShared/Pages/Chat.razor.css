@@ -5,7 +5,7 @@
 .chat-status-dot.connected { background: var(--mud-palette-success); }
 .chat-channels { display: flex; flex-wrap: wrap; gap: 6px; }
 .chat-channels ::deep .mud-button { min-height: 32px; padding: .3rem 12px; border-radius: 999px; font-size: .875rem; font-weight: 500; background: transparent; border: 0; color: var(--mud-palette-text-secondary); box-shadow: none; }
-.chat-channels ::deep .mud-button:hover:not(:disabled) { background: var(--mud-palette-background-gray); color: var(--mud-palette-text-primary); }
+.chat-channels ::deep .mud-button:hover:not(:disabled):not(.mud-button-filled) { background: var(--mud-palette-background-gray); color: var(--mud-palette-text-primary); }
 .chat-channels ::deep .mud-button.mud-button-filled { background: var(--app-selected-background); border-color: transparent; color: var(--mud-palette-primary); font-weight: 500; }
 .chat-channels ::deep .mud-button:disabled { opacity: .6; }
 .chat-channels ::deep .chat-unread { color: var(--app-dot); }
@@ -127,6 +127,9 @@
 .chat-panel-empty { padding: 2rem 1rem; text-align: center; color: var(--mud-palette-text-secondary); }
 .chat-panel-empty p { margin-top: .5rem; font-size: .85rem; }
 .chat-history-button { text-align: center; }
+@media (max-height: 500px) {
+    .chat-emoticons { height: min(240px, 70dvh); }
+}
 @container (max-width: 849px) {
     .chat-conversation-layout.with-stickers .chat-history { height: clamp(140px, 24dvh, 280px); }
 }
@@ -146,9 +149,63 @@
     .chat-channels ::deep .mud-button-label { line-height: 1.45; }
     .chat-workspace.with-contacts { grid-template-columns: minmax(0, 1fr); }
     .chat-contacts { max-height: 230px; }
-    .chat-history { height: clamp(280px, 48vh, 720px); }
+    .chat-workspace.with-contacts.has-target .chat-contacts { max-height: 132px; }
+    /* Fit the first screen: everything but the list ≈ 440px, plus the contact list on the private channel. */
+    .chat-history { height: clamp(200px, calc(100dvh - 440px), 720px); }
+    .with-contacts .chat-history { height: clamp(200px, calc(100dvh - 580px), 720px); }
+    .chat-conversation-heading { min-height: 48px; padding: .5rem .75rem; }
+    .chat-composer.no-target { display: none; }
+    .chat-send-actions ::deep .mud-button { min-width: 40px; width: 40px; padding: 0; font-size: 0; }
+    .chat-send-actions ::deep .mud-button-icon-start { margin: 0; }
+}
+@media (max-width: 430px) {
+    .chat-conversation-heading:has(.mud-button) .chat-muted { display: none; }
+}
+@media (min-width: 701px) {
+    /* The conversation sets the row height; the contact list scrolls inside it. */
+    .chat-workspace.with-contacts .chat-contacts { contain: size; max-height: none; }
+}
+/* Send sits beside the input: a focused input stays above the on-screen keyboard, whichever way the browser handles it. */
+@media (max-width: 700px), (max-height: 500px) {
+    .chat-composer { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; column-gap: .5rem; padding: .6rem .75rem; }
+    .chat-composer label { position: absolute; width: 1px; height: 1px; margin: 0; overflow: hidden; clip-path: inset(50%); }
+    .chat-composer textarea { min-height: 3.25rem; font-size: 16px; }
+    .chat-draft-preview { grid-column: 1 / -1; }
+    .chat-composer .chat-compose-actions { display: contents; }
+    .chat-composer .chat-compose-actions ::deep > .flex-grow-1 { display: none; }
+    .chat-composer .chat-compose-actions > .chat-muted, .chat-composer .chat-result { margin-top: .25rem; }
+    .chat-composer .chat-result { grid-column: 2; text-align: end; }
+    .chat-send-actions { grid-column: 2; grid-row: 1; margin: 0; }
+    .chat-send-actions ::deep .chat-emoticon-toggle { min-width: 0; }
     .chat-guild-scroll { padding: 1rem; }
     .chat-guild-card { padding: 1rem; }
     .chat-guild-toolbar { padding: .35rem 1rem; }
 }
-.chat-send-actions ::deep .mud-button-filled:disabled { background: var(--mud-palette-background-gray) !important; color: var(--mud-palette-text-secondary) !important; }
+/* Landscape phones: title, status and channels share one row, the heading buttons go icon-only and the list gives way, so Send fits the first screen. */
+@media (max-height: 500px) {
+    .chat-page { flex-flow: row wrap; column-gap: 1rem; }
+    .chat-page ::deep > * { flex: 1 1 100%; min-width: 0; }
+    .chat-page > .chat-heading { display: flex; flex: 0 1 auto; }
+    .chat-page > .chat-channels { display: flex; flex: 1 1 auto; }
+    .chat-heading ::deep .mud-button { min-width: 40px; padding-inline: 8px; font-size: 0; }
+    .chat-heading ::deep .mud-button-icon-start { margin: 0; }
+    .chat-conversation-heading { min-height: 44px; padding-block: .25rem; }
+    .chat-history, .chat-conversation-layout.with-stickers .chat-history { height: clamp(120px, calc(100dvh - 256px), 720px); }
+    .chat-guild-title p { display: none; }
+}
+/* ...and the sticker panel sits beside the conversation instead of below the fold. */
+@media (max-height: 500px) and (min-width: 600px) {
+    .chat-conversation-layout.with-stickers { grid-template-columns: minmax(0, 1fr) 260px; grid-template-areas: "heading stickers" "history stickers" "share stickers" "composer stickers"; }
+    .chat-emoticons { height: auto; border-top: 0; border-left: 1px solid var(--mud-palette-lines-default); }
+}
+@media (pointer: coarse) {
+    .chat-ctrl-hint { display: none; }
+    .chat-page ::deep .mud-icon-button-size-small, .chat-guild-info ::deep .mud-icon-button-size-small { min-width: 40px; min-height: 40px; }
+    .chat-send-actions ::deep .mud-button { min-height: 40px; }
+    .chat-sender { padding-block: .4rem; margin-block: -.4rem; }
+    .chat-emoticon-tabs button { min-height: 40px; }
+    .chat-size-control input[type="range"] { height: 32px; }
+    .chat-game-settings summary { padding-block: .4rem; }
+}
+.chat-composer textarea:disabled { background: var(--mud-palette-background-gray); cursor: not-allowed; }
+.chat-send-actions ::deep .mud-button-filled:disabled { background: transparent !important; color: var(--mud-palette-text-disabled) !important; }

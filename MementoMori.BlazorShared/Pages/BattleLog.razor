@@ -6,9 +6,11 @@
 @inject IDialogService DialogService
 @inject IFileSaver FileSaver
 
+<PageTitle>@MementoMori.Ortega.Share.Masters.TextResourceTable.Get("[BattleReportTitle]")</PageTitle>
+
 <div class="battle-log-page">
 <MudText Class="battle-log-intro" Typo="Typo.body1">
-    @ResourceStrings.You_can_download_the_battle_log_and_parse_it_here: <MudLink Href="@GameConfig.Value.BattleLogViewerUrl" Target="_blank">@ResourceStrings.BattleLogViewerTitle</MudLink>
+    @ResourceStrings.You_can_download_the_battle_log_and_parse_it_here: <MudLink Href="@GameConfig.Value.BattleLogViewerUrl" Target="_blank" Typo="Typo.body1">@ResourceStrings.BattleLogViewerTitle</MudLink>
 </MudText>
 
 <div class="battle-log-controls">
@@ -19,13 +21,11 @@
         <MudSelectItem Value="30">@ResourceStrings.BattleLogCleanOption1Month</MudSelectItem>
         <MudSelectItem Value="0">@ResourceStrings.BattleLogCleanOptionAll</MudSelectItem>
     </MudSelect>
-    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Outlined" title="@ResourceStrings.BattleLogCleanRange" aria-label="@ResourceStrings.BattleLogCleanRange"
+    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Variant="Variant.Outlined" aria-label="@Tr("[MyPagePresentDetailDeleteButton]")"
                    OnClick="CleanBattleLogs" Color="Color.Error"></MudIconButton>
 </div>
 
 <div role="group" class="battle-log-toolbar">
-    <MudIconButton Icon="@Icons.Material.Filled.Pageview" Size="Size.Small" Variant="Variant.Outlined" title="@ResourceStrings.BattleLogViewerTitle" aria-label="@ResourceStrings.BattleLogViewerTitle" OnClick="() => ViewBattleLog(SelectedBattleResult)"></MudIconButton>
-    <MudIconButton Icon="@Icons.Material.Filled.Download" Size="Size.Small" Variant="Variant.Outlined" title="@Tr("[LamentDownloadButton]")" aria-label="@Tr("[LamentDownloadButton]")" OnClick="() => DownloadBattleLog(SelectedBattleResult)"></MudIconButton>
     <MudSelect Class="battle-log-type" Label="@ResourceStrings.BattleLogType" T="BattleLogType" @bind-Value="selectedBattleLogType" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense">
         @foreach (BattleLogType battleLogType in Enum.GetValues(typeof(BattleLogType)))
         {
@@ -34,12 +34,12 @@
             </MudSelectItem>
         }
     </MudSelect>
-    <MudSelect Class="battle-log-file" Label="@ResourceStrings.BattleLogFile" Placeholder="@Tr("[CommonSelectLabel]")" @bind-Value="SelectedBattleResult" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+    <MudSelect Class="battle-log-file" Label="@ResourceStrings.BattleLogFile" Placeholder="@Tr("[CommonSelectLabel]")" @bind-Value="SelectedBattleResult" Disabled="@(BattleResults.Count == 0)" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense">
         @foreach (var filename in BattleResults)
         {
             var details = GetLogDetails(filename);
             <MudSelectItem Value="filename">
-                <div class="battle-log-option" title="@filename">
+                <div class="battle-log-option">
                     @if (details is { } detail)
                     {
                         <span class="battle-log-option-heading">
@@ -56,6 +56,8 @@
             </MudSelectItem>
         }
     </MudSelect>
+    <MudIconButton Icon="@Icons.Material.Filled.Pageview" Size="Size.Small" Variant="Variant.Outlined" title="@ResourceStrings.BattleLogViewerTitle" aria-label="@ResourceStrings.BattleLogViewerTitle" Disabled="@string.IsNullOrEmpty(SelectedBattleResult)" OnClick="() => ViewBattleLog(SelectedBattleResult)"></MudIconButton>
+    <MudIconButton Icon="@Icons.Material.Filled.Download" Size="Size.Small" Variant="Variant.Outlined" aria-label="@Tr("[LamentDownloadButton]")" Disabled="@string.IsNullOrEmpty(SelectedBattleResult)" OnClick="() => DownloadBattleLog(SelectedBattleResult)"></MudIconButton>
 </div>
 </div>
 

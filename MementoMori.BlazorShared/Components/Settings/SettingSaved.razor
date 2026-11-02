@@ -1,0 +1,39 @@
+@using MementoMori.Common.Localization
+@inject ISnackbar Snackbar
+
+@* Autosave feedback beside a card title: a short-lived check on success, a red snackbar with the error on failure.
+   Place it in the card header (before the card's inputs) so the @ref is set before any input can save. *@
+<span class="setting-saved" role="status">@if (_on)
+{
+    <span @key="_n">✓ @ResourceStrings.Save_successful</span>
+}</span>
+
+@code {
+    int _n;
+    bool _on;
+
+    /// <summary>Runs one save. Returns false (and shows the error) when it throws.</summary>
+    public bool Run(Action save)
+    {
+        try
+        {
+            save();
+        }
+        catch (Exception e)
+        {
+            Snackbar.Add(e.Message, Severity.Error);
+            return false;
+        }
+
+        var n = ++_n;
+        _on = true;
+        _ = InvokeAsync(StateHasChanged);
+        _ = Task.Delay(1600).ContinueWith(_ => InvokeAsync(() =>
+        {
+            if (n != _n) return;
+            _on = false;
+            StateHasChanged();
+        }));
+        return true;
+    }
+}

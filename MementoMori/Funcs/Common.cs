@@ -22,6 +22,8 @@ using BountyQuestGetListResponse = MementoMori.Ortega.Share.Data.ApiInterface.Bo
 
 namespace MementoMori.Funcs;
 
+public record LogEntry(DateTime Time, string Message, bool IsError);
+
 [RegisterTransient<MementoMoriFuncs>]
 [AutoConstruct]
 public partial class MementoMoriFuncs : ReactiveObject, IDisposable
@@ -53,6 +55,9 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
     public record JobRun(DateTimeOffset StartedAt, DateTimeOffset? FinishedAt = null, string? Error = null, bool Cancelled = false);
 
     private PlayerDataInfo _lastPlayerDataInfo;
+
+    /// <summary>World of the logged-in character (time server id * 1000 + world number); 0 before the first login.</summary>
+    public long WorldId => _lastPlayerDataInfo?.WorldId ?? 0;
     public TimeManager TimeManager => NetworkManager.TimeManager;
 
     [Reactive]
@@ -113,7 +118,7 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
     [Reactive]
     public bool LoginOk { get; set; }
 
-    public ObservableCollection<string> MesssageList { get; } = new();
+    public ObservableCollection<LogEntry> MesssageList { get; } = new();
 
     public long UserId { get; set; }
 
@@ -134,11 +139,18 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
         UserSyncData = new UserSyncData();
     }
 
+    // Listing characters is a full title-screen login (auth/login): the server rotates the token and the current session dies.
+    // While logged in, reuse the list from the last login; choosing a character logs in again anyway.
+    private List<PlayerDataInfo>? _playerDataInfos;
+    private string? _playerDataInfosKey;
+
     public async Task<List<PlayerDataInfo>> GetPlayerDataInfo()
     {
+        var clientKey = _accountManager.GetAccountInfo(UserId).ClientKey;
+        if (LoginOk && _playerDataInfos != null && _playerDataInfosKey == clientKey) return _playerDataInfos;
         var reqBody = new LoginRequest
         {
-            ClientKey = _accountManager.GetAccountInfo(UserId).ClientKey,
+            ClientKey = clientKey,
             DeviceToken = AuthOption.DeviceToken,
             AppVersion = AuthOption.AppVersion,
             OSVersion = AuthOption.OSVersion,
@@ -146,7 +158,9 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
             AdverisementId = Guid.NewGuid().ToString("D"),
             UserId = UserId
         };
-        return await NetworkManager.GetPlayerDataInfoList(reqBody, AddLog, OperationCancellation);
+        _playerDataInfos = await NetworkManager.GetPlayerDataInfoList(reqBody, AddLog, OperationCancellation);
+        _playerDataInfosKey = clientKey;
+        return _playerDataInfos;
     }
 
     public async Task<GetUserDataResponse> UserGetUserData()
@@ -180,6 +194,8 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
             _sessionLost = true;
             // Another device took over: give the player 15 minutes before the helper kicks it.
             if (e.ErrorCode == ErrorCode.CommonLoggedInAnotherDevice) NextAutoLoginAttempt = DateTimeOffset.UtcNow.AddMinutes(15);
+            // Pages call this directly; their banner then only says "please log in", so record why the session ended.
+            if (!_ownsExecutionSemaphore.Value) AddError(ErrorText(e));
             throw;
         }
     }
@@ -191,17 +207,25 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
     // Respect the back-off after another device took over (112) and a permanent auth failure.
     private bool CanJobLogin => !_autoLoginStopped && DateTimeOffset.UtcNow >= NextAutoLoginAttempt;
 
-    public async Task SyncUserData()
-    {
-        await UserGetUserData();
-    }
+    // Through ExecuteQuickAction so a failed sync shows in the execution log instead of breaking the page.
+    public Task SyncUserData() => ExecuteQuickAction(async (_, _) => await UserGetUserData());
 
-    private void AddLog(string message)
+    private void AddLog(string message) => AddEntry(message, false);
+
+    private void AddError(string message) => AddEntry(message, true);
+
+    // The API path makes a failed request easy to locate; Message alone is what the player sees elsewhere.
+    private static string ErrorText(Exception e) => e is ApiErrorException { Path: { } path } ? $"{path}: {e.Message}" : e.Message;
+
+    private void AddEntry(string message, bool isError)
     {
-        Console.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{_lastPlayerDataInfo?.Name}(Lv{_lastPlayerDataInfo?.PlayerRank})] {message}");
+        var now = DateTime.Now;
+        // Before the first login there is no player yet: name the account instead of printing "[(Lv)]".
+        var who = _lastPlayerDataInfo is { } player ? $"{player.Name}(Lv{player.PlayerRank})" : _accountManager?.GetAccountInfo(UserId)?.Name ?? UserId.ToString();
+        Console.WriteLine($"[{now:yyyy-MM-dd HH:mm:ss}] [{who}] {(isError ? "ERROR " : "")}{message}");
         lock (MesssageList)
         {
-            MesssageList.Insert(0, message);
+            MesssageList.Insert(0, new LogEntry(now, message, isError));
             if (MesssageList.Count > 100) MesssageList.RemoveAt(MesssageList.Count - 1);
         }
     }
@@ -224,12 +248,17 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
                 catch (Exception e)
                 {
                     _operationError = e.Message;
-                    _logger.LogError(e, "Quick action failed");
-                    AddLog(e.Message);
+                    var message = ErrorText(e);
+                    _logger.LogError(e, "Quick action failed: {Message}", message);
+                    AddError(message);
                 }
             }, cancellationToken);
         }
-        catch (OperationCanceledException) when (!nested) { }
+        catch (OperationCanceledException) when (!nested)
+        {
+            // Our own token was cancelled (取消 button or logout), not the caller's (scheduler shutdown): say so in the output.
+            if (!cancellationToken.IsCancellationRequested) AddLog(ResourceStrings.TaskCancelled);
+        }
     }
 
     public async Task ExecuteScheduledJob(Func<Task> func, CancellationToken cancellationToken, Func<bool>? canExecute = null, string? jobName = null,

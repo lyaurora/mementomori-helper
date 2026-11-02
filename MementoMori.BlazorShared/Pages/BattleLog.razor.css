@@ -1,5 +1,10 @@
-.battle-log-page {
+﻿.battle-log-page {
     min-width: 0;
+}
+
+.battle-log-page ::deep .battle-log-intro .mud-link {
+    display: inline-block;
+    padding-block: 6px;
 }
 
 .battle-log-page ::deep .battle-log-intro {
@@ -35,7 +40,8 @@
 
 .battle-log-toolbar {
     display: grid;
-    grid-template-columns: 2.5rem 2.5rem minmax(9rem, .4fr) minmax(15rem, 1fr);
+    /* type → file → view/download: the buttons sit next to the file they act on */
+    grid-template-columns: minmax(9rem, .4fr) minmax(15rem, 1fr) 2.5rem 2.5rem;
     align-items: end;
     gap: .65rem;
 }
@@ -114,24 +120,22 @@
     display: block;
     width: 100%;
     /* Fit the viewport so the viewer scrolls inside itself, not page + frame. */
-    height: max(480px, calc(100dvh - 120px));
+    height: max(300px, calc(100dvh - 88px));
     border: 0;
 }
 
 @media (max-width: 799.98px) {
+    /* Type on its own row; the file select shares the next row with the view/download buttons that act on it. */
     .battle-log-toolbar {
-        grid-template-columns: 2.5rem 2.5rem minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr) 2.5rem 2.5rem;
     }
 
     .battle-log-page ::deep .battle-log-toolbar > .mud-select:has(.battle-log-type) {
-        grid-column: 3;
-    }
-
-    .battle-log-page ::deep .battle-log-file {
         grid-column: 1 / -1;
+        order: -1;
     }
 
-    .battle-log-page ::deep .battle-log-toolbar > .mud-select:has(.battle-log-file) { grid-column: 1 / -1; min-width: 0; }
+    .battle-log-page ::deep .battle-log-toolbar > .mud-select:has(.battle-log-file) { grid-column: 1; grid-row: 2; min-width: 0; }
 }
 
 @media (max-width: 599.98px) {

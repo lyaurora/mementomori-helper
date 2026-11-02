@@ -1,15 +1,19 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="app-booting">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
+    <link rel="icon" href="@Assets["_content/MementoMori.BlazorShared/app-icon.png"]" type="image/png" />
+    <link rel="apple-touch-icon" href="@Assets["_content/MementoMori.BlazorShared/apple-touch-icon.png"]" />
     <link href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" rel="stylesheet" />
     <link href="@Assets["_content/MementoMori.BlazorShared/css/site.css"]" rel="stylesheet" />
     <link href="@Assets["MementoMori.WebUI.styles.css"]" rel="stylesheet" />
     <script src="@Assets["_content/MementoMori.BlazorShared/theme.js"]"></script>
     <script src="@Assets["_content/MementoMori.BlazorShared/tooltip.js"]"></script>
     <HeadOutlet @rendermode="@RenderMode.InteractiveServer" />
+    @* Until the circuit is interactive, clicks on the prerendered page do nothing; show it as busy instead. *@
+    <style>html.app-booting body { cursor: progress; } html.app-booting button, html.app-booting a, html.app-booting .mud-input-control { pointer-events: none; }</style>
 </head>
 <body>
 <Routes @rendermode="@RenderMode.InteractiveServer"/>

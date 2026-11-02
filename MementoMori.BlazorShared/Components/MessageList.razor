@@ -2,6 +2,7 @@
 @using System.Reactive.Concurrency
 @using System.Reactive.Linq
 @using DynamicData.Binding
+@using MementoMori.Funcs
 
 @inherits MementoMori.BlazorShared.Models.AccountComponent
 
@@ -10,8 +11,9 @@
     <tbody class="d-flex flex-column-reverse">
     @foreach (var msg in _messageList)
     {
-        <tr>
-            <td>@msg</td>
+        @* One line on purpose: the cell is white-space: pre-wrap, so markup whitespace would show. *@
+        <tr class="@(msg.IsError ? "is-error" : null)">
+            <td><span class="msg-time">@msg.Time.ToString("HH:mm:ss")</span>@if (msg.IsError){<MudIcon Icon="@Icons.Material.Filled.Error" Class="msg-error-icon" aria-hidden="true" />}@msg.Message</td>
         </tr>
     }
     </tbody>
@@ -24,12 +26,12 @@
     {
         try
         {
-            _messageList = Funcs.MesssageList.ToList();
+            lock (Funcs.MesssageList) _messageList = Funcs.MesssageList.ToList();
             TrackAccountSubscription(Funcs.MesssageList.ObserveCollectionChanges().Throttle(TimeSpan.FromMilliseconds(50)).Subscribe(set =>
             {
                 try
                 {
-                    _messageList = Funcs.MesssageList.ToList();
+                    lock (Funcs.MesssageList) _messageList = Funcs.MesssageList.ToList();
                 }
                 catch
                 {
@@ -49,5 +51,5 @@
         }
     }
 
-    private List<string> _messageList = new();
+    private List<LogEntry> _messageList = new();
 }

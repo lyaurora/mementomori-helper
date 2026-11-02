@@ -9,12 +9,12 @@
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Tune" aria-hidden="true" /><span>@ResourceStrings.AutoJobSwitchs <span class="panel-scope">@ResourceStrings.AllAccounts</span></span></MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Tune" aria-hidden="true" /><span>@ResourceStrings.AutoJobSwitchs <span class="panel-scope">@ResourceStrings.AllAccounts</span></span><SettingSaved @ref="_saved"/></MudText>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent>
         <div class="settings-toggle-list">
-            <MudSwitch Class="settings-toggle master-toggle" LabelPosition="LabelPosition.Start" Label="@ResourceStrings.DisableAllJobs" @bind-Value="AutoJob__DisableAll" @bind-Value:after="RegisterAllJobs" Color="Color.Primary"></MudSwitch>
+            <MudSwitch Class="settings-toggle master-toggle" LabelPlacement="Placement.Start" Label="@ResourceStrings.DisableAllJobs" @bind-Value="AutoJob__DisableAll" @bind-Value:after="RegisterAllJobs" Color="Color.Primary"></MudSwitch>
             @if (AccountManager.GetAccountInfo(UserId) is { } pauseAccount)
             {
                 var until = pauseAccount.PauseUntil > DateTimeOffset.UtcNow ? pauseAccount.PauseUntil : null;
@@ -44,27 +44,28 @@
                 </div>
             }
             <MudDivider Class="settings-toggle-divider" />
-            <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@ResourceStrings.ReinforceEquipmentOnce" @bind-Value="AutoJob__AutoReinforcementEquipmentOneTime" Color="Color.Primary"></MudSwitch>
-            <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@Tr("[CommonHeaderLocalPvpLabel]")" @bind-Value="AutoJob__AutoPvp" Color="Color.Primary"></MudSwitch>
-            <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@Tr("[CommonHeaderGlobalPvpLabel]")" @bind-Value="AutoJob__AutoLegendLeague" Color="Color.Primary"></MudSwitch>
-            <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@Tr("[CommonHeaderDungeonBattleLabel]")" @bind-Value="AutoJob__AutoDungeonBattle" Color="Color.Primary"></MudSwitch>
-            <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@ResourceStrings.UseNormalItems" @bind-Value="AutoJob__AutoUseItems" Color="Color.Primary"></MudSwitch>
-            <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@string.Format(ResourceStrings.FreeGachaFormat, Tr("[CommonFooterGachaButtonLabel]"))" @bind-Value="AutoJob__AutoFreeGacha" Color="Color.Primary"></MudSwitch>
-            <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@Tr("[CharacterMenuTabCharacterRankUp]")" @bind-Value="AutoJob__AutoRankUpCharacter" Color="Color.Primary"></MudSwitch>
-            <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@Tr("[GuildRaidReleaseConfirmTitle]")" @bind-Value="AutoJob__AutoOpenGuildRaid" Color="Color.Primary"></MudSwitch>
-            <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@Tr("[CommonHeaderLocalRaidLabel]")" @bind-Value="AutoJob__AutoLocalRaid" Color="Color.Primary"></MudSwitch>
+            <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@ResourceStrings.ReinforceEquipmentOnce" @bind-Value="AutoJob__AutoReinforcementEquipmentOneTime" Color="Color.Primary"></MudSwitch>
+            <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@Tr("[CommonHeaderLocalPvpLabel]")" @bind-Value="AutoJob__AutoPvp" Color="Color.Primary"></MudSwitch>
+            <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@Tr("[CommonHeaderGlobalPvpLabel]")" @bind-Value="AutoJob__AutoLegendLeague" Color="Color.Primary"></MudSwitch>
+            <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@Tr("[CommonHeaderDungeonBattleLabel]")" @bind-Value="AutoJob__AutoDungeonBattle" Color="Color.Primary"></MudSwitch>
+            <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@ResourceStrings.UseNormalItems" @bind-Value="AutoJob__AutoUseItems" Color="Color.Primary"></MudSwitch>
+            <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@string.Format(ResourceStrings.FreeGachaFormat, Tr("[CommonFooterGachaButtonLabel]"))" @bind-Value="AutoJob__AutoFreeGacha" Color="Color.Primary"></MudSwitch>
+            <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@Tr("[CharacterMenuTabCharacterRankUp]")" @bind-Value="AutoJob__AutoRankUpCharacter" Color="Color.Primary"></MudSwitch>
+            <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@Tr("[GuildRaidReleaseConfirmTitle]")" @bind-Value="AutoJob__AutoOpenGuildRaid" Color="Color.Primary"></MudSwitch>
+            <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@Tr("[CommonHeaderLocalRaidLabel]")" @bind-Value="AutoJob__AutoLocalRaid" Color="Color.Primary"></MudSwitch>
             @* <MudSwitch Label="@ResourceStrings.Deploy_defense" @bind-Value="AutoJob__AutoDeployGuildDefense" Color="Color.Primary"></MudSwitch> *@
-            <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@Tr("[GachaRelicChangeTitle]")" @bind-Value="AutoJob__AutoChangeGachaRelic" Color="Color.Primary"></MudSwitch>
-            <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@ResourceStrings.Auto_draw_10_times__up_to_3_draws_" @bind-Value="AutoJob__AutoDrawGachaRelic" Color="Color.Primary"></MudSwitch>
+            <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@Tr("[GachaRelicChangeTitle]")" @bind-Value="AutoJob__AutoChangeGachaRelic" Color="Color.Primary"></MudSwitch>
+            <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@ResourceStrings.Auto_draw_10_times__up_to_3_draws_" @bind-Value="AutoJob__AutoDrawGachaRelic" Color="Color.Primary"></MudSwitch>
         </div>
     </MudCardContent>
 </MudCard>
 
 @code {
+    SettingSaved _saved = null!;
     [Parameter] public EventCallback OnJobsChanged { get; set; }
     [Parameter] public long UserId { get; set; }
 
-    private void Pause(DateTimeOffset? until) => AccountManager.SetPauseUntil(UserId, until);
+    private void Pause(DateTimeOffset? until) => _saved.Run(() => AccountManager.SetPauseUntil(UserId, until));
 
     private async Task RegisterAllJobs()
     {
@@ -75,79 +76,79 @@
     public bool AutoJob__DisableAll
     {
         get => WritableGameConfig.Value.AutoJob.DisableAll;
-        set => WritableGameConfig.Update(x => x.AutoJob.DisableAll = value);
+        set => _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.DisableAll = value));
     }
 
     public bool AutoJob__AutoReinforcementEquipmentOneTime
     {
         get => WritableGameConfig.Value.AutoJob.AutoReinforcementEquipmentOneTime;
-        set => WritableGameConfig.Update(x => x.AutoJob.AutoReinforcementEquipmentOneTime = value);
+        set => _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.AutoReinforcementEquipmentOneTime = value));
     }
 
     public bool AutoJob__AutoPvp
     {
         get => WritableGameConfig.Value.AutoJob.AutoPvp;
-        set => WritableGameConfig.Update(x => x.AutoJob.AutoPvp = value);
+        set => _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.AutoPvp = value));
     }
 
     public bool AutoJob__AutoLegendLeague
     {
         get => WritableGameConfig.Value.AutoJob.AutoLegendLeague;
-        set => WritableGameConfig.Update(x => x.AutoJob.AutoLegendLeague = value);
+        set => _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.AutoLegendLeague = value));
     }
 
     public bool AutoJob__AutoDungeonBattle
     {
         get => WritableGameConfig.Value.AutoJob.AutoDungeonBattle;
-        set => WritableGameConfig.Update(x => x.AutoJob.AutoDungeonBattle = value);
+        set => _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.AutoDungeonBattle = value));
     }
 
     public bool AutoJob__AutoUseItems
     {
         get => WritableGameConfig.Value.AutoJob.AutoUseItems;
-        set => WritableGameConfig.Update(x => x.AutoJob.AutoUseItems = value);
+        set => _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.AutoUseItems = value));
     }
 
     public bool AutoJob__AutoFreeGacha
     {
         get => WritableGameConfig.Value.AutoJob.AutoFreeGacha;
-        set => WritableGameConfig.Update(x => x.AutoJob.AutoFreeGacha = value);
+        set => _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.AutoFreeGacha = value));
     }
 
     public bool AutoJob__AutoRankUpCharacter
     {
         get => WritableGameConfig.Value.AutoJob.AutoRankUpCharacter;
-        set => WritableGameConfig.Update(x => x.AutoJob.AutoRankUpCharacter = value);
+        set => _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.AutoRankUpCharacter = value));
     }
 
     public bool AutoJob__AutoOpenGuildRaid
     {
         get => WritableGameConfig.Value.AutoJob.AutoOpenGuildRaid;
-        set => WritableGameConfig.Update(x => x.AutoJob.AutoOpenGuildRaid = value);
+        set => _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.AutoOpenGuildRaid = value));
     }
 
     public bool AutoJob__AutoLocalRaid
     {
         get => WritableGameConfig.Value.AutoJob.AutoLocalRaid;
-        set => WritableGameConfig.Update(x => x.AutoJob.AutoLocalRaid = value);
+        set => _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.AutoLocalRaid = value));
     }
 
     public bool AutoJob__AutoDeployGuildDefense
     {
         get => WritableGameConfig.Value.AutoJob.AutoDeployGuildDefense;
-        set => WritableGameConfig.Update(x => x.AutoJob.AutoDeployGuildDefense = value);
+        set => _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.AutoDeployGuildDefense = value));
     }
 
     public bool AutoJob__AutoChangeGachaRelic
     {
         get => WritableGameConfig.Value.AutoJob.AutoChangeGachaRelic;
-        set => WritableGameConfig.Update(x => x.AutoJob.AutoChangeGachaRelic = value);
+        set => _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.AutoChangeGachaRelic = value));
     }
 
     public bool AutoJob__AutoDrawGachaRelic
     {
         get => WritableGameConfig.Value.AutoJob.AutoDrawGachaRelic;
-        set => WritableGameConfig.Update(x => x.AutoJob.AutoDrawGachaRelic = value);
+        set => _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.AutoDrawGachaRelic = value));
     }
 
 }

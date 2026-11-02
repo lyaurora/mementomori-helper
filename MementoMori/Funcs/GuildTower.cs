@@ -102,6 +102,7 @@ public partial class MementoMoriFuncs
                             {
                                 if (e.ErrorCode == ErrorCode.GuildTowerAlreadyClearFloor)
                                 {
+                                    log(e.Message);
                                     isFloorClearedByOther = true;
                                     break;
                                 }

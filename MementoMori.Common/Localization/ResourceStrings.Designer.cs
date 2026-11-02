@@ -2789,6 +2789,12 @@ namespace MementoMori.Common.Localization {
             }
         }
 
+        public static string NumberUnitMedium {
+            get {
+                return ResourceManager.GetString("NumberUnitMedium", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Looks up a localized string similar to Not enough {0}.
         /// </summary>

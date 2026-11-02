@@ -50,4 +50,5 @@ html[data-theme="dark"] .gacha-art > img { filter: brightness(.92); }
     .gacha-wallet { margin-inline-start: 0; gap: 6px; }
     .gacha-wallet-label, .gacha-coin > span:last-child { display: none; } /* names stay in the chip title */
     .gacha-coin { height: 34px; padding-inline-end: 10px; }
+    .gacha-card-description { min-height: 0; } /* one column: no need to align card heights */
 }

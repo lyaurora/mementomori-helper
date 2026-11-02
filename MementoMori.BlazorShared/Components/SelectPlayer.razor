@@ -5,23 +5,14 @@
 <MudDialog>
     <DialogContent>
         <MudList T="PlayerDataInfo" ReadOnly="false" @bind-SelectedValue="playerDataInfo.PlayerDataInfo">
-            <MudListSubheader>
-                @if (playerDataInfo.PlayerDataInfo != null)
-                {
-                    <MudText>@ResourceStrings.Selected: @(((PlayerDataInfo) playerDataInfo.PlayerDataInfo).Name)</MudText>
-                }
-                else
-                {
-                    <MudText>@ResourceStrings.NotSelected</MudText>
-                }
-            </MudListSubheader>
+            @* No "selected: name" subheader: the highlighted row already says it. *@
             @foreach (var info in PlayerDataInfos)
             {
                 <MudListItem Value="info">
-                    <MudStack Row="true">
+                    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1">
                         <MudText Typo="Typo.h6">@info.Name</MudText>
                         <MudText Typo="Typo.subtitle1">@Tr("[CommonPlayerRankFormat]", info.PlayerRank)</MudText>
-                        <MudText Typo="Typo.body1">@Tr("[CommonWorldFormat]", info.WorldId)</MudText>
+                        <MudText Typo="Typo.body1">@Tr($"[TimeServerName{info.WorldId / 1000}]") @Tr("[CommonWorldFormat]", info.WorldId % 1000)</MudText>
                     </MudStack>
                 </MudListItem>
             }
@@ -29,14 +20,14 @@
     </DialogContent>
     <DialogActions>
         <MudSwitch @bind-Value="playerDataInfo.AutoLoginThisWorld" Color="Color.Primary">@ResourceStrings.Automatically_select_this_world_when_auto_logging_in</MudSwitch>
-        <MudButton OnClick="ConfirmSelection">@Masters.TextResourceTable.Get("[CommonDecisionLabel]")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ConfirmSelection">@Masters.TextResourceTable.Get("[CommonDecisionLabel]")</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
 
     [CascadingParameter]
-    MudDialogInstance MudDialog { get; set; }
+    IMudDialogInstance MudDialog { get; set; }
 
     [Parameter]
     public List<PlayerDataInfo> PlayerDataInfos { get; set; }

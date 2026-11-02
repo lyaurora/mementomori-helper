@@ -71,7 +71,7 @@ public partial class BattleLog
         }
         catch (Exception e)
         {
-            await DialogService.ShowMessageBox(Tr("[CommonErrorLabel]"), e.ToString(), yesText: Tr("[CommonOkLabel]"));
+            await DialogService.ShowMessageBoxAsync(Tr("[CommonErrorLabel]"), e.ToString(), yesText: Tr("[CommonOkLabel]"));
         }
     }
 
@@ -98,7 +98,7 @@ public partial class BattleLog
         }
         catch (Exception e)
         {
-            DialogService.ShowMessageBox(Tr("[CommonErrorLabel]"), e.ToString(), yesText: Tr("[CommonOkLabel]"));
+            DialogService.ShowMessageBoxAsync(Tr("[CommonErrorLabel]"), e.ToString(), yesText: Tr("[CommonOkLabel]"));
             json = null;
             return false;
         }
@@ -171,7 +171,7 @@ public partial class BattleLog
 
         if (!filesToDelete.Any())
         {
-            await DialogService.ShowMessageBox(ResourceStrings.BattleLogCleanRange, ResourceStrings.BattleLogNoFilesToClean, yesText: Tr("[CommonOkLabel]"));
+            await DialogService.ShowMessageBoxAsync(ResourceStrings.BattleLogCleanRange, ResourceStrings.BattleLogNoFilesToClean, yesText: Tr("[CommonOkLabel]"));
             return;
         }
 
@@ -190,7 +190,7 @@ public partial class BattleLog
             return $"{bytes:0.##} {sizes[order]}";
         }
 
-        var result = await DialogService.ShowMessageBox(
+        var result = await DialogService.ShowMessageBoxAsync(
             ResourceStrings.BattleLogCleanRange,
             string.Format(ResourceStrings.BattleLogCleanConfirm, filesToDelete.Count, FormatFileSize(totalSize)),
             yesText: ResourceStrings.Confirm, cancelText: ResourceStrings.Cancel);
@@ -205,13 +205,13 @@ public partial class BattleLog
             }
             catch (Exception ex)
             {
-                await DialogService.ShowMessageBox(Tr("[CommonErrorLabel]"),
+                await DialogService.ShowMessageBoxAsync(Tr("[CommonErrorLabel]"),
                     string.Format(ResourceStrings.BattleLogCleanError, file, ex.Message), yesText: Tr("[CommonOkLabel]"));
             }
         }
 
         GetLogs();
-        await DialogService.ShowMessageBox(ResourceStrings.Finished,
+        await DialogService.ShowMessageBoxAsync(ResourceStrings.Finished,
             string.Format(ResourceStrings.BattleLogCleanComplete, filesToDelete.Count), yesText: Tr("[CommonOkLabel]"));
     }
 }

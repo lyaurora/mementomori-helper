@@ -1,4 +1,4 @@
-.items-page {
+﻿.items-page {
     min-width: 0;
 }
 
@@ -31,6 +31,7 @@
 
 .items-page ::deep .items-table .mud-table-sort-label {
     display: inline-flex;
+    vertical-align: middle;
     align-items: center;
     white-space: nowrap;
 }
@@ -133,7 +134,49 @@
 
     .items-page ::deep .items-equipment-table .mud-table-root,
     .items-page ::deep .items-sphere-table .mud-table-root {
-        min-width: 1040px;
+        min-width: 960px;
+    }
+
+    .items-page ::deep .items-equipment-table .mud-table-cell,
+    .items-page ::deep .items-sphere-table .mud-table-cell {
+        padding-inline: .5rem;
+    }
+
+    /* Edge shade while columns are hidden on that side. Driven by the table's own horizontal scroll;
+       with no overflow (inactive timeline) or no support it stays off, as before. */
+    .items-page ::deep .items-table {
+        position: relative;
+        timeline-scope: --items-x;
+    }
+
+    .items-page ::deep .items-table .mud-table-container {
+        scroll-timeline: --items-x inline;
+    }
+
+    .items-page ::deep .items-table::before,
+    .items-page ::deep .items-table::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        z-index: 1;
+        width: 28px;
+        opacity: 0;
+        pointer-events: none;
+        animation: linear both;
+        animation-timeline: --items-x;
+    }
+
+    .items-page ::deep .items-table::before {
+        left: 0;
+        background: linear-gradient(to right, color-mix(in srgb, var(--mud-palette-text-primary) 16%, transparent), transparent);
+        animation-name: items-shade-start;
+    }
+
+    .items-page ::deep .items-table::after {
+        right: 0;
+        background: linear-gradient(to left, color-mix(in srgb, var(--mud-palette-text-primary) 16%, transparent), transparent);
+        animation-name: items-shade-end;
     }
 
     .items-page ::deep .items-consumable-table .mud-table-root {
@@ -193,3 +236,6 @@
         padding-bottom: .85rem;
     }
 }
+
+@keyframes items-shade-start { from { opacity: 0; } 4%, to { opacity: 1; } }
+@keyframes items-shade-end { from, 96% { opacity: 1; } to { opacity: 0; } }

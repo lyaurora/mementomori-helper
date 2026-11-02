@@ -48,7 +48,12 @@ internal class Program
         builder.Configuration.AddJsonFile(physicalProvider, "appsettings.other.json", true, true);
         builder.Configuration.AddJsonFile(physicalProvider, "appsettings.user.json", true, true);
 
-        builder.Services.AddMudServices();
+        builder.Services.AddMudServices(config =>
+        {
+            // Keep the MudBlazor 7 popover behaviour: clicks outside an open menu/select only close it, and lists flip only when opened.
+            config.PopoverOptions.ModalOverlay = true;
+            config.PopoverOptions.OverflowBehavior = OverflowBehavior.FlipOnOpen;
+        });
 
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents(o =>

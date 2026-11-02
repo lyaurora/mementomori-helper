@@ -1,5 +1,4 @@
 ﻿@using MementoMori.BlazorShared.Components
-@inject ISnackbar Snackbar
 @inject IWritableOptions<PlayersOption> PlayersOptions
 @using MementoMori.Option
 @using MementoMori.Ortega.Common.Utils
@@ -14,11 +13,8 @@
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.AutoAwesome" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[CommonFooterGachaButtonLabel]") <span class="panel-scope">@ResourceStrings.AllAccounts</span></span></MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.AutoAwesome" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[CommonFooterGachaButtonLabel]") <span class="panel-scope">@ResourceStrings.AllAccounts</span></span><SettingSaved @ref="_saved"/></MudText>
         </CardHeaderContent>
-        <CardHeaderActions>
-            <MudButton Class="setting-save-button" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Save" OnClick="() => SavePlayerSetting()">@Masters.TextResourceTable.Get("[CommonSaveLabel]")</MudButton>
-        </CardHeaderActions>
     </MudCardHeader>
     <MudCardContent Class="settings-form">
         <MudSelect T="UserItem" Label="@ResourceStrings.AutoGachaConsumeItems" MultiSelection="true" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense" Comparer="@(new UserItemComparer())"
@@ -30,24 +26,25 @@
         </MudSelect>
         <div class="setting-section">
             <MudText Class="setting-field-label">@(Tr("[TradeShopTabName11]")) <span class="panel-scope is-account"><PlayerAvatar IconId="@(Funcs?.UserSyncData?.UserStatusDtoInfo?.MainCharacterIconId ?? 0)" Name="@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name)" Size="16" />@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name)</span></MudText>
-            <MudSelect T="GachaRelicType" Label="@Tr("[GachaRelicChangeTitle]")" @bind-Value="_targetRelicType" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense">
+            <MudSelect T="GachaRelicType" Label="@Tr("[GachaRelicChangeTitle]")" @bind-Value="_targetRelicType" @bind-Value:after="SavePlayerSetting" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense">
                 <MudSelectItem T="GachaRelicType" Value="GachaRelicType.None">@Tr("[CommonNoneLabel]")</MudSelectItem>
                 <MudSelectItem T="GachaRelicType" Value="GachaRelicType.ChaliceOfHeavenly">@Tr("[ItemName45]")</MudSelectItem>
                 <MudSelectItem T="GachaRelicType" Value="GachaRelicType.SilverOrderOfTheBlueSky">@Tr("[ItemName46]")</MudSelectItem>
                 <MudSelectItem T="GachaRelicType" Value="GachaRelicType.DivineWingsOfDesire">@Tr("[ItemName47]")</MudSelectItem>
                 <MudSelectItem T="GachaRelicType" Value="GachaRelicType.FruitOfTheGarden">@Tr("[ItemName48]")</MudSelectItem>
             </MudSelect>
-            <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Color="Color.Primary" Label="@ResourceStrings.Auto_draw_10_times__up_to_3_draws_" @bind-Value="_isAutoGacha"></MudSwitch>
+            <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Color="Color.Primary" Label="@ResourceStrings.Auto_draw_10_times__up_to_3_draws_" @bind-Value="_isAutoGacha" @bind-Value:after="SavePlayerSetting"></MudSwitch>
         </div>
     </MudCardContent>
 </MudCard>
 
 @code {
+    SettingSaved _saved = null!;
 
-    IEnumerable<UserItem> GachaConfigAutoGachaConsumeUserItems
+    IReadOnlyCollection<UserItem> GachaConfigAutoGachaConsumeUserItems
     {
         get => WritableGameConfig.Value.GachaConfig.AutoGachaConsumeUserItems;
-        set => WritableGameConfig.Update(x => x.GachaConfig.AutoGachaConsumeUserItems = value.ToList());
+        set => _saved.Run(() => WritableGameConfig.Update(x => x.GachaConfig.AutoGachaConsumeUserItems = value.ToList()));
     }
 
     List<UserItem> _gachaConsumeItems =
@@ -91,18 +88,11 @@
         }
     }
 
-    private void SavePlayerSetting()
+    private void SavePlayerSetting() => _saved.Run(() => PlayersOptions.Update(opt =>
     {
-        PlayersOptions.Update(opt =>
-        {
-            var playerOpt = opt.GetOrAdd(NetworkManager.PlayerId, (id) => new PlayerOption() {PlayerId = id});
-            playerOpt.GachaConfig.TargetRelicType = _targetRelicType;
-            playerOpt.GachaConfig.AutoGachaRelic = _isAutoGacha;
-        });
-
-        Snackbar.Clear();
-        Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
-        Snackbar.Add(ResourceStrings.Save_successful, Severity.Success);
-    }
+        var playerOpt = opt.GetOrAdd(NetworkManager.PlayerId, (id) => new PlayerOption() {PlayerId = id});
+        playerOpt.GachaConfig.TargetRelicType = _targetRelicType;
+        playerOpt.GachaConfig.AutoGachaRelic = _isAutoGacha;
+    }));
 
 }

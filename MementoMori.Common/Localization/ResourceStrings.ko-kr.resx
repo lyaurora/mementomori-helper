@@ -623,6 +623,7 @@
   <data name="ResumeJobs" xml:space="preserve"><value>재개</value></data>
   <data name="UnionMissionPointMsg" xml:space="preserve"><value>단결 미션: +{0}점 (개인 누계 {1})</value></data>
   <data name="NumberUnitLarge" xml:space="preserve"><value>억</value></data>
+  <data name="NumberUnitMedium" xml:space="preserve"><value>만</value></data>
   <data name="NotEnoughFormat" xml:space="preserve"><value>{0} 부족</value></data>
   <data name="DebugInfo" xml:space="preserve"><value>디버그 정보</value></data>
   <data name="CronModeHours" xml:space="preserve"><value>N시간마다</value></data>

@@ -89,7 +89,8 @@ namespace MementoMori.Ortega.Common.Utils
                     break;
             }
 
-            return ResourceStrings.Unknown;
+            // Types without their own table (icon fragments, guild tower materials, newer item kinds) are plain ItemMB rows.
+            return Masters.ItemTable.GetByItemTypeAndItemId(itemType, itemId) is { } itemMb ? Name(itemMb.NameKey) : ResourceStrings.Unknown;
 
             // if ("[CommonItemEquipmentFragmentFormat]" > (ulong)13L)
             // {
@@ -175,7 +176,7 @@ namespace MementoMori.Ortega.Common.Utils
                     break;
             }
 
-            return ResourceStrings.Unknown;
+            return Masters.ItemTable.GetByItemTypeAndItemId(itemType, itemId)?.ItemRarityFlags.ToString() ?? ResourceStrings.Unknown;
         }
 
         public static string GetItemDescription(ItemType itemType, long itemId)

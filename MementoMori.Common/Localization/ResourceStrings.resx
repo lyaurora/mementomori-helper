@@ -729,6 +729,7 @@
   <data name="ResumeJobs" xml:space="preserve"><value>Resume</value></data>
   <data name="UnionMissionPointMsg" xml:space="preserve"><value>Union Mission: +{0} points (personal total {1})</value></data>
   <data name="NumberUnitLarge" xml:space="preserve"><value>B</value></data>
+  <data name="NumberUnitMedium" xml:space="preserve"><value>M</value></data>
   <data name="NotEnoughFormat" xml:space="preserve"><value>Not enough {0}</value></data>
   <data name="DebugInfo" xml:space="preserve"><value>Debug Info</value></data>
   <data name="CronModeHours" xml:space="preserve"><value>Every N hours</value></data>

@@ -13,7 +13,7 @@
         </button>
     }
     <div class="chat-reaction-picker" @onkeydown="CloseOnEscape" @onkeydown:stopPropagation="_showChoices">
-        <MudIconButton @ref="_reactionButton" Icon="@Icons.Material.Filled.AddReaction" Size="Size.Small" aria-label="@ResourceStrings.AddReaction" title="@ResourceStrings.AddReaction" aria-expanded="@_showChoices.ToString().ToLowerInvariant()" Disabled="Disabled" OnClick="() => _showChoices = !_showChoices" />
+        <MudIconButton @ref="_reactionButton" Icon="@Icons.Material.Filled.AddReaction" Size="Size.Small" aria-label="@ResourceStrings.AddReaction" aria-expanded="@_showChoices.ToString().ToLowerInvariant()" Disabled="Disabled" OnClick="() => _showChoices = !_showChoices" />
         @if (_showChoices)
         {
             <MudPopover Open="true" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">

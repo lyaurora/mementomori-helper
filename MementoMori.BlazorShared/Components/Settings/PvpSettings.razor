@@ -1,5 +1,4 @@
 ﻿@using MementoMori.BlazorShared.Components
-@inject ISnackbar Snackbar
 @inject IWritableOptions<PlayersOption> PlayersOptions
 @using MementoMori.Common.Localization
 @using MementoMori.Option
@@ -11,16 +10,13 @@
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.SportsKabaddi" aria-hidden="true" /><span>@name <span class="panel-scope is-account"><PlayerAvatar IconId="@(Funcs?.UserSyncData?.UserStatusDtoInfo?.MainCharacterIconId ?? 0)" Name="@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name)" Size="16" />@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name)</span></span></MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.SportsKabaddi" aria-hidden="true" /><span>@name <span class="panel-scope is-account"><PlayerAvatar IconId="@(Funcs?.UserSyncData?.UserStatusDtoInfo?.MainCharacterIconId ?? 0)" Name="@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name)" Size="16" />@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name)</span></span><SettingSaved @ref="_saved"/></MudText>
         </CardHeaderContent>
-        <CardHeaderActions>
-            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" Class="setting-save-button" StartIcon="@Icons.Material.Filled.Save" OnClick="() => SavePlayerSetting()">@Masters.TextResourceTable.Get("[CommonSaveLabel]")</MudButton>
-        </CardHeaderActions>
     </MudCardHeader>
     <MudCardContent Class="settings-form">
         <fieldset class="setting-choice-group">
             <legend>@ResourceStrings.Opponent_Selection_Strategy</legend>
-            <InputRadioGroup TValue="TargetSelectStrategy" Name="@($"pvp-strategy-{LeagueType}")" @bind-Value="pvpOption.SelectStrategy">
+            <InputRadioGroup TValue="TargetSelectStrategy" Name="@($"pvp-strategy-{LeagueType}")" @bind-Value="pvpOption.SelectStrategy" @bind-Value:after="SavePlayerSetting">
                 <label class="setting-choice">
                     <InputRadio TValue="TargetSelectStrategy" Value="TargetSelectStrategy.Random" />
                     <span>@ResourceStrings.Random</span>
@@ -35,7 +31,7 @@
                 </label>
             </InputRadioGroup>
         </fieldset>
-        <MudTextField Label="@ResourceStrings.Exclude_player_IDs__comma_separated_" @bind-Value="ExcludePlayerIds" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
+        <MudTextField T="string" Label="@ResourceStrings.Exclude_player_IDs__comma_separated_" Value="_excludeText" ValueChanged="ExcludeChanged" DebounceInterval="500" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
         <MudList T="CharacterFilter" ReadOnly="true" Class="setting-filter-list">
             <MudListSubheader Class="setting-filter-header">
                 <MudText Inline="true">@ResourceStrings.Character_Filter</MudText>
@@ -53,8 +49,8 @@
                 <MudListItem Dense="true" T="CharacterFilter" Class="setting-filter-item">
                     <MudStack Row="true" Spacing="1" Class="setting-filter-row align-content-center align-center">
                         <MudText Inline="true" Class="setting-filter-description">@desc</MudText>
-                        <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Settings" title="@ResourceStrings.Settings" aria-label="@ResourceStrings.Settings" OnClick="() => OpenSetting(filter)"></MudIconButton>
-                        <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Delete" title="@Masters.TextResourceTable.Get("[MyPagePresentDetailDeleteButton]")" aria-label="@Masters.TextResourceTable.Get("[MyPagePresentDetailDeleteButton]")" OnClick="() => DeleteFilter(filter)"></MudIconButton>
+                        <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Settings" aria-label="@ResourceStrings.Settings" OnClick="() => OpenSetting(filter)"></MudIconButton>
+                        <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Delete" aria-label="@Masters.TextResourceTable.Get("[MyPagePresentDetailDeleteButton]")" OnClick="() => DeleteFilter(filter)"></MudIconButton>
                     </MudStack>
                 </MudListItem>
             }
@@ -62,9 +58,9 @@
     </MudCardContent>
 </MudCard>
 
-<MudDialog Class="app-form-dialog" @bind-Visible="settingDialogOpen" Options="@(new DialogOptions {CloseButton = true, FullWidth = true, MaxWidth = MaxWidth.Small})">
+<MudDialog Class="app-form-dialog" @bind-Visible="settingDialogOpen" Options="@(new DialogOptions {CloseButton = true, CloseOnEscapeKey = true, FullWidth = true, MaxWidth = MaxWidth.Small})">
     <TitleContent>
-        @ResourceStrings.Character_Filter
+        <MudText Typo="Typo.h6">@ResourceStrings.Character_Filter</MudText>
     </TitleContent>
     <DialogContent>
         <MudPaper Elevation="0" Class="setting-dialog-fields">
@@ -91,12 +87,14 @@
         </MudPaper>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="() => ConfirmFilter()">@Masters.TextResourceTable.Get("[CommonDecisionLabel]")</MudButton>
+        <MudButton OnClick="() => settingDialogOpen = false">@Masters.TextResourceTable.Get("[CommonCancelLabel]")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => ConfirmFilter()">@Masters.TextResourceTable.Get("[CommonDecisionLabel]")</MudButton>
     </DialogActions>
 </MudDialog>
 
 
 @code {
+    SettingSaved _saved = null!;
 
     [Parameter]
     public int LeagueType { get; set; }
@@ -106,13 +104,20 @@
     PlayerOption playerOption;
     PvpOption pvpOption;
 
-    CharacterFilter settingFilter;
+    CharacterFilter settingFilter; // the dialog edits a copy, so closing it without confirming changes nothing
+    CharacterFilter? editingFilter; // the stored filter being edited; null when adding
     bool settingDialogOpen;
 
-    string ExcludePlayerIds
+    // The typed text stays as typed (a trailing comma isn't stripped mid-typing); only the parsed IDs are saved.
+    string _excludeText = "";
+
+    private void ExcludeChanged(string text)
     {
-        get => string.Join(",", pvpOption.ExcludePlayerIds);
-        set => pvpOption.ExcludePlayerIds = value.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(x => long.TryParse(x, out var n) ? n : 0).Where(x => x > 0).ToList();
+        _excludeText = text ?? "";
+        var ids = _excludeText.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(x => long.TryParse(x, out var n) ? n : 0).Where(x => x > 0).ToList();
+        if (ids.SequenceEqual(pvpOption.ExcludePlayerIds)) return;
+        pvpOption.ExcludePlayerIds = ids;
+        SavePlayerSetting();
     }
 
 
@@ -135,21 +140,24 @@
     {
         playerOption = PlayersOptions.Value.TryGetValue(NetworkManager.PlayerId, out var opt) ? opt : new PlayerOption {PlayerId = NetworkManager.PlayerId};
         pvpOption = Clone(pvpOptionSelector(playerOption));
+        _excludeText = string.Join(",", pvpOption.ExcludePlayerIds);
         return Task.CompletedTask;
     }
 
-    // Edit a copy so unsaved edits don't leak into running jobs through the live PlayersOption.
-    private static PvpOption Clone(PvpOption option) => Newtonsoft.Json.JsonConvert.DeserializeObject<PvpOption>(Newtonsoft.Json.JsonConvert.SerializeObject(option))!;
+    // Work on copies so the live PlayersOption only changes through SavePlayerSetting.
+    private static T Clone<T>(T value) => Newtonsoft.Json.JsonConvert.DeserializeObject<T>(Newtonsoft.Json.JsonConvert.SerializeObject(value))!;
 
     private void OpenCreateFilter()
     {
+        editingFilter = null;
         settingFilter = new CharacterFilter();
         settingDialogOpen = true;
     }
 
     private void OpenSetting(CharacterFilter filter)
     {
-        settingFilter = filter;
+        editingFilter = filter;
+        settingFilter = Clone(filter);
         settingDialogOpen = true;
     }
 
@@ -166,32 +174,26 @@
             return;
         }
 
-        if (!pvpOption.CharacterFilters.Contains(settingFilter))
-        {
-            pvpOption.CharacterFilters.Add(settingFilter);
-        }
+        var index = editingFilter == null ? -1 : pvpOption.CharacterFilters.IndexOf(editingFilter);
+        if (index >= 0) pvpOption.CharacterFilters[index] = settingFilter;
+        else pvpOption.CharacterFilters.Add(settingFilter);
 
         settingDialogOpen = false;
+        SavePlayerSetting();
     }
 
-    private void SavePlayerSetting()
+    // Every change saves at once, so a save never carries other pending edits along.
+    private void SavePlayerSetting() => _saved.Run(() => PlayersOptions.Update(opt =>
     {
-        PlayersOptions.Update(opt =>
+        var playerOpt = opt.GetOrAdd(NetworkManager.PlayerId, id => new PlayerOption {PlayerId = id});
+        if (LeagueType == 0)
         {
-            var playerOpt = opt.GetOrAdd(NetworkManager.PlayerId, id => new PlayerOption {PlayerId = id});
-            if (LeagueType == 0)
-            {
-                playerOpt.BattleLeague = Clone(pvpOption);
-            }
-            else
-            {
-                playerOpt.LegendLeague = Clone(pvpOption);
-            }
-        });
-
-        Snackbar.Clear();
-        Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
-        Snackbar.Add(ResourceStrings.Save_successful, Severity.Success);
-    }
+            playerOpt.BattleLeague = Clone(pvpOption);
+        }
+        else
+        {
+            playerOpt.LegendLeague = Clone(pvpOption);
+        }
+    }));
 
 }

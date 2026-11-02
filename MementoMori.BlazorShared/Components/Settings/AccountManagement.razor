@@ -11,7 +11,7 @@
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.ManageAccounts" aria-hidden="true" /><span>@ResourceStrings.AccountManagement <span class="panel-scope">@ResourceStrings.AllAccounts</span></span></MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.ManageAccounts" aria-hidden="true" /><span>@ResourceStrings.AccountManagement <span class="panel-scope">@ResourceStrings.AllAccounts</span></span><SettingSaved @ref="_saved"/></MudText>
         </CardHeaderContent>
         <CardHeaderActions>
             <MudButton Class="setting-save-button" Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" Disabled="_accountDoingAction" OnClick="AddAccountClick">@ResourceStrings.Add</MudButton>
@@ -26,8 +26,8 @@
                     <MudStack Row="true" Spacing="1" Class="account-row align-content-center align-center">
                         @{
                             var status = funcs.UserSyncData?.UserStatusDtoInfo;
-                            var state = funcs.LoginOk ? (accountInfo.AutoLogin ? ResourceStrings.AutoLogin : ResourceStrings.LoggedIn)
-                                : accountInfo.AutoLogin ? ResourceStrings.AutoLogin : ResourceStrings.NotLoggedIn;
+                            // Login state only; auto-login lives in the gear dialog (it read the same whether logged in or not).
+                            var state = funcs.LoginOk ? ResourceStrings.LoggedIn : ResourceStrings.NotLoggedIn;
                         }
                         @* Player name + avatar once synced; the saved account name is the fallback and the secondary line. *@
                         <PlayerAvatar IconId="@(status?.MainCharacterIconId ?? 0)" Name="@(status?.Name ?? accountInfo.Name)" Size="32" />
@@ -38,50 +38,53 @@
                         <MudSpacer/>
                         <MudIconButton title="@ResourceStrings.Login" aria-label="@ResourceStrings.Login" Icon="@Icons.Material.Filled.Login" Disabled="_accountDoingAction" OnClick="() => LoginAccount(accountInfo.UserId)" Size="Size.Small"></MudIconButton>
                         <MudIconButton title="@ResourceStrings.Exit" aria-label="@ResourceStrings.Exit" Icon="@Icons.Material.Filled.Logout" Disabled="_accountDoingAction" OnClick="() => LogoutAccount(accountInfo.UserId)" Size="Size.Small"></MudIconButton>
-                        <MudIconButton title="@ResourceStrings.Settings" aria-label="@ResourceStrings.Settings" Icon="@Icons.Material.Filled.Settings" Disabled="_accountDoingAction" OnClick="() => ShowAccountSetting(accountInfo.UserId)" Size="Size.Small"></MudIconButton>
-                        <MudIconButton title="@Tr("[MyPagePresentDetailDeleteButton]")" aria-label="@Tr("[MyPagePresentDetailDeleteButton]")" Class="account-delete" Icon="@Icons.Material.Outlined.Delete" Disabled="_accountDoingAction" OnClick="() => DeleteAccount(accountInfo.UserId)" Size="Size.Small"></MudIconButton>
+                        <MudIconButton aria-label="@ResourceStrings.Settings" Icon="@Icons.Material.Filled.Settings" Disabled="_accountDoingAction" OnClick="() => ShowAccountSetting(accountInfo.UserId)" Size="Size.Small"></MudIconButton>
+                        <MudIconButton aria-label="@Tr("[MyPagePresentDetailDeleteButton]")" Class="account-delete" Icon="@Icons.Material.Outlined.Delete" Disabled="_accountDoingAction" OnClick="() => DeleteAccount(accountInfo.UserId)" Size="Size.Small"></MudIconButton>
                     </MudStack>
                 </MudListItem>
             }
         </MudList>
     </MudCardContent>
 </MudCard>
-<MudDialog Class="account-management-dialog" @bind-Visible="_addAccountDialog" Options="@(new DialogOptions {CloseButton = true, FullWidth = true, MaxWidth = MaxWidth.ExtraSmall})">
+<MudDialog Class="account-management-dialog" @bind-Visible="_addAccountDialog" Options="@(new DialogOptions {CloseButton = true, CloseOnEscapeKey = true, FullWidth = true, MaxWidth = MaxWidth.ExtraSmall})">
     <TitleContent>
         <MudText Typo="Typo.h6">@ResourceStrings.Add</MudText>
     </TitleContent>
     <DialogContent>
         <div class="settings-form">
         <MudTextField Label="@ResourceStrings.Name" @bind-Value="_addAccountName" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
-        <MudNumericField Label="@ResourceStrings.Account" @bind-Value="_addAccountUserId" HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+        <MudNumericField InputMode="InputMode.numeric" Label="@ResourceStrings.Account" @bind-Value="_addAccountUserId" HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
         <MudTextField Label="@ResourceStrings.Password" InputType="InputType.Password" @bind-Value="_addAccountPassword" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
-        <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@ResourceStrings.AutoLogin" @bind-Value="_addAccountAutoLogin" Color="Color.Primary"></MudSwitch>
+        <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@ResourceStrings.AutoLogin" @bind-Value="_addAccountAutoLogin" Color="Color.Primary"></MudSwitch>
         </div>
     </DialogContent>
     <DialogActions>
+        <MudButton OnClick="() => _addAccountDialog = false">@Tr("[CommonCancelLabel]")</MudButton>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="_accountDoingAction" OnClick="AddAccountConfirmClick">@Masters.TextResourceTable.Get("[CommonDecisionLabel]")</MudButton>
     </DialogActions>
 </MudDialog>
 
-<MudDialog Class="account-management-dialog" @bind-Visible="_settingAccountDialog" Options="@(new DialogOptions {CloseButton = true, FullWidth = true, MaxWidth = MaxWidth.ExtraSmall})">
+<MudDialog Class="account-management-dialog" @bind-Visible="_settingAccountDialog" Options="@(new DialogOptions {CloseButton = true, CloseOnEscapeKey = true, FullWidth = true, MaxWidth = MaxWidth.ExtraSmall})">
     <TitleContent>
         <MudText Typo="Typo.h6">@ResourceStrings.Settings</MudText>
     </TitleContent>
     <DialogContent>
         <div class="settings-form">
         <MudTextField Label="@ResourceStrings.Name" @bind-Value="_settingAccountName" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
-        <MudNumericField Disabled="true" Label="@ResourceStrings.Account" @bind-Value="_settingAccountUserId" HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+        <MudNumericField InputMode="InputMode.numeric" Disabled="true" Label="@ResourceStrings.Account" @bind-Value="_settingAccountUserId" HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
         <MudTextField Label="ClientKey" InputType="InputType.Password" @bind-Value="_settingAccountClientKey" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField>
-        <MudSwitch Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@ResourceStrings.AutoLogin" @bind-Value="_settingAccountAutoLogin" Color="Color.Primary"></MudSwitch>
+        <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@ResourceStrings.AutoLogin" @bind-Value="_settingAccountAutoLogin" Color="Color.Primary"></MudSwitch>
         </div>
     </DialogContent>
     <DialogActions>
+        <MudButton OnClick="() => _settingAccountDialog = false">@Tr("[CommonCancelLabel]")</MudButton>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveAccountSetting">@Masters.TextResourceTable.Get("[CommonDecisionLabel]")</MudButton>
     </DialogActions>
 </MudDialog>
 
 
 @code {
+    SettingSaved _saved = null!;
     List<AccountInfo> _accounts = new();
 
     bool _accountDoingAction;
@@ -141,7 +144,7 @@
         }
         catch (Exception e)
         {
-            await DialogService.ShowMessageBox(ResourceStrings.Failed_to_retrieve_account_information, e.Message, Tr("[CommonOkLabel]"));
+            await DialogService.ShowMessageBoxAsync(ResourceStrings.Failed_to_retrieve_account_information, e.Message, Tr("[CommonOkLabel]"));
         }
         finally
         {
@@ -190,7 +193,7 @@
 
     private async Task DeleteAccount(long userId)
     {
-        if (await DialogService.ShowMessageBox(ResourceStrings.Confirm_removal_of_this_account_, "", Tr("[CommonOkLabel]"), cancelText: Tr("[CommonCancelLabel]"), options: new DialogOptions {CloseButton = true}) != true)
+        if (await DialogService.ShowMessageBoxAsync(ResourceStrings.Confirm_removal_of_this_account_, "", Tr("[CommonOkLabel]"), cancelText: Tr("[CommonCancelLabel]"), options: new DialogOptions {CloseButton = true}) != true)
         {
             return;
         }
@@ -206,22 +209,23 @@
         finally { _accountDoingAction = false; }
     }
 
+    // Still an explicit confirm (it holds the ClientKey); feedback is the same check as the autosaved cards.
     private void SaveAccountSetting()
     {
-        authOption.Update(opt =>
-        {
-            var a = opt.Accounts.FirstOrDefault(d => d.UserId == _settingAccountUserId);
-            if (a != null)
+        if (!_saved.Run(() =>
             {
-                a.Name = _settingAccountName;
-                a.AutoLogin = _settingAccountAutoLogin;
-                a.ClientKey = _settingAccountClientKey;
-            }
-        });
-        AccountManager.UpdateAccountInfo(_settingAccountUserId);
-        Snackbar.Clear();
-        Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
-        Snackbar.Add(ResourceStrings.Save_successful, Severity.Success);
+                authOption.Update(opt =>
+                {
+                    var a = opt.Accounts.FirstOrDefault(d => d.UserId == _settingAccountUserId);
+                    if (a != null)
+                    {
+                        a.Name = _settingAccountName;
+                        a.AutoLogin = _settingAccountAutoLogin;
+                        a.ClientKey = _settingAccountClientKey;
+                    }
+                });
+                AccountManager.UpdateAccountInfo(_settingAccountUserId);
+            })) return;
         _settingAccountDialog = false;
         _accounts = authOption.Value.Accounts.ToList();
         StateHasChanged();

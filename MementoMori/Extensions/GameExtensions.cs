@@ -15,7 +15,7 @@ public static class GameExtensions
         {
             var itemName = ItemUtil.GetItemName(userItem.ItemType, userItem.ItemId);
             var itemRarity = ItemUtil.GetItemRarity(userItem.ItemType, userItem.ItemId);
-            log($"{ResourceStrings.Name}: {itemName}({itemRarity}) × {userItem.ItemCount}");
+            log(itemRarity is "None" or "" ? $"{ResourceStrings.Name}: {itemName} × {userItem.ItemCount}" : $"{ResourceStrings.Name}: {itemName}({itemRarity}) × {userItem.ItemCount}");
         }
     }
 
@@ -27,7 +27,7 @@ public static class GameExtensions
         {
             var itemName = ItemUtil.GetItemName(userItem.Item.ItemType, userItem.Item.ItemId);
             var itemRarity = ItemUtil.GetItemRarity(userItem.Item.ItemType, userItem.Item.ItemId);
-            log($"{ResourceStrings.Name}: {itemName}({itemRarity}) × {userItem.Item.ItemCount}");
+            log(itemRarity is "None" or "" ? $"{ResourceStrings.Name}: {itemName} × {userItem.Item.ItemCount}" : $"{ResourceStrings.Name}: {itemName}({itemRarity}) × {userItem.Item.ItemCount}");
         }
     }
 

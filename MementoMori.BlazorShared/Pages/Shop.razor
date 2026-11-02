@@ -18,15 +18,19 @@
 @using MementoMori.Ortega.Share.Master.Data
 @using MementoMori.WebUI.Extensions
 @using MementoMori.WebUI.UI
+@using ReactiveUI
+@using System.Reactive.Linq
 @inherits MementoMori.BlazorShared.Models.AccountComponent
 @page "/Shop"
 
 <PageTitle>@Masters.TextResourceTable.Get("[CommonHeaderExchangeLabel]")</PageTitle>
 
 <section class="shop-page">
-@if (!string.IsNullOrEmpty(_alertMessage))
+@* Login state is read live so the banner goes away as soon as a login succeeds; other errors only show once logged in. *@
+@{ var alert = Funcs.LoginOk ? _alertMessage : Funcs.Logining ? null : ResourceStrings.PleaseLogin; }
+@if (!string.IsNullOrEmpty(alert))
 {
-    <MudAlert Severity="Severity.Warning">@_alertMessage</MudAlert>
+    <MudAlert Severity="Severity.Warning">@alert</MudAlert>
 }
 @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="@ResourceStrings.Loading" /> }
 @if (Funcs?.UserSyncData?.UserItemDtoInfo != null)
@@ -101,9 +105,13 @@
                                                 {
                                                     <span class="shop-sphere-icon"><SphereIcon SphereMb="giveSphere" Size="48" /></span>
                                                 }
+                                                else if (ItemIcon(item.GiveItem.ItemType, item.GiveItem.ItemId, 48) is { } giveIcon)
+                                                {
+                                                    @giveIcon
+                                                }
                                                 else
                                                 {
-                                                    @ItemIcon(item.GiveItem.ItemType, item.GiveItem.ItemId, 48)
+                                                    <span class="shop-icon" style="width:48px;height:48px"></span>
                                                 }
                                                 <MudText Class="shop-product-title">@itemName</MudText>
 
@@ -123,9 +131,13 @@
                                             </div>
                                         </MudCardContent>
                                         <MudCardActions Class="shop-product-actions">
-                                            <MudButton Class="shop-buy-button" data-free="@(item.ConsumeItem1 == null)" Variant="Variant.Filled" Color="Color.Primary" Disabled="buyBtnDisabled" OnClick="() => BuyItem(tab, item)">
-                                                @if (item.ConsumeItem1 != null) { @ItemIcon(item.ConsumeItem1.ItemType, item.ConsumeItem1.ItemId, 20) }
-                                                @consumeText
+                                            <MudButton Class="shop-buy-button" data-free="@(item.ConsumeItem1 == null)" Variant="Variant.Filled" Color="Color.Primary" Disabled="buyBtnDisabled" title="@consumeText" aria-label="@consumeText" OnClick="() => BuyItem(tab, item)">
+                                                @if (item.ConsumeItem1 == null) { @consumeText }
+                                                else
+                                                {
+                                                    @Cost(item.ConsumeItem1)
+                                                    @if (item.ConsumeItem2 != null) { @Cost(item.ConsumeItem2) }
+                                                }
                                             </MudButton>
                                             <MudIconButton Class="shop-auto-buy-button" Icon="@Icons.Material.Filled.AlarmAdd" Variant="Variant.Outlined" Color="Color.Primary" title="@ResourceStrings.AutoBuy" aria-label="@ResourceStrings.AutoBuy" OnClick="() => ShowAutoBuyDialog(tradeShopTabMb, item)"></MudIconButton>
                                         </MudCardActions>
@@ -184,7 +196,8 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="ConfirmAutoBuy">@ResourceStrings.AutoBuy</MudButton>
+        <MudButton OnClick="() => _autoBuyDialogVisible = false">@Masters.TextResourceTable.Get("[CommonCancelLabel]")</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ConfirmAutoBuy">@ResourceStrings.AutoBuy</MudButton>
     </DialogActions>
 </MudDialog>
 </section>
@@ -208,7 +221,15 @@
         _tradeShopTabInfoList = new();
         _selectedTabIndex = 0;
         _autoBuyDialogVisible = false;
-        _alertMessage = Funcs.LoginOk ? string.Empty : ResourceStrings.PleaseLogin;
+        // Re-render on login/logout for the banner; the shop list fails while logged out, so load it once a login succeeds.
+        TrackAccountSubscription(Funcs.WhenAnyValue(f => f.LoginOk, f => f.Logining).Skip(1).Subscribe(_ => InvokeAsync(StateHasChanged)));
+        TrackAccountSubscription(Funcs.WhenAnyValue(f => f.LoginOk).Skip(1).Where(ok => ok && _interactive && _tradeShopTabInfoList.Count == 0).Subscribe(_ => InvokeAsync(LoadShop)));
+        await LoadShop();
+    }
+
+    private async Task LoadShop()
+    {
+        _alertMessage = string.Empty;
         _loading = Funcs.LoginOk;
         if (!_interactive || !Funcs.LoginOk) return;
         var token = CreateAccountCancellation();
@@ -230,7 +251,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender) { _interactive = true; await AccountChanged(); }
+        if (firstRender) { _interactive = true; await LoadShop(); }
     }
 
     // Countdown hit zero: reload the list once, keeping the current tab.
@@ -282,6 +303,9 @@
         var dialogParameters = new DialogParameters<UseItemDialog>();
         dialogParameters.Add(d => d.Count, GetBuyMaxCount(tradeShopItem));
         dialogParameters.Add(d => d.Name, GetItemName(tradeShopItem.GiveItem).name);
+        dialogParameters.Add(d => d.Icon, AtlasManager.GetItemIcon(tradeShopItem.GiveItem.ItemType, tradeShopItem.GiveItem.ItemId));
+        dialogParameters.Add(d => d.CostText, n => tradeShopItem.ConsumeItem1 == null ? Masters.TextResourceTable.Get("[ShopProductFreeLabel]")
+            : $"{tradeShopItem.ConsumeItem1.GetItemName()} × {tradeShopItem.ConsumeItem1.ItemCount * n:N0}" + (tradeShopItem.ConsumeItem2 == null ? "" : $" {tradeShopItem.ConsumeItem2.GetItemName()} × {tradeShopItem.ConsumeItem2.ItemCount * n:N0}"));
         dialogParameters.Add(d => d.ButtonText, Masters.TextResourceTable.Get("[ExchangeCommonPurchaseButtonLabel]"));
         dialogParameters.Add(d => d.UseItemFunc, async count =>
         {
@@ -290,7 +314,7 @@
             return response.TradeShopItems.Select(d => d.GiveItem).Cast<IUserItem>().ToList();
         });
 
-        DialogService.Show<UseItemDialog>(Masters.TextResourceTable.Get("[ExchangeConfirmationViewTitle]"), dialogParameters);
+        _ = DialogService.ShowAsync<UseItemDialog>(Masters.TextResourceTable.Get("[ExchangeConfirmationViewTitle]"), dialogParameters);
     }
 
     private static (string name, string subName) GetItemName(UserItem item)
@@ -408,6 +432,11 @@
         AtlasManager.GetItemIcon(type, itemId) is { } url
         ? @<span class="shop-icon" style="width:@(size)px;height:@(size)px"><img src="@url" @key="url" width="@size" height="@size" loading="lazy" decoding="async" alt="" onerror="this.remove()" /></span>
         : null;
+
+    // Cost on the buy button: icon + count; the name only when there is no icon (full text stays in the button title).
+    private RenderFragment Cost(UserItem c) => ItemIcon(c.ItemType, c.ItemId, 20) is { } icon
+        ? @<span class="shop-cost">@icon × @c.ItemCount.ToString("N0")</span>
+        : @<span class="shop-cost">@c.GetItemName() × @c.ItemCount.ToString("N0")</span>;
 
     private class UserItemComparer : IEqualityComparer<UserItem>
     {

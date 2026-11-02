@@ -11,6 +11,8 @@
 @using MementoMori.Ortega.Share.Data.Gacha
 @using MementoMori.Ortega.Share.Enums
 @using MementoMori.WebUI.Extensions
+@using ReactiveUI
+@using System.Reactive.Linq
 @inherits MementoMori.BlazorShared.Models.AccountComponent
 @page "/Gacha"
 <PageTitle>@Masters.TextResourceTable.Get("[CommonFooterGachaButtonLabel]")</PageTitle>
@@ -18,7 +20,7 @@
 <section class="gacha-page">
 @{ var sync = ViewModel?.UserSyncData; }
 <header class="gacha-head">
-    <MudText Typo="Typo.h5" Component="h1">@Tr("[CommonFooterGachaButtonLabel]")</MudText>
+    <MudText Typo="Typo.h5" HtmlTag="h1">@Tr("[CommonFooterGachaButtonLabel]")</MudText>
     @if (sync?.UserItemDtoInfo != null && gachaCaseInfos.Count > 0)
     {
         <div class="gacha-wallet">
@@ -38,9 +40,11 @@
         </div>
     }
 </header>
-@if (!string.IsNullOrEmpty(alertMessage))
+@* Login state is read live so the banner goes away as soon as a login succeeds; other errors only show once logged in. *@
+@{ var alert = Funcs.LoginOk ? alertMessage : Funcs.Logining ? null : ResourceStrings.PleaseLogin; }
+@if (!string.IsNullOrEmpty(alert))
 {
-    <MudAlert Severity="Severity.Warning">@alertMessage</MudAlert>
+    <MudAlert Severity="Severity.Warning">@alert</MudAlert>
 }
 @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" aria-label="@ResourceStrings.Loading" /> }
 
@@ -61,7 +65,7 @@
             var selected = _selectListMap?.GetValueOrDefault(selectType) ?? [];
             var candidates = SelectCandidates(selectType);
 
-            <MudItem xs="12" sm="6" md="4" lg="3">
+            <MudItem xs="12" sm="6" md="6" lg="4" xl="3">
                 <MudCard Class="gacha-card">
                     <div class="gacha-art">
                         @if (banner != null) { <img src="@banner" @key="banner" width="300" height="156" loading="lazy" decoding="async" alt="" onerror="this.remove()" /> }
@@ -126,7 +130,15 @@
         ViewModel = Funcs;
         gachaCaseInfos = new();
         _selectListMap = null;
-        alertMessage = Funcs.LoginOk ? string.Empty : ResourceStrings.PleaseLogin;
+        // Re-render on login/logout for the banner; the gacha list fails while logged out, so load it once a login succeeds.
+        TrackAccountSubscription(Funcs.WhenAnyValue(f => f.LoginOk, f => f.Logining).Skip(1).Subscribe(_ => InvokeAsync(StateHasChanged)));
+        TrackAccountSubscription(Funcs.WhenAnyValue(f => f.LoginOk).Skip(1).Where(ok => ok && _interactive && gachaCaseInfos.Count == 0).Subscribe(_ => InvokeAsync(LoadGachaList)));
+        await LoadGachaList();
+    }
+
+    private async Task LoadGachaList()
+    {
+        alertMessage = string.Empty;
         _loading = Funcs.LoginOk;
         if (!_interactive || !Funcs.LoginOk) return;
         var token = CreateAccountCancellation();
@@ -148,7 +160,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender) { _interactive = true; await AccountChanged(); }
+        if (firstRender) { _interactive = true; await LoadGachaList(); }
     }
 
     private async Task GetGachaList(CancellationToken token)
@@ -233,7 +245,7 @@
             var confirm = $"{Masters.TextResourceTable.Get(Masters.GachaCaseUiTable.GetById(gachaCaseInfo.GachaCaseUiId)?.NameKey)}: {cost.GetItemName()} × {cost.ItemCount} ({held})";
             if (cost.ItemType == ItemType.CurrencyFree) confirm += " " + Masters.TextResourceTable.Get("[GachaPurchaseConfirmationWarningFree]");
             else if (cost.ItemType == ItemType.CurrencyPaid) confirm += " " + Masters.TextResourceTable.Get("[GachaPurchaseConfirmationWarningPaid]");
-            var showMessageBox = await DialogService.ShowMessageBox(Masters.TextResourceTable.Get("[GachaPurchaseConfirmationTitle]"), confirm, Masters.TextResourceTable.Get("[GachaPurchaseConfirmationOK]"), Masters.TextResourceTable.Get("[CommonCancelLabel]"));
+            var showMessageBox = await DialogService.ShowMessageBoxAsync(Masters.TextResourceTable.Get("[GachaPurchaseConfirmationTitle]"), confirm, Masters.TextResourceTable.Get("[GachaPurchaseConfirmationOK]"), Masters.TextResourceTable.Get("[CommonCancelLabel]"));
             if (showMessageBox != true) return;
             var drawResponse = await funcs.GetResponse<DrawRequest, DrawResponse>(new DrawRequest {GachaButtonId = button.GachaButtonId}, token);
             token.ThrowIfCancellationRequested();
@@ -244,7 +256,7 @@
             drawResponse.BonusRewardItemList.PrintUserItems(s => msg.AppendLine(s).AppendLine("<br />"));
             drawResponse.CharacterReleaseItemList.PrintUserItems(s => msg.AppendLine(s).AppendLine("<br />"));
 
-            await DialogService.ShowMessageBox(ResourceStrings.GachaResult, (MarkupString) msg.ToString(), Masters.TextResourceTable.Get("[CommonOkLabel]"));
+            await DialogService.ShowMessageBoxAsync(ResourceStrings.GachaResult, (MarkupString) msg.ToString(), Masters.TextResourceTable.Get("[CommonOkLabel]"));
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
         catch (Exception e) { if (!token.IsCancellationRequested) alertMessage = e.Message; }
@@ -263,7 +275,7 @@
             var parameters = new DialogParameters<GachaDetail>();
             parameters.Add(d => d.GachaCaseInfo, gachaCaseInfo);
             parameters.Add(d => d.LotteryItemList, lotteryItemListResponse);
-            await DialogService.ShowAsync<GachaDetail>(Masters.TextResourceTable.Get("[CommonDetailLabel]"), parameters, new DialogOptions {CloseButton = true, CloseOnEscapeKey = true});
+            await DialogService.ShowAsync<GachaDetail>(Masters.TextResourceTable.Get("[CommonDetailLabel]"), parameters, new DialogOptions {CloseButton = true, CloseOnEscapeKey = true, DefaultFocus = DefaultFocus.FirstChild});
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
         catch (Exception e) { if (!token.IsCancellationRequested) alertMessage = e.Message; }

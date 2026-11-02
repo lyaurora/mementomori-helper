@@ -10,14 +10,18 @@
 @using MementoMori.Ortega.Share.Data.DtoInfo
 @using MementoMori.Ortega.Share.Enums
 @using MementoMori.Ortega.Share.Utils
+@using ReactiveUI
+@using System.Reactive.Linq
 @inherits MementoMori.BlazorShared.Models.AccountComponent
 @page "/Character"
 
 <PageTitle>@Masters.TextResourceTable.Get("[CommonFooterCharacterButtonLabel]")</PageTitle>
 <div class="character-page">
-@if (!string.IsNullOrEmpty(alertMessage))
+@* Login state is read live so the banner goes away as soon as a login succeeds; other errors only show once logged in. *@
+@{ var alert = Funcs.LoginOk ? alertMessage : Funcs.Logining ? null : ResourceStrings.PleaseLogin; }
+@if (!string.IsNullOrEmpty(alert))
 {
-    <MudAlert Severity="Severity.Warning">@alertMessage</MudAlert>
+    <MudAlert Severity="Severity.Warning">@alert</MudAlert>
 }
 <MudGrid>
     @if (_selectedCharactor != null)
@@ -25,7 +29,7 @@
         var cmb = Masters.CharacterTable.GetById(_selectedCharactor.CharacterId);
         var name = Masters.TextResourceTable.Get(cmb.NameKey);
 
-        <MudItem xs="12" sm="12" md="4">
+        <MudItem xs="12" sm="12" md="5" lg="4" Class="character-side">
             <MudPaper Class="character-panel" Elevation="0">
             <div class="character-hero">
                 <CharacterIcon Size="64" UserCharacterInfo="@Funcs.UserSyncData.GetUserCharacterInfoByUserCharacterDtoInfo(_selectedCharactor)"/>
@@ -102,7 +106,7 @@
             </MudPaper>
         </MudItem>
     }
-    <MudItem xs="12" sm="12" md="8">
+    <MudItem xs="12" sm="12" md="7" lg="8" Class="character-list">
         <MudPaper Class="character-grid" Elevation="0">
             @foreach (var character in (_userSyncData?.UserCharacterDtoInfos ?? new List<UserCharacterDtoInfo>()).OrderByDescending(d => d.RarityFlags))
             {
@@ -125,19 +129,28 @@
 
     protected override async Task AccountChanged()
     {
+        ViewModel = Funcs;
+        _selectedCharactor = null;
+        // Login replaces UserSyncData (empty while logged out): pick up the new one on login/logout, which also re-renders the banner.
+        TrackAccountSubscription(Funcs.WhenAnyValue(f => f.LoginOk, f => f.Logining).Skip(1).Subscribe(_ => InvokeAsync(LoadCharacters)));
+        await InvokeAsync(LoadCharacters);
+    }
+
+    private void LoadCharacters()
+    {
         try
         {
-            alertMessage = Funcs.LoginOk ? string.Empty : ResourceStrings.PleaseLogin;
-            ViewModel = Funcs;
+            alertMessage = string.Empty;
             _userSyncData = ViewModel.UserSyncData;
-            // default to the first tile of the grid (same order as below)
-            SelectCharacter(_userSyncData.UserCharacterDtoInfos?.OrderByDescending(d => d.RarityFlags).FirstOrDefault());
-            await InvokeAsync(StateHasChanged);
+            // default to the first tile of the grid (same order as below); keep the selection across a re-login
+            var characters = _userSyncData.UserCharacterDtoInfos;
+            SelectCharacter(characters?.Find(d => d.Guid == _selectedCharactor?.Guid) ?? characters?.OrderByDescending(d => d.RarityFlags).FirstOrDefault());
         }
         catch (Exception e)
         {
             alertMessage = e.Message;
         }
+        StateHasChanged();
     }
 
     private void SelectCharacter(UserCharacterDtoInfo info)

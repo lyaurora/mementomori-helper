@@ -44,27 +44,24 @@ html[data-theme="dark"] .home-cols ::deep .bq-rarity.is-lr { color: #F08DB5; }
 .home-cols ::deep .home-notices .notice-tabs > .mud-tabs-tabbar > .mud-tabs-tabbar-inner { display: flex; align-items: center; gap: 8px; padding: 0; border-radius: 0; background: transparent; }
 .home-cols ::deep .home-notices .notice-tabs > .mud-tabs-tabbar .mud-tabs-tabbar-content { flex: 0 1 auto; width: max-content; padding: 3px; border-radius: 12px; background: var(--mud-palette-background-gray); }
 .home-cols ::deep .home-notices .notice-tabs > .mud-tabs-tabbar .mud-tabs-tabbar-wrapper { width: max-content; gap: 2px; }
-.home-cols ::deep .home-notices .notice-tabs > .mud-tabs-tabbar .mud-tab { min-height: 30px; padding: .2rem 14px; border-radius: 9px; }
+.home-cols ::deep .home-notices .notice-tabs > .mud-tabs-tabbar .mud-tab { min-height: 32px; padding: .2rem 14px; border-radius: 9px; }
 .home-cols ::deep .home-notices .notice-tabs > .mud-tabs-tabbar .mud-tab.mud-tab-active { background: var(--mud-palette-surface); color: var(--mud-palette-text-primary); box-shadow: 0 1px 3px rgb(0 0 0 / .12); }
 .home-cols ::deep .home-notices .mud-tabs-header-after { margin-inline-start: auto; }
 
 /* Notices: cap at ~10 rows with an internal scroll so the right column doesn't run ~1900px below the others. */
 .home-cols ::deep .home-notices .mud-tabs-panels { max-height: 480px; overflow-y: auto; overscroll-behavior: contain; }
-/* Narrow: one column, cards back in today's row order; quick tabs scroll sideways instead of wrapping. */
+/* Narrow: one column; the character first, then what you act on (quick actions, entries) and its output, then the rest. */
 @media (max-width: 899.98px) {
     .home-cols { align-items: stretch; }
     .home-cols ::deep .mud-card { min-width: 0; }
     .home-cols ::deep .home-hero { order: 1; }
-    .home-cols ::deep .home-entries { order: 2; }
-    .home-cols ::deep .home-missions { order: 3; }
-    .home-cols ::deep .home-quick { order: 4; }
-    .home-cols ::deep .dashboard-output { order: 5; }
-    .home-cols ::deep .home-notices { order: 6; }
-    .home-cols ::deep .home-debug { order: 7; }
-    .home-cols ::deep .home-quick .quick-actions-tabs > .mud-tabs-tabbar { width: 100%; }
-    .home-cols ::deep .home-quick .quick-actions-tabs > .mud-tabs-tabbar .mud-tabs-tabbar-content { overflow-x: auto; scrollbar-width: none; }
-    .home-cols ::deep .home-quick .quick-actions-tabs > .mud-tabs-tabbar .mud-tabs-tabbar-wrapper { flex-wrap: nowrap; width: max-content; }
-    .home-cols ::deep .home-quick .quick-actions-tabs > .mud-tabs-tabbar .mud-tab { flex: none; white-space: nowrap; }
+    .home-cols ::deep .home-quick { order: 2; }
+    .home-cols ::deep .home-entries { order: 3; }
+    .home-cols ::deep .dashboard-output { order: 4; }
+    .home-cols ::deep .home-missions { order: 5; }
+    .home-cols ::deep .growth-card { order: 6; }
+    .home-cols ::deep .home-notices { order: 7; }
+    .home-cols ::deep .home-debug { order: 8; }
     .home-cols ::deep .hero-name { font-size: 1.1875rem; }
 }
 /* Keep the badge dot fully inside the icon box. */
@@ -73,14 +70,15 @@ html[data-theme="dark"] .home-cols ::deep .bq-rarity.is-lr { color: #F08DB5; }
 .home-cols ::deep .bq-head .panel-title { gap: 6px; font-size: .9375rem; }
 .home-cols ::deep .bq-head .panel-title-icon { width: 20px; height: 20px; padding: 0; background: transparent; }
 /* Quick-action tabs: hairline between tab bar and buttons. */
-.home-cols ::deep .home-quick .quick-actions-tabs > .mud-tabs-tabbar { padding-bottom: 10px; border-bottom: 1px solid var(--mud-palette-lines-default); }
+.home-cols ::deep .home-quick .quick-actions-tabs > .mud-tabs-tabbar { width: 100%; padding-bottom: 10px; border-bottom: 1px solid var(--mud-palette-lines-default); }
 /* Debug card has no content under its header while collapsed: match the top padding so the switch row is centred. */
 .home-cols ::deep .home-debug .mud-card-header { padding-bottom: 18px; }
 /* Wide (diamond) tile has a 44px icon vs 36px: shift it so all tile icons share one centre axis (12px pad - 4px). */
 /* ...and close the gap by the same 4px so tile text left edges line up too (8+44+6 = 12+36+10). */
 .home-cols ::deep .tile.is-wide { padding-inline-start: 8px; gap: 6px; }
 /* Bounty sync: same tonal chip as the buttons beside it, not a bare icon. */
-.home-cols ::deep .bq-actions .mud-icon-button { background: var(--mud-palette-background-gray); border-radius: var(--mud-default-borderradius); }
+.home-cols ::deep .bq-actions .mud-icon-button { width: 36px; height: 36px; background: var(--mud-palette-background-gray); border-radius: var(--mud-default-borderradius); }
+/* No bounty data yet: a centred sync under the actions says how to load the list. */
 /* MyPage grid, denser: 6 columns in the ~411px desktop card (11 entries = 6/5), fewer when narrower; 56px tile, 44px sprite,
    one-line 12px label with ellipsis (full name in title). */
 .home-cols ::deep .entries { grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); gap: 8px 6px; }
@@ -95,3 +93,18 @@ html[data-theme="dark"] .home-cols ::deep .bq-rarity.is-lr { color: #F08DB5; }
     /* en: Missions header actions dropped under the title by a few px; trim button side padding so they stay on one line. */
     .home-cols ::deep .mud-card-header > .mud-paper .mud-button-root { padding-inline: 10px; }
 }
+/* Notice separators: a real top border on a square top edge; the old box-shadow on a 10px radius curled up at both ends. */
+.home-cols ::deep .notice-row + .notice-row { border-top: 1px solid var(--mud-palette-lines-default); border-start-start-radius: 0; border-start-end-radius: 0; box-shadow: none; }
+/* One chip height across the quick card: 36px like the header buttons (touch keeps the 40px from site.css). */
+.home-cols ::deep .home-quick .quick-action-list .mud-button { min-height: 36px; }
+@media (pointer: coarse) { .home-cols ::deep .home-quick .quick-action-list .mud-button { min-height: 40px; } }
+/* Phones: small currency tiles get ~16px more for the number so 8-digit balances (99,999,999) stay inside the tile. */
+@media (max-width: 430px) {
+    .home-cols ::deep .tile:not(.is-wide) { gap: 8px; padding-inline: 10px 8px; }
+    .home-cols ::deep .tile:not(.is-wide) .tile-art { width: 28px; height: 28px; }
+    .home-cols ::deep .tile:not(.is-wide) .tile-value { font-size: .9375rem; }
+    /* ...and the three small bounty buttons trim their side padding so the sync button stays on their row in zh/ja/ko. */
+    .home-cols ::deep .bq-actions .mud-button:not(.mud-icon-button) { padding-inline: 8px; }
+}
+@media (max-width: 374.98px) { .home-cols ::deep .tile:not(.is-wide) .tile-value { font-size: .875rem; } }
+@media (pointer: coarse) { .home-cols ::deep .bq-actions .mud-icon-button { width: 40px; height: 40px; } }

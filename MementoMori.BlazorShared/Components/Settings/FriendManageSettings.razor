@@ -14,15 +14,12 @@
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Group" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[FriendTabFriend]") <span class="panel-scope is-account"><PlayerAvatar IconId="@(Funcs?.UserSyncData?.UserStatusDtoInfo?.MainCharacterIconId ?? 0)" Name="@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name)" Size="16" />@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name)</span></span></MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Group" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[FriendTabFriend]") <span class="panel-scope is-account"><PlayerAvatar IconId="@(Funcs?.UserSyncData?.UserStatusDtoInfo?.MainCharacterIconId ?? 0)" Name="@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name)" Size="16" />@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name)</span></span><SettingSaved @ref="_saved"/></MudText>
         </CardHeaderContent>
-        <CardHeaderActions>
-            <MudButton Class="setting-save-button" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Save" OnClick="SaveFriendManageConfig">@Masters.TextResourceTable.Get("[CommonSaveLabel]")</MudButton>
-        </CardHeaderActions>
     </MudCardHeader>
     <MudCardContent Class="settings-form">
-        <MudSwitch T="bool" Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@ResourceStrings.Remove_friends_inactive_for_7_days" Value="_autoRemoveFriend" ValueChanged="autoDeleteChanged" Color="Color.Primary"></MudSwitch>
-        <MudSelect Label="@ResourceStrings.Auto_remove_whitelist" MultiSelection="true" T="FriendInfo" Disabled="@(!_autoRemoveFriend || _friendList.Count == 0)" @bind-SelectedValues="_friendWhiteList" MultiSelectionTextFunc="list => string.Format(ResourceStrings.SelectedXItems, list.Count)" Variant="Variant.Outlined" Margin="Margin.Dense">
+        <MudSwitch T="bool" Class="settings-toggle" LabelPlacement="Placement.Start" Label="@ResourceStrings.Remove_friends_inactive_for_7_days" Value="_autoRemoveFriend" ValueChanged="AutoRemoveChanged" Color="Color.Primary"></MudSwitch>
+        <MudSelect Label="@ResourceStrings.Auto_remove_whitelist" MultiSelection="true" T="FriendInfo" Disabled="@(!_autoRemoveFriend || _friendList.Count == 0)" @bind-SelectedValues="_friendWhiteList" @bind-SelectedValues:after="SaveFriendManageConfig" MultiSelectionTextFunc="list => string.Format(ResourceStrings.SelectedXItems, list.Count)" Variant="Variant.Outlined" Margin="Margin.Dense">
             @foreach (var friend in _friendList)
             {
                 <MudSelectItem Value="friend">
@@ -30,50 +27,52 @@
                 </MudSelectItem>
             }
         </MudSelect>
-        <MudSwitch T="bool" Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@ResourceStrings.Auto_accept_friend_requests" @bind-Value="_autoAcceptNewFriend" Color="Color.Primary"></MudSwitch>
-        <MudSwitch T="bool" Class="settings-toggle" LabelPosition="LabelPosition.Start" Label="@ResourceStrings.Auto_send_friend_requests" @bind-Value="_autoApplyFriend" Color="Color.Primary"></MudSwitch>
+        <MudSwitch T="bool" Class="settings-toggle" LabelPlacement="Placement.Start" Label="@ResourceStrings.Auto_accept_friend_requests" @bind-Value="_autoAcceptNewFriend" @bind-Value:after="SaveFriendManageConfig" Color="Color.Primary"></MudSwitch>
+        <MudSwitch T="bool" Class="settings-toggle" LabelPlacement="Placement.Start" Label="@ResourceStrings.Auto_send_friend_requests" @bind-Value="_autoApplyFriend" @bind-Value:after="SaveFriendManageConfig" Color="Color.Primary"></MudSwitch>
     </MudCardContent>
 </MudCard>
 
 
 @code {
+    SettingSaved _saved = null!;
     bool _autoRemoveFriend;
     bool _autoAcceptNewFriend;
     bool _autoApplyFriend;
 
     List<FriendInfo> _friendList = [];
-    IEnumerable<FriendInfo> _friendWhiteList = [];
+    IReadOnlyCollection<FriendInfo> _friendWhiteList = [];
 
     protected override async Task AccountChanged()
     {
         _friendList = [];
         _friendWhiteList = [];
         var playerOpt = PlayersOptions.Value.TryGetValue(NetworkManager.PlayerId, out var v) ? v : new PlayerOption {PlayerId = NetworkManager.PlayerId};
+        // Show the new account's values before the friend-list request: a toggle during that wait saves straight to this account.
+        _autoRemoveFriend = playerOpt.FriendManage.AutoRemoveInactiveFriend;
+        _autoAcceptNewFriend = playerOpt.FriendManage.AutoAcceptFriendRequest;
+        _autoApplyFriend = playerOpt.FriendManage.AutoSendFriendRequest;
         if (NetworkManager.PlayerId > 0)
         {
             await autoDeleteChanged(playerOpt.FriendManage.AutoRemoveInactiveFriend);
         }
-
-        _autoRemoveFriend = playerOpt.FriendManage.AutoRemoveInactiveFriend;
-        _autoAcceptNewFriend = playerOpt.FriendManage.AutoAcceptFriendRequest;
-        _autoApplyFriend = playerOpt.FriendManage.AutoSendFriendRequest;
     }
 
 
-    private void SaveFriendManageConfig()
+    private void SaveFriendManageConfig() => _saved.Run(() => PlayersOptions.Update(opt =>
     {
-        PlayersOptions.Update(opt =>
-        {
-            var playerOpt = opt.GetOrAdd(NetworkManager.PlayerId, (id) => new PlayerOption() {PlayerId = id});
-            // Keep the stored whitelist when the friend list was never loaded (fetch failed or auto-remove off).
-            if (_friendList.Count > 0) playerOpt.FriendManage.AutoRemoveWhitelist = _friendWhiteList.Select(d => d.Id).ToList();
-            playerOpt.FriendManage.AutoRemoveInactiveFriend = _autoRemoveFriend;
-            playerOpt.FriendManage.AutoAcceptFriendRequest = _autoAcceptNewFriend;
-            playerOpt.FriendManage.AutoSendFriendRequest = _autoApplyFriend;
-        });
-        Snackbar.Clear();
-        Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
-        Snackbar.Add(ResourceStrings.Save_successful, Severity.Success);
+        var playerOpt = opt.GetOrAdd(NetworkManager.PlayerId, (id) => new PlayerOption() {PlayerId = id});
+        // Keep the stored whitelist when the friend list was never loaded (fetch failed or auto-remove off).
+        if (_friendList.Count > 0) playerOpt.FriendManage.AutoRemoveWhitelist = _friendWhiteList.Select(d => d.Id).ToList();
+        playerOpt.FriendManage.AutoRemoveInactiveFriend = _autoRemoveFriend;
+        playerOpt.FriendManage.AutoAcceptFriendRequest = _autoAcceptNewFriend;
+        playerOpt.FriendManage.AutoSendFriendRequest = _autoApplyFriend;
+    }));
+
+    // Turning auto-remove on still loads the friend list (read-only request, as before) so the whitelist can be edited.
+    private async Task AutoRemoveChanged(bool on)
+    {
+        await autoDeleteChanged(on);
+        SaveFriendManageConfig();
     }
 
     public class FriendInfo
@@ -111,7 +110,7 @@
         }
         catch (Exception e)
         {
-            // ignored
+            Snackbar.Add(e.Message, Severity.Error);
         }
     }
 

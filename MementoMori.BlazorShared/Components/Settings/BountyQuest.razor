@@ -9,16 +9,12 @@
 @inject IWritableOptions<GameConfig> WritableGameConfig
 @inherits MementoMori.BlazorShared.Models.AccountComponent
 @inject IWritableOptions<PlayersOption> PlayersOptions
-@inject ISnackbar Snackbar
 
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Explore" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[CommonHeaderBountyQuestLabel]") <span class="panel-scope">@ResourceStrings.AllAccounts</span></span></MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Explore" aria-hidden="true" /><span>@Masters.TextResourceTable.Get("[CommonHeaderBountyQuestLabel]") <span class="panel-scope">@ResourceStrings.AllAccounts</span></span><SettingSaved @ref="_saved"/></MudText>
         </CardHeaderContent>
-        <CardHeaderActions>
-            <MudButton Class="setting-save-button" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Save" OnClick="() => SavePlayerSetting()">@Masters.TextResourceTable.Get("[CommonSaveLabel]")</MudButton>
-        </CardHeaderActions>
     </MudCardHeader>
     <MudCardContent Class="settings-form">
         <MudSelect T="UserItem" Label="@ResourceStrings.BountyQuestTargetItems" MultiSelection="true" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense" Comparer="@(new UserItemComparer())"
@@ -30,15 +26,17 @@
         </MudSelect>
         <div class="setting-section">
             <MudText Class="setting-field-label">@(ResourceStrings.Auto_refresh_diamonds) <span class="panel-scope is-account"><PlayerAvatar IconId="@(Funcs?.UserSyncData?.UserStatusDtoInfo?.MainCharacterIconId ?? 0)" Name="@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name)" Size="16" />@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name)</span></MudText>
-            <MudNumericField T="int" Label="@ResourceStrings.Max_refresh_count" HelperText="@ResourceStrings.Enter_0_to_disable_auto_refresh_" @bind-Value="_autoRefreshMaxCount" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+            <MudNumericField InputMode="InputMode.numeric" T="int?" Label="@ResourceStrings.Max_refresh_count" HelperText="@ResourceStrings.Enter_0_to_disable_auto_refresh_" @bind-Value="_autoRefreshMaxCount" @bind-Value:after="SavePlayerSetting" Min="0" DebounceInterval="500" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
         </div>
     </MudCardContent>
 </MudCard>
 
 @code {
+    SettingSaved _saved = null!;
     List<UserItem> _bountyQuestRewardItems = new();
 
-    private int _autoRefreshMaxCount;
+    // Nullable so an emptied field (mid-typing) is not saved as 0.
+    private int? _autoRefreshMaxCount;
 
     protected override Task AccountChanged()
     {
@@ -61,23 +59,16 @@
         return Task.CompletedTask;
     }
 
-    IEnumerable<UserItem> BountyQuestAutoTargetItems
+    IReadOnlyCollection<UserItem> BountyQuestAutoTargetItems
     {
         get => WritableGameConfig.Value.BountyQuestAuto.TargetItems;
-        set => WritableGameConfig.Update(x => x.BountyQuestAuto.TargetItems = value.ToList());
+        set => _saved.Run(() => WritableGameConfig.Update(x => x.BountyQuestAuto.TargetItems = value.ToList()));
     }
 
     private void SavePlayerSetting()
     {
-        PlayersOptions.Update(opt =>
-        {
-            var playerOpt = opt.GetOrAdd(NetworkManager.PlayerId, (id) => new PlayerOption() {PlayerId = id});
-            playerOpt.BountyQuest.MaxRefreshCount = _autoRefreshMaxCount;
-        });
-
-        Snackbar.Clear();
-        Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
-        Snackbar.Add(ResourceStrings.Save_successful, Severity.Success);
+        if (_autoRefreshMaxCount is not { } count) return;
+        _saved.Run(() => PlayersOptions.Update(opt => opt.GetOrAdd(NetworkManager.PlayerId, id => new PlayerOption {PlayerId = id}).BountyQuest.MaxRefreshCount = count));
     }
 
     private class UserItemComparer : IEqualityComparer<UserItem>

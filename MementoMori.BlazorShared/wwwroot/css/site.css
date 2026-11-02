@@ -9,8 +9,8 @@
     --app-selected-background: color-mix(in srgb, var(--mud-palette-primary) 12%, var(--mud-palette-surface));
 }
 html[data-theme="dark"] {
-    --app-card-line: rgba(255,236,214,.13);
-    --app-card-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+    --app-card-line: rgba(255,236,214,.09);
+    --app-card-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 14px 30px -18px rgb(0 0 0 / .8);
     --app-overlay-shadow: 0 16px 40px -14px rgb(0 0 0 / .7), 0 2px 6px rgb(0 0 0 / .2);
     --app-text-3: #A39788;
     --app-dot: #FF6B5B;
@@ -45,7 +45,9 @@ button, input, textarea, select { font-family: inherit; }
 .app-segment .mud-icon-button { width: 34px; height: 32px; padding: 0; border-radius: 999px; color: var(--app-text-3); }
 .app-segment .mud-icon-button[aria-pressed="true"] { background: var(--app-selected-background); color: var(--mud-palette-primary); }
 .app-nav { border-right: 1px solid var(--mud-palette-lines-default); }
-.app-nav .mud-drawer-header { align-items: center; height: 65px; min-height: 0; padding: 0 22px; }
+.app-nav .mud-drawer-header { flex-shrink: 0; align-items: center; gap: 10px; height: 65px; min-height: 0; padding: 0 22px; }
+.app-nav .mud-navmenu { min-height: 0; overflow-y: auto; }
+.app-brand-icon { flex: none; width: 36px; height: 36px; object-fit: contain; }
 .app-nav .mud-typography-h5 { font-size: 1rem; font-weight: 700; line-height: 1.2; color: var(--mud-palette-text-primary); }
 .app-nav .mud-typography-h5 small { display: block; margin-top: 2px; font-size: .75rem; font-weight: 400; letter-spacing: .04em; color: var(--app-text-3); }
 .app-nav .mud-nav-link { align-items: center; width: calc(100% - 24px); min-height: 42px; margin: 2px 12px; padding: 0 12px; border-radius: 12px; font-weight: 500; transition: background-color .15s, color .15s; }
@@ -62,13 +64,14 @@ button, input, textarea, select { font-family: inherit; }
     flex-wrap: wrap;
     row-gap: .5rem;
     min-height: 58px;
-    padding: 18px 18px 0 22px;
+    column-gap: .5rem;
+    padding: 18px 22px 0 22px;
     background: transparent;
     font-weight: 600;
     line-height: 1.55;
 }
 .app-content .mud-card-header > .panel-title { flex-shrink: 0; }
-.app-content .mud-card-header > .mud-paper { flex-wrap: wrap; }
+.app-content .mud-card-header > .mud-paper { flex-wrap: wrap; margin-inline-start: auto; }
 .app-content .mud-card-header .mud-typography { font-weight: 650; line-height: 1.5; }
 .app-content .mud-card-header .mud-paper { background: transparent; }
 .app-content .panel-title {
@@ -88,7 +91,8 @@ button, input, textarea, select { font-family: inherit; }
 .app-content .mud-card-content { padding: 16px 22px 22px; line-height: 1.6; }
 .app-content .mud-card-actions { padding: 0 22px 22px; }
 .app-content .mud-card-header-content { min-width: 0; }
-.app-content .mud-card-header-actions { margin: 0 0 0 .5rem; align-self: center; flex-shrink: 0; }
+.app-content .mud-card-header-actions { margin: 0 0 0 auto; align-self: center; flex-shrink: 0; }
+.app-content .mud-card-header-actions .mud-icon-button { width: 32px; height: 32px; padding: 4px; }
 .app-content .mud-button, .mud-dialog .mud-button {
     border-radius: 10px;
     font-weight: 500;
@@ -103,8 +107,8 @@ button, input, textarea, select { font-family: inherit; }
 .app-content .mud-button-text-default, .mud-dialog .mud-button-text-default { color: var(--mud-palette-text-secondary); font-weight: 500; }
 .app-content .mud-button-outlined-default, .mud-dialog .mud-button-outlined-default { border-color: var(--mud-palette-lines-default); }
 :is(.app-content, .mud-dialog) .mud-button:not(.mud-icon-button) { min-height: 36px; padding-inline: 14px; align-items: center; }
-:is(.app-content, .mud-dialog) .mud-button-size-small:not(.mud-icon-button) { min-height: 32px; padding-inline: 12px; }
-@media (pointer: coarse) { :is(.app-content, .mud-dialog) .mud-button:not(.mud-icon-button) { min-height: 40px; } }
+:is(.app-content, .mud-dialog) .mud-button[class*="-size-small"]:not(.mud-icon-button) { min-height: 32px; padding-inline: 12px; }
+@media (pointer: coarse) { :is(.app-content, .mud-dialog) :is(.mud-button, .mud-button[class*="-size-small"]):not(.mud-icon-button) { min-height: 40px; } }
 .app-content .mud-button:disabled, .mud-dialog .mud-button:disabled { color: var(--mud-palette-action-disabled); box-shadow: none; }
 .app-content :is(button, a).mud-icon-button, .mud-dialog :is(button, a).mud-icon-button { border-radius: 10px; }
 .app-content .mud-card-header .mud-button-outlined.mud-icon-button:not(:disabled) {
@@ -149,7 +153,10 @@ button, input, textarea, select { font-family: inherit; }
     mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12.5l4 4 8-8.5' fill='none' stroke='%23000' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 11px no-repeat;
 }
 :is(.app-content, .mud-dialog) .mud-switch-base.mud-switch-disabled + .mud-switch-track { opacity: .4 !important; }
-:is(.app-content, .mud-dialog) .mud-switch-label-medium { font-size: .875rem !important; }
+/* MudBlazor 9: .mud-switch lost its default margins, keyboard focus moved to the hidden input, and the label is a plain body1 span. */
+.mud-switch { margin-inline: -11px 16px; }
+.mud-switch-base:has(.mud-switch-input:focus-visible) { outline: 2px solid var(--mud-palette-primary); outline-offset: 2px; }
+:is(.app-content, .mud-dialog) .mud-switch > .mud-typography { font-size: .875rem !important; }
 .settings-toggle { width: 100%; margin: 0; }
 .settings-toggle .mud-input-control-input-container { width: 100%; }
 .settings-toggle .mud-switch {
@@ -161,21 +168,23 @@ button, input, textarea, select { font-family: inherit; }
     justify-content: space-between;
     border-bottom: 1px solid var(--mud-palette-divider-light);
 }
-.settings-toggle:last-child .mud-switch { border-bottom: 0; }
+.settings-toggle:last-child .mud-switch, .settings-toggle:has(+ .setting-section) .mud-switch { border-bottom: 0; }
 .settings-toggle .mud-switch .mud-switch-span { margin: 0; }
-.settings-toggle .mud-switch-label-medium { min-width: 0; flex: 1; text-align: start; overflow-wrap: anywhere; line-height: 1.6; }
+.settings-toggle .mud-switch > .mud-typography { min-width: 0; flex: 1; text-align: start; overflow-wrap: anywhere; line-height: 1.6; }
+.settings-toggle-list .master-toggle { width: calc(100% + 1.5rem); max-width: none; margin-inline: -.75rem; }
 .settings-toggle-list .master-toggle .mud-switch { padding: .75rem; background: var(--mud-palette-background-gray); border: 1px solid var(--mud-palette-lines-default); border-radius: 14px; font-weight: 600; }
 .settings-toggle-divider { margin: .6rem 0; opacity: 0; }
 .settings-form > * + *, .mud-dialog .settings-form > * + * { margin-top: .85rem; }
 .settings-form > .settings-toggle + .settings-toggle { margin-top: 0; }
 .settings-form > .mud-input-control { width: 100%; }
 .settings-form .mud-input-helper-text { padding: .3rem 0 0; }
-:is(.settings-form, .setting-dialog-fields, .shop-auto-buy-fields, .equipment-training, .quick-action-form, .battle-log-controls, .mud-dialog) .mud-input-control-input-container:has(> .mud-input-label) {
+.settings-form .mud-input-control-helper-container { padding-inline: 0 !important; }
+:is(.settings-form, .setting-dialog-fields, .shop-auto-buy-fields, .equipment-training, .quick-action-form, .battle-log-controls, .mud-dialog, .cron-body) .mud-input-control-input-container:has(> .mud-input-label) {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     row-gap: .4rem;
 }
-:is(.settings-form, .setting-dialog-fields, .shop-auto-buy-fields, .equipment-training, .quick-action-form, .battle-log-controls, .mud-dialog) .mud-input-control-input-container > .mud-input-label {
+:is(.settings-form, .setting-dialog-fields, .shop-auto-buy-fields, .equipment-training, .quick-action-form, .battle-log-controls, .mud-dialog, .cron-body) .mud-input-control-input-container > .mud-input-label {
     grid-row: 1;
     position: static;
     width: 100%;
@@ -188,7 +197,13 @@ button, input, textarea, select { font-family: inherit; }
     white-space: normal;
     overflow: visible;
 }
-:is(.settings-form, .setting-dialog-fields, .shop-auto-buy-fields, .equipment-training, .quick-action-form, .battle-log-controls, .mud-dialog) .mud-input-control-input-container:has(> .mud-input-label) > .mud-input { grid-row: 2; }
+:is(.settings-form, .setting-dialog-fields, .shop-auto-buy-fields, .equipment-training, .quick-action-form, .battle-log-controls, .mud-dialog, .cron-body) .mud-input-control-input-container:has(> .mud-input-label) > .mud-input { grid-row: 2; }
+/* The select's empty popover anchor would otherwise be a third grid row (+6.4px under every select). */
+:is(.settings-form, .setting-dialog-fields, .shop-auto-buy-fields, .equipment-training, .quick-action-form, .battle-log-controls, .mud-dialog, .cron-body) .mud-input-control-input-container:has(> .mud-input-label) > .mud-popover-cascading-value { position: absolute; }
+/* MudBlazor darkens the label once the field has a value; keep one label colour (focus and disabled colours stay). */
+:is(.settings-form, .setting-dialog-fields, .shop-auto-buy-fields, .equipment-training, .quick-action-form, .battle-log-controls, .mud-dialog, .cron-body) .mud-shrink:not(:focus-within) ~ label.mud-input-label.mud-input-label-inputcontrol:not(.mud-disabled) { color: var(--mud-palette-text-secondary); }
+/* MudBlazor 9 cuts a notch in the outline for the floating label; the label sits above the field here, so drop the notch. */
+:is(.settings-form, .setting-dialog-fields, .shop-auto-buy-fields, .equipment-training, .quick-action-form, .battle-log-controls, .mud-dialog, .cron-body) .mud-input-control-input-container:has(> .mud-input-label) .mud-input-outlined-border legend { display: none; }
 .setting-section { border-top: 1px solid var(--mud-palette-lines-default); padding-top: 1rem; }
 .setting-field-label { display: block; margin-bottom: .65rem; font-size: .8125rem; font-weight: 500; line-height: 1.65; color: var(--mud-palette-text-secondary); }
 .setting-choice-group { min-width: 0; display: flex; flex-wrap: wrap; gap: .4rem; padding: 0; margin: 0; border: 0; }
@@ -222,7 +237,7 @@ button, input, textarea, select { font-family: inherit; }
 .setting-item-row + .setting-item-row { border-top: 1px solid var(--mud-palette-divider-light); }
 .setting-item-text { flex: 1; min-width: 0; font-size: .8125rem; line-height: 1.7; overflow-wrap: anywhere; }
 .setting-item-remove { flex-shrink: 0; }
-.setting-weight-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem .75rem; }
+.setting-weight-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .35rem .75rem; }
 .setting-weight-list .mud-input-control { min-width: 0; }
 .setting-weight-list > .setting-field-label { grid-column: 1 / -1; margin-bottom: 0; }
 .cron-fields .cron-field + .cron-field { margin-top: .85rem; }
@@ -233,7 +248,7 @@ button, input, textarea, select { font-family: inherit; }
 .setting-filter-list .setting-filter-row { display: flex; align-items: center; gap: .5rem; }
 .setting-filter-description { flex: 1; min-width: 0; font-size: .8125rem; overflow-wrap: anywhere; }
 .setting-dialog-fields > * + * { margin-top: .85rem; }
-.app-content .setting-save-button { min-width: 0; height: 30px; padding: .25rem .5rem; font-size: .75rem; border-color: var(--mud-palette-lines-default); }
+.app-content .setting-save-button { min-width: 0; font-size: .75rem; border-color: var(--mud-palette-lines-default); }
 .setting-save-button .mud-button-icon-start { margin-right: .3rem; margin-left: 0; }
 .setting-save-button .mud-icon-root { width: 16px; height: 16px; }
 .app-content .mud-tab, .mud-dialog .mud-tab { font-size: .8125rem; font-weight: 500; line-height: 1.5; letter-spacing: 0; text-transform: none; }
@@ -275,7 +290,7 @@ button, input, textarea, select { font-family: inherit; }
     flex: 0 1 auto;
     min-width: 3rem;
     max-width: 100%;
-    min-height: 34px;
+    min-height: 32px;
     margin: 0;
     padding: .4rem .75rem;
     border-radius: 10px;
@@ -290,16 +305,20 @@ button, input, textarea, select { font-family: inherit; }
 .app-content .quick-action-list .mud-button-label { display: block; text-wrap: balance; }
 .quick-action-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: .85rem; align-content: start; align-items: end; }
 .quick-action-form > .mud-select { width: 100%; min-width: 0; }
-.quick-action-form .mud-input-control { margin-top: 0; margin-bottom: 0; }
+.app-content .quick-action-form .mud-input-control { margin-top: 0; margin-bottom: 0; }
 .app-content .quick-action-form .mud-input.mud-input-outlined { min-height: 40px; }
 .app-content .quick-action-form .mud-input > .mud-input-root.mud-input-root-outlined { padding-top: .5rem; padding-bottom: .5rem; font-size: .875rem; line-height: 1.5; }
-.app-content .quick-action-form > .mud-button { min-height: 40px; width: 100%; margin: 0; }
+.app-content .quick-action-form > .mud-button { grid-column: -2 / -1; min-height: 40px; width: 100%; margin: 0; }
 /* Execution output as a timeline; newest entry (last DOM row, shown first) is emphasised. */
 .execution-messages tbody { max-height: 20rem; overflow-y: auto; overscroll-behavior: contain; }
 .execution-messages tr { flex-shrink: 0; }
 .app-content .execution-messages td { position: relative; padding: 5px 0 5px 22px; border: 0; color: var(--mud-palette-text-secondary); font-size: .84375rem; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; background: linear-gradient(var(--mud-palette-lines-inputs), var(--mud-palette-lines-inputs)) 5px 0 / 1.5px 100% no-repeat; }
 .app-content .execution-messages td::before { content: ""; position: absolute; left: 1px; top: 12px; width: 9px; height: 9px; border: 2px solid var(--app-text-3); border-radius: 50%; background: var(--mud-palette-surface); }
 .app-content .execution-messages tr:last-child td { color: var(--mud-palette-text-primary); font-weight: 500; }
+.app-content .execution-messages .msg-time { margin-inline-end: .5em; color: var(--app-text-3); font-size: .75rem; font-weight: 400; font-variant-numeric: tabular-nums; }
+.app-content .execution-messages .msg-error-icon { margin-inline-end: .25em; font-size: 1.1em; vertical-align: -.2em; }
+.app-content .execution-messages tr.is-error td { color: var(--mud-palette-error); }
+.app-content .execution-messages tr.is-error td::before { border-color: var(--mud-palette-error); background: var(--mud-palette-error); }
 .app-content .mud-table-root, .app-content .mud-simple-table { font-variant-numeric: tabular-nums; }
 .app-content .mud-card .mud-table, .app-content .mud-card .mud-simple-table { box-shadow: none; border-radius: 12px; background: transparent; }
 .app-content .mud-table-head .mud-table-cell, .app-content .mud-simple-table thead th {
@@ -334,14 +353,16 @@ button, input, textarea, select { font-family: inherit; }
 .mission-status { color: var(--app-text-3); font-size: .78125rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .mission-status.is-todo { color: var(--mud-palette-primary); font-weight: 600; }
 .notice-row { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 6px 8px; border: 0; border-radius: 10px; background: none; color: var(--mud-palette-text-primary); font-size: .84375rem; line-height: 1.45; text-align: start; cursor: pointer; }
-.notice-row + .notice-row { box-shadow: 0 -1px 0 var(--mud-palette-lines-default); }
+.notice-row + .notice-row { background: linear-gradient(var(--mud-palette-lines-default), var(--mud-palette-lines-default)) top / 100% 1px no-repeat; }
 .notice-row > :first-child { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .notice-row > .mud-icon-root { color: var(--app-text-3); }
 .shop-rule-text { display: block; overflow-wrap: break-word; }
-.shop-rule-sentence { line-height: 1.8; }
+.shop-rule-sentence { line-height: 1.8; word-break: keep-all; }
 .shop-rule-discount { display: inline-flex; flex: 0 0 auto; padding: .1rem .4rem; border-radius: .3rem; background: var(--mud-palette-background-gray); color: var(--mud-palette-text-secondary); font-size: .75rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .account-management-dialog { width: 420px; max-width: calc(100vw - 32px); }
-.app-form-dialog, .mud-dialog:has(.use-item-dialog) { width: 480px; max-width: calc(100vw - 32px); }
+.app-form-dialog, .mud-dialog:has(.use-item-dialog), .mud-dialog:has(.gacha-select-grid) { width: 480px; max-width: calc(100vw - 32px); }
+.mud-dialog.mud-message-box { width: min(420px, calc(100vw - 32px)); }
+.mud-dialog.mud-message-box .mud-dialog-content { padding-block: 16px; }
 .app-content .job-runs-table { max-height: 24rem; overflow-y: auto; }
 .app-content .job-runs-table thead th { position: sticky; top: 0; z-index: 1; }
 .job-runs-table table { width: 100%; table-layout: fixed; }
@@ -375,14 +396,21 @@ button, input, textarea, select { font-family: inherit; }
 }
 .mud-popover { border-radius: 12px; }
 .mud-popover.app-account-popover { min-width: 200px; }
+/* On phones the language select shrinks to its globe icon; keep the list readable. */
+.mud-popover.app-language-popover { min-width: 150px; }
 .mud-popover.training-equipment-popover { min-width: min(320px, calc(100vw - 32px)); max-width: calc(100vw - 32px); }
 .mud-popover .mud-list { padding: .35rem; }
 .mud-popover .mud-list-item, .mud-popover .mud-menu-item { min-height: 38px; border-radius: .35rem; padding: .45rem .7rem; font-size: .875rem; }
-.mud-popover .mud-list-item .mud-typography { font-size: .875rem; line-height: 1.5; }
-.mud-popover .mud-list-item-text { min-width: 0; overflow-wrap: anywhere; }
+.mud-popover :is(.mud-list-item, .mud-menu-item) .mud-typography { font-size: .875rem; line-height: 1.5; }
+.mud-popover :is(.mud-list-item-text, .mud-menu-item-text) { min-width: 0; overflow-wrap: anywhere; }
 .mud-popover .mud-selected-item { background: var(--app-selected-background); color: var(--mud-palette-primary); font-weight: 500; }
 .mud-dialog .mud-dialog-title { border-bottom: 1px solid var(--mud-palette-lines-default); }
-.mud-dialog .mud-dialog-actions { border-top: 1px solid var(--mud-palette-lines-default); }
+/* Title stays put when a whole dialog scrolls (GachaDetail has no inner scroller); the close X is centred on it. */
+.mud-dialog .mud-dialog-title { position: sticky; top: 0; z-index: 2; background: var(--mud-palette-surface); }
+.mud-dialog .mud-dialog-title .mud-button-close { top: 50%; transform: translateY(-50%); }
+/* Actions share the 24px content inset, so the confirm button lines up with the fields. */
+.mud-dialog .mud-dialog-actions { padding: 12px 24px; border-top: 1px solid var(--mud-palette-lines-default); }
+.mud-dialog .mud-dialog-actions .mud-switch { margin-inline: 0 auto; }
 @media (hover: hover) and (pointer: fine) {
     :is(.app-content, .mud-dialog) .mud-tabs:not(.mud-tabs-vertical) > .mud-tabs-tabbar .mud-tab:not(.mud-tab-active):hover { background: var(--mud-palette-action-default-hover); color: var(--mud-palette-text-primary); }
     .app-content .mud-button-filled-default:not(:disabled):hover, .mud-dialog .mud-button-filled-default:not(:disabled):hover {
@@ -396,13 +424,20 @@ button, input, textarea, select { font-family: inherit; }
 @media (pointer: coarse) {
     .app-content .quick-action-list .mud-button, .app-content .quick-actions-tabs .mud-tab { min-height: 40px; }
     .app-content .account-row > .mud-icon-button { width: 36px; min-height: 40px; }
+    .app-content .mud-card-header-actions .mud-icon-button { width: 40px; height: 40px; }
+    /* Small icon buttons (remove, reactions, sticker close) are 26px; the stacked 20px number spinners go, the numeric keyboard covers them. */
+    .setting-item-remove, :is(.chat-page, .chat-guild-dialog, .shop-auto-buy-fields) .mud-icon-button-size-small { min-width: 36px; min-height: 36px; }
+    .mud-input-control.mud-input-number-control .mud-input-numeric-spin { display: none; }
 }
 .chat-guild-dialog.mud-dialog { height: min(880px, calc(100dvh - 80px)); max-height: calc(100dvh - 80px); overflow: hidden; border-radius: 1rem; }
 .chat-guild-dialog .mud-dialog-title { padding: 1rem 1.5rem; border-bottom: 1px solid var(--mud-palette-lines-default); }
 .chat-guild-dialog .mud-focus-trap { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-.chat-guild-dialog .mud-dialog-content { display: flex; flex-direction: column; min-height: 0; }
-:focus-visible { outline: 2px solid var(--mud-palette-primary); outline-offset: 2px; }
-@media (max-width: 700px) {
+.chat-guild-dialog .mud-dialog-content { display: flex; flex-direction: column; min-height: 0; overflow: hidden; border-radius: 0; }
+/* MudBlazor's button:focus { outline: none } outranks a bare :focus-visible, so buttons and links are named here. */
+:focus-visible, :is(button, a, summary):focus-visible { outline: 2px solid var(--mud-palette-primary); outline-offset: 2px; }
+/* Not controls: the heading FocusOnNavigate focuses after a load, and MudFocusTrap's 0x0 sentinel in dialogs. */
+h1:focus-visible, .mud-dialog .fixed.pointer-events-none:focus-visible { outline: none; }
+@media (max-width: 700px), (max-height: 500px) {
     .chat-guild-dialog.mud-dialog { width: 100%; max-width: 100%; height: 100dvh; max-height: 100dvh; margin: 0; border: 0; border-radius: 0; }
     .chat-guild-dialog .mud-dialog-title { padding: .75rem 1rem; }
 }
@@ -413,7 +448,7 @@ button, input, textarea, select { font-family: inherit; }
 @media (max-width: 899.98px) {
     .home-cols, .settings-cols { display: flex; flex-direction: column; align-items: stretch; gap: 14px; }
     :is(.home-cols, .settings-cols) > .col, :is(.home-cols, .settings-cols) > .col:nth-child(3) { display: contents; }
-    .app-content .mud-card-header { padding: 14px 14px 0 16px; }
+    .app-content .mud-card-header { padding: 14px 16px 0 16px; }
     .app-content .mud-card-content { padding: 12px 16px 16px; }
     .app-content .mud-card-actions { padding: 0 16px 16px; }
     .tile-value { font-size: 1rem; }
@@ -434,6 +469,7 @@ button, input, textarea, select { font-family: inherit; }
     .app-content { padding: 14px; }
     .app-content .quick-actions-tabs .quick-action-list .mud-button { flex-basis: auto; min-width: calc(50% - .2rem); }
     .training-equipment-popover { left: 16px !important; max-width: calc(100vw - 32px) !important; }
+    .mud-dialog.mud-dialog-width-full { width: calc(100% - 32px); }
 }
 @media (max-width: 359.98px) {
     .app-header .app-account-menu { flex: 0 0 auto; }
@@ -445,20 +481,36 @@ button, input, textarea, select { font-family: inherit; }
     .app-segment .mud-icon-button { width: 26px; }
     .app-header > .mud-toolbar > .mud-icon-button[aria-label="GitHub"] { display: none; }
 }
+/* Theme buttons stay 32px wide on touch at every width (the account pill gives up the room). */
+@media (pointer: coarse) {
+    .app-segment { gap: 0; }
+    .app-segment .mud-icon-button { width: 32px; }
+}
+/* Landscape phones: a 52px bar instead of 64px (main padding, drawer and dialogs follow the variable). */
+@media (max-height: 500px) {
+    html:root, html[data-theme]:root { --mud-appbar-height: 52px; }
+    .app-header .mud-toolbar { height: 52px; }
+    .app-nav .mud-drawer-header { height: 53px; }
+}
 /* Primary filled buttons are tonal (soft accent fill + accent text), one step above the selected-tab tint. */
-:is(.app-content, .mud-dialog) .mud-button-filled-primary:not(:disabled) {
+:is(.app-content, .mud-dialog) .mud-button-filled-primary:not(:disabled), .mud-message-box .mud-button-text-primary:not(:disabled) {
     background: color-mix(in srgb, var(--mud-palette-primary) 18%, var(--mud-palette-surface));
     color: color-mix(in srgb, var(--mud-palette-primary) 82%, #000);
     box-shadow: none;
 }
 @media (hover: hover) and (pointer: fine) {
-    :is(.app-content, .mud-dialog) .mud-button-filled-primary:not(:disabled):hover { background: color-mix(in srgb, var(--mud-palette-primary) 25%, var(--mud-palette-surface)); }
+    :is(.app-content, .mud-dialog) .mud-button-filled-primary:not(:disabled):hover, .mud-message-box .mud-button-text-primary:not(:disabled):hover { background: color-mix(in srgb, var(--mud-palette-primary) 25%, var(--mud-palette-surface)); }
 }
 /* Selects/menus: the list is the only scroll container (popover border otherwise made the popover scroll 2px too). */
 .mud-popover:has(> .mud-list) { overflow: hidden; }
-html[data-theme="dark"] :is(.app-content, .mud-dialog) .mud-button-filled-primary:not(:disabled) { color: var(--mud-palette-primary); }
+/* MudBlazor fixes lists at 300px; in a short (landscape) viewport that covered the field and the app bar. */
+.mud-popover.mud-popover-open:has(> .mud-list) { max-height: min(300px, 38dvh) !important; }
+html[data-theme="dark"] :is(.app-content, .mud-dialog) .mud-button-filled-primary:not(:disabled), html[data-theme="dark"] .mud-message-box .mud-button-text-primary:not(:disabled) { color: var(--mud-palette-primary); background: color-mix(in srgb, var(--mud-palette-primary) 14%, var(--mud-palette-surface)); }
+/* Dark: a column of on-switches in full accent is loud; mute the large fills, keep small accents bright. */
+html[data-theme="dark"] :is(.app-content, .mud-dialog) .mud-switch-base.mud-checked + .mud-switch-track { background: color-mix(in srgb, var(--mud-palette-primary) 70%, var(--mud-palette-surface)) !important; }
 /* Focus/open inputs: 1px accent border + soft glow (MudBlazor default is a 2px ring). */
 .mud-input.mud-input-outlined .mud-input-outlined-border { border-width: 1px !important; }
+.mud-input.mud-input-outlined.mud-disabled .mud-input-outlined-border { border-color: var(--mud-palette-lines-default); }
 .app-account-option { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .app-account-option .player-avatar { border: 0; border-radius: 50%; }
 .app-account-option .app-account-who > * { max-width: 220px; }
@@ -495,3 +547,5 @@ html[data-theme="dark"] :is(.app-content, .mud-dialog) .mud-button-filled-primar
 .pause-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.6fr); gap: 6px; }
 .pause-state { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .pause-until { font-size: .8125rem; color: var(--mud-palette-warning-darken, var(--mud-palette-warning)); }
+/* MudBlazor 8+ dropped the Input typography and 9 sets .mud-input to 1.1876em; keep the 7.15 field height. */
+.mud-input { line-height: 1.5; }

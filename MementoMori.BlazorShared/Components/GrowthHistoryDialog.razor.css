@@ -1,4 +1,5 @@
-.growth-dialog { display: flex; flex-direction: column; gap: 12px; max-height: 70vh; overflow: auto; padding-bottom: 8px; }
+﻿/* Never taller than the room left under the dialog title (phone landscape), so only this box scrolls. */
+.growth-dialog { display: flex; flex-direction: column; gap: 12px; max-height: min(70vh, calc(100dvh - 150px)); overflow: auto; padding-bottom: 8px; }
 .growth-empty { padding: 12px 14px; border-radius: 12px; background: var(--mud-palette-background-gray); color: var(--mud-palette-text-secondary); font-size: .8125rem; }
 .growth-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .growth-trend { padding: 12px 14px; border-radius: 14px; background: var(--mud-palette-background-gray); }
@@ -15,3 +16,4 @@
 .growth-legend i.is-tower { background: var(--mud-palette-info); }
 .growth-legend b { color: var(--mud-palette-text-primary); font-weight: 500; font-variant-numeric: tabular-nums; }
 .growth-day { position: sticky; top: 0; z-index: 1; padding: 6px 4px 2px; background: var(--mud-palette-surface); color: var(--app-text-3); font-size: .75rem; font-weight: 500; }
+@media (max-width: 600px) { .growth-chips .app-choice { padding-inline: 10px; } }

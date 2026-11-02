@@ -2,6 +2,7 @@
 @using System.Globalization
 @using MementoMori.Common.Localization
 @inject AccountSelection AccountSelection
+@inject IDialogService DialogService
 
 @* Friendly editor for a Quartz cron: every N hours / daily / weekly; anything else stays raw text (custom). *@
 <div class="cron-picker">
@@ -13,20 +14,14 @@
                 <button type="button" role="radio" aria-checked="@(m == _mode ? "true" : "false")" class="app-choice cron-mode" @onclick="() => SetMode(m)">@ModeName(m)</button>
             }
         </div>
-        @if (!string.IsNullOrEmpty(Default))
-        {
-            <MudTooltip Text="@ResourceStrings.ResettoDefault">
-                <MudIconButton Icon="@Icons.Material.Rounded.Restore" Size="Size.Small" OnClick="() => Save(Default)" aria-label="@ResourceStrings.ResettoDefault"/>
-            </MudTooltip>
-        }
     </div>
 
     <div class="cron-body">
         @switch (_mode)
         {
             case CronMode.Hours:
-                <MudNumericField T="int" Value="_every" ValueChanged="v => { _every = v; Save(Build()); }" Min="1" Max="23" Label="@ResourceStrings.CronIntervalHours" Variant="Variant.Outlined" Margin="Margin.Dense" Class="cron-num"/>
-                <MudNumericField T="int" Value="_minute" ValueChanged="v => { _minute = v; Save(Build()); }" Min="0" Max="59" Label="@ResourceStrings.CronAtMinute" Variant="Variant.Outlined" Margin="Margin.Dense" Class="cron-num"/>
+                <MudNumericField InputMode="InputMode.numeric" T="int" Value="_every" ValueChanged="v => { _every = v; Save(Build()); }" Min="1" Max="23" Label="@ResourceStrings.CronIntervalHours" Variant="Variant.Outlined" Margin="Margin.Dense" Class="cron-num"/>
+                <MudNumericField InputMode="InputMode.numeric" T="int" Value="_minute" ValueChanged="v => { _minute = v; Save(Build()); }" Min="0" Max="59" Label="@ResourceStrings.CronAtMinute" Variant="Variant.Outlined" Margin="Margin.Dense" Class="cron-num"/>
                 break;
             case CronMode.Daily:
                 <div class="cron-chips cron-hours" role="group" aria-label="@ResourceStrings.CronModeDaily">
@@ -36,7 +31,7 @@
                         <button type="button" aria-pressed="@(_hours.Contains(hour) ? "true" : "false")" class="app-choice cron-chip" @onclick="() => ToggleHour(hour)">@($"{hour:00}:{_minute:00}")</button>
                     }
                 </div>
-                <MudNumericField T="int" Value="_minute" ValueChanged="v => { _minute = v; Save(Build()); }" Min="0" Max="59" Label="@ResourceStrings.CronAtMinute" Variant="Variant.Outlined" Margin="Margin.Dense" Class="cron-num"/>
+                <MudNumericField InputMode="InputMode.numeric" T="int" Value="_minute" ValueChanged="v => { _minute = v; Save(Build()); }" Min="0" Max="59" Label="@ResourceStrings.CronAtMinute" Variant="Variant.Outlined" Margin="Margin.Dense" Class="cron-num"/>
                 break;
             case CronMode.Weekly:
                 <div class="cron-chips" role="group" aria-label="@ResourceStrings.CronModeWeekly">
@@ -51,17 +46,29 @@
                 <MudTextField T="string" Value="_customText" ValueChanged="SaveCustom" Immediate="true" DebounceInterval="400" Placeholder="0 0 4 ? * *"
                               Variant="Variant.Outlined" Margin="Margin.Dense" Class="cron-custom" Validation="@CustomError"
                               HelperText="sec min hour day month weekday [year]"/>
+                <MudIconButton Class="cron-help" Icon="@Icons.Material.Filled.Help" Size="Size.Small" Href="https://www.freeformatter.com/cron-expression-generator-quartz.html" Target="_blank" rel="noopener noreferrer"
+                               title="@ResourceStrings.CronExpression" aria-label="@ResourceStrings.CronExpression"/>
                 break;
         }
     </div>
 
-    @if (NextRuns() is { Count: > 0 } runs)
+    @* Reset sits at the end of the next-runs row, so the mode buttons get the whole head row. *@
+    @if (NextRuns() is var runs && (runs.Count > 0 || !string.IsNullOrEmpty(Default)))
     {
         <div class="cron-next">
-            <span class="cron-next-label">@ResourceStrings.CronNextRuns</span>
-            @foreach (var r in runs)
+            @if (runs.Count > 0)
             {
-                <span class="cron-next-time">@r</span>
+                <span class="cron-next-label">@ResourceStrings.CronNextRuns</span>
+                @foreach (var r in runs)
+                {
+                    <span class="cron-next-time">@r</span>
+                }
+            }
+            @if (!string.IsNullOrEmpty(Default))
+            {
+                <MudTooltip Text="@ResourceStrings.ResettoDefault" RootClass="cron-reset">
+                    <MudIconButton Icon="@Icons.Material.Rounded.Restore" Size="Size.Small" OnClick="Reset" aria-label="@ResourceStrings.ResettoDefault"/>
+                </MudTooltip>
             }
         </div>
     }
@@ -132,11 +139,12 @@
         return mode switch
         {
             CronMode.Hours => string.Format(ResourceStrings.CronEveryHoursFormat, every, minute.ToString("00")),
-            CronMode.Daily => $"{ResourceStrings.CronModeDaily} " + (hours.Count <= 3
-                ? string.Join(", ", hours.Order().Select(h => $"{h:00}:{minute:00}"))
+            // "Every N h from HH:mm" already implies daily, so it gets no "daily" prefix.
+            CronMode.Daily => hours.Count <= 3
+                ? $"{ResourceStrings.CronModeDaily} " + string.Join(", ", hours.Order().Select(h => $"{h:00}:{minute:00}"))
                 : EvenStep(hours) is { } step
                     ? string.Format(ResourceStrings.CronEveryHoursFromFormat, step, $"{hours.Min():00}:{minute:00}")
-                    : string.Format(ResourceStrings.CronTimesPerDayFormat, hours.Count, minute.ToString("00"))),
+                    : $"{ResourceStrings.CronModeDaily} " + string.Format(ResourceStrings.CronTimesPerDayFormat, hours.Count, minute.ToString("00")),
             CronMode.Weekly => $"{string.Join(" ", Days.Where(d => days.Contains(d.Code)).Select(d => d.Name))} {hours[0]:00}:{minute:00}",
             _ => null,
         };
@@ -163,6 +171,14 @@
         if (mode == CronMode.Weekly) _hours = new() { _hours[0] };
         if (from == CronMode.Custom) _minute = Math.Clamp(_minute, 0, 59);
         Save(Build());
+    }
+
+    // Resetting discards a changed schedule, so confirm first (nothing to confirm when it already is the default).
+    async Task Reset()
+    {
+        if (Value != Default && await DialogService.ShowMessageBoxAsync(ResourceStrings.ResettoDefault, $"{Label}: {Describe(Default!) ?? Default}",
+                Tr("[CommonOkLabel]"), cancelText: Tr("[CommonCancelLabel]"), options: new DialogOptions {CloseButton = true, CloseOnEscapeKey = true}) != true) return;
+        Save(Default!);
     }
 
     void ToggleHour(int hour)

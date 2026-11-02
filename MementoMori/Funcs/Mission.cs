@@ -69,6 +69,7 @@ public partial class MementoMoriFuncs
                 }
                 catch (ApiErrorException ex) when (ex.ErrorCode is not (ErrorCode.CommonNoSession or ErrorCode.CommonLoggedInAnotherDevice))
                 {
+                    AddLog(ex.Message);
                 }
             }
 

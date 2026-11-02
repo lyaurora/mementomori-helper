@@ -2,7 +2,7 @@
     display: grid;
     gap: 16px;
     min-width: 0;
-    padding: 20px 24px 22px;
+    padding: 20px 24px 0;
 }
 
 .use-item-summary {
@@ -46,6 +46,10 @@
     font-weight: 500;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+}
+
+div.use-item-owned {
+    white-space: normal;
 }
 
 .use-item-dialog ::deep .use-item-count {
@@ -92,7 +96,12 @@
     flex-wrap: wrap;
     justify-content: flex-end;
     gap: 10px;
-    padding-top: 4px;
+    /* Sticky so Close/Buy stay reachable when the dialog scrolls (phone landscape); the bottom inset lives here for that. */
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    padding: 4px 0 22px;
+    background: var(--mud-palette-surface);
 }
 
 .use-item-actions ::deep .mud-button {
@@ -102,6 +111,30 @@
 
 @media (max-width: 599.98px) {
     .use-item-dialog {
-        padding: 16px;
+        padding: 16px 16px 0;
+    }
+
+    .use-item-actions {
+        padding-bottom: 16px;
+    }
+}
+
+/* Landscape phones: amount field beside the slider, so everything fits above the pinned button row instead of scrolling under it. */
+@media (max-height: 500px) {
+    .use-item-dialog {
+        grid-template-columns: 8.5rem minmax(0, 1fr);
+        align-items: center;
+        gap: 12px 16px;
+        padding-top: 14px;
+    }
+
+    .use-item-summary,
+    .use-item-result,
+    .use-item-actions {
+        grid-column: 1 / -1;
+    }
+
+    .use-item-actions {
+        padding-bottom: 14px;
     }
 }

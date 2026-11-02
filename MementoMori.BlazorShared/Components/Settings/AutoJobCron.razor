@@ -9,17 +9,8 @@
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Schedule" aria-hidden="true" /><span>@ResourceStrings.AutoJobCrons <span class="panel-scope">@ResourceStrings.AllAccounts</span></span></MudText>
+            <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Filled.Schedule" aria-hidden="true" /><span>@ResourceStrings.AutoJobCrons <span class="panel-scope">@ResourceStrings.AllAccounts</span></span><SettingSaved @ref="_saved"/></MudText>
         </CardHeaderContent>
-        <CardHeaderActions>
-            <MudButton Href="https://www.freeformatter.com/cron-expression-generator-quartz.html"
-                       Target="_blank"
-                       Size="Size.Small" Class="setting-save-button"
-                       Variant="Variant.Outlined"
-                       Style="text-transform:none"
-                       StartIcon="@Icons.Material.Filled.Help"
-                       Color="Color.Primary">@ResourceStrings.CronExpression</MudButton>
-        </CardHeaderActions>
     </MudCardHeader>
     <MudCardContent Class="cron-list">
         @* One row per job; the editor opens inline for a single job at a time. *@
@@ -29,7 +20,7 @@
             var cron = job.Get();
             var summary = CronPicker.Describe(cron);
             <div class="cron-row @(open ? "is-open" : null)">
-                <button type="button" class="cron-row-head" aria-expanded="@(open ? "true" : "false")" title="@ResourceStrings.EditSchedule" @onclick="() => _open = open ? null : job.Label">
+                <button type="button" class="cron-row-head" aria-expanded="@(open ? "true" : "false")" @onclick="() => _open = open ? null : job.Label">
                     <span class="cron-row-name">@job.Label</span>
                     <span class="cron-row-sum @(summary == null ? "is-raw" : null)">@(summary ?? cron)</span>
                     <span class="cron-row-next">@CronPicker.NextRuns(cron, AccountSelection, 1, false).FirstOrDefault()</span>
@@ -45,6 +36,7 @@
 </MudCard>
 
 @code {
+    SettingSaved _saved = null!;
     [Parameter] public EventCallback OnJobsChanged { get; set; }
 
     GameConfig.AutoJobModel defaultValue = new();
@@ -84,61 +76,61 @@
     public string AutoJob__DailyJobCron
     {
         get => WritableGameConfig.Value.AutoJob.DailyJobCron;
-        set { if (CronError(value) == null) WritableGameConfig.Update(x => x.AutoJob.DailyJobCron = value); }
+        set { if (CronError(value) == null) _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.DailyJobCron = value)); }
     }
 
     public string AutoJob__HourlyJobCron
     {
         get => WritableGameConfig.Value.AutoJob.HourlyJobCron;
-        set { if (CronError(value) == null) WritableGameConfig.Update(x => x.AutoJob.HourlyJobCron = value); }
+        set { if (CronError(value) == null) _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.HourlyJobCron = value)); }
     }
 
     public string AutoJob__PvpJobCron
     {
         get => WritableGameConfig.Value.AutoJob.PvpJobCron;
-        set { if (CronError(value) == null) WritableGameConfig.Update(x => x.AutoJob.PvpJobCron = value); }
+        set { if (CronError(value) == null) _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.PvpJobCron = value)); }
     }
 
     public string AutoJob__LegendLeagueJobCron
     {
         get => WritableGameConfig.Value.AutoJob.LegendLeagueJobCron;
-        set { if (CronError(value) == null) WritableGameConfig.Update(x => x.AutoJob.LegendLeagueJobCron = value); }
+        set { if (CronError(value) == null) _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.LegendLeagueJobCron = value)); }
     }
 
     public string AutoJob__GuildRaidBossReleaseCron
     {
         get => WritableGameConfig.Value.AutoJob.GuildRaidBossReleaseCron;
-        set { if (CronError(value) == null) WritableGameConfig.Update(x => x.AutoJob.GuildRaidBossReleaseCron = value); }
+        set { if (CronError(value) == null) _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.GuildRaidBossReleaseCron = value)); }
     }
 
     public string AutoJob__AutoBuyShopItemJobCron
     {
         get => WritableGameConfig.Value.AutoJob.AutoBuyShopItemJobCron;
-        set { if (CronError(value) == null) WritableGameConfig.Update(x => x.AutoJob.AutoBuyShopItemJobCron = value); }
+        set { if (CronError(value) == null) _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.AutoBuyShopItemJobCron = value)); }
     }
 
     public string AutoJob__AutoLocalRaidJobCron
     {
         get => WritableGameConfig.Value.AutoJob.AutoLocalRaidJobCron;
-        set { if (CronError(value) == null) WritableGameConfig.Update(x => x.AutoJob.AutoLocalRaidJobCron = value); }
+        set { if (CronError(value) == null) _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.AutoLocalRaidJobCron = value)); }
     }
 
     public string AutoJob__AutoDeployGuildDefenseJobCron
     {
         get => WritableGameConfig.Value.AutoJob.AutoDeployGuildDefenseJobCron;
-        set { if (CronError(value) == null) WritableGameConfig.Update(x => x.AutoJob.AutoDeployGuildDefenseJobCron = value); }
+        set { if (CronError(value) == null) _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.AutoDeployGuildDefenseJobCron = value)); }
     }
 
     public string AutoJob__AutoChangeGachaRelicJobCron
     {
         get => WritableGameConfig.Value.AutoJob.AutoChangeGachaRelicJobCron;
-        set { if (CronError(value) == null) WritableGameConfig.Update(x => x.AutoJob.AutoChangeGachaRelicJobCron = value); }
+        set { if (CronError(value) == null) _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.AutoChangeGachaRelicJobCron = value)); }
     }
 
     public string AutoJob__AutoDrawGachaRelicJobCron
     {
         get => WritableGameConfig.Value.AutoJob.AutoDrawGachaRelicJobCron;
-        set { if (CronError(value) == null) WritableGameConfig.Update(x => x.AutoJob.AutoDrawGachaRelicJobCron = value); }
+        set { if (CronError(value) == null) _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.AutoDrawGachaRelicJobCron = value)); }
     }
 
 }
