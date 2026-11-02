@@ -25,7 +25,7 @@ There are three separate versions:
 - Master files are refreshed on startup and hourly. Changed files are staged, hash-checked and deserialized before replacement. Tables without a local file read as empty; failed reloads retain the previous data and ID index. Existing text data remains available if a replacement fails.
 - C# protocol definitions and business rules require a reviewed source update. Downloading Master files does not update these definitions.
 
-For a client update, compare the official client's properties, MessagePack keys and enum numeric values with `MementoMori.Ortega`, then trace affected calls in `MementoMori/Funcs`. Preserve explicit numeric keys and update serialization constructors and copy methods. Do not import unused client UI code or assume a new enum implements a new game feature.
+For a client update, compare the official client's properties, MessagePack keys and enum numeric values with `MementoMori.Ortega`, then trace affected calls in `MementoMori/Funcs`. Preserve explicit numeric keys and update serialization constructors and copy methods. Do not import unused client UI code or assume a new enum implements a new game feature. The step-by-step workflow and its scripts (fetch, dump, enum/class diff, apply) are in [tools/protocol-sync/README.md](../tools/protocol-sync/README.md).
 
 When MagicOnion sender/receiver interfaces change, regenerate the existing proxy with its matching tool version:
 
@@ -68,11 +68,15 @@ With Playwright available, `node tests/check-chat-ui.cjs http://127.0.0.1:5290` 
 
 ## WebUI appearance
 
-The shared UI uses a neutral black/white/gray palette. On wide screens, Home places quick actions, execution output and notices in three columns; categories in inventory, equipment and shops remain directly visible and wrap when space is limited. Quantity dialogs accept typed counts as well as the slider, validate the allowed range, and keep failed actions retryable. Switching accounts or leaving the originating page cancels pending purchase, item-use and draw confirmations.
+The shared UI uses warm paper tones with an orange accent. On wide screens, Home places quick actions, execution output and notices in three columns; categories in inventory, equipment and shops remain directly visible and wrap when space is limited. Quantity dialogs accept typed counts as well as the slider, validate the allowed range, and keep failed actions retryable. Switching accounts or leaving the originating page cancels pending purchase, item-use and draw confirmations.
 
 The app-bar **外观模式** menu offers **跟随系统**, **浅色** and **深色**. New browsers follow the system automatically; changes to the system preference apply immediately while that mode is selected. Explicit light/dark choices override the system and persist in browser storage. The shared MudBlazor palette controls page backgrounds, navigation, cards, menus, chat and native inputs; dark mode uses distinct background/surface levels and readable text and action colors. Both palettes are rendered during prerender, with the dark palette scoped to the document's theme attribute. The small fingerprinted `theme.js` script chooses the palette in the document head, so initial rendering and system changes do not wait for a Blazor connection.
 
 Enhanced navigation reapplies the current browser theme after Blazor patches the document, including sidebar clicks before the interactive connection is ready.
+
+The UI uses MudBlazor 9.12. `Program.cs` sets `PopoverOptions.ModalOverlay` and `OverflowBehavior.FlipOnOpen` globally to keep the 7.15 popover behavior (a click outside only closes the menu), and `site.css` targets the v9 DOM, so re-check those selectors and the dropdowns when upgrading MudBlazor.
+
+README screenshots (`images/intro*.png`) come from a test account. Before capturing, mask player IDs, comments, transfer and friend codes, other players' names and avatars, and chat text.
 
 `node tests/check-theme-ui.cjs http://127.0.0.1:5290` checks the palette before Blazor starts, early sidebar navigation, system changes, manual overrides, reload persistence, dark text contrast, mobile controls and storage-denied fallback. It uses Playwright and does not invoke game actions.
 
@@ -96,10 +100,16 @@ Failed automatic login retries after 1, 2, 4, 8, then 15 minutes, capped at 15 m
 
 Settings shows each scheduled task's last start/end time, result and error. This is the latest in-memory result, reset when the process restarts. A failed action can be reported as partial failure while subsequent daily actions continue. Account selection belongs to each browser session; account data and scheduled work remain shared.
 
+Home **执行输出** keeps the newest 100 entries, each with a time and an error flag (`LogEntry`). The network layer no longer writes API errors there: `ApiErrorException` carries the API path, and whoever handles the exception logs one line. Only exceptions that reach the catch-all in `ExecuteQuickAction` or `AutoDungeonBattle` become red lines with the path. Code that catches `ApiErrorException` and should tell the user must therefore log it itself.
+
+The log-in banners on Home, Character, Items, Shop and Gacha are computed from the live `LoginOk`/`Logining` state, and these pages reload their data once a login succeeds, so no refresh is needed.
+
+Each account's device id (`OrtegaUuid`) is stored per account in `appsettings.user.json` so it stays the same across restarts. Growth history is one `GrowthHistory/<UserId>.jsonl` file per account under the configuration directory; once a file passes 2 MB it is trimmed to the last 90 days and at most 5000 lines.
+
 `GET /healthz` reports process readiness after initial Master loading. It does not assert that every account logged in or every game task succeeded; use the account/task status for that.
 
 After deploying, run `python3 tests/check-webui.py http://127.0.0.1:5290` and check a menu or theme toggle in a browser. HTTP 200 for the HTML page alone does not verify Blazor interactivity. Framework scripts use the static-asset manifest and fingerprinted URLs. ASP.NET data-protection keys are persisted under the configuration directory so redeployments retain the cookie encryption keys.
 
-Set `ConfigDirectory` to mount a writable configuration directory, as in the compose example. Saves keep a `.bak` copy and preserve file permissions. `GameConfig.AssetsUrl` and `GameConfig.BattleLogViewerUrl` can be changed in Settings. The public AuthToken is cached only for its matching game version; account client keys remain in the private configuration file.
+Set `ConfigDirectory` to mount a writable configuration directory, as in the compose example. Saves keep a `.bak` copy and preserve file permissions. `GameConfig.AssetsUrl` and `GameConfig.BattleLogViewerUrl` can be changed in Settings. `AssetsUrl` still defaults to the upstream server, so all images, including the character plate background in the icon CSS, go through the `/assets` disk cache and keep working from local copies when it is down. The public AuthToken comes from the same server and is cached with its game version. If fetching fails after a game update, the older cached token is tried with a warning in the log and execution output; if adding an account then fails, the dialog reports the token problem together with the server's message. Account client keys remain in the private configuration file.
 
 The 5.1.1 sync adds the twelve `unionMission/*` HTTP models (info, ranking, accept/retire/refresh/select, cool-time reset, accept-count purchase and reward claims), panel/ranking DTOs, `UnionMissionMB` plus ranking/repeat/total-point reward masters, `LimitedEventMB.TargetInfoList`, `RequiredCurrencyMB.UnionMission`, and new enum and error-code values. "Complete missions" also claims finished Union Mission panels accepted by the current player and the cumulative point rewards while a `UnionMissionEventMB` period is active; it never accepts, refreshes, resets cool time or buys accept counts.

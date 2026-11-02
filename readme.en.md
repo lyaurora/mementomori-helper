@@ -1,23 +1,17 @@
-This fork uses .NET 10 LTS and aligns the relevant game protocols with 5.1.1 (chat assets and guild notes from 5.0.0). See the [maintenance guide](docs/maintenance.md) for builds, offline checks, updates and configuration migration.
-
 [ [Zh](readme.md) | [En](readme.en.md) ]
 
 # MementoMori Game Assistant
 
-[![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/moonheart/mementomori-helper/publish-dev.yml)](https://github.com/moonheart/mementomori-helper/actions/workflows/publish-dev.yml)
-[![GitHub Release Date - Published_At](https://img.shields.io/github/release-date/moonheart/mementomori-helper)](https://github.com/moonheart/mementomori-helper/releases)
-[![GitHub release (with filter)](https://img.shields.io/github/v/release/moonheart/mementomori-helper)](https://github.com/moonheart/mementomori-helper/releases)
-[![GitHub all releases](https://img.shields.io/github/downloads/moonheart/mementomori-helper/total)](https://github.com/moonheart/mementomori-helper/releases)
-[![Docker Pulls](https://img.shields.io/docker/pulls/moonheartmoon/mementomori-webui)](https://hub.docker.com/r/moonheartmoon/mementomori-webui/)
+[![Build](https://img.shields.io/github/actions/workflow/status/lyaurora/mementomori-helper/publish-dev.yml?branch=master)](https://github.com/lyaurora/mementomori-helper/actions/workflows/publish-dev.yml)
 
-Under construction
+A web assistant for Memento Mori: it claims rewards and runs dailies on a schedule, and lets you view characters and items, buy, invoke and chat from a browser.
 
-[Telegram](https://t.me/+gTRe8AxKxIdkOTg9) [Discord](https://discord.gg/mJ3fWxrypx)
+This is a maintained fork of [moonheart/mementomori-helper](https://github.com/moonheart/mementomori-helper) that keeps the original WebUI. It runs on .NET 10, its game protocol is synced to client 5.1.1, and the UI is available in English, 简体中文, 繁體中文, 日本語 and 한국어.
 
 ## **Disclaimer**
 
 Please be aware of the following points when using this tool:
-s
+
 1. This tool is provided for personal entertainment and educational purposes. The use of this tool may violate the usage policies of specific games or applications, and users assume all associated risks.
 
 2. The developer (referred to as "we") is not responsible for any legal or moral consequences that may arise from a user's use of this tool in games. Users should take full responsibility for the potential risks associated with using the tool.
@@ -31,367 +25,246 @@ s
 By downloading, installing, and using this tool, users acknowledge that they have carefully read and understood this disclaimer and agree to assume all risks associated with using this tool. If you do not agree with any part of this disclaimer, please discontinue the use of this tool.
 
 ## Previews
+
+The screenshots use the English UI. Player IDs, comments and other players' information are masked.
+
 <table>
 <tbody>
-<tr><td> 
-
-![](images/intro1.png) </td><td>![](images/intro2.png)</td></tr>
 <tr><td>
 
-![](images/intro3.png)</td><td>![](images/intro4.png)</td></tr>
+**Home**
+
+![Home](images/en/intro1.png)</td><td>
+
+**Characters**
+
+![Characters](images/en/intro2.png)</td></tr>
 <tr><td>
 
-![](images/intro5.png)</td><td>![](images/intro6.png)</td></tr>
+**Box**
+
+![Box](images/en/intro3.png)</td><td>
+
+**Shop**
+
+![Shop](images/en/intro4.png)</td></tr>
 <tr><td>
 
-![](images/intro7.png)</td><td>![](images/intro8.png)</td></tr>
+**Invoke details**
+
+![Invoke details](images/en/intro5.png)</td><td>
+
+**Chat and stickers**
+
+![Chat and stickers](images/en/intro6.png)</td></tr>
+<tr><td>
+
+**Battle Report**
+
+![Battle Report](images/en/intro7.png)</td><td>
+
+**Options (dark mode)**
+
+![Options](images/en/intro8.png)</td></tr>
 </tbody>
 </table>
-Here's the English translation of the provided document:
-
-## Todos
-
-<!-- prettier-ignore -->
-<table>
-  <tbody>
-  <tr>
-      <td>
-
-- [x] Multi-account support
-    - [x]Direct login with account and password
-- [ ] Home
-    - [x] User login
-    - [x] Collect daily login rewards
-    - [x] Collect daily VIP gifts
-    - [x] One-click send/receive friendship points
-    - [x] One-click collect gift box
-    - [x] One-click collect task rewards
-    - [x] One-click collect badge rewards
-    - [x] One-click use fixed items
-    - [x] Automatically collect monthly card rewards
-- [ ] Exchange Shop
-    - [x] Purchase regular items
-    - [x] Purchase gems
-    - [x] Auto-buy products
-- [ ] Characters
-    - [x] Character list
-    - [x] Character attributes
-    - [x] Character equipment details
-    - [ ] Upgrade
-    - [ ] Breakthrough
-    - [ ] Formation
-
-</td>
-<td>
-
-- [ ] Storage Box
-    - [x] Automatically use items
-    - [x] Automatically refine magic equipment and inherit to D-grade equipment
-    - [x] Automatically inherit divine equipment to D-grade
-    - [x] Automatically polish equipment
-    - [ ] Manual use of items
-- [ ] Adventure
-    - [x] Collect automatic battle rewards
-    - [x] One-click high-speed battle
-    - [x] Boss one-click sweep
-    - [x] Auto stage clearing
-        - [x] Stop after a specified stage
-- [ ] Trial
-    - [x] Infinite Tower one-click sweep
-    - [x] Auto stage clearing in the Infinite Tower
-        - [x] Stop after a specified stage
-    - [x] Phantom Temple one-click challenge
-      - [x] Hitch a Ride Mode
-      - [ ] Create Your Own Room Mode
-      - [x] Configure Reward Weight
-    - [x] Ancient Arena one-click challenge 5 times
-    - [x] Fountain of Wishes one-click collect all
-    - [x] Fountain of Wishes one-click expedition
-        - [x] Optional tasks that dispatch specified reward items only
-    - [x] Space-Time Cavern one-click automatic execution
-        - [x] Optional automatic purchase of specified products
-        - [x] Prioritize treasure chest nodes when available
-        - [x] Automatically use recovery items
-</td>
-<td>
-
-- [ ] Gacha
-    - [x] Daily free/gold coin gacha
-    - [x] Gacha pool list
-    - [x] Manual gacha
-- [ ] Guild
-    - [x] Guild check-in
-    - [x] Guild raid automatic sweep
-    - [x] Automatically start the guild raid
-    - [x] Collect guild battle rewards
-- [ ] Others
-    - [x] Support other automatic tasks while clearing stages
-    - [x] Frequency limit for stage clearing configuration
-
-</td>
-</tr>
-
-  </tbody>
-</table>
-
-## Usage
-
-To run the program, follow these steps:
-
-1. Go to the release page: https://github.com/moonheart/mementomori-helper/releases, and download the `publish-win-x64.zip` file. Unzip it.
-
-### Method 1: Run Directly
-
-To run the program, you need to configure your account information. After that, you can run `MementoMori.WebUI.exe`. Look for log messages like "Now listening on: http://0.0.0.0:5000". Open this address in your web browser.
 
-### Method 2: Run with Docker
+## Features
 
-See [docker-compose](examples/docker-compose)
+### Home
 
-## Automatic Tasks
+- Character info (including server and world) and main resources at a glance; Fountain of Prayers, mission and game notice panels. **Claim All** on the mission panel also claims medal rewards.
+- **Quick actions**: run the whole daily routine at once or any single step (reward claims, sweeps, leagues, guild, Temple of Illusions, Guild Tree, auto-buy and more).
+- Bulk-cast S/A/B/C equipment and inherit Matchless and Legend levels onto D equipment.
+- Automatic main quest and Tower of Infinity (including the elemental towers) runs that can stop after a chosen stage; automatic Cave of Space-Time; manual equipment reforging.
+- **Execution output**: every line has a time; failed actions are shown in red with the API that failed, so problems are easy to locate. A running action can be cancelled at any time.
+- **Recent growth**: records rewards, character and equipment upgrades, and quest and tower progress, with category filters and a battle power trend.
 
-The program will execute specific actions at certain times.
+### Other pages
 
-### Daily Tasks (Server Time 4:10)
-- Collect daily login rewards
-- Collect daily VIP rewards
-- Collect automatic battle rewards
-- Collect friendship points
-- Collect gift box
-- Strengthen equipment once (automatically selects the lowest-level equipment currently equipped by characters, used to complete daily tasks)
-- Main story sweep 3 times
-- Infinite Tower sweep 3 times
-- Free high-speed battle (one free and one from the monthly card)
-- Guild check-in
-- Guild raid
-- Fountain of Wishes collect rewards
-- Fountain of Wishes automatic dispatch
-- Space-Time Cavern automatic execution
-- Collect daily/
+- **Characters**: character list, stats and equipment details.
+- **Box**: equipment, consumables, materials, runes and shards; items can be used by hand.
+- **Shop**: browse the shops and buy; the alarm button on an item adds an auto-buy rule.
+- **Invoke**: banner list, details and rates, character selection and manual draws.
+- **Chat**: World, Guild, SvS, cross-world guild battle and private conversations; stickers, reactions, guild announcements, surveys and notes.
+- **Battle Report**: browse saved logs by type (main quest, towers, Battle League, Legend League), download the JSON, open it in the embedded viewer, or clean up by age.
+- **Options**: account management, automatic job switches and schedules, job status, and the automation settings.
 
-weekly task rewards
-- Use fixed items
-- Consume item gacha
-- Automatically advance characters (R->R+, SR->SR+)
+### Multiple accounts
 
-### Reward Scheduled Collection (Server Time 0:30, 4:30, 8:30, 12:30, 16:30, 20:30)
-- Collect daily login rewards
-- Collect automatic battle rewards
-- Fountain of Wishes dispatch+collect
-- Guild raid
-- Friendship points collection
-- Task reward collection
-- Guild battle reward collection
-- Auto gacha
-- Use fixed items
+- Add several accounts and switch between them in the app bar. Each browser session picks its own current account; scheduled jobs run for all accounts.
+- Each account keeps its own device ID across restarts.
+- Scheduled jobs can be paused per account (1, 2 or 4 hours, or until resumed).
+- A failed automatic login retries after 1, 2, 4, 8, then 15 minutes; the error and retry time are shown in Options.
 
-### Arena (Server Time 20:00)
-- Arena 5 times (automatically selects the lowest power opponent from the list)
+### Interface
 
-## Account Configuration
+The appearance can follow the system or be set to light or dark, and the app bar shows the server time.
 
-After launching the program, go to settings, add an account, and enter the account name, Transfer ID, and Transfer password.
+## Installation
 
-## Function Description
+Docker Compose is recommended. This repository does not currently publish release archives.
 
-### Daily Check-in Rewards
+### Option 1: Docker Compose, built from source
 
-Automatically claim daily check-in rewards, cumulative check-in days rewards, and limited-time check-in rewards.
+```sh
+git clone https://github.com/lyaurora/mementomori-helper.git
+cd mementomori-helper/examples/docker-compose
+mkdir -p config Master BattleLogs
+test -f config/appsettings.user.json || printf '{}\n' > config/appsettings.user.json
+chmod 600 config/appsettings.user.json
+docker compose up -d --build
+```
 
-### VIP Daily Benefits
+Then open `http://127.0.0.1:5290`. See [examples/docker-compose](examples/docker-compose/Readme.md) for more.
 
-Automatically claim VIP daily free gifts.
+### Option 2: Docker Compose, prebuilt image
 
-### Monthly Strengthening Package
+CI publishes the master branch to `ghcr.io/lyaurora/mementomori-helper:dev` (linux/amd64, linux/arm64). After preparing the directories above, replace `build`, `image` and `pull_policy` in the example `docker-compose.yml` with:
 
-Automatically claim the monthly strengthening package.
+```yaml
+    image: ghcr.io/lyaurora/mementomori-helper:dev
+```
 
-### Auto Battle Rewards
+### Option 3: Run directly
 
-Automatically claim rewards from auto battles.
+Install the .NET 10 SDK selected by [global.json](global.json), then:
 
-### Friendship Points
+```sh
+cd MementoMori.WebUI
+dotnet run -c Release
+```
 
-Automatically send and receive friendship points.
+By default it listens on port 5290 on all interfaces (`http://0.0.0.0:5290`) and keeps its configuration and data in the current directory.
 
-### Strengthen Equipment Once
+> The WebUI has no login of its own. The example publishes the port on loopback only. For remote access use SSH, Tailscale or an authenticating reverse proxy; do not expose it directly to the internet.
 
-Used to complete the daily mission "Strengthen equipment 1 time."
+## Adding an account
 
-Equipment selection strategy: Choose equipment with the lowest level among character-equipped equipment that has not reached its level limit.
+Go to **Options - Account Management - Add**, enter a name, the account (Transfer ID) and the password (Transfer Password), and enable automatic login if you want it. Then click **Login** on Home and choose the character to log in with.
 
-### Challenge Boss 3 Times
+The configuration is stored in `appsettings.user.json`. It contains each account's ClientKey, so do not share it.
 
-Automatically use the daily 3 free attempts to challenge the boss. Prioritize using sweep, and if sweep is not unlocked, use regular challenge.
+## Automatic jobs
 
-### Tower of Infinity 3 Times
+Times are in the server time of the account's world and can be changed under **Options - Auto Job Crons**. **Disable All Jobs** stops every job at once. **Job Status** shows the next run and the last result (cleared on restart).
 
-Automatically use the daily 3 free attempts to challenge the Tower of Infinity. Prioritize using sweep, and if sweep is not unlocked, use regular challenge.
+| Job | Default time | Default switch | What it does |
+| --- | --- | --- | --- |
+| Daily Job | Every day 04:50 | Always runs | See the list below |
+| Reward Claim Job | Every 4 hours from 00:30 | Always runs | See the list below |
+| Battle League | Every day 20:00 | On | Fights until the attempts run out, then claims mission rewards |
+| Legend League | Every day 20:10 | Off | Fights until the attempts run out |
+| Unlock Guild Raid | Every hour on the hour | Off | Unlocks the guild raid |
+| Auto Buy Store Items | Every day 09:09, 12:09, 15:09, 18:09 | Follows the rules; none by default | Buys items matching the rules and takes free items |
+| Temple of Illusions | Every day 12:31, 19:31 | Off | Challenges the Temple of Illusions |
+| Change Relic | Every Monday 04:40 | Off | Switches the relic invoke to the configured relic |
+| Auto draw 10 times (up to 3 draws) | Every Sunday 06:00 | Off | Draws the relic invoke with free diamonds only; also needs this account's switch in the Invoke settings |
 
-### Ancient Arena Auto Battle 5 Times
+### Daily Job
 
-Automatically engage in 5 battles in the Ancient Arena.
+- Claim login bonuses, the VIP daily gift, Monthly Boost, auto-battle rewards and the Presents Box
+- Send and receive Friend Points
+- Reinforce equipment once (switch, on by default): picks the lowest-level equipped item that is below its cap
+- Sweep the boss and the Tower of Infinity 3 times each
+- High-speed battle: the daily free one, plus Monthly Boost uses if active
+- Guild check-in, Guild Raid, Guild Tree, Guild Battle rewards
+- Friend management, friend campaign rewards, achievement rewards, character Memories
+- Fountain of Prayers claim and dispatch
+- Cave of Space-Time (switch, on by default)
+- Mission and medal rewards, rental raid share rewards
+- Use Normal Items (switch, on by default), free invoke (switch, on by default)
+- Character Awaken (switch, on by default): R to R+ and SR to SR+; locked and level-linked characters are never used as material
 
-Opponent selection strategy: Choose the player with the lowest combat power in the list.
+### Reward Claim Job
 
-### Peak Arena Auto Battle 10 Times
+- Login bonuses, Fountain of Prayers (claim and dispatch), the Presents Box, auto-battle rewards
+- Guild Raid, Guild Tree, Guild Battle rewards
+- Send and receive Friend Points
+- Mission and medal rewards, rental raid share rewards, character Memories
+- Free invoke and Use Normal Items (each follows its switch)
 
-Automatically engage in 10 battles in the Peak Arena.
+## Automation settings
 
-Opponent selection strategy: Choose the player with the lowest combat power in the list.
+These are on the **Options** page. Changes save automatically and the card title briefly shows "Saved"; **Reset to default** asks for confirmation first. The label on each card shows its scope: "All accounts" applies everywhere, and a character name applies to the current account only.
 
-### Free High-Speed Battles
+### Battle League, Legend League
 
-Automatically use the free 2-hour high-speed battle attempts.
+The opponent strategy can be random (default), lowest or highest battle power. You can exclude player IDs and filter by character: exclude opponents who have a certain character, or whose character has a higher chosen stat than yours.
 
-### Free Summons
+### Temple of Illusions
 
-Automatically use items for card draws.
+By default it joins existing rooms and hosts its own after failing to find one for a long time; it can also be set to always host. When hosting you can set the wait before the battle, and it stops after 3 losses in a row.
 
-Item configuration: Options - Summons - Automatically consume items for card draws.
+It picks among the open quests by reward weight; during events only event quests are considered. Each quest scores:
 
-### Guild Check-in
+$$score=\sum weight\times\frac{count}{count_{max}}$$
 
-Automatically claim daily guild check-in rewards.
+$count$ is the quest's reward count (plus the first-clear reward if not cleared yet) and $count_{max}$ is the maximum reward of that item. The highest score wins, then the higher level.
 
-### Guild Raid Battle
+### Fountain of Prayers
 
-Automatically engage in guild raid battles. Prioritize using sweep, and if sweep is not unlocked, use regular challenge.
+You can dispatch only quests with chosen rewards; **Force Dispatch** on Home ignores this setting. Refreshing quests with diamonds is off by default and can be limited to a maximum count per day.
 
-### Guild Raid Battle Opening
+### Cave of Space-Time
 
-Automatically open the guild raid battle in the Lightsaber Guild.
+Options: prefer treasure chest nodes, remove and re-equip gear during events, the maximum number of recovery items, and which cave shop items to buy at what minimum discount.
 
-### Guild Battle Defense Deployment
+### Shop auto-buy
 
-Automatically deploy defense on the guild's own bases in guild battles.
+A rule names the item to buy, the item to pay with and a minimum discount; at least one of the two items is required. Diamond prices count free diamonds only, so paid diamonds are never used. **Reset to Default** restores two rules: Tree of Life's Dew at 20% off with any item, and any general store item for gold.
 
-Deployment strategy: Deploy from large bases to small bases in order. For the first deployment, use a team of 5 characters; for subsequent deployments, use three teams of 3 characters each, with the remaining using 1 character.
+### Invoke, items
 
-Character selection strategy: Highest combat power to lowest.
+- **Auto Gacha Consume Items**: what the free invoke may spend.
+- **Items to use automatically**: which chest types Use Normal Items opens.
 
-### Guild Battle Rewards Claim
+### Friends, Guild Tree
 
-Automatically claim rewards from guild battles and cross-server guild battles.
+- Friends: remove friends inactive for 7 days (with a whitelist), accept and send friend requests automatically.
+- Guild Tree: automatic entry, challenges (with a retry count), reinforcement and stage reward claims.
 
-### Phantom Temple
+### Others
 
-Automatically engage in battles in the Phantom Temple. The battle method is to randomly join an existing room.
+You can set a delay between requests, the asset server address and the battle log viewer address.
 
-#### Mission selection strategy:
-
-When there is an event: Choose the mission with the highest number of event item rewards (first-time reward + fixed reward).
-
-When there is no event: Select missions based on the configured reward weights in the options.
-
-### Reward Weight
-
-By going to Options - Phantom Temple, you can set the reward weight. The calculation method is as follows:
-
-$$Sort=weight\times\frac{N_{start\_{current}}^{lv\_{current}}}{N_{start\_{max}}^{lv\_{max}}}$$
-
-Suppose the settings are as follows:
-
-- Rune Exchange Coupon: 5
-- Potential Orb: 3
-
-There are two tasks:
-
-- Task A rewards with Rune Exchange Coupon x10. The reward for a 127-level 10-star task is Rune Exchange Coupon x100, calculated as $0.5 = 5 \times \frac{10}{100}$.
-- Task B rewards with Potential Orb x30. The reward for a 127-level 10-star task is Potential Orb x2000, calculated as $0.045 = 3 \times \frac{30}{2000}$.
-
-Ultimately, Task A will be chosen for the battle.
-
-### Fountain of Wishes All Claim
-
-Automatically claim rewards from the Fountain of Wishes.
-
-### Fountain of Wishes Auto Expedition
-
-Automatically send characters on expedition missions in the Fountain of Wishes.
-
-You can set tasks that only include specified rewards in Options - Fountain of Wishes.
-
-You can open Forced Expedition to ignore this setting.
-
-You can click Refresh (Diamonds x20) to refresh regular tasks.
-
-### Auto Purchase Shop Items
-
-Automatically purchase items from the shop. You can set the consumed items, purchased items, and the minimum discount.
-
-Default items to buy can be found in the options, and they are as follows. You can click Reset to Default to restore:
-- Buy Life Tree Dew with any item at 20% OFF.
-- Buy any item with coins at 0% OFF.
-
-To add items for auto purchase, go to the left sidebar - Shop, click the alarm clock next to the item to open the auto purchase dialog, and configure:
-
-- Items to buy, leave it empty to buy all items.
-- Discount percentage, 0% OFF means no discount is required.
-- Consumed items, leave it empty to consume any item.
-- At least one of the purchase item and consumed item must be specified.
-
-### Use Fixed Items
-
-Automatically use items categorized as "Treasure Chest" with reward types "Fixed" or "Random," such as chests and unidentified gems.
-
-### Batch Evolution
-
-Automatically evolve R cards into R+, and SR cards into SR+.
-
-### Memories
-
-Automatically read all unread character memories to earn diamonds.
-
-### Tasks - All Claim
-
-Claim rewards for completed tasks.
-
-### Tasks - Medal Rewards
-
-Claim daily and weekly task medal rewards.
-
-### Characters
-
-You can access the character page from the left sidebar. Here, you can browse the basic information and equipment information of all characters.
-
-### Storage Box
-
-You can access the storage box page from the left sidebar. Here, you can browse all items and their information.
-
-### Shop
-
-You can access the shop page from the left sidebar. It is the same as the in-game shop, where you can buy items or gems and set up automatic item purchases.
-
-### Summon
-
-You can access the summon page from the left sidebar. It is the same as the in-game summon page, where you can draw cards, view draw details, and check the pity progress.
-
-### Battle Records
-
-You can access the battle records page from the left sidebar. Here, you can view the battle records of the main adventure and the Tower of Infinity, watch detailed battle information, and download JSON files for sharing or backup.
-
-### Options
-
-You can access the options page from the left sidebar. Here, you can view all settings and check information about automatic tasks.
-
-## FAQs
+## FAQ
 
 ### How do I run multiple instances?
 
-To run multiple instances, modify the port number in `appsettings.user.json`. For example, change the port to 5700:
+One instance already handles several accounts, so this is rarely needed. If you do:
 
-```json5
+- Docker: copy the `examples/docker-compose` directory and change `container_name` and the left side of `ports`.
+- Running directly: give each instance its own working directory and set its port in that directory's `appsettings.user.json`, for example:
+
+```json
 {
-  {
-    // original contents
-  },
   "Kestrel": {
     "Endpoints": {
       "Http": {
-        "Url": "http://localhost:5700"
+        "Url": "http://127.0.0.1:5700"
       }
     }
   }
 }
 ```
+
+### Icons or avatars do not show
+
+Images are downloaded from the asset server (`list.moonheart.dev` by default) and cached locally. If that server is unavailable, cached images keep working; you can change the address under **Options - Others**.
+
+### A job did not run
+
+Check **Options - Job Status** first: the account must be logged in, **Disable All Jobs** and the account pause must be off, and the job's switch must be on.
+
+### How do I upgrade?
+
+Docker Compose: update the code and run `docker compose up -d --build` again, or with the prebuilt image run `docker compose pull && docker compose up -d`. Configuration, Master data and battle logs stay in the mounted directories.
+
+## Maintenance
+
+See the [maintenance guide](docs/maintenance.md) for builds, regression checks, game version updates and configuration migration.
+
+## Credits
+
+Thanks to [moonheart/mementomori-helper](https://github.com/moonheart/mementomori-helper) and its contributors.
