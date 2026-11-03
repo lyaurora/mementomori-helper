@@ -27,7 +27,7 @@
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@UseItem" Disabled="_processing || _buyed || _countField?.HasErrors == true || _useCount < 1 || _useCount > Count">
                     @if (_processing)
                     {
-                        <MudProgressCircular Class="ms-n1 me-2" Size="Size.Small" Indeterminate="true"/>
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true"/>
                     }
                     @ButtonText
                 </MudButton>

@@ -111,6 +111,11 @@ button, input, textarea, select { font-family: inherit; }
 @media (pointer: coarse) { :is(.app-content, .mud-dialog) :is(.mud-button, .mud-button[class*="-size-small"]):not(.mud-icon-button) { min-height: 40px; } }
 .app-content .mud-button:disabled, .mud-dialog .mud-button:disabled { color: var(--mud-palette-action-disabled); box-shadow: none; }
 .app-content :is(button, a).mud-icon-button, .mud-dialog :is(button, a).mud-icon-button { border-radius: 10px; }
+/* Running indicator before a button's text: about the text height with a text-weight stroke (MudBlazor's Small is 24px, most of a
+   32px button). Its viewBox only fits the default 3-unit stroke, so the thicker ring may draw past it. */
+.mud-button-label > .mud-progress-circular { flex: none; width: 1.1em; height: 1.1em; margin-inline-end: 6px; }
+.mud-button-label > .mud-progress-circular svg { overflow: visible; }
+.mud-button-label > .mud-progress-circular circle { stroke-width: 5; }
 .app-content .mud-card-header .mud-button-outlined.mud-icon-button:not(:disabled) {
     background: var(--mud-palette-surface);
     border-color: var(--mud-palette-lines-default);

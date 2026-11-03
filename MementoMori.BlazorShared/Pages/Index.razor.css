@@ -76,8 +76,8 @@ html[data-theme="dark"] .home-cols ::deep .bq-rarity.is-lr { color: #F08DB5; }
 /* Wide (diamond) tile has a 44px icon vs 36px: shift it so all tile icons share one centre axis (12px pad - 4px). */
 /* ...and close the gap by the same 4px so tile text left edges line up too (8+44+6 = 12+36+10). */
 .home-cols ::deep .tile.is-wide { padding-inline-start: 8px; gap: 6px; }
-/* Bounty sync: same tonal chip as the buttons beside it, not a bare icon. */
-.home-cols ::deep .bq-actions .mud-icon-button { width: 36px; height: 36px; background: var(--mud-palette-background-gray); border-radius: var(--mud-default-borderradius); }
+/* Bounty sync: same tonal chip as the buttons beside it, not a bare icon; a square at their 32px height (40px on touch, below). */
+.home-cols ::deep .bq-actions .mud-icon-button { width: 32px; height: 32px; background: var(--mud-palette-background-gray); border-radius: var(--mud-default-borderradius); }
 /* No bounty data yet: a centred sync under the actions says how to load the list. */
 /* MyPage grid, denser: 6 columns in the ~411px desktop card (11 entries = 6/5), fewer when narrower; 56px tile, 44px sprite,
    one-line 12px label with ellipsis (full name in title). */

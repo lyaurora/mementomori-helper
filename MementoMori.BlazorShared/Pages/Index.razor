@@ -45,12 +45,12 @@
                 <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.Badge"/><span>@ResourceStrings.CharacterInfo</span></MudText>
                 <MudPaper Elevation="0" Class="d-flex justify-end gap-2">
                     <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Sync" Disabled="@(Funcs.Logining || Funcs.IsQuickActionExecuting)" @onclick="Funcs.SyncUserData">@ResourceStrings.SyncUserInfo</MudButton>
-                    <MudButton Size="Size.Small" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Login" Disabled="Funcs.Logining" @onclick="ShowPlayerList">
-                        @ResourceStrings.Login
+                    <MudButton Size="Size.Small" Variant="Variant.Filled" StartIcon="@(Funcs.Logining ? null : Icons.Material.Filled.Login)" Disabled="Funcs.Logining" @onclick="ShowPlayerList">
                         @if (Funcs.Logining)
                         {
-                            <MudProgressCircular Class="ml-2" Size="Size.Small" Indeterminate="true"/>
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true"/>
                         }
+                        @ResourceStrings.Login
                     </MudButton>
                 </MudPaper>
             </MudCardHeader>
@@ -105,12 +105,12 @@
             <MudCardHeader Class="justify-space-between">
                 <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.Bolt"/><span>@ResourceStrings.QuickActions</span></MudText>
                 <MudPaper Elevation="0" Class="d-flex justify-end gap-2">
-                    <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Stop" Disabled="!Funcs.IsQuickActionExecuting" @onclick="Funcs.CancelQuickAction">@Tr("[CommonCancelLabel]")</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Filled" Disabled="!Funcs.IsQuickActionExecuting" @onclick="Funcs.CancelQuickAction">@Tr("[CommonCancelLabel]")</MudButton>
                     @* While any action runs this button turns into the running indicator (same pattern as Login). *@
-                    <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@(Funcs.IsQuickActionExecuting ? null : Icons.Material.Filled.Bolt)" Disabled="Funcs.IsQuickActionExecuting" @onclick="Funcs.ExecuteAllQuickAction">
+                    <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" Disabled="Funcs.IsQuickActionExecuting" @onclick="Funcs.ExecuteAllQuickAction">
                         @if (Funcs.IsQuickActionExecuting)
                         {
-                            <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true"/>
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true"/>
                             @ResourceStrings.ResourceManager.GetString("TaskRunning")
                         }
                         else
