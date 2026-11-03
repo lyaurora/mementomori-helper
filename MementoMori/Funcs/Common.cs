@@ -239,6 +239,8 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
         {
             await ExecuteExclusive(async token =>
             {
+                // Each job starts fresh: its first request then logs why the session is gone, instead of every step skipping silently.
+                if (!nested) _sessionLost = false;
                 try
                 {
                     await func(AddLog, token);

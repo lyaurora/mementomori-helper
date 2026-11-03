@@ -190,12 +190,20 @@ public partial class MementoMoriFuncs
                 var info = await GetResponse<GetPlayerInfoListRequest, GetPlayerInfoListResponse>(new GetPlayerInfoListRequest {FriendInfoType = FriendInfoType.Recommend});
                 if (info.FriendNum < 40 && info.PlayerInfoList.Count > 0)
                 {
-                    var response = await GetResponse<BulkApplyFriendsRequest, BulkApplyFriendsResponse>(new BulkApplyFriendsRequest
-                        {TargetPlayerIdList = info.PlayerInfoList.Select(d => d.PlayerId).ToList()});
-                    foreach (var l in response.AppliedPlayerIdList)
+                    try
                     {
-                        var name = info.PlayerInfoList.Find(d => d.PlayerId == l).PlayerName;
-                        log($"{ResourceStrings.Auto_send_friend_requests}: {name}");
+                        var response = await GetResponse<BulkApplyFriendsRequest, BulkApplyFriendsResponse>(new BulkApplyFriendsRequest
+                            {TargetPlayerIdList = info.PlayerInfoList.Select(d => d.PlayerId).ToList()});
+                        foreach (var l in response.AppliedPlayerIdList)
+                        {
+                            var name = info.PlayerInfoList.Find(d => d.PlayerId == l).PlayerName;
+                            log($"{ResourceStrings.Auto_send_friend_requests}: {name}");
+                        }
+                    }
+                    // Already at the game's cap of pending requests: nothing to send today, not a failure.
+                    catch (ApiErrorException e) when (e.ErrorCode == ErrorCode.FriendFriendApplyingFull)
+                    {
+                        log(e.Message);
                     }
                 }
             }
