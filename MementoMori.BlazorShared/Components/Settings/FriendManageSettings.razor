@@ -71,8 +71,8 @@
     // Turning auto-remove on still loads the friend list (read-only request, as before) so the whitelist can be edited.
     private async Task AutoRemoveChanged(bool on)
     {
-        await autoDeleteChanged(on);
-        SaveFriendManageConfig();
+        if (await autoDeleteChanged(on))
+            SaveFriendManageConfig();
     }
 
     public class FriendInfo
@@ -82,16 +82,20 @@
         public bool IsWhiteList { get; set; }
     }
 
-    private async Task autoDeleteChanged(bool obj)
+    private async Task<bool> autoDeleteChanged(bool obj)
     {
         _autoRemoveFriend = obj;
+        var token = CreateAccountCancellation();
+        var funcs = Funcs;
+        var playerId = NetworkManager.PlayerId;
         try
         {
             if (obj)
             {
-                var playerOpt = PlayersOptions.Value.TryGetValue(NetworkManager.PlayerId, out var v) ? v : new PlayerOption {PlayerId = NetworkManager.PlayerId};
-                var response = await Funcs.GetResponse<GetPlayerInfoListRequest, GetPlayerInfoListResponse>(new GetPlayerInfoListRequest() {FriendInfoType = FriendInfoType.Friend});
-                _friendList = response.PlayerInfoList.Select(d => new FriendInfo() {Id = d.PlayerId, Name = d.PlayerName, IsWhiteList = false}).ToList();
+                var playerOpt = PlayersOptions.Value.TryGetValue(playerId, out var v) ? v : new PlayerOption {PlayerId = playerId};
+                var response = await funcs.GetResponse<GetPlayerInfoListRequest, GetPlayerInfoListResponse>(new GetPlayerInfoListRequest() {FriendInfoType = FriendInfoType.Friend}, token);
+                token.ThrowIfCancellationRequested();
+                _friendList = (response.PlayerInfoList ?? []).Select(d => new FriendInfo() {Id = d.PlayerId, Name = d.PlayerName, IsWhiteList = false}).ToList();
                 foreach (var l in playerOpt.FriendManage.AutoRemoveWhitelist)
                 {
                     var friendInfo = _friendList.Find(d => d.Id == l);
@@ -107,10 +111,17 @@
 
                 _friendWhiteList = _friendList.Where(f => f.IsWhiteList).ToList();
             }
+            return !token.IsCancellationRequested;
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            return false;
         }
         catch (Exception e)
         {
+            if (token.IsCancellationRequested) return false;
             Snackbar.Add(e.Message, Severity.Error);
+            return true;
         }
     }
 

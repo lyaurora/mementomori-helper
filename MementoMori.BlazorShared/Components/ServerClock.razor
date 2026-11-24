@@ -1,5 +1,6 @@
 @implements IDisposable
 @inject AccountSelection AccountSelection
+@inject AccountManager AccountManager
 
 @* Game server clock for the top bar; hidden until the current account has logged in (no server offset before that). *@
 @if (Now() is { } now)
@@ -12,15 +13,39 @@
 
 @code {
     System.Threading.Timer? _timer;
+    volatile bool _disposed;
 
     DateTime? Now()
     {
-        var funcs = AccountSelection.Current?.Funcs;
-        return funcs?.LoginOk == true ? funcs.TimeManager.ServerNow : null;
+        var userId = AccountSelection.CurrentUserId;
+        if (userId <= 0 || !AccountManager.TryGet(userId, out var account)) return null;
+        return account.Funcs?.TimeManager.HasTimeServer == true ? account.Funcs.TimeManager.ServerNow : null;
     }
 
-    protected override void OnInitialized() =>
-        _timer = new System.Threading.Timer(_ => InvokeAsync(StateHasChanged), null, TimeSpan.FromMilliseconds(1000 - DateTime.UtcNow.Millisecond), TimeSpan.FromSeconds(1));
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender || _disposed) return;
+        _timer = new System.Threading.Timer(_ => _ = OnTickAsync(), null,
+            TimeSpan.FromMilliseconds(1000 - DateTime.UtcNow.Millisecond), TimeSpan.FromSeconds(1));
+    }
 
-    public void Dispose() => _timer?.Dispose();
+    private async Task OnTickAsync()
+    {
+        if (_disposed) return;
+        try
+        {
+            await InvokeAsync(() =>
+            {
+                if (!_disposed) StateHasChanged();
+            });
+        }
+        catch (ObjectDisposedException) { }
+        catch (InvalidOperationException) { }
+    }
+
+    public void Dispose()
+    {
+        _disposed = true;
+        _timer?.Dispose();
+    }
 }

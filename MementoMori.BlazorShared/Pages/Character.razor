@@ -27,7 +27,7 @@
     @if (_selectedCharactor != null)
     {
         var cmb = Masters.CharacterTable.GetById(_selectedCharactor.CharacterId);
-        var name = Masters.TextResourceTable.Get(cmb.NameKey);
+        var name = cmb == null ? _selectedCharactor.CharacterId.ToString() : Masters.TextResourceTable.Get(cmb.NameKey);
 
         <MudItem xs="12" sm="12" md="5" lg="4" Class="character-side">
             <MudPaper Class="character-panel" Elevation="0">
@@ -91,6 +91,7 @@
                                 }
 
                                 var equipmentMb = Masters.EquipmentTable.GetById(equipmentDtoInfo.EquipmentId);
+                                if (equipmentMb == null) continue;
                                 var changedSetEquipmentCount = ViewModel.UserSyncData.GetChangedSetEquipmentCount(_selectedCharactor.Guid, equipmentMb.EquipmentSetId, slotType);
 
                                 <MudTabPanel Text="@slotName">
@@ -131,8 +132,9 @@
     {
         ViewModel = Funcs;
         _selectedCharactor = null;
-        // Login replaces UserSyncData (empty while logged out): pick up the new one on login/logout, which also re-renders the banner.
+        // Login replaces UserSyncData (empty while logged out): pick up the new one on login/logout and live sync updates.
         TrackAccountSubscription(Funcs.WhenAnyValue(f => f.LoginOk, f => f.Logining).Skip(1).Subscribe(_ => InvokeAsync(LoadCharacters)));
+        TrackAccountSubscription(Funcs.Changed.Where(c => c.PropertyName == nameof(Funcs.UserSyncData)).Sample(TimeSpan.FromMilliseconds(250)).Subscribe(_ => InvokeAsync(LoadCharacters)));
         await InvokeAsync(LoadCharacters);
     }
 

@@ -122,7 +122,7 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    // Same clock as the cron editor and the top-bar ServerClock: game server time once logged in, local time before.
+    // Same clock as the cron editor and the top-bar ServerClock: game server time once a time server is known, local time before.
     private string ServerTime(DateTimeOffset t, string format) =>
-        (Funcs?.LoginOk == true ? t.UtcDateTime + Funcs.TimeManager.DiffFromUtc : t.LocalDateTime).ToString(format);
+        (Funcs?.TimeManager.HasTimeServer == true ? t.UtcDateTime + Funcs.TimeManager.DiffFromUtc : t.LocalDateTime).ToString(format);
 }

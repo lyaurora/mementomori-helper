@@ -29,6 +29,19 @@ public partial class BattleLog
             return;
         }
 
+        var files = Directory.GetFiles(GameConfig.Value.BattleLogDir).Select(Path.GetFileName).Where(f => f != null).ToList();
+        if (!files.Any(f => f!.StartsWith(logTypePrefixes[_selectedBattleLogType])))
+        {
+            foreach (var (type, prefix) in logTypePrefixes)
+            {
+                if (files.Any(f => f!.StartsWith(prefix)))
+                {
+                    _selectedBattleLogType = type;
+                    break;
+                }
+            }
+        }
+
         GetLogs();
     }
 
@@ -71,7 +84,7 @@ public partial class BattleLog
         }
         catch (Exception e)
         {
-            await DialogService.ShowMessageBoxAsync(Tr("[CommonErrorLabel]"), e.ToString(), yesText: Tr("[CommonOkLabel]"));
+            await DialogService.ShowMessageBoxAsync(Tr("[CommonErrorLabel]"), e.Message, yesText: Tr("[CommonOkLabel]"));
         }
     }
 
@@ -98,7 +111,7 @@ public partial class BattleLog
         }
         catch (Exception e)
         {
-            DialogService.ShowMessageBoxAsync(Tr("[CommonErrorLabel]"), e.ToString(), yesText: Tr("[CommonOkLabel]"));
+            _ = DialogService.ShowMessageBoxAsync(Tr("[CommonErrorLabel]"), e.Message, yesText: Tr("[CommonOkLabel]"));
             json = null;
             return false;
         }
@@ -175,7 +188,12 @@ public partial class BattleLog
             return;
         }
 
-        long totalSize = filesToDelete.Sum(f => new FileInfo(f).Length);
+        long totalSize = 0;
+        foreach (var f in filesToDelete)
+        {
+            try { totalSize += new FileInfo(f).Length; }
+            catch (IOException) { }
+        }
 
         string FormatFileSize(long bytes)
         {
@@ -197,11 +215,13 @@ public partial class BattleLog
 
         if (result != true) return;
 
+        var deletedCount = 0;
         foreach (var file in filesToDelete)
         {
             try
             {
                 File.Delete(file);
+                deletedCount++;
             }
             catch (Exception ex)
             {
@@ -212,6 +232,6 @@ public partial class BattleLog
 
         GetLogs();
         await DialogService.ShowMessageBoxAsync(ResourceStrings.Finished,
-            string.Format(ResourceStrings.BattleLogCleanComplete, filesToDelete.Count), yesText: Tr("[CommonOkLabel]"));
+            string.Format(ResourceStrings.BattleLogCleanComplete, deletedCount), yesText: Tr("[CommonOkLabel]"));
     }
 }

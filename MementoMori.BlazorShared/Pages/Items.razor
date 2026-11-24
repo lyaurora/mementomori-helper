@@ -31,9 +31,9 @@
     <MudTabs Class="items-tabs" MinimumTabWidth="20px">
         <MudTabPanel Text="@Masters.TextResourceTable.Get("[ItemBoxTabEquipment]")">
             @{
-                var equips1 = ViewModel.UserSyncData.UserEquipmentDtoInfos.Where(d => d.CharacterGuid == "").Select(x => x.ToEquipmentInfo());
-                var equips = ViewModel.UserSyncData.UserItemDtoInfo
-                    ?.Where(d => d.ItemType == ItemType.Equipment && d.ItemCount > 0)
+                var equips1 = (ViewModel.UserSyncData?.UserEquipmentDtoInfos ?? []).Where(d => d.CharacterGuid == "").Select(x => x.ToEquipmentInfo());
+                var equips = (ViewModel.UserSyncData?.UserItemDtoInfo ?? [])
+                    .Where(d => d.ItemType == ItemType.Equipment && d.ItemCount > 0)
                     .Select(d => d.ToEquipmentInfo())
                     .Union(equips1)
                     .Where(d => d.EquipmentMb != null);
@@ -91,7 +91,7 @@
                    ItemType.CharacterFragment
                }; }
             <MudTable Class="items-table items-consumable-table" Dense="true" HorizontalScrollbar="true" Virtualize="true"
-                      Items="@(ViewModel.UserSyncData.UserItemDtoInfo.Where(d => types.Contains(d.ItemType) && d.ItemCount > 0).Select(d => d.ToUserItemInfo()).OrderBy(d => d.Item.ItemType).ThenByDescending(d => d.ItemRarityFlags))">
+                      Items="@((ViewModel.UserSyncData?.UserItemDtoInfo ?? []).Where(d => types.Contains(d.ItemType) && d.ItemCount > 0).Select(d => d.ToUserItemInfo()).OrderBy(d => d.Item.ItemType).ThenByDescending(d => d.ItemRarityFlags))">
                 <HeaderContent>
                     <MudTh Class="item-name-column">
                         <MudTableSortLabel SortBy="new Func<UserItemExtensions.UserItemInfo, object>(x => x.Name)">@ResourceStrings.Name</MudTableSortLabel>
@@ -140,7 +140,7 @@
                    ItemType.EquipmentSetMaterial
                }; }
             <MudTable Class="items-table items-material-table" Dense="true" HorizontalScrollbar="true" Virtualize="true"
-                      Items="@(ViewModel.UserSyncData.UserItemDtoInfo.Where(d => types.Contains(d.ItemType) && d.ItemCount > 0).Select(d => d.ToUserItemInfo()))">
+                      Items="@((ViewModel.UserSyncData?.UserItemDtoInfo ?? []).Where(d => types.Contains(d.ItemType) && d.ItemCount > 0).Select(d => d.ToUserItemInfo()))">
                 <HeaderContent>
                     <MudTh Class="item-name-column">
                         <MudTableSortLabel SortBy="new Func<UserItemExtensions.UserItemInfo, object>(x => x.Name)">@ResourceStrings.Name</MudTableSortLabel>
@@ -169,7 +169,7 @@
                    ItemType.Sphere
                }; }
             <MudTable Class="items-table items-sphere-table" Dense="true" HorizontalScrollbar="true" Virtualize="true"
-                      Items="@(ViewModel.UserSyncData.UserItemDtoInfo.Where(d => types.Contains(d.ItemType) && d.ItemCount > 0).Select(d => d.ToSphereInfo()).Where(d => d.SphereMB != null))">
+                      Items="@((ViewModel.UserSyncData?.UserItemDtoInfo ?? []).Where(d => types.Contains(d.ItemType) && d.ItemCount > 0).Select(d => d.ToSphereInfo()).Where(d => d.SphereMB != null))">
                 <HeaderContent>
                     <MudTh Class="item-name-column">
                         <MudTableSortLabel SortBy="new Func<UserItemExtensions.SphereInfo, object>(x => x.Name)">@ResourceStrings.Name</MudTableSortLabel>
@@ -207,7 +207,7 @@
                    ItemType.EquipmentFragment
                }; }
             <MudTable Class="items-table items-fragment-table" Dense="true" HorizontalScrollbar="true" Virtualize="true"
-                      Items="@(ViewModel.UserSyncData.UserItemDtoInfo.Where(d => types.Contains(d.ItemType) && d.ItemCount > 0).Select(d => d.ToUserItemInfo()))">
+                      Items="@((ViewModel.UserSyncData?.UserItemDtoInfo ?? []).Where(d => types.Contains(d.ItemType) && d.ItemCount > 0).Select(d => d.ToUserItemInfo()))">
                 <HeaderContent>
                     <MudTh Class="item-name-column">
                         <MudTableSortLabel SortBy="new Func<UserItemExtensions.UserItemInfo, object>(x => x.Name)">@ResourceStrings.Name</MudTableSortLabel>
@@ -242,8 +242,9 @@
     protected override async Task AccountChanged()
     {
         ViewModel = Funcs;
-        // Re-render on login/logout so the banner and the item tabs follow the login without a page refresh.
+        // Re-render on login/logout and inventory sync so manual item usage updates the tables without a page refresh.
         TrackAccountSubscription(Funcs.WhenAnyValue(f => f.LoginOk, f => f.Logining).Skip(1).Subscribe(_ => InvokeAsync(StateHasChanged)));
+        TrackAccountSubscription(Funcs.Changed.Where(c => c.PropertyName == nameof(Funcs.UserSyncData)).Sample(TimeSpan.FromMilliseconds(250)).Subscribe(_ => InvokeAsync(StateHasChanged)));
         await InvokeAsync(StateHasChanged);
     }
 

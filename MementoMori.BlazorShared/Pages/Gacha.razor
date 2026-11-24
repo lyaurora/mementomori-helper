@@ -26,7 +26,7 @@
         <div class="gacha-wallet">
             <span class="gacha-wallet-label">@Tr("[CommonPossessionLabel]")</span>
             @* diamonds: free and paid buttons share one pill, the count already sums both *@
-            @foreach (var item in gachaCaseInfos.OrderByDescending(d => d.DisplayOrder).SelectMany(d => d.GachaButtonInfoList).Select(d => d.ConsumeUserItem)
+            @foreach (var item in gachaCaseInfos.OrderByDescending(d => d.DisplayOrder).SelectMany(d => d.GachaButtonInfoList ?? []).Select(d => d.ConsumeUserItem).Where(c => c != null)
                           .DistinctBy(d => d.ItemType is ItemType.CurrencyFree or ItemType.CurrencyPaid ? (ItemType.CurrencyFree, 0L) : (d.ItemType, d.ItemId)))
             {
                 var held = sync.GetUserItemCount(item.ItemType, item.ItemId, true);
@@ -59,8 +59,8 @@
                     Masters.TextResourceTable.Get(Masters.CharacterTable.GetById(gachaCaseUiMb.PickUpCharacterId)?.NameKey))
                 : Masters.TextResourceTable.Get(gachaCaseUiMb?.ExplanationKey);
             var banner = gachaCaseUiMb?.BannerImageNumber > 0 ? Atlas.GetGachaBanner(gachaCaseUiMb.BannerImageNumber) : null;
-            var buttons = gachaCaseInfo.GachaButtonInfoList;
-            var multi = buttons.Count > 1 ? buttons.MaxBy(b => (b.LotteryCount, b.ConsumeUserItem.ItemCount)) : null;
+            var buttons = gachaCaseInfo.GachaButtonInfoList ?? [];
+            var multi = buttons.Count > 1 ? buttons.MaxBy(b => (b.LotteryCount, b.ConsumeUserItem?.ItemCount ?? 0)) : null;
             var selectType = gachaCaseInfo.GachaSelectListType;
             var selected = _selectListMap?.GetValueOrDefault(selectType) ?? [];
             var candidates = SelectCandidates(selectType);
@@ -96,18 +96,19 @@
                         @foreach (var button in buttons)
                         {
                             var cost = button.ConsumeUserItem;
-                            var itemName = cost.GetItemName();
-                            var isShort = sync.GetUserItemCount(cost.ItemType, cost.ItemId, true) < cost.ItemCount;
+                            var isFree = cost == null || cost.ItemCount == 0;
+                            var itemName = isFree ? Tr("[CommonFreeLabel]") : cost!.GetItemName();
+                            var isShort = !isFree && sync.GetUserItemCount(cost!.ItemType, cost.ItemId, true) < cost.ItemCount;
                             // ponytail: LotteryCount can be 0 (no master table for buttons); game buttons are 1x or 10x, so the cheapest same-item button is 1x and any dearer one 10x (discounted 10x like relic 1,800 still reads 10). Breaks if a 5x button appears.
-                            var minCost = buttons.Where(b => b.ConsumeUserItem.ItemType == cost.ItemType && b.ConsumeUserItem.ItemId == cost.ItemId).Min(b => b.ConsumeUserItem.ItemCount);
-                            var count = button.LotteryCount > 0 ? button.LotteryCount : cost.ItemCount > minCost ? 10 : 1;
+                            var minCost = isFree ? 0 : buttons.Where(b => b.ConsumeUserItem != null && b.ConsumeUserItem.ItemCount > 0 && b.ConsumeUserItem.ItemType == cost!.ItemType && b.ConsumeUserItem.ItemId == cost.ItemId).Min(b => b.ConsumeUserItem.ItemCount);
+                            var count = button.LotteryCount > 0 ? button.LotteryCount : !isFree && cost!.ItemCount > minCost ? 10 : 1;
                             var drawLabel = count > 0 ? Tr("[GachaDrawCurrencyButtonFormat]", count) : null;
                             var note = isShort ? string.Format(ResourceStrings.NotEnoughFormat, itemName) : drawLabel;
-                            var icon = Atlas.GetItemIcon(cost.ItemType, cost.ItemId);
+                            var icon = cost == null ? null : Atlas.GetItemIcon(cost.ItemType, cost.ItemId);
                             <MudButton Disabled="isShort || _drawing" Variant="Variant.Outlined" Class="@($"gacha-draw-button{(button == multi ? " is-multi" : "")}{(isShort ? " is-short" : "")}")"
-                                       title="@($"{itemName} × {cost.ItemCount:N0} {drawLabel}")" OnClick="() => DoGacha(gachaCaseInfo, button)">
+                                       title="@(isFree ? $"{itemName} {drawLabel}" : $"{itemName} × {cost!.ItemCount:N0} {drawLabel}")" OnClick="() => DoGacha(gachaCaseInfo, button)">
                                 <span class="gacha-icon is-cost">@if (icon != null) { <img src="@icon" @key="icon" width="30" height="30" loading="lazy" decoding="async" alt="" onerror="this.remove()" /> }</span>
-                                <span class="gacha-draw-text"><b>@cost.ItemCount.ToString("N0")</b>@if (note != null) { <small>@note</small> }</span>
+                                <span class="gacha-draw-text"><b>@(isFree ? itemName : cost!.ItemCount.ToString("N0"))</b>@if (note != null) { <small>@note</small> }</span>
                             </MudButton>
                         }
                     </MudCardActions>
@@ -180,7 +181,7 @@
         var jstNow = DateTime.UtcNow.AddHours(9).ToString("yyyy-MM-dd HH:mm:ss"); // same fixed format, so ordinal compare works
         return Masters.GachaSelectListTable.GetArray()
             .Where(m => m.GachaSelectListType == type && string.CompareOrdinal(m.StartTimeFixJST, jstNow) <= 0 && string.CompareOrdinal(jstNow, m.EndTimeFixJST) <= 0)
-            .SelectMany(m => m.CharacterIdList).Distinct().ToList();
+            .SelectMany(m => m.CharacterIdList ?? []).Distinct().ToList();
     }
 
     private async Task EditSelection(GachaCaseInfo gachaCaseInfo, List<long> candidates)
@@ -238,23 +239,32 @@
         {
             var cost = button.ConsumeUserItem;
             var sync = funcs.UserSyncData;
-            // diamonds: show free and paid separately so a draw that would dip into paid diamonds is visible
-            var held = cost.ItemType is ItemType.CurrencyFree or ItemType.CurrencyPaid
-                ? $"{Masters.TextResourceTable.Get("[CurrencyDetailCurrencyFree]")} {sync.GetUserItemCount(ItemType.CurrencyFree):N0} / {Masters.TextResourceTable.Get("[CurrencyDetailCurrencyPaid]")} {sync.GetUserItemCount(ItemType.CurrencyPaid):N0}"
-                : $"{Masters.TextResourceTable.Get("[CommonPossessionLabel]")} {sync.GetUserItemCount(cost.ItemType, cost.ItemId):N0}";
-            var confirm = $"{Masters.TextResourceTable.Get(Masters.GachaCaseUiTable.GetById(gachaCaseInfo.GachaCaseUiId)?.NameKey)}: {cost.GetItemName()} × {cost.ItemCount} ({held})";
-            if (cost.ItemType == ItemType.CurrencyFree) confirm += " " + Masters.TextResourceTable.Get("[GachaPurchaseConfirmationWarningFree]");
-            else if (cost.ItemType == ItemType.CurrencyPaid) confirm += " " + Masters.TextResourceTable.Get("[GachaPurchaseConfirmationWarningPaid]");
+            string confirm;
+            if (cost == null || cost.ItemCount == 0)
+            {
+                confirm = $"{Masters.TextResourceTable.Get(Masters.GachaCaseUiTable.GetById(gachaCaseInfo.GachaCaseUiId)?.NameKey)}: {Tr("[CommonFreeLabel]")}";
+            }
+            else
+            {
+                // diamonds: show free and paid separately so a draw that would dip into paid diamonds is visible
+                var held = cost.ItemType is ItemType.CurrencyFree or ItemType.CurrencyPaid
+                    ? $"{Masters.TextResourceTable.Get("[CurrencyDetailCurrencyFree]")} {sync.GetUserItemCount(ItemType.CurrencyFree):N0} / {Masters.TextResourceTable.Get("[CurrencyDetailCurrencyPaid]")} {sync.GetUserItemCount(ItemType.CurrencyPaid):N0}"
+                    : $"{Masters.TextResourceTable.Get("[CommonPossessionLabel]")} {sync.GetUserItemCount(cost.ItemType, cost.ItemId):N0}";
+                confirm = $"{Masters.TextResourceTable.Get(Masters.GachaCaseUiTable.GetById(gachaCaseInfo.GachaCaseUiId)?.NameKey)}: {cost.GetItemName()} × {cost.ItemCount} ({held})";
+                if (cost.ItemType == ItemType.CurrencyFree) confirm += " " + Masters.TextResourceTable.Get("[GachaPurchaseConfirmationWarningFree]");
+                else if (cost.ItemType == ItemType.CurrencyPaid) confirm += " " + Masters.TextResourceTable.Get("[GachaPurchaseConfirmationWarningPaid]");
+            }
             var showMessageBox = await DialogService.ShowMessageBoxAsync(Masters.TextResourceTable.Get("[GachaPurchaseConfirmationTitle]"), confirm, Masters.TextResourceTable.Get("[GachaPurchaseConfirmationOK]"), Masters.TextResourceTable.Get("[CommonCancelLabel]"));
             if (showMessageBox != true) return;
             var drawResponse = await funcs.GetResponse<DrawRequest, DrawResponse>(new DrawRequest {GachaButtonId = button.GachaButtonId}, token);
             token.ThrowIfCancellationRequested();
             var msg = new StringBuilder();
             gachaCaseInfos = drawResponse.GachaCaseInfoList;
-            drawResponse.GachaRewardItemList.PrintUserItems(s => msg.AppendLine(s).AppendLine("<br />"));
-            drawResponse.GachaRewardAddItemList.PrintUserItems(s => msg.AppendLine(s).AppendLine("<br />"));
-            drawResponse.BonusRewardItemList.PrintUserItems(s => msg.AppendLine(s).AppendLine("<br />"));
-            drawResponse.CharacterReleaseItemList.PrintUserItems(s => msg.AppendLine(s).AppendLine("<br />"));
+            void AppendItem(string s) => msg.Append(System.Net.WebUtility.HtmlEncode(s)).AppendLine("<br />");
+            drawResponse.GachaRewardItemList.PrintUserItems(AppendItem);
+            drawResponse.GachaRewardAddItemList.PrintUserItems(AppendItem);
+            drawResponse.BonusRewardItemList.PrintUserItems(AppendItem);
+            drawResponse.CharacterReleaseItemList.PrintUserItems(AppendItem);
 
             await DialogService.ShowMessageBoxAsync(ResourceStrings.GachaResult, (MarkupString) msg.ToString(), Masters.TextResourceTable.Get("[CommonOkLabel]"));
         }

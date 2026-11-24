@@ -39,17 +39,19 @@
             <div class="growth-chips" role="radiogroup">
                 @foreach (var (key, label) in Filters)
                 {
-                    <button type="button" role="radio" aria-checked="@(key == _filter ? "true" : "false")" class="app-choice" @onclick="() => _filter = key">@label</button>
+                    <button type="button" role="radio" aria-checked="@(key == _filter ? "true" : "false")" class="app-choice" @onclick="() => SetFilter(key)">@label</button>
                 }
             </div>
             @{
                 var shown = Events.Where(e => e.Kind != "Snapshot" && (_filter == "" || GrowthCard.Category(e) == _filter)).Reverse().ToList();
+                var pageItems = shown.Take(_visibleCount).ToList();
+                var remaining = shown.Count - pageItems.Count;
             }
             @if (shown.Count == 0)
             {
                 <div class="growth-empty">@ResourceStrings.GrowthNoData</div>
             }
-            @foreach (var day in shown.GroupBy(e => e.Time.ToLocalTime().Date))
+            @foreach (var day in pageItems.GroupBy(e => e.Time.ToLocalTime().Date))
             {
                 <div class="growth-day">@day.Key.ToString("D", CultureInfo.CurrentUICulture)</div>
                 @foreach (var e in day)
@@ -57,15 +59,27 @@
                     @GrowthCard.Row(e, Atlas, false)
                 }
             }
+            @if (remaining > 0)
+            {
+                <MudButton Variant="Variant.Outlined" FullWidth="true" Class="mt-3" OnClick="() => _visibleCount += PageSize">@string.Format(ResourceStrings.LoadMore, remaining)</MudButton>
+            }
         </div>
     </DialogContent>
 </MudDialog>
 
 @code {
+    private const int PageSize = 200;
     [Parameter] public List<GrowthEvent> Events { get; set; } = new();
 
     private int _days = 7;
     private string _filter = "";
+    private int _visibleCount = PageSize;
+
+    private void SetFilter(string key)
+    {
+        _filter = key;
+        _visibleCount = PageSize;
+    }
 
     private static (string, string)[] Filters =>
     [

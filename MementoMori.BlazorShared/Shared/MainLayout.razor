@@ -212,7 +212,7 @@
         get => AccountManager.CurrentCulture.Name;
         set
         {
-            AccountManager.CurrentCulture = new CultureInfo(value);
+            AccountManager.ChangeLanguage(value);
             NavigationManager.NavigateTo(NavigationManager.Uri, true);
         }
     }

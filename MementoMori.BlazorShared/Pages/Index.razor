@@ -187,7 +187,7 @@
                             </MudSelect>
                             @if (Funcs.SelectedAutoTowerType != TowerType.None)
                             {
-                                var maxTowerBattleId = Funcs.UserSyncData.UserTowerBattleDtoInfos.ToList().Find(x => x.TowerType == Funcs.SelectedAutoTowerType).MaxTowerBattleId;
+                                var maxTowerBattleId = Funcs.UserSyncData?.UserTowerBattleDtoInfos?.Find(x => x.TowerType == Funcs.SelectedAutoTowerType)?.MaxTowerBattleId ?? 0;
                                 var quests = TowerBattleQuestTable.GetArray().Where(d => d.TowerType == Funcs.SelectedAutoTowerType && d.Floor > maxTowerBattleId).Take(50);
                                 <MudSelect @bind-Value="selectedTargetTowerLayer" Label="@ResourceStrings.StopAfterSpecifiedStage" Variant="Variant.Outlined" Margin="Margin.Dense">
                                     <MudSelectItem T="long" Value="0">@ResourceStrings.NoStop</MudSelectItem>
@@ -262,77 +262,14 @@
                         <span class="bq-cost">@if (diamondIcon != null) {<img src="@diamondIcon" @key="diamondIcon" width="18" height="18" loading="lazy" decoding="async" alt="" onerror="this.remove()">}</span>
                         @Tr("[CommonAlternativesItemFormat]", Tr("[CommonCurrencyName]"), 20)
                     </MudButton>
-                    <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Sync" aria-label="@ResourceStrings.Sync" @onclick="Funcs.GetBountyRequestInfo"/>
+                    <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Sync" aria-label="@ResourceStrings.Sync" @onclick="SyncBounty"/>
                 </div>
-                <div class="bq-list">
-                    @foreach (var info in Funcs.BountyQuestResponseInfo?.UserBountyQuestDtoInfos ?? new List<UserBountyQuestDtoInfo>())
-                    {
-                        var bountyQuestInfo = Funcs.BountyQuestResponseInfo.BountyQuestInfos?.Find(d => d.BountyQuestId == info.BountyQuestId);
-                        if (bountyQuestInfo == null) continue;
-                        var guerrilla = bountyQuestInfo.BountyQuestType == BountyQuestType.Guerrilla;
-                        var itemNames = guerrilla
-                            ? Tr("[ItemRewardDetailDialogLotteryRateLabel]")
-                            : string.Join(",", (bountyQuestInfo.RewardItems ?? []).Select(d => $"{ItemUtil.GetItemName(d)}×{d.ItemCount}"));
-                        var reward = guerrilla ? null : bountyQuestInfo.RewardItems?.FirstOrDefault();
-                        var rewardIcon = reward == null ? null : Atlas.GetItemIcon(reward.ItemType, reward.ItemId);
-                        string? statusLabel = ResourceStrings.NotStarted;
-                        string? time = null;
-                        var statusClass = "";
-                        if (info.BountyQuestEndTime > 0)
-                        {
-                            var nowMilli = DateTimeOffset.Now.Add(Funcs.TimeManager.DiffFromUtc).ToUnixTimeMilliseconds();
-                            if (nowMilli < info.BountyQuestEndTime)
-                            {
-                                statusLabel = ResourceStrings.OnGoing;
-                                time = TimeSpan.FromMilliseconds(info.BountyQuestEndTime - nowMilli).ToString(@"hh\:mm\:ss");
-                                statusClass = "is-running";
-                            }
-                            else if (!info.IsReward)
-                            {
-                                statusLabel = ResourceStrings.NotReceived;
-                                time = TimeSpan.FromMilliseconds(info.RewardEndTime - nowMilli).ToString(@"hh\:mm\:ss");
-                                statusClass = "is-todo";
-                            }
-                            else
-                            {
-                                statusLabel = ResourceStrings.Received;
-                            }
-                        }
-                        <div class="bq-row" title="@Tr(bountyQuestInfo.BountyQuestNameKey)">
-                            <span class="bq-rarity is-@bountyQuestInfo.BountyQuestRarity.ToString().ToLowerInvariant()">@Tr(bountyQuestInfo.BountyQuestRarity)</span>
-                            <span class="bq-art">
-                                @if (guerrilla)
-                                {
-                                    <MudIcon Icon="@Icons.Material.Outlined.HelpOutline" Size="Size.Small"/>
-                                }
-                                else if (rewardIcon != null)
-                                {
-                                    <img src="@rewardIcon" @key="rewardIcon" width="28" height="28" loading="lazy" decoding="async" alt="" onerror="this.remove()">
-                                }
-                            </span>
-                            <span class="bq-name">@itemNames</span>
-                            <span class="bq-status @statusClass">
-                                @if (statusClass == "is-running")
-                                {
-                                    <MudIcon Icon="@Icons.Material.Outlined.Schedule" Size="Size.Small" title="@statusLabel" aria-label="@statusLabel"/>
-                                }
-                                else
-                                {
-                                    <span>@statusLabel</span>
-                                }
-                                @if (time != null)
-                                {
-                                    <span class="bq-time">@time</span>
-                                }
-                            </span>
-                        </div>
-                    }
-                </div>
+                <BountyQuestList/>
             </MudCardContent>
         </MudCard>
         <GrowthCard/>
         <MudCard Class="dashboard-output">
-            <MudCardHeader><MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.Terminal"/><span>@ResourceStrings.ExecutionOutput</span></MudText></MudCardHeader>
+            <MudCardHeader><MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.Terminal"/><span>@ResourceStrings.ExecutionOutput <span class="panel-scope">@LocalOffsetLabel</span></span></MudText></MudCardHeader>
             <MudCardContent>
                 <MessageList/>
             </MudCardContent>
@@ -343,7 +280,7 @@
             <MudCardHeader Class="justify-space-between">
                 <MudText Class="panel-title"><MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.TaskAlt"/><span>@Tr("[MyPageMenuButtonMissionLabel]")</span></MudText>
                 <MudPaper Elevation="0" Class="d-flex justify-end gap-2">
-                    <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Sync" @onclick="@Funcs.GetMissionInfo">@ResourceStrings.Sync</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Sync" @onclick="SyncMissions">@ResourceStrings.Sync</MudButton>
                     <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" Disabled="@Funcs.IsQuickActionExecuting" @onclick="CompleteMissionsAndMedals">@Tr("[MissionAllReceiveButton]")</MudButton>
                 </MudPaper>
             </MudCardHeader>
@@ -378,7 +315,7 @@
             <MudCardContent>
                 <MudTabs Class="notice-tabs" MinimumTabWidth="20px" HeaderPosition="TabHeaderPosition.After">
                     <Header>
-                        <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Sync" @onclick="@Funcs.GetNoticeInfoList">@ResourceStrings.Sync</MudButton>
+                        <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Sync" @onclick="LoadNotices">@ResourceStrings.Sync</MudButton>
                     </Header>
                     <ChildContent>
                         <MudTabPanel Text="@Tr("[NoticeCategoryTypeEventTab]")">@NoticeList(Funcs.EventInfoList)</MudTabPanel>
@@ -408,8 +345,6 @@
             alertMessage = string.Empty;
             // Sample, not Throttle: Throttle starves while a job keeps changing properties; Sample renders the latest state at most 4x/s.
             TrackAccountSubscription(Funcs.WhenAnyPropertyChanged().Sample(TimeSpan.FromMilliseconds(250)).Subscribe(_ => InvokeAsync(StateHasChanged)));
-            // Bounty quest countdowns are computed at render; tick once a second while any quest is still running.
-            TrackAccountSubscription(Observable.Interval(TimeSpan.FromSeconds(1)).Where(_ => HasRunningBountyQuest()).Subscribe(_ => InvokeAsync(StateHasChanged)));
             // Notices fail while logged out (no API host yet); load them again once a login succeeds.
             TrackAccountSubscription(Funcs.WhenAnyValue(f => f.LoginOk).Skip(1).Where(ok => ok && _interactive).Subscribe(_ => InvokeAsync(LoadNotices)));
         }
@@ -425,12 +360,25 @@
         if (_interactive) _ = LoadNotices();
     }
 
-    private bool HasRunningBountyQuest()
+    private static string LocalOffsetLabel
     {
-        var infos = Funcs.BountyQuestResponseInfo?.UserBountyQuestDtoInfos;
-        if (infos == null) return false;
-        var nowMilli = DateTimeOffset.Now.Add(Funcs.TimeManager.DiffFromUtc).ToUnixTimeMilliseconds();
-        return infos.Any(d => d.BountyQuestEndTime > 0 && (nowMilli < d.BountyQuestEndTime || (!d.IsReward && nowMilli < d.RewardEndTime)));
+        get
+        {
+            var offset = DateTimeOffset.Now.Offset;
+            return $"UTC{(offset < TimeSpan.Zero ? "-" : "+")}{offset:hh\\:mm}";
+        }
+    }
+
+    private Task SyncBounty()
+    {
+        var funcs = Funcs;
+        return funcs.ExecuteQuickAction(async (_, _) => await funcs.GetBountyRequestInfo());
+    }
+
+    private Task SyncMissions()
+    {
+        var funcs = Funcs;
+        return funcs.ExecuteQuickAction(async (_, _) => await funcs.GetMissionInfo());
     }
 
     private (UserSyncData Data, DateTime At, string Json) _debugJson;

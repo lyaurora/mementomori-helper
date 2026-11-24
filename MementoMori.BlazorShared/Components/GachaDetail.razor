@@ -177,11 +177,13 @@
         AddRewardList = gachaCaseUiMb?.AddRewardItems;
         var gachaCaseMb = GachaCaseTable.GetById(GachaCaseInfo.GachaCaseId);
         var periodTime = string.Empty;
-        if (gachaCaseMb != null)
+        if (gachaCaseMb != null
+            && DateTimeOffset.TryParse(gachaCaseMb.StartTimeFixJST + " +09:00", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedStart)
+            && DateTimeOffset.TryParse(gachaCaseMb.EndTimeFixJST + " +09:00", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedEnd))
         {
-            var startTime = DateTimeOffset.Parse(gachaCaseMb.StartTimeFixJST + " +09:00").ToLocalTime();
+            var startTime = parsedStart.ToLocalTime();
             var startTimeTime = TextResourceTable.Get("[CommonTimeFormatOnlyTime]", startTime.Hour, startTime.Minute, startTime.Second);
-            var endTime = DateTimeOffset.Parse(gachaCaseMb.EndTimeFixJST + " +09:00").ToLocalTime();
+            var endTime = parsedEnd.ToLocalTime();
             var endTimeTime = TextResourceTable.Get("[CommonTimeFormatOnlyTime]", endTime.Hour, endTime.Minute, endTime.Second);
             periodTime = TextResourceTable.Get("[GachaLotteryPeriodFormat]", startTime.Year, startTime.Month, startTime.Day, startTimeTime, endTime.Year, endTime.Month, endTime.Day, endTimeTime);
         }

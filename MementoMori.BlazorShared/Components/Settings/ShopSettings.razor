@@ -26,10 +26,21 @@
         <div class="setting-item-list">
             @foreach (var item in ShopAutoBuyItems)
             {
+                var tabMb = Masters.TradeShopTabTable.GetById(item.ShopTabId);
+                var tabName = tabMb == null
+                    ? $"#{item.ShopTabId}"
+                    : !string.IsNullOrEmpty(Masters.TextResourceTable.Get(tabMb.TabNameKey))
+                        ? Masters.TextResourceTable.Get(tabMb.TabNameKey)
+                        : tabMb.Id switch
+                        {
+                            36 => $"{Masters.TextResourceTable.Get("[WeeklyTopicsShopHeadline]")} ({Masters.TextResourceTable.Get("[ShopProductFreeLabel]")})",
+                            37 => Masters.TextResourceTable.Get("[WeeklyTopicsShopHeadline]"),
+                            _ => tabMb.Memo
+                        };
                 var buy = item.BuyItem == null ? ResourceStrings.AnyItems : $"{ItemUtil.GetItemName(item.BuyItem.ItemType, item.BuyItem.ItemId)}×{item.BuyItem.ItemCount}";
                 var amountDesc = item.ConsumeItem?.ItemCount == 0 ? ResourceStrings.Any_amount : item.ConsumeItem?.ItemCount.ToString();
                 var consume = item.ConsumeItem == null ? ResourceStrings.AnyItems : $"{ItemUtil.GetItemName(item.ConsumeItem.ItemType, item.ConsumeItem.ItemId)}×{amountDesc}";
-                var text = string.Format(ResourceStrings.BuyWith, consume, buy);
+                var text = $"[{tabName}] {string.Format(ResourceStrings.BuyWith, consume, buy)}";
                 var iconItem = item.BuyItem ?? item.ConsumeItem;
                 var icon = iconItem == null ? null : Atlas.GetItemIcon(iconItem.ItemType, iconItem.ItemId);
                 <div class="setting-item-row">

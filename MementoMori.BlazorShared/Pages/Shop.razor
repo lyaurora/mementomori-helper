@@ -155,7 +155,7 @@
                             {
                                 <MudItem>
                                     <span class="shop-sphere-icon"><SphereIcon SphereMb="sphere" Size="48" /></span>
-                                    <ShopSphereItem SphereMb="sphere" Tab="tab"></ShopSphereItem>
+                                    <ShopSphereItem SphereMb="sphere" Tab="tab" OnPurchased="RefreshExpired"></ShopSphereItem>
                                 </MudItem>
                             }
                         </MudGrid>
@@ -171,13 +171,16 @@
 <MudDialog Class="app-form-dialog" @bind-Visible="_autoBuyDialogVisible" Options="new DialogOptions {CloseButton = true, FullWidth = true, MaxWidth = MaxWidth.Small}">
     <TitleContent>
         @{
-            var tradeShopTabMb = Masters.TradeShopTabTable.GetById(_tradeShopTabInfoList[_selectedTabIndex].TradeShopTabId);
-            var tabName = Masters.TextResourceTable.Get(tradeShopTabMb.TabNameKey);
+            var selectedTab = _selectedTabIndex >= 0 && _selectedTabIndex < _tradeShopTabInfoList.Count ? _tradeShopTabInfoList[_selectedTabIndex] : null;
+            var tradeShopTabMb = selectedTab == null ? null : Masters.TradeShopTabTable.GetById(selectedTab.TradeShopTabId);
+            var tabName = tradeShopTabMb == null ? "" : TabName(tradeShopTabMb);
         }
         <MudText Typo="Typo.h6"><span class="shop-auto-buy-title">@tabName @ResourceStrings.AutoBuy</span></MudText>
     </TitleContent>
     <DialogContent>
-        @{ var tab = _tradeShopTabInfoList[_selectedTabIndex]; }
+        @if (_selectedTabIndex >= 0 && _selectedTabIndex < _tradeShopTabInfoList.Count)
+        {
+        var tab = _tradeShopTabInfoList[_selectedTabIndex];
         <div class="shop-auto-buy-fields">
         <MudSelect Label="@ResourceStrings.ShopAutoBuyItems" T="UserItem" @bind-Value="_selectedAutoBuyItem" Comparer="@(new UserItemComparer())" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="@ResourceStrings.No_setting_means_buying_any_item">
             @foreach (var item in tab.TradeShopItems?.OrderBy(d => d.SortOrder).ToArray() ?? Array.Empty<TradeShopItem>())
@@ -194,6 +197,7 @@
         </MudSelect>
         <MudTextField Label="@ResourceStrings.Amount_consumed" Variant="Variant.Outlined" Margin="Margin.Dense" T="long" @bind-Value="_selectedConsumeCount" AutoFocus="true" HelperText="@ResourceStrings.Set_to_0_for_any_amount"></MudTextField>
         </div>
+        }
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="() => _autoBuyDialogVisible = false">@Masters.TextResourceTable.Get("[CommonCancelLabel]")</MudButton>
@@ -271,32 +275,35 @@
         var listResponse = await funcs.GetResponse<GetListRequest, GetListResponse>(new GetListRequest(), token);
         var weeklyTopicInfo = await funcs.GetResponse<GetWeeklyTopicsInfoRequest, GetWeeklyTopicsInfoResponse>(new GetWeeklyTopicsInfoRequest(), token);
         token.ThrowIfCancellationRequested();
-        _tradeShopTabInfoList = listResponse.TradeShopTabInfoList
+        _tradeShopTabInfoList = (listResponse.TradeShopTabInfoList ?? [])
             .Where(d => Masters.TradeShopTabTable.GetById(d.TradeShopTabId) != null) // a tab newer than our master data: hide it until the hourly refresh
             .OrderBy(d => Masters.TradeShopTabTable.GetById(d.TradeShopTabId).SortOrder).ToList();
-        foreach (var tradeShopItems in weeklyTopicInfo.ShopData.TradeShopItemList.GroupBy(d => d.TradeShopItemId / 10000))
+        if (weeklyTopicInfo?.ShopData?.TradeShopItemList != null)
         {
-            if (Masters.TradeShopTabTable.GetById(tradeShopItems.Key) == null) continue;
-            _tradeShopTabInfoList.Add(new TradeShopTabInfo
+            foreach (var tradeShopItems in weeklyTopicInfo.ShopData.TradeShopItemList.GroupBy(d => d.TradeShopItemId / 10000))
             {
-                TradeShopTabId = tradeShopItems.Key,
-                ExpirationTimeStamp = weeklyTopicInfo.ShopData.ExpirationTimeStamp,
-                TradeShopItems = tradeShopItems.ToList()
-            });
+                if (Masters.TradeShopTabTable.GetById(tradeShopItems.Key) == null) continue;
+                _tradeShopTabInfoList.Add(new TradeShopTabInfo
+                {
+                    TradeShopTabId = tradeShopItems.Key,
+                    ExpirationTimeStamp = weeklyTopicInfo.ShopData.ExpirationTimeStamp,
+                    TradeShopItems = tradeShopItems.ToList()
+                });
+            }
         }
     }
 
     private long GetBuyMaxCount(TradeShopItem item)
     {
         long count = item.LimitTradeCount == 0 ? int.MaxValue : Math.Max(0, item.LimitTradeCount - item.TradeCount);
-        if (item.ConsumeItem1 != null)
+        if (item.ConsumeItem1 is { ItemCount: > 0 })
             count = Math.Min(count, Funcs.UserSyncData.GetUserItemCount(item.ConsumeItem1.ItemType, item.ConsumeItem1.ItemId, true) / item.ConsumeItem1.ItemCount);
-        if (item.ConsumeItem2 != null)
+        if (item.ConsumeItem2 is { ItemCount: > 0 })
             count = Math.Min(count, Funcs.UserSyncData.GetUserItemCount(item.ConsumeItem2.ItemType, item.ConsumeItem2.ItemId, true) / item.ConsumeItem2.ItemCount);
         return count;
     }
 
-    private void BuyItem(TradeShopTabInfo tab, TradeShopItem tradeShopItem)
+    private async Task BuyItem(TradeShopTabInfo tab, TradeShopItem tradeShopItem)
     {
         var funcs = Funcs;
         var token = CreateAccountCancellation();
@@ -307,14 +314,19 @@
         dialogParameters.Add(d => d.CostText, n => tradeShopItem.ConsumeItem1 == null ? Masters.TextResourceTable.Get("[ShopProductFreeLabel]")
             : $"{tradeShopItem.ConsumeItem1.GetItemName()} × {tradeShopItem.ConsumeItem1.ItemCount * n:N0}" + (tradeShopItem.ConsumeItem2 == null ? "" : $" {tradeShopItem.ConsumeItem2.GetItemName()} × {tradeShopItem.ConsumeItem2.ItemCount * n:N0}"));
         dialogParameters.Add(d => d.ButtonText, Masters.TextResourceTable.Get("[ExchangeCommonPurchaseButtonLabel]"));
+        var purchased = false;
         dialogParameters.Add(d => d.UseItemFunc, async count =>
         {
             var response = await funcs.GetResponse<BuyItemRequest, BuyItemResponse>(
                 new BuyItemRequest {TradeShopTabId = tab.TradeShopTabId, TradeShopItemInfos = new List<TradeShopItemInfo> {new() {TradeShopItemId = tradeShopItem.TradeShopItemId, TradeCount = (int) count}}}, token);
+            purchased = true;
             return response.TradeShopItems.Select(d => d.GiveItem).Cast<IUserItem>().ToList();
         });
 
-        _ = DialogService.ShowAsync<UseItemDialog>(Masters.TextResourceTable.Get("[ExchangeConfirmationViewTitle]"), dialogParameters);
+        var dialog = await DialogService.ShowAsync<UseItemDialog>(Masters.TextResourceTable.Get("[ExchangeConfirmationViewTitle]"), dialogParameters);
+        var result = await dialog.Result;
+        if (!token.IsCancellationRequested && (purchased || result is { Data: true }))
+            await RefreshExpired();
     }
 
     private static (string name, string subName) GetItemName(UserItem item)
@@ -360,6 +372,7 @@
         _consumableItems = (tab.ConsumeItemInfos ?? []).Select(d => new UserItem {ItemType = d.ItemType, ItemId = d.ItemId}).ToList();
         _autoBuyDialogVisible = true;
         _selectedAutoBuyItem = item.GiveItem;
+        _selectedAutoBuyDiscount = 0;
         _selectedConsumeItem = item.ConsumeItem1 == null ? null
             : _consumableItems.FirstOrDefault(d => d.IsEqual(item.ConsumeItem1.ItemType, item.ConsumeItem1.ItemId));
         _selectedConsumeCount = item.ConsumeItem1?.ItemCount ?? 0;
@@ -371,28 +384,39 @@
         set => WritableGameConfig.Update(x => x.Shop.AutoBuyItems = value);
     }
 
+    internal static bool MatchesAutoBuyRule(GameConfig.ShopAutoBuyItem existing, long shopTabId, UserItem? buyItem, UserItem? consumeItem)
+    {
+        if (existing.ShopTabId != shopTabId) return false;
+        var sameBuy = buyItem == null
+            ? existing.BuyItem == null
+            : existing.BuyItem != null && existing.BuyItem.IsEqual(buyItem);
+        var sameConsume = consumeItem == null
+            ? existing.ConsumeItem == null
+            : existing.ConsumeItem != null && existing.ConsumeItem.IsEqual(consumeItem.ItemType, consumeItem.ItemId) && existing.ConsumeItem.ItemCount == consumeItem.ItemCount;
+        return sameBuy && sameConsume;
+    }
+
     private void ConfirmAutoBuy()
     {
         if (_selectedAutoBuyItem == null && _selectedConsumeItem == null)
         {
-            Snackbar.Clear();
-            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
             Snackbar.Add(ResourceStrings.ShopAutoBuyPleaseSelectOne, Severity.Error);
             return;
         }
 
+        if (_selectedTabIndex < 0 || _selectedTabIndex >= _tradeShopTabInfoList.Count) return;
+
         var tmp = ShopAutoBuyItems.ToList();
         var shopTabId = _tradeShopTabInfoList[_selectedTabIndex].TradeShopTabId;
+        var consumeItem = _selectedConsumeItem == null
+            ? null
+            : new UserItem { ItemType = _selectedConsumeItem.ItemType, ItemId = _selectedConsumeItem.ItemId, ItemCount = _selectedConsumeCount };
 
-        var existing = tmp.Find(d => d.ShopTabId == shopTabId && (_selectedAutoBuyItem != null || _selectedConsumeItem != null) &&
-                                     (_selectedAutoBuyItem == null
-                                         ? d.BuyItem == null && d.ConsumeItem.IsConsumeEqual(_selectedConsumeItem)
-                                         : d.ConsumeItem == null && d.BuyItem.IsEqual(_selectedAutoBuyItem)));
-        if (_selectedConsumeItem != null) _selectedConsumeItem.ItemCount = _selectedConsumeCount;
+        var existing = tmp.Find(d => MatchesAutoBuyRule(d, shopTabId, _selectedAutoBuyItem, consumeItem));
         if (existing != null)
         {
             existing.MinDiscountPercent = _selectedAutoBuyDiscount;
-            existing.ConsumeItem = _selectedConsumeItem;
+            existing.ConsumeItem = consumeItem;
             existing.BuyItem = _selectedAutoBuyItem;
             existing.ShopTabId = shopTabId;
         }
@@ -403,13 +427,11 @@
                 BuyItem = _selectedAutoBuyItem,
                 MinDiscountPercent = _selectedAutoBuyDiscount,
                 ShopTabId = shopTabId,
-                ConsumeItem = _selectedConsumeItem
+                ConsumeItem = consumeItem
             });
         }
 
         ShopAutoBuyItems = tmp;
-        Snackbar.Clear();
-        Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
         Snackbar.Add(ResourceStrings.Success, Severity.Success);
         _autoBuyDialogVisible = false;
     }

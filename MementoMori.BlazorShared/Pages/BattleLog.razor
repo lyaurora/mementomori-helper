@@ -46,7 +46,8 @@
                             <span class="battle-log-option-name">@detail.Name</span>
                             <span class="battle-log-option-result">@Tr(detail.Result == "win" ? "[CommonWinLabel]" : "[CommonLoseLabel]")</span>
                         </span>
-                        <time class="battle-log-option-time" datetime="@detail.Time.ToString("O")">@detail.Time.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</time>
+                        @* BattleTime.StartBattle is server-local wall clock encoded as Unix ms (same convention as Chat.LocalTimeStamp). *@
+                        <time class="battle-log-option-time" datetime="@detail.Time.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ss")">@detail.Time.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss")</time>
                     }
                     else
                     {

@@ -6,6 +6,8 @@
 @using MementoMori.Jobs
 @using MementoMori.Option
 @using MementoMori.Ortega.Share
+@using ReactiveUI
+@using System.Reactive.Linq
 @inherits MementoMori.BlazorShared.Models.AccountComponent
 
 <MudCard>
@@ -108,6 +110,17 @@
         _accounts = authOption.Value.Accounts.ToList();
     }
 
+    protected override Task AccountChanged()
+    {
+        TrackAccountSubscription(AccountManager.Changed.Where(c => c.PropertyName == nameof(AccountManager.AccountInfos))
+            .Subscribe(_ => InvokeAsync(() =>
+            {
+                _accounts = authOption.Value.Accounts.ToList();
+                StateHasChanged();
+            })));
+        return Task.CompletedTask;
+    }
+
     private void AddAccountClick()
     {
         _addAccountDialog = true;
@@ -122,6 +135,13 @@
             return;
         }
 
+        if (AccountManager.GetAccountInfo(_addAccountUserId) != null)
+        {
+            await DialogService.ShowMessageBoxAsync(ResourceStrings.Failed_to_retrieve_account_information, ResourceStrings.AccountAlreadyExists, Tr("[CommonOkLabel]"));
+            return;
+        }
+
+        var existedBefore = AccountManager.Contains(_addAccountUserId);
         var account = AccountManager.Get(_addAccountUserId);
         if (account.Funcs.LoginOk)
         {
@@ -144,6 +164,7 @@
         }
         catch (Exception e)
         {
+            if (!existedBefore) AccountManager.DiscardTransientAccount(_addAccountUserId);
             await DialogService.ShowMessageBoxAsync(ResourceStrings.Failed_to_retrieve_account_information, e.Message, Tr("[CommonOkLabel]"));
         }
         finally

@@ -263,9 +263,16 @@ public partial class Chat
     public async ValueTask DisposeAsync()
     {
         _disposed = true;
-        if (_guildDialog != null) await _guildDialog.CloseAsync();
-        Dispose();
-        _accountCancellation.Dispose();
+        try
+        {
+            if (_guildDialog != null) await _guildDialog.CloseAsync();
+        }
+        catch (Exception) { }
+        finally
+        {
+            Dispose();
+            _accountCancellation.Dispose();
+        }
         if (_module != null)
         {
             try { await _module.DisposeAsync(); }
@@ -562,7 +569,11 @@ public partial class Chat
         _showGuildInfo = true;
         var loading = LoadGuildInfo();
         StateHasChanged();
-        if (_module != null) await _module.InvokeVoidAsync("labelGuildDialog");
+        if (_module != null)
+        {
+            try { await _module.InvokeVoidAsync("labelGuildDialog"); }
+            catch (JSDisconnectedException) { }
+        }
         await loading;
     }
 

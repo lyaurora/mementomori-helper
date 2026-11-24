@@ -33,28 +33,27 @@
 
 @code {
     SettingSaved _saved = null!;
-    List<UserItem> _bountyQuestRewardItems = new();
+    private static readonly List<UserItem> _bountyQuestRewardItems =
+    [
+        new() {ItemType = ItemType.Gold, ItemId = 1},
+        new() {ItemType = ItemType.CurrencyFree, ItemId = 1},
+        new() {ItemType = ItemType.CharacterTrainingMaterial, ItemId = 2},
+        new() {ItemType = ItemType.TreasureChest, ItemId = 4},
+        new() {ItemType = ItemType.TreasureChest, ItemId = 5},
+        new() {ItemType = ItemType.TreasureChest, ItemId = 6},
+        new() {ItemType = ItemType.TreasureChest, ItemId = 7},
+        new() {ItemType = ItemType.TreasureChest, ItemId = 8},
+        new() {ItemType = ItemType.TreasureChest, ItemId = 9},
+        new() {ItemType = ItemType.TreasureChest, ItemId = 10},
+        new() {ItemType = ItemType.TreasureChest, ItemId = 27},
+        new() {ItemType = ItemType.TreasureChest, ItemId = 28}
+    ];
 
     // Nullable so an emptied field (mid-typing) is not saved as 0.
     private int? _autoRefreshMaxCount;
 
     protected override Task AccountChanged()
     {
-        _bountyQuestRewardItems.AddRange(new[]
-        {
-            new UserItem() {ItemType = ItemType.Gold, ItemId = 1},
-            new UserItem() {ItemType = ItemType.CurrencyFree, ItemId = 1},
-            new UserItem() {ItemType = ItemType.CharacterTrainingMaterial, ItemId = 2},
-            new UserItem() {ItemType = ItemType.TreasureChest, ItemId = 4},
-            new UserItem() {ItemType = ItemType.TreasureChest, ItemId = 5},
-            new UserItem() {ItemType = ItemType.TreasureChest, ItemId = 6},
-            new UserItem() {ItemType = ItemType.TreasureChest, ItemId = 7},
-            new UserItem() {ItemType = ItemType.TreasureChest, ItemId = 8},
-            new UserItem() {ItemType = ItemType.TreasureChest, ItemId = 9},
-            new UserItem() {ItemType = ItemType.TreasureChest, ItemId = 10},
-            new UserItem() {ItemType = ItemType.TreasureChest, ItemId = 27},
-            new UserItem() {ItemType = ItemType.TreasureChest, ItemId = 28}
-        });
         _autoRefreshMaxCount = PlayersOptions.Value.TryGetValue(NetworkManager.PlayerId, out var v1) ? v1.BountyQuest.MaxRefreshCount : 0;
         return Task.CompletedTask;
     }

@@ -1,0 +1,97 @@
+@using System.Reactive.Linq
+@using MementoMori.Common.Localization
+@using MementoMori.Ortega.Common.Utils
+@using MementoMori.Ortega.Share.Data.DtoInfo
+@using MementoMori.Ortega.Share.Enums
+@using ReactiveUI
+@inherits MementoMori.BlazorShared.Models.AccountComponent
+@inject MementoMori.WebUI.UI.AtlasManager Atlas
+
+<div class="bq-list">
+    @foreach (var info in Funcs.BountyQuestResponseInfo?.UserBountyQuestDtoInfos ?? new List<UserBountyQuestDtoInfo>())
+    {
+        var bountyQuestInfo = Funcs.BountyQuestResponseInfo?.BountyQuestInfos?.Find(d => d.BountyQuestId == info.BountyQuestId);
+        if (bountyQuestInfo == null) continue;
+        var guerrilla = bountyQuestInfo.BountyQuestType == BountyQuestType.Guerrilla;
+        var itemNames = guerrilla
+            ? Tr("[ItemRewardDetailDialogLotteryRateLabel]")
+            : string.Join(",", (bountyQuestInfo.RewardItems ?? []).Select(d => $"{ItemUtil.GetItemName(d)}×{d.ItemCount}"));
+        var reward = guerrilla ? null : bountyQuestInfo.RewardItems?.FirstOrDefault();
+        var rewardIcon = reward == null ? null : Atlas.GetItemIcon(reward.ItemType, reward.ItemId);
+        string? statusLabel = ResourceStrings.NotStarted;
+        string? time = null;
+        var statusClass = "";
+        if (info.BountyQuestEndTime > 0)
+        {
+            var nowMilli = DateTimeOffset.UtcNow.Add(Funcs.TimeManager.DiffFromUtc).ToUnixTimeMilliseconds();
+            if (nowMilli < info.BountyQuestEndTime)
+            {
+                statusLabel = ResourceStrings.OnGoing;
+                time = FormatRemaining(info.BountyQuestEndTime - nowMilli);
+                statusClass = "is-running";
+            }
+            else if (!info.IsReward)
+            {
+                statusLabel = ResourceStrings.NotReceived;
+                time = FormatRemaining(info.RewardEndTime - nowMilli);
+                statusClass = "is-todo";
+            }
+            else
+            {
+                statusLabel = ResourceStrings.Received;
+            }
+        }
+        <div class="bq-row" title="@Tr(bountyQuestInfo.BountyQuestNameKey)">
+            <span class="bq-rarity is-@bountyQuestInfo.BountyQuestRarity.ToString().ToLowerInvariant()">@Tr(bountyQuestInfo.BountyQuestRarity)</span>
+            <span class="bq-art">
+                @if (guerrilla)
+                {
+                    <MudIcon Icon="@Icons.Material.Outlined.HelpOutline" Size="Size.Small"/>
+                }
+                else if (rewardIcon != null)
+                {
+                    <img src="@rewardIcon" @key="rewardIcon" width="28" height="28" loading="lazy" decoding="async" alt="" onerror="this.remove()">
+                }
+            </span>
+            <span class="bq-name">@itemNames</span>
+            <span class="bq-status @statusClass">
+                @if (statusClass == "is-running")
+                {
+                    <MudIcon Icon="@Icons.Material.Outlined.Schedule" Size="Size.Small" title="@statusLabel" aria-label="@statusLabel"/>
+                }
+                else
+                {
+                    <span>@statusLabel</span>
+                }
+                @if (time != null)
+                {
+                    <span class="bq-time">@time</span>
+                }
+            </span>
+        </div>
+    }
+</div>
+
+@code {
+    protected override Task AccountChanged()
+    {
+        TrackAccountSubscription(Funcs.WhenAnyValue(f => f.BountyQuestResponseInfo).Skip(1).Subscribe(_ => InvokeAsync(StateHasChanged)));
+        TrackAccountSubscription(Observable.Interval(TimeSpan.FromSeconds(1)).Where(_ => HasRunningBountyQuest()).Subscribe(_ => InvokeAsync(StateHasChanged)));
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private bool HasRunningBountyQuest()
+    {
+        var infos = Funcs.BountyQuestResponseInfo?.UserBountyQuestDtoInfos;
+        if (infos == null) return false;
+        var nowMilli = DateTimeOffset.UtcNow.Add(Funcs.TimeManager.DiffFromUtc).ToUnixTimeMilliseconds();
+        return infos.Any(d => d.BountyQuestEndTime > 0 && (nowMilli < d.BountyQuestEndTime || (!d.IsReward && nowMilli < d.RewardEndTime)));
+    }
+
+    internal static string FormatRemaining(long remainingMs)
+    {
+        if (remainingMs <= 0) return "00:00:00";
+        var ts = TimeSpan.FromMilliseconds(remainingMs);
+        return ts.TotalHours >= 24 ? $"{(int) ts.TotalDays}d {ts:hh\\:mm\\:ss}" : ts.ToString(@"hh\:mm\:ss");
+    }
+}

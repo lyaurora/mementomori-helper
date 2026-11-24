@@ -70,7 +70,7 @@
 
     private void Cancel()
     {
-        MudDialog.Close();
+        MudDialog.Close(DialogResult.Ok(_buyed));
     }
 
     private async Task UseItem()

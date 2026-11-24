@@ -84,7 +84,7 @@
         try
         {
             var data = Funcs.UserSyncData;
-            var chas = data?.UserEquipmentDtoInfos?.GroupBy(d => d.CharacterGuid).ToDictionary(d => d.Key);
+            var chas = data?.UserEquipmentDtoInfos?.Where(d => !string.IsNullOrEmpty(d.CharacterGuid)).GroupBy(d => d.CharacterGuid).ToDictionary(d => d.Key);
             _characterGuids = data?.UserCharacterDtoInfos?.Where(d => chas?.ContainsKey(d.Guid) ?? false).Select(d =>
             {
                 var isLevelLinkMember = data.IsLevelLinkMember(d.Guid);
@@ -135,7 +135,7 @@
                 };
             }).Where(d => d != null)
             .Where(d => d.CharacterGuid == obj?.Guid)
-            .OrderBy(d => d.CharacterGuid).ToList() ?? [];
+            .OrderBy(d => EquipmentTable.GetById(d.UserEquipmentDtoInfo.EquipmentId)?.SlotType).ToList() ?? [];
         if (resetTarget)
         {
             Funcs.TrainingEquipmentGuid = _characterEquipments.FirstOrDefault()?.EquipmentGuid;

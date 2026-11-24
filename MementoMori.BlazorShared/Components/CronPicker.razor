@@ -227,8 +227,8 @@
     public static List<string> NextRuns(string cron, AccountSelection selection, int count, bool withZone)
     {
         if (!CronExpression.IsValidExpression(cron ?? "")) return new();
-        var funcs = selection.Current?.Funcs;
-        var offset = funcs?.LoginOk == true ? funcs.TimeManager.DiffFromUtc : TimeSpan.Zero;
+        var funcs = selection.CurrentUserId > 0 ? selection.Current?.Funcs : null;
+        var offset = funcs?.TimeManager.HasTimeServer == true ? funcs.TimeManager.DiffFromUtc : TimeSpan.Zero;
         var expr = new CronExpression(cron!) { TimeZone = TimeZoneInfo.CreateCustomTimeZone(offset.ToString(), offset, null, null) };
         var runs = new List<string>();
         for (DateTimeOffset? t = DateTimeOffset.UtcNow; runs.Count < count && (t = expr.GetTimeAfter(t.Value)) != null;)
