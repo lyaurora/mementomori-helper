@@ -123,7 +123,8 @@ internal class Program
         var logger = sp.GetRequiredService<ILogger<Program>>();
         var networkManager = sp.GetRequiredService<MementoNetworkManager>();
         accountManager.MigrateToAccountArray();
-        accountManager.CurrentCulture = CultureInfo.CurrentCulture;
+        var startupCulture = accountManager.ResolveStartupCulture();
+        accountManager.CurrentCulture = startupCulture;
         try
         {
             await networkManager.Initialize();
@@ -133,6 +134,6 @@ internal class Program
         {
             logger.LogWarning(e, "Failed to update master data; using existing files");
         }
-        networkManager.SetCultureInfo(CultureInfo.CurrentCulture);
+        networkManager.SetCultureInfo(startupCulture);
     }
 }

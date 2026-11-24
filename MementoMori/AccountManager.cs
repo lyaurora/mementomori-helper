@@ -30,13 +30,61 @@ public partial class AccountManager : ReactiveObject
         set
         {
             this.RaiseAndSetIfChanged(ref _currentCulture, value);
+            TextResourceTable.SetLanguageType(MementoNetworkManager.ParseLanguageType(value));
+            try
+            {
+                TextResourceTable.Load();
+            }
+            catch (FileNotFoundException)
+            {
+                // Master data may not have been downloaded yet during early startup.
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning(e, "Failed to reload text resources for {Culture}", value.Name);
+            }
+
             foreach (var account in _accounts.Values)
             {
-                account.NetworkManager.SetCultureInfo(value);
+                account.NetworkManager.SetCultureInfo(value, reloadAllMasters: false);
             }
 
             CultureInfo.DefaultThreadCurrentCulture = value;
             CultureInfo.DefaultThreadCurrentUICulture = value;
+        }
+    }
+
+    public CultureInfo ResolveStartupCulture()
+    {
+        var configured = _gameConfig?.Value?.Language;
+        if (!string.IsNullOrWhiteSpace(configured))
+        {
+            try { return CultureInfo.GetCultureInfo(configured); }
+            catch (CultureNotFoundException) { }
+        }
+        return CultureInfo.CurrentCulture;
+    }
+
+    public void ChangeLanguage(string cultureName)
+    {
+        CurrentCulture = new CultureInfo(cultureName);
+        try
+        {
+            _gameConfig.Update(cfg => cfg.Language = cultureName);
+        }
+        catch (Exception e)
+        {
+            _logger.LogWarning(e, "Failed to persist language setting {Language}", cultureName);
+        }
+    }
+
+    public void DiscardTransientAccount(long userId)
+    {
+        if (GetAccountInfo(userId) != null) return;
+        if (_accounts.TryRemove(userId, out var account))
+        {
+            account.Funcs?.Dispose();
+            account.NetworkManager?.Dispose();
         }
     }
 

@@ -78,6 +78,7 @@ public class GameConfig
 
     public string AssetsUrl { get; set; } = "https://list.moonheart.dev/d/public/mmtm";
     public string BattleLogViewerUrl { get; set; } = "https://mentemori.icu/battle_log.html";
+    public string Language { get; set; } = "";
 
     public LoginConfig Login { get; set; } = new();
     public ItemsConfig Items { get; set; } = new();

@@ -27,12 +27,13 @@ namespace MementoMori.Maui
             var networkManager = Common.Services.Get<MementoNetworkManager>();
             UpdateInfo("Initializing...");
             accountManager.MigrateToAccountArray();
-            accountManager.CurrentCulture = CultureInfo.CurrentCulture;
+            var startupCulture = accountManager.ResolveStartupCulture();
+            accountManager.CurrentCulture = startupCulture;
             await networkManager.Initialize(UpdateInfo);
             UpdateInfo("Downloading master catalog...");
             await networkManager.DownloadMasterCatalog(UpdateInfo);
             UpdateInfo("Loading master catalog...");
-            networkManager.SetCultureInfo(CultureInfo.CurrentCulture);
+            networkManager.SetCultureInfo(startupCulture);
             UpdateInfo("Auto login...");
             await accountManager.AutoLogin();
             // return;

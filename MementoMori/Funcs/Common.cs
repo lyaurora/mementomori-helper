@@ -144,10 +144,10 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
     private List<PlayerDataInfo>? _playerDataInfos;
     private string? _playerDataInfosKey;
 
-    public async Task<List<PlayerDataInfo>> GetPlayerDataInfo()
+    public async Task<List<PlayerDataInfo>> GetPlayerDataInfo(bool forceRefresh = false)
     {
         var clientKey = _accountManager.GetAccountInfo(UserId).ClientKey;
-        if (LoginOk && _playerDataInfos != null && _playerDataInfosKey == clientKey) return _playerDataInfos;
+        if (!forceRefresh && LoginOk && _playerDataInfos != null && _playerDataInfosKey == clientKey) return _playerDataInfos;
         var reqBody = new LoginRequest
         {
             ClientKey = clientKey,
@@ -182,8 +182,9 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
         {
             return await NetworkManager.GetResponse<TReq, TResp>(req, AddLog, data =>
             {
-                RecordGrowth(data);
+                var growthDiff = BuildGrowthDiffEvents(data);
                 UserSyncData.UserItemEditorMergeUserSyncData(data);
+                FinishRecordGrowth(growthDiff);
                 this.RaisePropertyChanged(nameof(UserSyncData));
             }, cancellationToken: linked.Token);
         }
@@ -285,6 +286,8 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
                 if (!LoginOk) _operationError ??= LastLoginError ?? ResourceStrings.PleaseLogin;
                 if (token.IsCancellationRequested || _loggedOut || !LoginOk
                     || GameConfig.AutoJob.DisableAll || canExecute?.Invoke() == false) return;
+                // Clear any transient error from post-login background refreshes (MyPage/Mission/Bounty) before running the job.
+                _operationError = null;
                 await func();
                 // The session died silently during the job: log in again and run it once more. Only for jobs whose
                 // steps are bounded by fresh server state; a replay of daily/relic jobs could spend diamonds twice.

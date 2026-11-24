@@ -36,6 +36,7 @@ public partial class MementoNetworkManager : IDisposable
     private static Task? _masterDataUpdateTask;
     private static readonly object MasterUpdateLock = new();
     private static readonly SemaphoreSlim MasterDownloadLock = new(1, 1);
+    private static volatile string? _sharedAppVersion;
     private int _disposed;
 
 
@@ -92,7 +93,7 @@ public partial class MementoNetworkManager : IDisposable
 
         _apiAuth = new Uri(string.IsNullOrEmpty(_authOption.Value.AuthUrl) ? "https://prd1-auth.mememori-boi.com/api/" : _authOption.Value.AuthUrl);
 
-        MoriHttpClientHandler = new MeMoriHttpClientHandler {AppVersion = _authOption.Value.AppVersion};
+        MoriHttpClientHandler = new MeMoriHttpClientHandler { AppVersion = _sharedAppVersion ?? _authOption.Value.AppVersion ?? "" };
         _httpClient = new HttpClient(MoriHttpClientHandler);
         if (!Debugger.IsAttached) _httpClient.Timeout = TimeSpan.FromSeconds(10);
         _unityHttpClient = new HttpClient();
@@ -112,36 +113,54 @@ public partial class MementoNetworkManager : IDisposable
         MasterUriFormat = response.MasterUriFormat;
         NoticeBannerImageUriFormat = response.NoticeBannerImageUriFormat;
         AppAssetVersionInfo = response.AppAssetVersionInfo;
-        if (_authOption.Value.AppVersion != AppAssetVersionInfo.Version)
-            _authOption.Update(x => x.AppVersion = AppAssetVersionInfo.Version);
-        MoriHttpClientHandler.AppVersion = AppAssetVersionInfo.Version;
+        if (!string.IsNullOrEmpty(AppAssetVersionInfo?.Version))
+        {
+            _sharedAppVersion = AppAssetVersionInfo.Version;
+            if (_authOption.Value.AppVersion != AppAssetVersionInfo.Version)
+                _authOption.Update(x => x.AppVersion = AppAssetVersionInfo.Version);
+            MoriHttpClientHandler.AppVersion = AppAssetVersionInfo.Version;
+        }
     }
 
     private async Task AutoUpdateMasterData()
     {
-        while (!cts.IsCancellationRequested)
+        try
         {
-            try
+            while (!cts.IsCancellationRequested)
             {
-                await Task.Delay(TimeSpan.FromHours(1), cts.Token);
-                if (!DisableAutoUpdateMasterData)
+                try
                 {
-                    _logger.LogInformation("auto updating master data");
-                    if (await DownloadMasterCatalog(cancellationToken: cts.Token) && !LoadAllMasters()) _logger.LogWarning("Some master tables failed to load; keeping their previous data");
+                    await Task.Delay(TimeSpan.FromHours(1), cts.Token);
+                    if (!DisableAutoUpdateMasterData)
+                    {
+                        _logger.LogInformation("auto updating master data");
+                        var changed = await DownloadMasterCatalogChanges(cancellationToken: cts.Token);
+                        if (changed.Count > 0 && !LoadTables(changed))
+                            _logger.LogWarning("Some master tables failed to load; keeping their previous data");
+                    }
+                }
+                catch (OperationCanceledException) when (cts.IsCancellationRequested) { break; }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "error auto update master data");
                 }
             }
-            catch (OperationCanceledException) when (cts.IsCancellationRequested) { break; }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "error auto update master data");
-            }
+        }
+        finally
+        {
+            lock (MasterUpdateLock) _masterDataUpdateTask = null;
         }
     }
 
     public async Task<bool> DownloadMasterCatalog(Action<string> log = null, CancellationToken cancellationToken = default)
     {
+        return (await DownloadMasterCatalogChanges(log, cancellationToken)).Count > 0;
+    }
+
+    internal async Task<List<string>> DownloadMasterCatalogChanges(Action<string>? log = null, CancellationToken cancellationToken = default)
+    {
         await MasterDownloadLock.WaitAsync(cancellationToken);
-        var staged = new List<(string Temporary, string Target)>();
+        var staged = new List<(string Name, string Temporary, string Target)>();
         try
         {
             log ??= Console.WriteLine;
@@ -158,7 +177,11 @@ public partial class MementoNetworkManager : IDisposable
             var response = await GetResponse<GetDataUriRequest, GetDataUriResponse>(
                 new GetDataUriRequest { CountryCode = "CN", UserId = 0 }, cancellationToken: cancellationToken);
             var version = MoriHttpClientHandler.OrtegaMasterVersion;
-            var catalogBytes = await _unityHttpClient.GetByteArrayAsync(string.Format(response.MasterUriFormat, version, "master-catalog"), cancellationToken);
+            var catalogUrl = string.Format(response.MasterUriFormat, version, "master-catalog");
+            var catalogBytes = await ExecWithRetry(
+                () => _unityHttpClient.GetByteArrayAsync(catalogUrl, cancellationToken),
+                retryCount: 2,
+                cancellationToken: cancellationToken);
             var catalog = MessagePackSerializer.Deserialize<MasterBookCatalog>(catalogBytes);
             Directory.CreateDirectory("Master");
             HashSet<string> languages = ["TextResourceJaJpMB", "TextResourceZhTwMB", "TextResourceZhCnMB", "TextResourceEnUsMB", "TextResourceKoKrMB"];
@@ -178,7 +201,7 @@ public partial class MementoNetworkManager : IDisposable
                     if (!Convert.ToHexString(MD5.HashData(bytes)).Equals(info.Hash, StringComparison.OrdinalIgnoreCase))
                         throw new InvalidDataException($"Master hash mismatch: {name}");
                     ValidateMasterData(name, bytes);
-                    staged.Add((temporary, path));
+                    staged.Add((name, temporary, path));
                     await File.WriteAllBytesAsync(temporary, bytes, cancellationToken);
                 }
                 catch (Exception e) when (e is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
@@ -186,20 +209,20 @@ public partial class MementoNetworkManager : IDisposable
                     // One broken or schema-drifted table must not block every other table; keep the old file.
                     _logger.LogWarning(e, "Skipped master file {Name}", name);
                     skipped.Add(name);
-                    if (staged.Remove((temporary, path))) File.Delete(temporary);
+                    if (staged.Remove((name, temporary, path)) && File.Exists(temporary)) File.Delete(temporary);
                 }
             }
             // Publish only after every changed file has been downloaded; failed files keep their old version.
             cancellationToken.ThrowIfCancellationRequested();
-            foreach (var (temporary, target) in staged) File.Move(temporary, target, true);
+            foreach (var (_, temporary, target) in staged) File.Move(temporary, target, true);
             if (skipped.Count > 0 && !HasUsableMasterData())
                 throw new InvalidDataException($"Master data is unusable, failed files: {string.Join(", ", skipped)}");
             log(ResourceStrings.Download_master_directory_completed);
-            return staged.Count > 0;
+            return staged.Select(s => s.Name).ToList();
         }
         finally
         {
-            foreach (var (temporary, _) in staged)
+            foreach (var (_, temporary, _) in staged)
                 if (File.Exists(temporary)) File.Delete(temporary);
             MasterDownloadLock.Release();
         }
@@ -222,14 +245,15 @@ public partial class MementoNetworkManager : IDisposable
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or MessagePackSerializationException) { return false; }
     }
 
-    public void SetCultureInfo(CultureInfo cultureInfo)
+    public void SetCultureInfo(CultureInfo cultureInfo, bool reloadAllMasters = true)
     {
         CultureInfo = cultureInfo;
-        TextResourceTable.SetLanguageType(parseLanguageType(cultureInfo));
+        if (!reloadAllMasters) return;
+        TextResourceTable.SetLanguageType(ParseLanguageType(cultureInfo));
         if (!LoadAllMasters()) _logger.LogWarning("Some master tables failed to load; keeping their previous data");
     }
 
-    private LanguageType parseLanguageType(CultureInfo cultureInfo)
+    internal static LanguageType ParseLanguageType(CultureInfo cultureInfo)
     {
         return cultureInfo.TwoLetterISOLanguageName switch
         {
@@ -268,7 +292,7 @@ public partial class MementoNetworkManager : IDisposable
         _logger.LogInformation("Downloading assets...");
         await Parallel.ForEachAsync(locations, cancellationToken, async (location, token) =>
         {
-            if (cancellationToken.IsCancellationRequested) return;
+            if (token.IsCancellationRequested) return;
 
             var bundleId = location.PrimaryKey;
             if (Path.GetFileName(bundleId) != bundleId) // catalog entries are plain file names; never write outside assetsPath
@@ -291,9 +315,9 @@ public partial class MementoNetworkManager : IDisposable
 
             var bundleUrl = string.Format(AssetCatalogFixedUriFormat, $"{gameOs}/{bundleId}");
             _logger.LogInformation($"download {bundleUrl}");
-            var bytes = await ExecWithRetry(async () => await _unityHttpClient.GetByteArrayAsync(bundleUrl, cancellationToken), cancellationToken: cancellationToken);
+            var bytes = await ExecWithRetry(async () => await _unityHttpClient.GetByteArrayAsync(bundleUrl, token), cancellationToken: token);
             var localTmpPath = Path.Combine(assetsTmpPath, bundleId);
-            await File.WriteAllBytesAsync(localTmpPath, bytes, cancellationToken);
+            await File.WriteAllBytesAsync(localTmpPath, bytes, token);
         });
 
         _logger.LogInformation("Download assets finished");
@@ -307,7 +331,7 @@ public partial class MementoNetworkManager : IDisposable
             {
                 return await func();
             }
-            catch (Exception e) when (e is not OperationCanceledException)
+            catch (Exception e) when (e is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
             {
                 retryCount--;
                 if (retryCount <= 0) throw;
@@ -341,7 +365,11 @@ public partial class MementoNetworkManager : IDisposable
     {
         var authLoginResp = await GetResponse<LoginRequest, LoginResponse>(_lastLoginRequest, log, cancellationToken: cancellationToken);
         var playerDataInfo = authLoginResp.PlayerDataInfoList.First(x => x.WorldId == worldId);
+        await Login(playerDataInfo, log, cancellationToken);
+    }
 
+    public async Task Login(PlayerDataInfo playerDataInfo, Action<string> log = null, CancellationToken cancellationToken = default)
+    {
         var timeServerId = playerDataInfo.WorldId / 1000;
         var timeServerMb = TimeServerTable.GetById(timeServerId);
         TimeManager.SetTimeServerMb(timeServerMb);
@@ -397,6 +425,9 @@ public partial class MementoNetworkManager : IDisposable
             for (var attempt = 0; ; attempt++)
             {
                 token.ThrowIfCancellationRequested();
+                var sharedVersion = _sharedAppVersion;
+                if (!string.IsNullOrEmpty(sharedVersion) && MoriHttpClientHandler.AppVersion != sharedVersion)
+                    MoriHttpClientHandler.AppVersion = sharedVersion;
                 if (req is LoginRequest login) login.AppVersion = MoriHttpClientHandler.AppVersion;
                 if (req is CreateUserRequest create) create.AppVersion = MoriHttpClientHandler.AppVersion;
                 using var content = new ByteArrayContent(MessagePackSerializer.Serialize(req));
@@ -435,6 +466,7 @@ public partial class MementoNetworkManager : IDisposable
         if (!match.Success || !Version.TryParse(match.Groups["version"].Value, out var version))
             throw new InvalidDataException("The official download page did not provide a valid game version.");
         var appVersion = version.ToString(3);
+        _sharedAppVersion = appVersion;
         if (_authOption.Value.AppVersion != appVersion) _authOption.Update(x => x.AppVersion = appVersion);
         MoriHttpClientHandler.AppVersion = appVersion;
         _logger.LogInformation("Using official game version {Version}", appVersion);

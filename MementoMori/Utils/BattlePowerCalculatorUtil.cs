@@ -43,18 +43,22 @@ public static class BattlePowerCalculatorUtil
 
     public static long GetUserCharacterBattlePower(long userId, UserCharacterInfo userCharacterInfo, LockEquipmentDeckType lockEquipmentDeckType = LockEquipmentDeckType.None)
     {
+        if (userCharacterInfo == null) return 0;
         var (baseParameter, battleParameter) = CalcCharacterBattleParameter(userId, userCharacterInfo, lockEquipmentDeckType);
-        var battlePower = BattlePowerCalculator.CalculateBattlePower(battleParameter, baseParameter);
-        // var characterMb = Masters.CharacterTable.GetById(userCharacterInfo.CharacterId);
-        // var name = Masters.TextResourceTable.Get(characterMb.NameKey);
-        // Directory.CreateDirectory("./battlePowerDebug");
-        // File.WriteAllText($"./battlePowerDebug/{name}_{userCharacterInfo.RarityFlags}_{userCharacterInfo.Level}_{userCharacterInfo.Guid}.json",JsonConvert.SerializeObject(new
-        // {
-        // 	BattlePower = battlePower,
-        // 	BaseParameter = baseParameter,
-        // 	BattleParameter = battleParameter,
-        // }, Formatting.Indented));
-        return battlePower;
+        return BattlePowerCalculator.CalculateBattlePower(battleParameter, baseParameter);
+    }
+
+    public static long GetUserCharacterBattlePower(Ortega.Share.Data.UserSyncData syncData, UserCharacterDtoInfo userCharacterDtoInfo,
+        Ortega.Share.Data.Character.CharacterCollectionParameterInfo collectionParameterInfo,
+        LockEquipmentDeckType lockEquipmentDeckType = LockEquipmentDeckType.None)
+    {
+        if (syncData == null || userCharacterDtoInfo == null) return 0;
+        var info = syncData.GetUserCharacterInfoByUserCharacterDtoInfo(userCharacterDtoInfo);
+        if (info == null) return 0;
+        var rank = syncData.UserStatusDtoInfo?.Rank ?? 0;
+        var userEquipmentDtoInfos = syncData.GetUserEquipmentDtoInfosByCharacterGuid(info.Guid, lockEquipmentDeckType);
+        var (baseParameter, battleParameter) = info.CalcCharacterBattleParameter(userEquipmentDtoInfos, collectionParameterInfo, rank);
+        return BattlePowerCalculator.CalculateBattlePower(battleParameter, baseParameter);
     }
 
     public static long GetUserCharacterBattlePower(List<string> userCharacterGuids, LockEquipmentDeckType lockEquipmentDeckType = LockEquipmentDeckType.None)
@@ -141,8 +145,9 @@ public static class BattlePowerCalculatorUtil
     public static ValueTuple<BaseParameter, BattleParameter> CalcCharacterBattleParameter(long userId, UserCharacterInfo userCharacterInfo,
         LockEquipmentDeckType lockEquipmentDeckType = LockEquipmentDeckType.None)
     {
+        if (userCharacterInfo == null) return (new BaseParameter(), new BattleParameter());
         var syncData = Services.Get<AccountManager>().Get(userId).Funcs.UserSyncData;
-        var rank = syncData.UserStatusDtoInfo.Rank;
+        var rank = syncData.UserStatusDtoInfo?.Rank ?? 0;
         var userEquipmentDtoInfos = syncData.GetUserEquipmentDtoInfosByCharacterGuid(userCharacterInfo.Guid, lockEquipmentDeckType);
         var characterCollectionDtoInfos = syncData.UserCharacterCollectionDtoInfos();
         var characterCollectionParameterInfo = characterCollectionDtoInfos.CalcCharacterCollectionParameterInfo();

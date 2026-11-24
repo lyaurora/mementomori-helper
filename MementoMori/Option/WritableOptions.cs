@@ -39,8 +39,7 @@ public class WritableOptions<T> : IWritableOptions<T> where T : class, new()
         _file = file;
         // The bound object merges appsettings.json arrays by index; keep the user file (what Update writes) as the one source of truth.
         // assign under the file lock so a reload can't overwrite a newer value written by Update (the lock is reentrant)
-        _configuration.GetReloadToken().RegisterChangeCallback(_ => { lock (WritableOptionsFileLock.SyncRoot) _value = ReadFile(_options.CurrentValue); }, null);
-        _options.OnChange(obj => { lock (WritableOptionsFileLock.SyncRoot) _value = ReadFile(obj); });
+        _options.OnChange(obj => { lock (WritableOptionsFileLock.SyncRoot) Volatile.Write(ref _value, ReadFile(obj)); });
     }
 
     private string PhysicalPath => _fileProvider?.GetFileInfo(_file).PhysicalPath ?? Path.Combine(Directory.GetCurrentDirectory(), _file);
@@ -62,7 +61,22 @@ public class WritableOptions<T> : IWritableOptions<T> where T : class, new()
 
     private T _value;
 
-    public T Value => _value ??= ReadFile(_options.CurrentValue);
+    public T Value
+    {
+        get
+        {
+            var current = Volatile.Read(ref _value);
+            if (current != null) return current;
+            lock (WritableOptionsFileLock.SyncRoot)
+            {
+                current = Volatile.Read(ref _value);
+                if (current != null) return current;
+                current = ReadFile(_options.CurrentValue);
+                Volatile.Write(ref _value, current);
+                return current;
+            }
+        }
+    }
 
     public T Get(string name)
     {
@@ -107,7 +121,7 @@ public class WritableOptions<T> : IWritableOptions<T> where T : class, new()
                 if (File.Exists(tempPath)) File.Delete(tempPath);
             }
 
-            _value = sectionObject;
+            Volatile.Write(ref _value, sectionObject);
         }
     }
 }

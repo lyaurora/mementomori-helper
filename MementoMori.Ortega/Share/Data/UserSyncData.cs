@@ -180,7 +180,7 @@ public class UserSyncData
         if (userSyncData == null) return;
         // 后台任务线程在这里合并，UI 可能正在枚举这些列表：一律复制后再改，再替换引用（写时复制）
         if (userSyncData.ChatSettingData != null) ChatSettingData = userSyncData.ChatSettingData;
-        if (userSyncData.BlockPlayerIdList.IsNotNullOrEmpty()) BlockPlayerIdList = (BlockPlayerIdList?.ToList()).Merge(userSyncData.BlockPlayerIdList);
+        if (userSyncData.BlockPlayerIdList != null) BlockPlayerIdList = userSyncData.BlockPlayerIdList.ToList();
         if (userSyncData.CanJoinTodayLegendLeague != null) CanJoinTodayLegendLeague = userSyncData.CanJoinTodayLegendLeague;
         if (userSyncData.ClearedTutorialIdList.IsNotNullOrEmpty()) ClearedTutorialIdList = (ClearedTutorialIdList?.ToList()).Merge(userSyncData.ClearedTutorialIdList);
         if (userSyncData.CreateUserIdTimestamp != null) CreateUserIdTimestamp = userSyncData.CreateUserIdTimestamp;
@@ -194,7 +194,7 @@ public class UserSyncData
         if (userSyncData.ExistVipDailyGift != null) ExistVipDailyGift = userSyncData.ExistVipDailyGift;
         if (userSyncData.GivenItemCountInfoList.IsNotNullOrEmpty())
         {
-            var userItemDtoInfos = UserItemDtoInfo.ToList();
+            var userItemDtoInfos = (UserItemDtoInfo ?? []).ToList();
             foreach (var userItem in userSyncData.GivenItemCountInfoList)
             {
                 var userItemDtoInfo = userItemDtoInfos.FirstOrDefault(d => d.ItemId == userItem.ItemId && d.ItemType == userItem.ItemType);
@@ -207,7 +207,7 @@ public class UserSyncData
                         ItemId = userItem.ItemId,
                         ItemType = userItem.ItemType,
                         ItemCount = userItem.ItemCount,
-                        PlayerId = UserStatusDtoInfo.PlayerId
+                        PlayerId = UserStatusDtoInfo?.PlayerId ?? 0
                     });
                 }
             }

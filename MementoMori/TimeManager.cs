@@ -11,7 +11,9 @@ namespace MementoMori
 {
     public class TimeManager
     {
-        public TimeSpan DiffFromUtc => TimeSpan.Parse(_timeServerMb.DifferenceDateTimeFromUtc);
+        public bool HasTimeServer => _timeServerMb != null;
+
+        public TimeSpan DiffFromUtc => _timeServerMb == null ? TimeSpan.Zero : TimeSpan.Parse(_timeServerMb.DifferenceDateTimeFromUtc);
 
         private TimeServerMB _timeServerMb;
 

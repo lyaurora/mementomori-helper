@@ -41,16 +41,17 @@ public partial class TimeZoneAwareJobRegister
 
     public async Task RegisterJobs(long userId)
     {
-        var account = _accountManager.Get(userId);
-        if (!account.Funcs.LoginOk) return;
-
-        var networkManager = account.NetworkManager;
-        var scheduler = await _schedulerFactory.GetScheduler();
         if (_gameConfig.Value.AutoJob.DisableAll)
         {
             await DeregisterJobs(userId);
             return;
         }
+
+        var account = _accountManager.Get(userId);
+        if (!account.Funcs.LoginOk) return;
+
+        var networkManager = account.NetworkManager;
+        var scheduler = await _schedulerFactory.GetScheduler();
 
         await AddJob<DailyJob>(scheduler, _gameConfig.Value.AutoJob.DailyJobCron, ResourceStrings.DailyJob, userId, networkManager.TimeManager.DiffFromUtc);
         await AddJob<HourlyJob>(scheduler, _gameConfig.Value.AutoJob.HourlyJobCron, ResourceStrings.RewardClaimJob, userId, networkManager.TimeManager.DiffFromUtc);

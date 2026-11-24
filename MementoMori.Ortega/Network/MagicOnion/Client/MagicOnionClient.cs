@@ -64,7 +64,8 @@ namespace MementoMori.Ortega.Network.MagicOnion.Client
 
 		protected override void SucceededAuthentication()
 		{
-            _connectionCancellation?.CancelAfter(Timeout.InfiniteTimeSpan);
+            try { _connectionCancellation?.CancelAfter(Timeout.InfiniteTimeSpan); }
+            catch (ObjectDisposedException) { }
 			base.ResetRetryCount();
 			base.ChangeState(HubClientState.Ready);
 		}

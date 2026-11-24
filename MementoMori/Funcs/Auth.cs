@@ -17,13 +17,16 @@ public partial class MementoMoriFuncs
     public bool IsPaused => _accountManager.GetAccountInfo(UserId)?.PauseUntil > DateTimeOffset.UtcNow;
     public bool CanAutoLogin => !IsPaused && !_loggedOut && !LoginOk && !_autoLoginStopped && !IsQuickActionExecuting && DateTimeOffset.UtcNow >= NextAutoLoginAttempt;
 
-    public async Task AuthLogin(PlayerDataInfo playerDataInfo)
+    public async Task AuthLogin(PlayerDataInfo playerDataInfo, bool skipAuthLogin = false)
     {
         _cancellationTokenSource?.Token.ThrowIfCancellationRequested();
         _lastPlayerDataInfo = playerDataInfo;
         LoginOk = false;
         if (_chat != null) await _chat.ResetAsync();
-        await NetworkManager.Login(playerDataInfo.WorldId, AddLog, OperationCancellation);
+        if (skipAuthLogin)
+            await NetworkManager.Login(playerDataInfo, AddLog, OperationCancellation);
+        else
+            await NetworkManager.Login(playerDataInfo.WorldId, AddLog, OperationCancellation);
         _cancellationTokenSource?.Token.ThrowIfCancellationRequested();
         await UserGetUserData();
         _cancellationTokenSource?.Token.ThrowIfCancellationRequested();
@@ -51,12 +54,12 @@ public partial class MementoMoriFuncs
             {
                 LastLoginError = null;
                 AddLog(manual ? ResourceStrings.Login : ResourceStrings.AutoLoginonStartup);
-                var playerDataInfos = await GetPlayerDataInfo();
+                var playerDataInfos = await GetPlayerDataInfo(forceRefresh: true);
                 var playerDataInfo = accountInfo.AutoLoginWorldId > 0
                     ? playerDataInfos.Find(d => d.WorldId == accountInfo.AutoLoginWorldId)
                     : playerDataInfos.MaxBy(d => d.LastLoginTime);
                 if (playerDataInfo == null) throw new InvalidOperationException(ResourceStrings.NoCharacterInSelectedWorld);
-                await LoginCore(playerDataInfo, null);
+                await LoginCore(playerDataInfo, null, skipAuthLogin: true);
             }
             catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
             catch (Exception e)
@@ -65,8 +68,7 @@ public partial class MementoMoriFuncs
                 if (_chat != null) await _chat.ResetAsync();
                 LastLoginError = e.Message;
                 // The account itself is rejected (missing/deleted user, bad client key): retrying cannot help, wait for a manual login.
-                _autoLoginStopped = e is ApiErrorException { ErrorCode: ErrorCode.AuthNotFoundUserAccountDto or ErrorCode.AuthLoginInvalidRequest
-                    or ErrorCode.AuthLoginAlreadyDeletedUser };
+                _autoLoginStopped = IsPermanentAuthError(e);
                 _logger.LogError(e, "Auto login failed");
                 AddError(ErrorText(e));
             }
@@ -81,6 +83,11 @@ public partial class MementoMoriFuncs
             }
         }, cancellationToken);
     }
+
+    private static bool IsPermanentAuthError(Exception e) => e is ApiErrorException
+    {
+        ErrorCode: ErrorCode.AuthNotFoundUserAccountDto or ErrorCode.AuthLoginInvalidRequest or ErrorCode.AuthLoginAlreadyDeletedUser
+    };
 
     public async Task Logout()
     {
@@ -104,7 +111,7 @@ public partial class MementoMoriFuncs
         return ExecuteExclusive(_ => LoginCore(playerDataInfo, autoLoginThisWorld));
     }
 
-    private async Task LoginCore(PlayerDataInfo playerDataInfo, bool? autoLoginThisWorld)
+    private async Task LoginCore(PlayerDataInfo playerDataInfo, bool? autoLoginThisWorld, bool skipAuthLogin = false)
     {
         Logining = true;
         try
@@ -117,7 +124,7 @@ public partial class MementoMoriFuncs
                 var account = d.Accounts.Find(x => x.UserId == UserId);
                 if (account != null) account.AutoLoginWorldId = autoLoginThisWorld.Value ? playerDataInfo.WorldId : 0;
             });
-            await AuthLogin(playerDataInfo);
+            await AuthLogin(playerDataInfo, skipAuthLogin);
             _loggedOut = false;
             await GetMyPage();
             await GetMissionInfo();
@@ -139,6 +146,7 @@ public partial class MementoMoriFuncs
             if (_chat != null) await _chat.ResetAsync();
             LastLoginError = e.Message;
             _operationError = e.Message;
+            if (IsPermanentAuthError(e)) _autoLoginStopped = true;
             _logger.LogError(e, "Login failed");
             AddError(ErrorText(e));
             return;

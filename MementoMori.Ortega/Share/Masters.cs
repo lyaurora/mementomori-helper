@@ -449,28 +449,58 @@ public static class Masters
     //      tables.Add(clientTables[i]);
     //     }
     // }
+    // Large enemy battle tables (~71 MB combined) are never queried by the helper; keep their static
+    // properties intact but skip loading them during startup and periodic master refreshes.
+    private static readonly HashSet<ITable> UnusedLargeTables =
+    [
+        AutoBattleEnemyTable,
+        BossBattleEnemyTable,
+        TowerBattleEnemyTable
+    ];
+
     public static bool LoadAllMasters()
     {
         // Load every table even if one fails; a failed table keeps its previous snapshot (TableBase publishes atomically).
         var ok = true;
         foreach (var allTable in GetAllTables())
         {
-            try
-            {
-                if (!allTable.Load()) ok = false;
-            }
-            catch (FileNotFoundException)
-            {
-                // ignored
-            }
-            catch (Exception e)
-            {
-                ok = false;
-                Console.Error.WriteLine($"Failed to load master {allTable.GetMasterBookName()}: {e.Message}");
-            }
+            if (UnusedLargeTables.Contains(allTable)) continue;
+            if (!TryLoadTable(allTable)) ok = false;
         }
 
         return ok;
+    }
+
+    public static bool LoadTables(IEnumerable<string> masterBookNames)
+    {
+        var names = new HashSet<string>(masterBookNames, StringComparer.Ordinal);
+        if (names.Count == 0) return true;
+        var ok = true;
+        foreach (var table in GetAllTables())
+        {
+            if (UnusedLargeTables.Contains(table)) continue;
+            if (!names.Contains(table.GetMasterBookName())) continue;
+            if (!TryLoadTable(table)) ok = false;
+        }
+
+        return ok;
+    }
+
+    private static bool TryLoadTable(ITable table)
+    {
+        try
+        {
+            return table.Load();
+        }
+        catch (FileNotFoundException)
+        {
+            return true;
+        }
+        catch (Exception e)
+        {
+            Console.Error.WriteLine($"Failed to load master {table.GetMasterBookName()}: {e.Message}");
+            return false;
+        }
     }
 
     private static ITable[] GetClientTables()

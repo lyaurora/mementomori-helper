@@ -42,19 +42,19 @@ public static class UserSyncDataExtensions
 
     public static UserCharacterDtoInfo GetUserCharacterDtoInfoByGuid(this UserSyncData userSyncData, string userCharacterGuid)
     {
-        return userSyncData.UserCharacterDtoInfos.FirstOrDefault(d => d.Guid == userCharacterGuid);
+        return userSyncData?.UserCharacterDtoInfos?.FirstOrDefault(d => d.Guid == userCharacterGuid);
     }
 
 
     public static bool IsLevelLinkMember(this UserSyncData userSyncData, string userCharacterGuid)
     {
-        return userSyncData.UserLevelLinkMemberDtoInfos.Exists(d => d.UserCharacterGuid == userCharacterGuid);
+        return userSyncData?.UserLevelLinkMemberDtoInfos?.Exists(d => d.UserCharacterGuid == userCharacterGuid) == true;
     }
 
     public static long GetLevelLinkLevel(this UserSyncData userSyncData, long characterId)
     {
         var byId = CharacterTable.GetById(characterId);
-        if (byId != null)
+        if (byId != null && userSyncData?.UserLevelLinkDtoInfo != null)
         {
             var RarityFlags = byId.RarityFlags;
             if (!OrtegaConst.LevelLink.MaxCharacterLevel.TryGetValue(RarityFlags, out var MaxCharacterLevel)) MaxCharacterLevel = userSyncData.UserLevelLinkDtoInfo.PartyLevel;
@@ -68,11 +68,12 @@ public static class UserSyncDataExtensions
     public static List<UserEquipmentDtoInfo> GetUserEquipmentDtoInfosByCharacterGuid(this UserSyncData userSyncData, string characterGuid,
         LockEquipmentDeckType lockEquipmentDeckType = LockEquipmentDeckType.None)
     {
-        if (userSyncData.LockedEquipmentCharacterGuidListMap.TryGetValue(lockEquipmentDeckType, out var guids) && guids?.Contains(characterGuid) == true)
+        if (userSyncData?.LockedEquipmentCharacterGuidListMap?.TryGetValue(lockEquipmentDeckType, out var guids) == true && guids?.Contains(characterGuid) == true)
             return userSyncData.GetLockedUserEquipmentDtoInfosByCharacterGuid(characterGuid, lockEquipmentDeckType);
 
         var userEquipmentDtoInfos = new List<UserEquipmentDtoInfo>();
-        if (!string.IsNullOrEmpty(characterGuid)) userEquipmentDtoInfos.AddRange(userSyncData.UserEquipmentDtoInfos.Where(equipmentDtoInfo => equipmentDtoInfo.CharacterGuid == characterGuid));
+        if (!string.IsNullOrEmpty(characterGuid) && userSyncData?.UserEquipmentDtoInfos != null)
+            userEquipmentDtoInfos.AddRange(userSyncData.UserEquipmentDtoInfos.Where(equipmentDtoInfo => equipmentDtoInfo.CharacterGuid == characterGuid));
 
         return userEquipmentDtoInfos;
     }
@@ -81,7 +82,8 @@ public static class UserSyncDataExtensions
         LockEquipmentDeckType lockEquipmentDeckType = LockEquipmentDeckType.None)
     {
         var userEquipmentDtoInfos = new List<UserEquipmentDtoInfo>();
-        if (characterGuid.IsNullOrEmpty() || !syncData.LockedUserEquipmentDtoInfoListMap.TryGetValue(lockEquipmentDeckType, out var userEquipmentDtoInfos1)) return userEquipmentDtoInfos;
+        if (characterGuid.IsNullOrEmpty() || syncData?.LockedUserEquipmentDtoInfoListMap?.TryGetValue(lockEquipmentDeckType, out var userEquipmentDtoInfos1) != true || userEquipmentDtoInfos1 == null)
+            return userEquipmentDtoInfos;
 
         return userEquipmentDtoInfos1.Where(d => d.CharacterGuid == characterGuid).ToList();
     }
