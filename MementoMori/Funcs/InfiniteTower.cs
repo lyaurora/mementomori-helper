@@ -18,15 +18,15 @@ public partial class MementoMoriFuncs
             {
                 try
                 {
-                    var towerBattleDtoInfo = UserSyncData.UserTowerBattleDtoInfos.First(d => d.TowerType == SelectedAutoTowerType);
+                    var towerBattleDtoInfo = UserSyncData.UserTowerBattleDtoInfos?.FirstOrDefault(d => d.TowerType == SelectedAutoTowerType);
+                    if (towerBattleDtoInfo == null) break;
                     if (SelectedAutoTowerType != TowerType.Infinite && towerBattleDtoInfo.TodayClearNewFloorCount >= 10)
                     {
                         log($"{TextResourceTable.Get(SelectedAutoTowerType)} {TextResourceTable.Get("[ClientErrorMessage1700007]")}");
                         break;
                     }
 
-                    var tower = UserSyncData.UserTowerBattleDtoInfos.First(d => d.TowerType == SelectedAutoTowerType);
-                    var targetQuestId = tower.MaxTowerBattleId + 1;
+                    var targetQuestId = towerBattleDtoInfo.MaxTowerBattleId + 1;
                     var bossQuickResponse = await GetResponse<StartRequest, StartResponse>(new StartRequest
                     {
                         TargetTowerType = SelectedAutoTowerType, TowerBattleQuestId = targetQuestId
@@ -40,15 +40,16 @@ public partial class MementoMoriFuncs
 
                     var name = TextResourceTable.Get(SelectedAutoTowerType);
                     var result = win ? TextResourceTable.Get("[LocalRaidBattleWinMessage]") : TextResourceTable.Get("[LocalRaidBattleLoseMessage]");
+                    var updatedClearCount = UserSyncData.UserTowerBattleDtoInfos?.FirstOrDefault(d => d.TowerType == SelectedAutoTowerType)?.TodayClearNewFloorCount ?? towerBattleDtoInfo.TodayClearNewFloorCount;
 
                     if (SelectedAutoTowerType == TowerType.Infinite)
                         log(string.Format(ResourceStrings.AutoTowerInfiniteExecMsg, name, targetQuestId, result, totalCount, winCount, errCount));
                     else
-                        log(string.Format(ResourceStrings.AutoTowerElementExecMsg, name, targetQuestId, result, totalCount, winCount, errCount, towerBattleDtoInfo.TodayClearNewFloorCount));
+                        log(string.Format(ResourceStrings.AutoTowerElementExecMsg, name, targetQuestId, result, totalCount, winCount, errCount, updatedClearCount));
 
                     if (win && targetStopLayer > 0 && targetQuestId >= targetStopLayer) break;
                 }
-                catch (Exception e)
+                catch (Exception e) when (e is not OperationCanceledException || !token.IsCancellationRequested)
                 {
                     log(e.Message);
                     errCount++;
@@ -99,8 +100,9 @@ public partial class MementoMoriFuncs
         {
             try
             {
-                var tower = UserSyncData.UserTowerBattleDtoInfos.First(d => d.TowerType == TowerType.Infinite);
-                log($"{TextResourceTable.Get("[CommonHeaderTowerBattleLabel]")}:\n");
+                var tower = UserSyncData.UserTowerBattleDtoInfos?.FirstOrDefault(d => d.TowerType == TowerType.Infinite);
+                if (tower == null) return;
+                log($"{TextResourceTable.Get("[CommonHeaderTowerBattleLabel]")}:");
 
                 if (IsBossBattleQuickAvailable)
                 {

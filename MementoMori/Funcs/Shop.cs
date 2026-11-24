@@ -42,23 +42,25 @@ public partial class MementoMoriFuncs
     {
         await ExecuteQuickAction(async (log, token) =>
         {
-            var autoBuyItems = GameConfig.Shop.AutoBuyItems;
-            if (autoBuyItems.Count == 0) return;
+            var autoBuyItems = GameConfig.Shop.AutoBuyItems ?? [];
 
             var listResponse = await GetResponse<TradeShopGetListRequest, TradeShopGetListResponse>(new TradeShopGetListRequest());
 
             log(ResourceStrings.ShopAutoBuyItems);
-            var tabInfoList = listResponse.TradeShopTabInfoList;
+            var tabInfoList = listResponse.TradeShopTabInfoList?.ToList() ?? [];
 
             var weeklyTopicInfo = await GetResponse<GetWeeklyTopicsInfoRequest, GetWeeklyTopicsInfoResponse>(new GetWeeklyTopicsInfoRequest());
-            foreach (var tradeShopItems in weeklyTopicInfo.ShopData.TradeShopItemList.GroupBy(d => d.TradeShopItemId / 10000))
+            if (weeklyTopicInfo?.ShopData?.TradeShopItemList != null)
             {
-                tabInfoList.Add(new TradeShopTabInfo
+                foreach (var tradeShopItems in weeklyTopicInfo.ShopData.TradeShopItemList.GroupBy(d => d.TradeShopItemId / 10000))
                 {
-                    ExpirationTimeStamp = weeklyTopicInfo.ShopData.ExpirationTimeStamp,
-                    TradeShopItems = tradeShopItems.ToList(),
-                    TradeShopTabId = tradeShopItems.Key
-                });
+                    tabInfoList.Add(new TradeShopTabInfo
+                    {
+                        ExpirationTimeStamp = weeklyTopicInfo.ShopData.ExpirationTimeStamp,
+                        TradeShopItems = tradeShopItems.ToList(),
+                        TradeShopTabId = tradeShopItems.Key
+                    });
+                }
             }
 
             foreach (var tabInfo in tabInfoList)
@@ -71,10 +73,13 @@ public partial class MementoMoriFuncs
 
                     if (!shopItem.IsFree())
                     {
-                        var shopAutoBuyItem = autoBuyItems.Find(autoBuyItem =>
+                        var matched = autoBuyItems.Any(autoBuyItem =>
                         {
                             // skip if not match tab
                             if (autoBuyItem.ShopTabId != tabInfo.TradeShopTabId) return false;
+
+                            // check discount per rule so a higher-discount rule does not shadow a lower-discount rule
+                            if (shopItem.SalePercent < autoBuyItem.MinDiscountPercent) return false;
 
                             // skip if not match item
                             if (autoBuyItem.BuyItem == null && autoBuyItem.ConsumeItem == null) return false;
@@ -98,16 +103,13 @@ public partial class MementoMoriFuncs
                             return false;
                         });
 
-                        if (shopAutoBuyItem == null) continue;
+                        if (!matched) continue;
 
                         // check if user has enough items to consume (diamond costs count free diamonds only, never paid)
                         if (shopItem.ConsumeItem1 != null && shopItem.ConsumeItem1.ItemCount > UserSyncData.GetUserItemCount(shopItem.ConsumeItem1.ItemType, shopItem.ConsumeItem1.ItemId))
                             continue;
                         if (shopItem.ConsumeItem2 != null && shopItem.ConsumeItem2.ItemCount > UserSyncData.GetUserItemCount(shopItem.ConsumeItem2.ItemType, shopItem.ConsumeItem2.ItemId))
                             continue;
-
-                        // check if discount is enough
-                        if (shopItem.SalePercent < shopAutoBuyItem.MinDiscountPercent) continue;
                     }
 
                     try
@@ -118,9 +120,9 @@ public partial class MementoMoriFuncs
                             {
                                 TradeShopTabId = tabInfo.TradeShopTabId, TradeShopItemInfos = [new TradeShopItemInfo {TradeShopItemId = shopItem.TradeShopItemId, TradeCount = 1}]
                             });
-                        response.UserSyncData.GivenItemCountInfoList.PrintUserItems(log);
+                        response.UserSyncData?.GivenItemCountInfoList?.PrintUserItems(log);
                     }
-                    catch (ApiErrorException e)
+                    catch (ApiErrorException e) when (e.ErrorCode is not (ErrorCode.CommonNoSession or ErrorCode.CommonLoggedInAnotherDevice))
                     {
                         log(e.Message);
                     }

@@ -766,4 +766,8 @@
   <data name="GrowthDaysAgo" xml:space="preserve"><value>{0} d ago</value></data>
   <data name="CronEveryHoursFromFormat" xml:space="preserve"><value>Every {0} h from {1}</value></data>
   <data name="DialogError" xml:space="preserve"><value>This dialog hit an error and was closed.</value></data>
+  <data name="LocalRaidSoloLossesStop" xml:space="preserve"><value>Stopped hosting after {0} consecutive losses</value></data>
+  <data name="DungeonBattleLayerProgress" xml:space="preserve"><value>Layer {0} cleared ({1} steps)</value></data>
+  <data name="PresentUnclaimableRepeated" xml:space="preserve"><value>{0} unclaimable presents remain (details already shown today)</value></data>
+  <data name="LoadMore" xml:space="preserve"><value>Load more ({0} remaining)</value></data>
 </root>

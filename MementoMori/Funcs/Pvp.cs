@@ -14,9 +14,10 @@ public partial class MementoMoriFuncs
     {
         await ExecuteQuickAction(async (log, token) =>
         {
-            log($"{TextResourceTable.Get("[CommonHeaderLocalPvpLabel]")}:\n");
+            log($"{TextResourceTable.Get("[CommonHeaderLocalPvpLabel]")}:");
             var count = 100;
             var noTargetRounds = 0;
+            var lostPlayerIds = new HashSet<long>();
             var characterDetailInfoDict = new Dictionary<long, List<(string, CharacterDetailInfo)>>();
             while (!token.IsCancellationRequested && count-- > 0)
             {
@@ -43,11 +44,15 @@ public partial class MementoMoriFuncs
                         list.Add((d.PlayerInfo.PlayerId, d.DefenseBattlePower, characterDetailInfos));
                     }
 
-                    var targetPlayerId = await SelectLeagueTarget(log, PlayerOption.BattleLeague, list);
+                    var targetPlayerId = await SelectLeagueTarget(log, PlayerOption.BattleLeague, list, lostPlayerIds);
                     if (targetPlayerId == 0)
                     {
                         // 过滤掉了所有对手，对手列表不会变，别反复刷新
-                        if (++noTargetRounds < 3) continue;
+                        if (++noTargetRounds < 3)
+                        {
+                            await Task.Delay(TimeSpan.FromSeconds(Random.Shared.Next(2, 5)), token);
+                            continue;
+                        }
                         log(ResourceStrings.PvpNoEligibleTarget);
                         return;
                     }
@@ -65,28 +70,28 @@ public partial class MementoMoriFuncs
 
                     await _battleLogManager.SaveBattleLog(pvpStartResponse.BattleResult, "battleleague", pvpStartResponse.RivalPlayerInfo.PlayerName, autoDeletePreserveCount: 100);
 
-                    log(pvpStartResponse.BattleResult.SimulationResult.BattleEndInfo.IsWinAttacker()
+                    var win = pvpStartResponse.BattleResult.SimulationResult.BattleEndInfo.IsWinAttacker();
+                    if (!win) lostPlayerIds.Add(targetPlayerId);
+                    log(win
                         ? $"{TextResourceTable.Get("[CommonWinLabel]")}: {pvpStartResponse.RivalPlayerInfo.PlayerName}"
                         : $"{TextResourceTable.Get("[CommonLoseLabel]")}: {pvpStartResponse.RivalPlayerInfo.PlayerName}");
 
                     pvpStartResponse.BattleRewardResult.FixedItemList.PrintUserItems(log);
                     pvpStartResponse.BattleRewardResult.DropItemList.PrintUserItems(log);
+                    await Task.Delay(TimeSpan.FromSeconds(Random.Shared.Next(2, 5)), token);
                 }
-                catch (ApiErrorException e)
+                catch (ApiErrorException e) when (e.ErrorCode is not (ErrorCode.CommonNoSession or ErrorCode.CommonLoggedInAnotherDevice))
                 {
                     log(e.Message);
                     break;
-                }
-                finally
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(Random.Shared.Next(2, 5)));
                 }
             }
         });
     }
 
     private async Task<long> SelectLeagueTarget(Action<string> log, PvpOption pvpOption,
-        List<(long playerId, long defenseBattlePower, List<(long characterId, Func<Task<BattleParameter>> battleParameter)> chareacters)> playerInfoList)
+        List<(long playerId, long defenseBattlePower, List<(long characterId, Func<Task<BattleParameter>> battleParameter)> chareacters)> playerInfoList,
+        HashSet<long>? lostPlayerIds = null)
     {
         // playerInfoList: dict<playerId, dict<characterId, CharacterDetailInfo>>
         var localplayerInfoList = playerInfoList.ToList();
@@ -95,27 +100,29 @@ public partial class MementoMoriFuncs
 
         foreach (var characterFilter in pvpOption.CharacterFilters)
         {
-            if (playerInfoList.Count == 0) break;
+            if (localplayerInfoList.Count == 0) break;
 
             switch (characterFilter.FilterStrategy)
             {
                 case CharacterFilterStrategy.Character:
-                    foreach (var (playerId, _, _) in playerInfoList.Where(d => d.chareacters.Any(x => x.characterId == characterFilter.CharacterId)))
+                    foreach (var (playerId, _, _) in localplayerInfoList.Where(d => d.chareacters.Any(x => x.characterId == characterFilter.CharacterId)).ToList())
                     {
                         localplayerInfoList.RemoveAll(x => x.playerId == playerId);
                     }
 
                     break;
                 case CharacterFilterStrategy.PropertyMoreThanSelf:
-                    foreach (var (playerId, _, characterDetailInfos) in playerInfoList)
+                    foreach (var (playerId, _, characterDetailInfos) in localplayerInfoList.ToList())
                     {
                         var (characterId, battleParameter) = characterDetailInfos.FirstOrDefault(d => d.characterId == characterFilter.CharacterId);
                         if (characterId == 0) continue;
                         var battleParameters = await battleParameter();
                         var targetParameterValue = battleParameters?.GetParameter(characterFilter.BattleParameterType) ?? 0;
-                        var selfCharacterGuid = UserSyncData.UserCharacterDtoInfos.FirstOrDefault(d => d.CharacterId == characterId)?.Guid;
+                        var selfCharacterGuid = UserSyncData.UserCharacterDtoInfos?.FirstOrDefault(d => d.CharacterId == characterId)?.Guid;
                         if (selfCharacterGuid == null) continue;
-                        var lockType = UserSyncData.ReleaseLockEquipmentCooldownTimeStampMap.ContainsKey(LockEquipmentDeckType.League) ? LockEquipmentDeckType.League : LockEquipmentDeckType.None;
+                        var lockType = UserSyncData.ReleaseLockEquipmentCooldownTimeStampMap?.ContainsKey(LockEquipmentDeckType.League) == true
+                            ? LockEquipmentDeckType.League
+                            : LockEquipmentDeckType.None;
                         var selfParameterValue = BattlePowerCalculatorUtil.CalcCharacterBattleParameter(UserId, selfCharacterGuid, lockType).Item2.GetParameter(characterFilter.BattleParameterType);
                         if (targetParameterValue > selfParameterValue) localplayerInfoList.RemoveAll(x => x.playerId == playerId);
                     }
@@ -125,6 +132,13 @@ public partial class MementoMoriFuncs
         }
 
         if (localplayerInfoList.Count == 0) return 0;
+
+        // Avoid re-attacking opponents we already lost to this session whenever another eligible opponent exists.
+        if (lostPlayerIds is { Count: > 0 })
+        {
+            var notLost = localplayerInfoList.Where(d => !lostPlayerIds.Contains(d.playerId)).ToList();
+            if (notLost.Count > 0) localplayerInfoList = notLost;
+        }
 
         switch (pvpOption.SelectStrategy)
         {
@@ -174,7 +188,7 @@ public partial class MementoMoriFuncs
                                     if (string.IsNullOrEmpty(guid1))
                                         details.Add((null, null));
                                     else
-                                        details.Add((guid1, details1[index++]));
+                                        details.Add((guid1, details1 != null && index < details1.Count ? details1[index++] : null));
                                 }
 
                                 characterDetailInfoDict.Add(playerId, details);
@@ -196,6 +210,7 @@ public partial class MementoMoriFuncs
             log($"{TextResourceTable.Get("[CommonHeaderGlobalPvpLabel]")}");
             var count = 100;
             var noTargetRounds = 0;
+            var lostPlayerIds = new HashSet<long>();
             var characterDetailInfoDict = new Dictionary<long, List<(string, CharacterDetailInfo)>>();
             while (!token.IsCancellationRequested && count-- > 0)
             {
@@ -227,11 +242,15 @@ public partial class MementoMoriFuncs
                         list.Add((d.PlayerInfo.PlayerId, d.DefenseBattlePower, characterDetailInfos));
                     }
 
-                    var targetPlayerId = await SelectLeagueTarget(log, PlayerOption.LegendLeague, list);
+                    var targetPlayerId = await SelectLeagueTarget(log, PlayerOption.LegendLeague, list, lostPlayerIds);
                     if (targetPlayerId == 0)
                     {
                         // 过滤掉了所有对手，对手列表不会变，别反复刷新
-                        if (++noTargetRounds < 3) continue;
+                        if (++noTargetRounds < 3)
+                        {
+                            await Task.Delay(TimeSpan.FromSeconds(Random.Shared.Next(2, 5)), token);
+                            continue;
+                        }
                         log(ResourceStrings.PvpNoEligibleTarget);
                         return;
                     }
@@ -243,22 +262,21 @@ public partial class MementoMoriFuncs
                         RivalPlayerId = targetPlayerId
                     });
 
-                    await _battleLogManager.SaveBattleLog(leagueStartResponse.BattleResult, "legendleague", leagueStartResponse.RivalPlayerInfo.PlayerName);
+                    await _battleLogManager.SaveBattleLog(leagueStartResponse.BattleResult, "legendleague", leagueStartResponse.RivalPlayerInfo.PlayerName, autoDeletePreserveCount: 40);
 
-                    log(leagueStartResponse.BattleResult.SimulationResult.BattleEndInfo.IsWinAttacker()
+                    var win = leagueStartResponse.BattleResult.SimulationResult.BattleEndInfo.IsWinAttacker();
+                    if (!win) lostPlayerIds.Add(targetPlayerId);
+                    log(win
                         ? $"{TextResourceTable.Get("[CommonWinLabel]")}: {leagueStartResponse.RivalPlayerInfo.PlayerName}"
                         : $"{TextResourceTable.Get("[CommonLoseLabel]")}: {leagueStartResponse.RivalPlayerInfo.PlayerName}");
 
                     log(TextResourceTable.Get("[GlobalPvpChangePointFormat]", leagueStartResponse.GetPoint));
+                    await Task.Delay(TimeSpan.FromSeconds(Random.Shared.Next(2, 5)), token);
                 }
-                catch (ApiErrorException e)
+                catch (ApiErrorException e) when (e.ErrorCode is not (ErrorCode.CommonNoSession or ErrorCode.CommonLoggedInAnotherDevice))
                 {
                     log(e.Message);
                     break;
-                }
-                finally
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(Random.Shared.Next(2, 5)));
                 }
             }
         });

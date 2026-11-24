@@ -23,21 +23,25 @@ public abstract class LocalRaidBaseReceiver : IMagicOnionLocalRaidReceiver, IMag
     }
 
     private long _questId;
+    private volatile bool _isNoRemainingChallenges;
+    private volatile bool _isMaxTimeExceeded;
+    private volatile bool _isBattleStarted;
+
     public long QuestId
     {
-        get => _questId;
+        get => Interlocked.Read(ref _questId);
         set
         {
-            _questId = value;
+            Interlocked.Exchange(ref _questId, value);
             // A new search can use the same quest as the previous battle.
             _startSw.Restart();
             IsMaxTimeExceeded = false;
         }
     }
-    public bool IsNoRemainingChallenges { get; protected set; }
-    public bool IsMaxTimeExceeded { get; protected set; }
+    public bool IsNoRemainingChallenges { get => _isNoRemainingChallenges; protected set => _isNoRemainingChallenges = value; }
+    public bool IsMaxTimeExceeded { get => _isMaxTimeExceeded; protected set => _isMaxTimeExceeded = value; }
 
-    public bool IsBattleStarted { get; set; }
+    public bool IsBattleStarted { get => _isBattleStarted; set => _isBattleStarted = value; }
 
     public virtual void OnError(ErrorCode errorCode)
     {
@@ -46,7 +50,6 @@ public abstract class LocalRaidBaseReceiver : IMagicOnionLocalRaidReceiver, IMag
 
     public virtual void OnGetRoomList(OnGetRoomListResponse response)
     {
-        _log("OnGetRoomList");
     }
 
     public virtual void OnDisbandRoom()
@@ -56,27 +59,22 @@ public abstract class LocalRaidBaseReceiver : IMagicOnionLocalRaidReceiver, IMag
 
     public virtual void OnInvite(OnInviteResponse response)
     {
-        _log("OnInvite");
     }
 
     public void OnInviteRefuse(OnInviteRefuseResponse response)
     {
-        _log("OnInviteRefuse");
     }
 
     public virtual void OnLeaveRoom()
     {
-        _log("OnLeaveRoom");
     }
 
     public virtual void OnLockRoom()
     {
-        _log("OnLockRoom");
     }
 
     public virtual void OnJoinRoom(OnJoinRoomResponse response)
     {
-        _log("OnJoinRoom");
     }
 
     public virtual void OnRefuse()
@@ -92,12 +90,10 @@ public abstract class LocalRaidBaseReceiver : IMagicOnionLocalRaidReceiver, IMag
 
     public virtual void OnUpdateRoom(OnUpdateRoomResponse response)
     {
-        _log("OnUpdateRoom");
     }
 
     public virtual void OnUpdatePartyCount(OnUpdatePartyCountResponse response)
     {
-        _log("OnUpdatePartyCount");
     }
 }
 
@@ -147,7 +143,6 @@ public class LocalRaidJoinRoomReceiver : LocalRaidBaseReceiver
     public override void OnJoinRoom(OnJoinRoomResponse response)
     {
         if (CancellationToken.IsCancellationRequested) return;
-        _log("OnJoinRoom");
         _startSw.Stop();
         IsMaxTimeExceeded = false;
         _ortegaMagicOnionClient.SendLocalRaidReady(true);
@@ -191,8 +186,10 @@ public class LocalRaidJoinRoomReceiver : LocalRaidBaseReceiver
 public class LocalRaidCreateRoomReceiver : LocalRaidBaseReceiver
 {
     private readonly int _waitSeconds;
+    private readonly object _loopLock = new();
     private volatile LocalRaidPartyInfo _party;
-    private int _loopRunning;
+    private bool _loopRunning;
+    private bool _pendingStart;
 
     public LocalRaidCreateRoomReceiver(OrtegaMagicOnionClient ortegaMagicOnionClient, Action<string> log, int waitSeconds, CancellationToken cancellationToken) : base(ortegaMagicOnionClient, log,
         cancellationToken)
@@ -202,54 +199,72 @@ public class LocalRaidCreateRoomReceiver : LocalRaidBaseReceiver
 
     public override void OnJoinRoom(OnJoinRoomResponse response)
     {
-        _log("OnJoinRoom");
         StartBattle(response.LocalRaidPartyInfo);
     }
 
-    // 每次加入/更新房间只刷新最新的队伍信息，同一时间只跑一个开战循环
+    // 每次加入/更新房间只刷新最新的队伍信息，同一时间只跑一个开战循环；避免退出窗口漏掉新事件
     private void StartBattle(LocalRaidPartyInfo partyInfo)
     {
+        if (partyInfo == null) return;
         _party = partyInfo;
-        if (Interlocked.Exchange(ref _loopRunning, 1) == 1) return;
+        lock (_loopLock)
+        {
+            if (_loopRunning)
+            {
+                _pendingStart = true;
+                return;
+            }
+            _loopRunning = true;
+            _pendingStart = false;
+        }
         _ = StartBattleLoop();
     }
 
     private async Task StartBattleLoop()
     {
-        try
+        while (true)
         {
-            var roomId = _party.RoomId;
-            await Task.Delay(TimeSpan.FromSeconds(_waitSeconds), CancellationToken);
-            while (!IsBattleStarted && !CancellationToken.IsCancellationRequested)
+            try
             {
-                var party = _party;
-                if (party.RoomId != roomId)
+                var roomId = _party.RoomId;
+                await Task.Delay(TimeSpan.FromSeconds(Math.Max(0, _waitSeconds)), CancellationToken);
+                while (!IsBattleStarted && !CancellationToken.IsCancellationRequested)
                 {
-                    // 换了新房间，重新等待
-                    roomId = party.RoomId;
-                    await Task.Delay(TimeSpan.FromSeconds(_waitSeconds), CancellationToken);
+                    var party = _party;
+                    if (party.RoomId != roomId)
+                    {
+                        // 换了新房间，重新等待
+                        roomId = party.RoomId;
+                        await Task.Delay(TimeSpan.FromSeconds(Math.Max(0, _waitSeconds)), CancellationToken);
+                        continue;
+                    }
+
+                    if (!IsBattleStarted && party.IsReady) _ortegaMagicOnionClient.SendLocalRaidStartBattle();
+
+                    await Task.Delay(TimeSpan.FromSeconds(1), CancellationToken);
+                }
+            }
+            catch (OperationCanceledException) when (CancellationToken.IsCancellationRequested) { }
+            catch (Exception e)
+            {
+                _log(e.Message);
+            }
+
+            lock (_loopLock)
+            {
+                if (_pendingStart && !IsBattleStarted && !CancellationToken.IsCancellationRequested)
+                {
+                    _pendingStart = false;
                     continue;
                 }
-
-                if (party.IsReady) _ortegaMagicOnionClient.SendLocalRaidStartBattle();
-
-                await Task.Delay(TimeSpan.FromSeconds(1), CancellationToken);
+                _loopRunning = false;
+                return;
             }
-        }
-        catch (OperationCanceledException) when (CancellationToken.IsCancellationRequested) { }
-        catch (Exception e)
-        {
-            _log(e.Message);
-        }
-        finally
-        {
-            Volatile.Write(ref _loopRunning, 0);
         }
     }
 
     public override void OnUpdateRoom(OnUpdateRoomResponse response)
     {
-        _log("OnUpdateRoom");
         StartBattle(response.LocalRaidPartyInfo);
     }
 

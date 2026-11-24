@@ -22,17 +22,21 @@ public partial class MementoMoriFuncs
             async Task<bool> DoFreeGacha()
             {
                 var gachaListResponse = await GetResponse<GetListRequest, GetListResponse>(new GetListRequest());
-                foreach (var gachaCaseInfo in gachaListResponse.GachaCaseInfoList)
+                foreach (var gachaCaseInfo in gachaListResponse.GachaCaseInfoList ?? [])
                 {
-                    var userItems = UserSyncData.UserItemDtoInfo.ToList();
-                    var buttonInfo = gachaCaseInfo.GachaButtonInfoList.OrderByDescending(d => d.LotteryCount)
-                        .FirstOrDefault(d => GameConfig.GachaConfig.AutoGachaConsumeUserItems.Exists(consumeUserItem => CheckCount(d, userItems, consumeUserItem.ItemType, consumeUserItem.ItemId)));
+                    var userItems = (UserSyncData.UserItemDtoInfo ?? []).ToList();
+                    var autoConsumeItems = GameConfig.GachaConfig.AutoGachaConsumeUserItems ?? [];
+                    var buttonInfo = gachaCaseInfo.GachaButtonInfoList?.OrderByDescending(d => d.LotteryCount)
+                        .FirstOrDefault(d => !ignoredButtonId.Contains(d.GachaButtonId) && (IsFreeButton(d) || autoConsumeItems.Exists(consumeUserItem => CheckCount(d, userItems, consumeUserItem.ItemType, consumeUserItem.ItemId))));
                     if (buttonInfo == null) continue;
-                    if (ignoredButtonId.Contains(buttonInfo.GachaButtonId)) continue;
 
-                    var itemMb = ItemTable.GetByItemTypeAndItemId(buttonInfo.ConsumeUserItem.ItemType, buttonInfo.ConsumeUserItem.ItemId);
-                    var name = TextResourceTable.Get(itemMb.NameKey);
-                    log(string.Format(ResourceStrings.GachaExecInfo, TextResourceTable.Get(GachaCaseUiTable.GetById(gachaCaseInfo.GachaCaseUiId)?.NameKey), buttonInfo.LotteryCount, name, buttonInfo.ConsumeUserItem.ItemCount));
+                    var consumeName = buttonInfo.ConsumeUserItem == null
+                        ? TextResourceTable.Get("[CommonFreeLabel]")
+                        : ItemTable.GetByItemTypeAndItemId(buttonInfo.ConsumeUserItem.ItemType, buttonInfo.ConsumeUserItem.ItemId) is { } itemMb
+                            ? TextResourceTable.Get(itemMb.NameKey)
+                            : buttonInfo.ConsumeUserItem.ItemType.ToString();
+                    var consumeCount = buttonInfo.ConsumeUserItem?.ItemCount ?? 0;
+                    log(string.Format(ResourceStrings.GachaExecInfo, TextResourceTable.Get(GachaCaseUiTable.GetById(gachaCaseInfo.GachaCaseUiId)?.NameKey), buttonInfo.LotteryCount, consumeName, consumeCount));
                     try
                     {
                         var response = await GetResponse<DrawRequest, DrawResponse>(new DrawRequest {GachaButtonId = buttonInfo.GachaButtonId});
@@ -51,12 +55,12 @@ public partial class MementoMoriFuncs
                 return false;
             }
 
+            static bool IsFreeButton(GachaButtonInfo buttonInfo) => buttonInfo.ConsumeUserItem == null || buttonInfo.ConsumeUserItem.ItemCount == 0;
+
             bool CheckCount(GachaButtonInfo buttonInfo, List<UserItemDtoInfo> userItems, ItemType itemType, long itemId = 1)
             {
                 if (itemId == 0) itemId = 1;
-                if (buttonInfo.ConsumeUserItem == null ||
-                    buttonInfo.ConsumeUserItem.ItemCount == 0)
-                    return true;
+                if (IsFreeButton(buttonInfo)) return true;
 
                 if (buttonInfo.ConsumeUserItem.ItemType != itemType ||
                     buttonInfo.ConsumeUserItem.ItemId != itemId)

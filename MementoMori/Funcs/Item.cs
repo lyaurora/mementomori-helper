@@ -29,11 +29,11 @@ public partial class MementoMoriFuncs
             {
                 successOpen = false;
                 await UserGetUserData();
-                foreach (var userItemDtoInfo in UserSyncData.UserItemDtoInfo.Where(d => d.ItemCount > 0 && d.ItemType == ItemType.TreasureChest).ToList())
+                foreach (var userItemDtoInfo in (UserSyncData.UserItemDtoInfo ?? []).Where(d => d.ItemCount > 0 && d.ItemType == ItemType.TreasureChest).ToList())
                 {
                     var treasureChestMb = TreasureChestTable.GetById(userItemDtoInfo.ItemId);
                     // a chest newer than the local master is left for the next run instead of aborting every chest
-                    if (treasureChestMb == null) continue;
+                    if (treasureChestMb == null || treasureChestMb.MinOpenCount <= 0) continue;
                     if (treasureChestMb.TreasureChestLotteryType == TreasureChestLotteryType.Fix ||
                         treasureChestMb.TreasureChestLotteryType == TreasureChestLotteryType.Random)
                     {
@@ -64,8 +64,6 @@ public partial class MementoMoriFuncs
                     }
                 }
             } while (successOpen);
-
-            log(TextResourceTable.Get("[CharacterResetErrorMessageNotEnoughDiamond]"));
         });
 
         async Task OpenTreasure(long openCount, TreasureChestMB treasureChestMb, Action<string> log)

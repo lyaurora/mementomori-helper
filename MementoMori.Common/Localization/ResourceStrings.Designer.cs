@@ -3118,5 +3118,41 @@ namespace MementoMori.Common.Localization {
                 return ResourceManager.GetString("DialogError", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Stopped hosting after {0} consecutive losses.
+        /// </summary>
+        public static string LocalRaidSoloLossesStop {
+            get {
+                return ResourceManager.GetString("LocalRaidSoloLossesStop", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Layer {0} cleared ({1} steps).
+        /// </summary>
+        public static string DungeonBattleLayerProgress {
+            get {
+                return ResourceManager.GetString("DungeonBattleLayerProgress", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to {0} unclaimable presents remain (details already shown today).
+        /// </summary>
+        public static string PresentUnclaimableRepeated {
+            get {
+                return ResourceManager.GetString("PresentUnclaimableRepeated", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Load more ({0} remaining).
+        /// </summary>
+        public static string LoadMore {
+            get {
+                return ResourceManager.GetString("LoadMore", resourceCulture);
+            }
+        }
     }
 }

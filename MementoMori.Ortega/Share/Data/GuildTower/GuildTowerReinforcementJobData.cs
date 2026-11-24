@@ -16,7 +16,7 @@ namespace MementoMori.Ortega.Share.Data.GuildTower
 
 		public long GetConsumedMaterialCount(ItemType itemType, long itemId)
 		{
-			return ConsumedMaterialItemList.Find(d=>d.ItemType == itemType && d.ItemId == itemId)?.ItemCount ?? 0;
+			return ConsumedMaterialItemList?.Find(d=>d.ItemType == itemType && d.ItemId == itemId)?.ItemCount ?? 0;
 		}
 	}
 }

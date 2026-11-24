@@ -142,7 +142,7 @@
     <value>待领取</value>
   </data>
   <data name="Received" xml:space="preserve">
-    <value>已接收</value>
+    <value>已领取</value>
   </data>
   <data name="RewardMissonActivity" xml:space="preserve">
       <value>奖章奖励</value>
@@ -766,4 +766,8 @@
   <data name="GrowthDaysAgo" xml:space="preserve"><value>{0} 天前</value></data>
   <data name="CronEveryHoursFromFormat" xml:space="preserve"><value>每 {0} 小时（{1} 起）</value></data>
   <data name="DialogError" xml:space="preserve"><value>对话框出错，已关闭。</value></data>
+  <data name="LocalRaidSoloLossesStop" xml:space="preserve"><value>连续失败 {0} 次，停止单人开房</value></data>
+  <data name="DungeonBattleLayerProgress" xml:space="preserve"><value>第 {0} 层完成（共 {1} 步）</value></data>
+  <data name="PresentUnclaimableRepeated" xml:space="preserve"><value>仍有 {0} 个礼物暂不可领取（详情今日已提示）</value></data>
+  <data name="LoadMore" xml:space="preserve"><value>加载更多（剩余 {0} 条）</value></data>
 </root>

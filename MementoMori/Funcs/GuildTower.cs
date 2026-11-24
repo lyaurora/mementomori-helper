@@ -46,14 +46,20 @@ public partial class MementoMoriFuncs
             // chanllenge guild tower for each job
             if (guildTowerOption.AutoChallenge)
             {
-                while (guildTowerInfo.TodayWinCount < 3)
+                while (guildTowerInfo.TodayWinCount < 3 && !token.IsCancellationRequested)
                 {
                     var nextFloor = GuildTowerFloorTable.GetById(guildTowerInfo.CurrentFloorMBId);
                     // var nextFloor = GuildTowerFloorTable.GetByEventIdAndFloor(guildTowerFloorMb.EventNo, guildTowerFloorMb.FloorCount + 1);
-                    if (nextFloor == null) break;
+                    if (nextFloor == null || nextFloor.SelectableDifficultyList is not { Count: > 0 }) break;
+
+                    var entryCharacters = (guildTowerInfo.GuildTowerEntryCharacterList ?? [])
+                        .Select(d => new { tc = d, cha = UserSyncData.GetUserCharacterInfoByUserCharacterGuid(d.CharacterGuid) })
+                        .Where(d => d.cha != null && CharacterTable.GetById(d.cha.CharacterId) != null)
+                        .ToList();
+                    if (entryCharacters.Count == 0) break;
 
                     // get the least used job
-                    var jobFlag = guildTowerInfo.GuildTowerEntryCharacterList.Select(d => new {tc = d, cha = UserSyncData.GetUserCharacterInfoByUserCharacterGuid(d.CharacterGuid)})
+                    var jobFlag = entryCharacters
                         .GroupBy(d => CharacterTable.GetById(d.cha.CharacterId).JobFlags)
                         .OrderBy(d => d // order by used count ascending
                                 .Select(x => new {cha = x, bp = BattlePowerCalculatorUtil.GetUserCharacterBattlePower(UserId, x.cha)})
@@ -65,22 +71,25 @@ public partial class MementoMoriFuncs
                     var isWin = false;
                     var isFloorClearedByOther = false;
                     // from max difficulty to min difficulty
-                    for (var i = nextFloor.SelectableDifficultyList.Count - 1; i >= 0; i--)
+                    for (var i = nextFloor.SelectableDifficultyList.Count - 1; i >= 0 && !token.IsCancellationRequested; i--)
                     {
-                        var guids = guildTowerInfo.GuildTowerEntryCharacterList.Select(d => UserSyncData.GetUserCharacterInfoByUserCharacterGuid(d.CharacterGuid))
+                        var guids = entryCharacters
+                            .Select(d => d.cha)
                             .Where(d => CharacterTable.GetById(d.CharacterId).JobFlags == jobFlag)
                             .OrderByDescending(d => BattlePowerCalculatorUtil.GetUserCharacterBattlePower(UserId, d))
                             .Take(5)
-                            .Select(d => d.Guid);
+                            .Select(d => d.Guid)
+                            .ToList();
+                        if (guids.Count == 0) break;
 
                         var battleRequest = new BattleRequest
                         {
-                            CharacterGuidList = guids.ToList(), Difficulty = nextFloor.SelectableDifficultyList[i], GuildTowerFloor = nextFloor.FloorCount
+                            CharacterGuidList = guids, Difficulty = nextFloor.SelectableDifficultyList[i], GuildTowerFloor = nextFloor.FloorCount
                         };
 
                         var retryCount = Math.Max(1, guildTowerOption.AutoChallengeRetryCount);
                         retryCount = Math.Min(retryCount, 1000);
-                        for (var j = 0; j < retryCount; j++)
+                        for (var j = 0; j < retryCount && !token.IsCancellationRequested; j++)
                         {
                             try
                             {
@@ -116,6 +125,9 @@ public partial class MementoMoriFuncs
                         if (isWin || isFloorClearedByOther) break;
                     }
 
+                    // All difficulties on this floor failed: stop instead of looping forever.
+                    if (!isWin && !isFloorClearedByOther) break;
+
                     guildTowerInfo = await GetResponse<GetGuildTowerInfoRequest, GetGuildTowerInfoResponse>(new GetGuildTowerInfoRequest());
                 }
 
@@ -132,28 +144,40 @@ public partial class MementoMoriFuncs
                 foreach (var guildTowerReinforcementJobData in getReinforcementJobDataResponse.ReinforcementJobDataList)
                 {
                     var reinforcementJobData = guildTowerReinforcementJobData;
-                    var guildTowerReinforcementJobLevelMb =
-                        GuildTowerReinforcementJobLevelTable.GetByEventNoJobFlagsLevel(guildTowerEventMb.EventNo, reinforcementJobData.JobFlags, reinforcementJobData.Level);
-                    // 职业满级时没有对应行或材料为 null
-                    if (guildTowerReinforcementJobLevelMb?.RequiredMaterialList is not {Count: > 0}) continue;
-                    var userItem = guildTowerReinforcementJobLevelMb.RequiredMaterialList.OrderByDescending(d => d.ItemCount).First();
-                    long count;
-                    while ((count = UserSyncData.GetUserItemCount(userItem.ItemType, userItem.ItemId)) > 0)
+                    while (!token.IsCancellationRequested && reinforcementJobData != null)
                     {
-                        var consumedMaterialCount = reinforcementJobData.GetConsumedMaterialCount(userItem.ItemType, userItem.ItemId);
-                        var toConsumeCount = Math.Min(userItem.ItemCount - consumedMaterialCount, count);
-                        if (toConsumeCount == 0) break;
+                        var guildTowerReinforcementJobLevelMb =
+                            GuildTowerReinforcementJobLevelTable.GetByEventNoJobFlagsLevel(guildTowerEventMb.EventNo, reinforcementJobData.JobFlags, reinforcementJobData.Level);
+                        // 职业满级时没有对应行或材料为 null
+                        if (guildTowerReinforcementJobLevelMb?.RequiredMaterialList is not {Count: > 0}) break;
+
+                        var candidate = guildTowerReinforcementJobLevelMb.RequiredMaterialList
+                            .OrderByDescending(d => d.ItemCount)
+                            .Select(item =>
+                            {
+                                var owned = UserSyncData.GetUserItemCount(item.ItemType, item.ItemId);
+                                var consumed = reinforcementJobData.GetConsumedMaterialCount(item.ItemType, item.ItemId);
+                                var toConsume = Math.Min(item.ItemCount - consumed, owned);
+                                return (item, consumed, toConsume);
+                            })
+                            .FirstOrDefault(x => x.toConsume > 0);
+                        if (candidate.item == null) break;
 
                         log($"{TextResourceTable.Get("[GuildTowerJobReinforceLabel]")} {TextResourceTable.Get(reinforcementJobData.JobFlags)}");
                         try
                         {
+                            var prevLevel = reinforcementJobData.Level;
                             var reinforceJobResponse = await GetResponse<ReinforceJobRequest, ReinforceJobResponse>(new ReinforceJobRequest
                             {
                                 JobFlags = reinforcementJobData.JobFlags,
                                 Level = reinforcementJobData.Level,
-                                MaterialItemList = [new UserItem {ItemType = userItem.ItemType, ItemId = userItem.ItemId, ItemCount = toConsumeCount}]
+                                MaterialItemList = [new UserItem {ItemType = candidate.item.ItemType, ItemId = candidate.item.ItemId, ItemCount = candidate.toConsume}]
                             });
                             reinforcementJobData = reinforceJobResponse.ReinforcementJobData;
+                            if (reinforcementJobData == null) break;
+                            if (reinforcementJobData.Level == prevLevel
+                                && reinforcementJobData.GetConsumedMaterialCount(candidate.item.ItemType, candidate.item.ItemId) <= candidate.consumed)
+                                break;
                         }
                         catch (ApiErrorException e) when (e.ErrorCode is not (ErrorCode.CommonNoSession or ErrorCode.CommonLoggedInAnotherDevice))
                         {

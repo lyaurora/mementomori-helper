@@ -12,14 +12,16 @@ namespace MementoMori.Funcs;
 public partial class MementoMoriFuncs
 {
     private const double UseOverLimitItemRate = 0.3;
+    private DateTime _lastStuckPresentDay;
+    private string? _lastStuckPresentSignature;
 
     public async Task PresentReceiveItem()
     {
         await ExecuteQuickAction(async (log, token) =>
         {
-            var getListResponse = await GetResponse<GetListRequest, GetListResponse>(new GetListRequest {LanguageType = LanguageType.zhTW});
+            var getListResponse = await GetResponse<GetListRequest, GetListResponse>(new GetListRequest {LanguageType = NetworkManager.LanguageType});
             // the list also holds received presents; only the ones still waiting need room
-            var pending = getListResponse.userPresentDtoInfos.Where(d => !d.IsReceived).ToList();
+            var pending = (getListResponse.userPresentDtoInfos ?? []).Where(d => !d.IsReceived).ToList();
             if (pending.Count > 0)
             {
                 // use over limit items before receiving
@@ -73,11 +75,12 @@ public partial class MementoMoriFuncs
                     var resp = await GetResponse<ReceiveItemRequest, ReceiveItemResponse>(new ReceiveItemRequest {LanguageType = NetworkManager.LanguageType});
                     log($"{TextResourceTable.Get("[MyPagePresentBoxButtonTitle]")} {TextResourceTable.Get("[MyPagePresentBoxButtonAllReceive]")}");
                     resp.ResultItems.Select(d => d.Item).PrintUserItems(log);
+                    _lastStuckPresentSignature = null;
                 }
                 catch (ApiErrorException e) when (e.ErrorCode == ErrorCode.PresentReceiveOverLimitCountPresent)
                 {
-                    log(e.Message);
                     // receive one by one
+                    var stuck = new List<(string Guid, string Line)>();
                     foreach (var present in pending)
                     {
                         try
@@ -89,13 +92,28 @@ public partial class MementoMoriFuncs
                         catch (ApiErrorException e2) when (e2.ErrorCode == ErrorCode.PresentReceiveOverLimitCountPresent)
                         {
                             // name what is stuck (one line per present): it is lost when the present expires unless room is made in time
-                            log($"{e2.Message}: {present.Title} ({string.Join(", ", present.ItemList.Select(d => $"{ItemUtil.GetItemName(d.Item.ItemType, d.Item.ItemId)}×{d.Item.ItemCount}"))})");
+                            stuck.Add((present.Guid ?? "", $"{e2.Message}: {present.Title} ({string.Join(", ", present.ItemList.Select(d => $"{ItemUtil.GetItemName(d.Item.ItemType, d.Item.ItemId)}×{d.Item.ItemCount}"))})"));
+                        }
+                    }
+
+                    if (stuck.Count > 0)
+                    {
+                        var today = GameDay;
+                        var signature = string.Join(",", stuck.Select(s => s.Guid).OrderBy(x => x, StringComparer.Ordinal));
+                        if (_lastStuckPresentDay == today && _lastStuckPresentSignature == signature)
+                        {
+                            log(string.Format(ResourceStrings.PresentUnclaimableRepeated, stuck.Count));
+                        }
+                        else
+                        {
+                            _lastStuckPresentDay = today;
+                            _lastStuckPresentSignature = signature;
+                            log(e.Message);
+                            foreach (var (_, line) in stuck) log(line);
                         }
                     }
                 }
             }
-            else
-                log(TextResourceTable.GetErrorCodeMessage(ErrorCode.PresentReceiveAlreadyReceivedPresent));
         });
 
         bool HeldBackByOtherItem(UserPresentDtoInfo present) => present.ItemList.Any(d =>

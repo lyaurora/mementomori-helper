@@ -121,21 +121,23 @@ public partial class MementoMoriFuncs
                 var equipmentMb = EquipmentTable.GetById(equipItem.ItemId);
                 log($"{ResourceStrings.FindEquipmentCharacter} {TextResourceTable.Get(equipmentMb.NameKey)}");
                 // 找到可以装备的一个角色
-                var userCharacterDtoInfo = UserSyncData.UserCharacterDtoInfos.Where(d =>
+                var userCharacterDtoInfo = UserSyncData.UserCharacterDtoInfos?.Where(d =>
                 {
                     var characterMb = CharacterTable.GetById(d.CharacterId);
-                    if ((characterMb.JobFlags & equipmentMb.EquippedJobFlags) == 0) return false; // 装备职业
+                    if (characterMb == null || (characterMb.JobFlags & equipmentMb.EquippedJobFlags) == 0) return false; // 装备职业
 
                     if (d.Level >= equipmentMb.EquipmentLv) return true; // 装备等级
 
-                    if (UserSyncData.UserLevelLinkMemberDtoInfos.Exists(x =>
-                            d.Guid == x.UserCharacterGuid)
+                    if (UserSyncData.UserLevelLinkMemberDtoInfos?.Exists(x =>
+                            d.Guid == x.UserCharacterGuid) == true
+                        && UserSyncData.UserLevelLinkDtoInfo != null
                         && UserSyncData.UserLevelLinkDtoInfo.PartyLevel >=
                         equipmentMb.EquipmentLv) // 角色在等级链接里面并且等级链接大于装备等级
                         return true;
 
                     return false;
-                }).First();
+                }).FirstOrDefault();
+                if (userCharacterDtoInfo == null) continue;
 
 
                 // 获取角色某个位置的装备, 可能没有装备
@@ -147,6 +149,7 @@ public partial class MementoMoriFuncs
                 }).FirstOrDefault();
 
                 Exception? changeException = null;
+                var needRestore = false;
                 try
                 {
                     // 替换装备
@@ -164,48 +167,54 @@ public partial class MementoMoriFuncs
                                 }
                             }
                         });
+                    needRestore = true;
                 }
                 catch (Exception e)
                 {
                     changeException = e;
+                    // Timeout/network ambiguity may have applied on server; API error means server rejected the change.
+                    if (e is not ApiErrorException) needRestore = true;
                     throw;
                 }
                 finally
                 {
-                    try
+                    if (needRestore)
                     {
-                        // 恢复装备
-                        if (replacedEquip == null)
+                        try
                         {
-                            await GetResponse<RemoveEquipmentRequest, RemoveEquipmentResponse>(new RemoveEquipmentRequest
+                            // 恢复装备
+                            if (replacedEquip == null)
                             {
-                                EquipmentSlotTypes = new List<EquipmentSlotType> {equipmentMb.SlotType},
-                                UserCharacterGuid = userCharacterDtoInfo.Guid
-                            }, ignoreOperationCancellation: true);
-                        }
-                        else
-                        {
-                            await GetResponse<ChangeEquipmentRequest, ChangeEquipmentResponse>(
-                                new ChangeEquipmentRequest
+                                await GetResponse<RemoveEquipmentRequest, RemoveEquipmentResponse>(new RemoveEquipmentRequest
                                 {
-                                    UserCharacterGuid = userCharacterDtoInfo.Guid,
-                                    EquipmentChangeInfos = new List<EquipmentChangeInfo>
-                                    {
-                                        new()
-                                        {
-                                            EquipmentGuid = replacedEquip.Guid,
-                                            EquipmentId = replacedEquip.EquipmentId,
-                                            EquipmentSlotType = equipmentMb.SlotType,
-                                            IsInherit = false
-                                        }
-                                    }
+                                    EquipmentSlotTypes = new List<EquipmentSlotType> {equipmentMb.SlotType},
+                                    UserCharacterGuid = userCharacterDtoInfo.Guid
                                 }, ignoreOperationCancellation: true);
+                            }
+                            else
+                            {
+                                await GetResponse<ChangeEquipmentRequest, ChangeEquipmentResponse>(
+                                    new ChangeEquipmentRequest
+                                    {
+                                        UserCharacterGuid = userCharacterDtoInfo.Guid,
+                                        EquipmentChangeInfos = new List<EquipmentChangeInfo>
+                                        {
+                                            new()
+                                            {
+                                                EquipmentGuid = replacedEquip.Guid,
+                                                EquipmentId = replacedEquip.EquipmentId,
+                                                EquipmentSlotType = equipmentMb.SlotType,
+                                                IsInherit = false
+                                            }
+                                        }
+                                    }, ignoreOperationCancellation: true);
+                            }
                         }
-                    }
-                    catch (Exception e) when (changeException != null)
-                    {
-                        _logger.LogError(e, "Failed to restore equipment");
-                        log(e.Message);
+                        catch (Exception e) when (changeException != null)
+                        {
+                            _logger.LogError(e, "Failed to restore equipment");
+                            log(e.Message);
+                        }
                     }
                 }
 
@@ -278,9 +287,6 @@ public partial class MementoMoriFuncs
 
     private async Task<bool> InheritantEquipment(EquipmentMB mb, UserEquipmentDtoInfo info, Action<string> log)
     {
-        // 同步数据
-        await UserGetUserData();
-
         var userEquipmentDtoInfo = UserSyncData.UserEquipmentDtoInfos.Where(d =>
         {
             var equipmentMb = EquipmentTable.GetById(d.EquipmentId);

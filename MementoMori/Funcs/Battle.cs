@@ -10,9 +10,10 @@ public partial class MementoMoriFuncs
     {
         get
         {
-            var vip = VipTable.GetByLevel(UserSyncData.UserStatusDtoInfo.Vip);
-            var isQuickAvailable = vip.IsQuickBossBattleAvailable;
-            if (!isQuickAvailable) isQuickAvailable = UserSyncData.UserBattleBossDtoInfo.BossClearMaxQuestId >= OpenContentTable.GetByOpenCommandType(OpenCommandType.BossBattleQuick).OpenContentValue;
+            var vip = VipTable.GetByLevel(UserSyncData.UserStatusDtoInfo?.Vip ?? 0);
+            var isQuickAvailable = vip?.IsQuickBossBattleAvailable == true;
+            if (!isQuickAvailable && OpenContentTable.GetByOpenCommandType(OpenCommandType.BossBattleQuick) is { } oc)
+                isQuickAvailable = UserSyncData.UserBattleBossDtoInfo?.BossClearMaxQuestId >= oc.OpenContentValue;
 
             return isQuickAvailable;
         }
@@ -54,7 +55,7 @@ public partial class MementoMoriFuncs
                         });
                     if (bossQuickResponse.BattleRewardResult == null) return;
 
-                    log($"{TextResourceTable.Get("[AutoBattleButtonQuickForward]")}:\n");
+                    log($"{TextResourceTable.Get("[AutoBattleButtonQuickForward]")}:");
                     bossQuickResponse.BattleRewardResult.FixedItemList.PrintUserItems(log);
                     bossQuickResponse.BattleRewardResult.DropItemList.PrintUserItems(log);
                 }
@@ -69,7 +70,7 @@ public partial class MementoMoriFuncs
                             });
                         if (bossQuickResponse.BattleRewardResult == null) return;
 
-                        log($"{TextResourceTable.Get("[AutoBattleButtonQuickForward]")}:\n");
+                        log($"{TextResourceTable.Get("[AutoBattleButtonQuickForward]")}:");
                         bossQuickResponse.BattleRewardResult.FixedItemList.PrintUserItems(log);
                         bossQuickResponse.BattleRewardResult.DropItemList.PrintUserItems(log);
                     }
@@ -102,7 +103,7 @@ public partial class MementoMoriFuncs
                 log(TextResourceTable.GetErrorCodeMessage(ErrorCode.BattleAutoNotEnoughPrivilegeCount));
             else
             {
-                log($"{TextResourceTable.Get("[AutoBattleButtonQuickForward]")}{TextResourceTable.Get("[CommonRewardLabel]")}:\n");
+                log($"{TextResourceTable.Get("[AutoBattleButtonQuickForward]")}{TextResourceTable.Get("[CommonRewardLabel]")}:");
                 await BattleQuick(log, QuestQuickExecuteType.Currency, 1);
             }
         });
@@ -114,9 +115,9 @@ public partial class MementoMoriFuncs
 
             log($"{TextResourceTable.Get("[AutoBattleRewardInfoPopulationLabel]")} {TextResourceTable.Get("[ItemName5]")} {quickResponse.AutoBattleRewardResult.GoldByPopulation}");
             log($"{TextResourceTable.Get("[AutoBattleRewardInfoPopulationLabel]")} {TextResourceTable.Get("[ItemName11]")} {quickResponse.AutoBattleRewardResult.PotentialJewelByPopulation}");
-            log($"{TextResourceTable.Get("[ItemName6]")} {quickResponse.AutoBattleRewardResult.BattleRewardResult.CharacterExp}");
+            log($"{TextResourceTable.Get("[ItemName10]")} {quickResponse.AutoBattleRewardResult.BattleRewardResult.CharacterExp}");
             log($"{TextResourceTable.Get("[ItemName5]")} {quickResponse.AutoBattleRewardResult.BattleRewardResult.ExtraGold}");
-            log($"{TextResourceTable.Get("[ItemName11]")} {quickResponse.AutoBattleRewardResult.BattleRewardResult.PlayerExp}");
+            log($"{TextResourceTable.Get("[ItemName6]")} {quickResponse.AutoBattleRewardResult.BattleRewardResult.PlayerExp}");
             log($"{TextResourceTable.Get("[CharacterLevelUpLabel]")} {quickResponse.AutoBattleRewardResult.BattleRewardResult.RankUp}");
 
             quickResponse.AutoBattleRewardResult.BattleRewardResult.FixedItemList.PrintUserItems(log);
@@ -153,7 +154,7 @@ public partial class MementoMoriFuncs
                     var win = bossResponse.BattleResult.SimulationResult.BattleEndInfo.IsWinAttacker();
                     totalCount++;
                     if (win) winCount++;
-                    var info = QuestTable.GetById(targetQuestId).Memo;
+                    var info = QuestTable.GetById(targetQuestId)?.Memo ?? targetQuestId.ToString();
                     var result = win ? TextResourceTable.Get("[LocalRaidBattleWinMessage]") : TextResourceTable.Get("[LocalRaidBattleLoseMessage]");
                     log(string.Format(ResourceStrings.AutoBossExecMessage, info, result, totalCount, winCount, errCount));
 
@@ -166,7 +167,7 @@ public partial class MementoMoriFuncs
                         var nextQuestResponse = await GetResponse<NextQuestRequest, NextQuestResponse>(new NextQuestRequest());
                     }
                 }
-                catch (Exception e)
+                catch (Exception e) when (e is not OperationCanceledException || !token.IsCancellationRequested)
                 {
                     log(e.Message);
                     errCount++;

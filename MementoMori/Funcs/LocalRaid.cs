@@ -1,8 +1,10 @@
-﻿using MementoMori.MagicOnion;
+﻿using MementoMori.Exceptions;
+using MementoMori.MagicOnion;
 using MementoMori.Ortega.Common.Enums;
 using MementoMori.Ortega.Network.MagicOnion.Client;
 using MementoMori.Ortega.Share.Data.ApiInterface.LocalRaid;
 using MementoMori.Ortega.Share.Data.Item;
+using Microsoft.Extensions.Logging;
 
 namespace MementoMori.Funcs;
 
@@ -13,23 +15,30 @@ public partial class MementoMoriFuncs
         await ExecuteQuickAction(async (log, token) =>
         {
             var rewardItems = PlayerOption.LocalRaid.RewardItems;
+            if (rewardItems.Count == 0) rewardItems = GameConfig.LocalRaid.RewardItems;
             if (rewardItems.Count == 0)
             {
-                rewardItems = GameConfig.LocalRaid.RewardItems;
-                if (rewardItems.Count == 0)
-                {
-                    rewardItems.AddRange(new[]
-                    {
-                        new GameConfig.WeightedItem(ItemType.ExchangePlaceItem, 4, 4), // 符石兑换券
-                        new GameConfig.WeightedItem(ItemType.CharacterTrainingMaterial, 2, 3), // 潜能宝珠
-                        new GameConfig.WeightedItem(ItemType.EquipmentReinforcementItem, 2, 2.5), // 强化秘药
-                        new GameConfig.WeightedItem(ItemType.CharacterTrainingMaterial, 1, 2), // 经验珠
-                        new GameConfig.WeightedItem(ItemType.EquipmentReinforcementItem, 1, 1) // 强化水
-                    });
-                }
+                rewardItems =
+                [
+                    new GameConfig.WeightedItem(ItemType.ExchangePlaceItem, 4, 4), // 符石兑换券
+                    new GameConfig.WeightedItem(ItemType.CharacterTrainingMaterial, 2, 3), // 潜能宝珠
+                    new GameConfig.WeightedItem(ItemType.EquipmentReinforcementItem, 2, 2.5), // 强化秘药
+                    new GameConfig.WeightedItem(ItemType.CharacterTrainingMaterial, 1, 2), // 经验珠
+                    new GameConfig.WeightedItem(ItemType.EquipmentReinforcementItem, 1, 1) // 强化水
+                ];
             }
 
             var createRoom = _playersOption.Value.TryGetValue(NetworkManager.PlayerId, out var c) && c.LocalRaid.SelfCreateRoom;
+
+            // 先查询幻影神殿信息：若挑战次数已用尽或无可用任务，直接返回而不建立 MagicOnion 连接
+            var prefetchedInfo = await GetResponse<GetLocalRaidInfoRequest, GetLocalRaidInfoResponse>(new GetLocalRaidInfoRequest());
+            var initialRemaining = prefetchedInfo.UserSyncData?.LocalRaidChallengeCount ?? UserSyncData?.LocalRaidChallengeCount;
+            if (initialRemaining is <= 0)
+            {
+                log(TextResourceTable.GetErrorCodeMessage(ErrorCode.MagicOnionLocalRaidJoinRandomRoomNoRemainingChallenges));
+                return;
+            }
+            if (GetQuestId(prefetchedInfo) == 0) return;
 
             while (!token.IsCancellationRequested)
             {
@@ -65,8 +74,16 @@ public partial class MementoMoriFuncs
                     keepaliveTask = client.KeepAlive(connectionCts.Token);
                     while (!token.IsCancellationRequested)
                     {
-                        var localRaidInfoResponse = await GetResponse<GetLocalRaidInfoRequest, GetLocalRaidInfoResponse>(new GetLocalRaidInfoRequest());
+                        var localRaidInfoResponse = prefetchedInfo ?? await GetResponse<GetLocalRaidInfoRequest, GetLocalRaidInfoResponse>(new GetLocalRaidInfoRequest());
+                        prefetchedInfo = null;
+                        var remaining = localRaidInfoResponse.UserSyncData?.LocalRaidChallengeCount ?? UserSyncData?.LocalRaidChallengeCount;
+                        if (remaining is <= 0)
+                        {
+                            log(TextResourceTable.GetErrorCodeMessage(ErrorCode.MagicOnionLocalRaidJoinRandomRoomNoRemainingChallenges));
+                            return;
+                        }
                         var questId = GetQuestId(localRaidInfoResponse);
+                        if (questId == 0) return;
                         localRaidReceiver.QuestId = questId;
                         localRaidReceiver.IsBattleStarted = false;
 
@@ -111,8 +128,14 @@ public partial class MementoMoriFuncs
                                     battleResultResponse.BattleRewardResult?.FixedItemList?.PrintUserItems(log);
                                     battleResultResponse.BattleRewardResult?.DropItemList?.PrintUserItems(log);
                                     soloLosses = isWinAttacker ? 0 : soloLosses + 1;
-                                    if (createRoom && soloLosses >= 3) return;
+                                    if (createRoom && soloLosses >= 3)
+                                    {
+                                        log(string.Format(ResourceStrings.LocalRaidSoloLossesStop, soloLosses));
+                                        return;
+                                    }
                                 }
+                                catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
+                                catch (ApiErrorException e) when (e.ErrorCode is ErrorCode.CommonNoSession or ErrorCode.CommonLoggedInAnotherDevice) { throw; }
                                 catch (Exception e)
                                 {
                                     log(e.Message);
@@ -128,6 +151,10 @@ public partial class MementoMoriFuncs
                     connectionCts.Cancel();
                     try { await keepaliveTask; }
                     catch (OperationCanceledException) when (connectionCts.IsCancellationRequested) { }
+                    catch (Exception e)
+                    {
+                        _logger.LogWarning(e, "LocalRaid keepalive ended with error");
+                    }
                     finally
                     {
                         if (client != null)
@@ -146,25 +173,26 @@ public partial class MementoMoriFuncs
             long GetQuestId(GetLocalRaidInfoResponse response)
             {
                 // 只选开放的任务（活动期间只选活动任务），筛完为空时退回原列表
-                var openIds = response.OpenEventLocalRaidQuestIds.Count > 0 ? response.OpenEventLocalRaidQuestIds : response.OpenLocalRaidQuestIds;
-                var localRaidQuestMbs = response.LocalRaidQuestInfos.Where(d => openIds?.Contains(d.Id) == true).ToList();
-                if (localRaidQuestMbs.Count == 0) localRaidQuestMbs = response.LocalRaidQuestInfos;
+                var openIds = response.OpenEventLocalRaidQuestIds is { Count: > 0 } ? response.OpenEventLocalRaidQuestIds : response.OpenLocalRaidQuestIds;
+                var localRaidQuestMbs = response.LocalRaidQuestInfos?.Where(d => openIds?.Contains(d.Id) == true).ToList() ?? [];
+                if (localRaidQuestMbs.Count == 0) localRaidQuestMbs = response.LocalRaidQuestInfos ?? [];
+                if (localRaidQuestMbs.Count == 0) return 0;
                 if (rewardItems.Count == 0) return localRaidQuestMbs.OrderByDescending(d => d.Level).First().Id;
 
                 return localRaidQuestMbs.Select(d =>
                 {
                     var count = 0D;
                     // if cleared dict contains the quest id, it means the quest has been cleared before
-                    var isFirst = !response.ClearCountDict.ContainsKey(d.Id);
+                    var isFirst = response.ClearCountDict == null || !response.ClearCountDict.ContainsKey(d.Id);
                     foreach (var rewardItem in rewardItems)
                     {
-                        foreach (var reward in d.FixedBattleRewards)
+                        foreach (var reward in d.FixedBattleRewards ?? [])
                         {
                             if (reward.IsEqual(rewardItem.ItemType, rewardItem.ItemId)) count += reward.ItemCount / GetMaxItemCount(rewardItem) * rewardItem.Weight;
                         }
 
                         if (!isFirst) continue;
-                        foreach (var reward in d.FirstBattleRewards)
+                        foreach (var reward in d.FirstBattleRewards ?? [])
                         {
                             if (reward.IsEqual(rewardItem.ItemType, rewardItem.ItemId)) count += reward.ItemCount / GetMaxItemCount(rewardItem) * rewardItem.Weight;
                         }

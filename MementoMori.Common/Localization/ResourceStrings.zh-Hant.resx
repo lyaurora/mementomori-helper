@@ -766,4 +766,8 @@
   <data name="GrowthDaysAgo" xml:space="preserve"><value>{0} 天前</value></data>
   <data name="CronEveryHoursFromFormat" xml:space="preserve"><value>每 {0} 小時（{1} 起）</value></data>
   <data name="DialogError" xml:space="preserve"><value>對話框出錯，已關閉。</value></data>
+  <data name="LocalRaidSoloLossesStop" xml:space="preserve"><value>連續失敗 {0} 次，停止單人開房</value></data>
+  <data name="DungeonBattleLayerProgress" xml:space="preserve"><value>第 {0} 層完成（共 {1} 步）</value></data>
+  <data name="PresentUnclaimableRepeated" xml:space="preserve"><value>仍有 {0} 個禮物暫不可領取（詳情今日已提示）</value></data>
+  <data name="LoadMore" xml:space="preserve"><value>載入更多（剩餘 {0} 條）</value></data>
 </root>

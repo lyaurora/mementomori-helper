@@ -660,4 +660,8 @@
   <data name="GrowthDaysAgo" xml:space="preserve"><value>{0} 日前</value></data>
   <data name="CronEveryHoursFromFormat" xml:space="preserve"><value>{1} から {0} 時間ごと</value></data>
   <data name="DialogError" xml:space="preserve"><value>ダイアログでエラーが発生したため閉じました。</value></data>
+  <data name="LocalRaidSoloLossesStop" xml:space="preserve"><value>{0}回連続で敗北したため、ルーム作成を停止しました</value></data>
+  <data name="DungeonBattleLayerProgress" xml:space="preserve"><value>第{0}階層クリア（{1}ステップ）</value></data>
+  <data name="PresentUnclaimableRepeated" xml:space="preserve"><value>受け取れないプレゼントが {0} 件残っています（詳細は本日表示済み）</value></data>
+  <data name="LoadMore" xml:space="preserve"><value>さらに読み込む（残り {0} 件）</value></data>
 </root>

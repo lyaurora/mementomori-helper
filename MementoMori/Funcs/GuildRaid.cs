@@ -10,9 +10,10 @@ public partial class MementoMoriFuncs
     {
         get
         {
-            var vip = VipTable.GetByLevel(UserSyncData.UserStatusDtoInfo.Vip);
-            var isQuickAvailable = vip.IsQuickStartGuildRaidAvailable;
-            if (!isQuickAvailable) isQuickAvailable = UserSyncData.UserBattleBossDtoInfo.BossClearMaxQuestId >= OpenContentTable.GetByOpenCommandType(OpenCommandType.GuildRaidQuick).OpenContentValue;
+            var vip = VipTable.GetByLevel(UserSyncData.UserStatusDtoInfo?.Vip ?? 0);
+            var isQuickAvailable = vip?.IsQuickStartGuildRaidAvailable == true;
+            if (!isQuickAvailable && OpenContentTable.GetByOpenCommandType(OpenCommandType.GuildRaidQuick) is { } oc)
+                isQuickAvailable = UserSyncData.UserBattleBossDtoInfo?.BossClearMaxQuestId >= oc.OpenContentValue;
 
             return isQuickAvailable;
         }
@@ -23,14 +24,13 @@ public partial class MementoMoriFuncs
         await ExecuteQuickAction(async (log, token) =>
         {
             var response1 = await GetResponse<GetGuildIdRequest, GetGuildIdResponse>(new GetGuildIdRequest());
-            log($"{TextResourceTable.Get("[GuildId]")} {response1.GuildId}");
             if (response1.GuildId == 0) return;
             bool hasRaid;
             do
             {
                 hasRaid = false;
                 var response2 = await GetResponse<GetGuildRaidInfoRequest, GetGuildRaidInfoResponse>(new GetGuildRaidInfoRequest {BelongGuildId = response1.GuildId});
-                foreach (var info in response2.GuildRaidInfos)
+                foreach (var info in response2.GuildRaidInfos ?? [])
                 {
                     if (info.IsOpen && (info.UserGuildRaidDtoInfo == null || info.UserGuildRaidDtoInfo is {ChallengeCount: < 2}))
                     {
@@ -39,16 +39,16 @@ public partial class MementoMoriFuncs
                             var response3 = await GetResponse<QuickStartGuildRaidRequest, QuickStartGuildRaidResponse>(new QuickStartGuildRaidRequest
                                 {BelongGuildId = response1.GuildId, GuildRaidBossType = info.GuildRaidDtoInfo.BossType});
                             log($"{ResourceStrings.BattleResult}: {TextResourceTable.Get(response3.BattleSimulationResult.BattleEndInfo.IsWinAttacker() ? "[CommonWinLabel]" : "[CommonLoseLabel]")}");
-                            response3.BattleRewardResult.FixedItemList.PrintUserItems(log);
-                            response3.BattleRewardResult.DropItemList.PrintUserItems(log);
+                            response3.BattleRewardResult?.FixedItemList?.PrintUserItems(log);
+                            response3.BattleRewardResult?.DropItemList?.PrintUserItems(log);
                         }
                         else
                         {
                             var response3 = await GetResponse<StartGuildRaidRequest, StartGuildRaidResponse>(new StartGuildRaidRequest
                                 {BelongGuildId = response1.GuildId, GuildRaidBossType = info.GuildRaidDtoInfo.BossType});
                             log($"{ResourceStrings.BattleResult}: {TextResourceTable.Get(response3.BattleResult.SimulationResult.BattleEndInfo.IsWinAttacker() ? "[CommonWinLabel]" : "[CommonLoseLabel]")}");
-                            response3.BattleRewardResult.FixedItemList.PrintUserItems(log);
-                            response3.BattleRewardResult.DropItemList.PrintUserItems(log);
+                            response3.BattleRewardResult?.FixedItemList?.PrintUserItems(log);
+                            response3.BattleRewardResult?.DropItemList?.PrintUserItems(log);
                         }
 
                         hasRaid = true;
@@ -63,9 +63,9 @@ public partial class MementoMoriFuncs
                             var worldRewardInfoResponse =
                                 await GetResponse<GetGuildRaidWorldRewardInfoRequest, GetGuildRaidWorldRewardInfoResponse>(new GetGuildRaidWorldRewardInfoRequest {GuildRaidBossId = bossMb.Id});
                             var guildRaidRewardMb = GuildRaidRewardTable.GetByBossId(bossMb.Id);
-                            foreach (var worldDamageBar in guildRaidRewardMb.WorldDamageBarRewards)
+                            foreach (var worldDamageBar in guildRaidRewardMb?.WorldDamageBarRewards ?? [])
                             {
-                                var worldRewardInfo = worldRewardInfoResponse.WorldRewardInfos.FirstOrDefault(d => d.GoalDamage == worldDamageBar.GoalDamage);
+                                var worldRewardInfo = worldRewardInfoResponse.WorldRewardInfos?.FirstOrDefault(d => d.GoalDamage == worldDamageBar.GoalDamage);
                                 if (worldRewardInfoResponse.TotalWorldDamage >= worldDamageBar.GoalDamage && (worldRewardInfo == null || !worldRewardInfo.IsReceived))
                                 {
                                     var resp = await GetResponse<GiveGuildRaidWorldRewardItemRequest, GiveGuildRaidWorldRewardItemResponse>(
@@ -95,16 +95,16 @@ public partial class MementoMoriFuncs
             }
 
             var guildMemberInfoResponse = await GetResponse<GetGuildMemberInfoRequest, GetGuildMemberInfoResponse>(new GetGuildMemberInfoRequest {GuildId = response1.GuildId});
-            var playerInfo = guildMemberInfoResponse.PlayerInfoList.Find(d => d.PlayerId == UserSyncData.UserStatusDtoInfo.PlayerId);
-            if (playerInfo.PlayerGuildPositionType == PlayerGuildPositionType.Member || playerInfo.PlayerGuildPositionType == PlayerGuildPositionType.None)
+            var playerInfo = guildMemberInfoResponse.PlayerInfoList?.Find(d => d.PlayerId == UserSyncData.UserStatusDtoInfo?.PlayerId);
+            if (playerInfo == null || playerInfo.PlayerGuildPositionType == PlayerGuildPositionType.Member || playerInfo.PlayerGuildPositionType == PlayerGuildPositionType.None)
             {
                 log(TextResourceTable.GetErrorCodeMessage(ErrorCode.GuildRaidNotHavePermission));
                 return;
             }
 
             var response2 = await GetResponse<GetGuildRaidInfoRequest, GetGuildRaidInfoResponse>(new GetGuildRaidInfoRequest {BelongGuildId = response1.GuildId});
-            var guildRaidInfo = response2.GuildRaidInfos.Find(d => d.GuildRaidDtoInfo.BossType == GuildRaidBossType.Releasable);
-            if (guildRaidInfo.IsOpen)
+            var guildRaidInfo = response2.GuildRaidInfos?.Find(d => d.GuildRaidDtoInfo?.BossType == GuildRaidBossType.Releasable);
+            if (guildRaidInfo == null || guildRaidInfo.IsOpen)
             {
                 log(TextResourceTable.GetErrorCodeMessage(ErrorCode.GuildRaidAlreadyOpenGuildRaid));
                 return;
@@ -115,7 +115,7 @@ public partial class MementoMoriFuncs
                 await GetResponse<OpenGuildRaidRequest, OpenGuildRaidResponse>(new OpenGuildRaidRequest {BelongGuildId = response1.GuildId, GuildRaidBossType = GuildRaidBossType.Releasable});
                 log($"{TextResourceTable.Get("[GuildRaidReleaseConfirmTitle]")} {ResourceStrings.Success}");
             }
-            catch (ApiErrorException e)
+            catch (ApiErrorException e) when (e.ErrorCode is not (ErrorCode.CommonNoSession or ErrorCode.CommonLoggedInAnotherDevice))
             {
                 log(e.Message);
             }
