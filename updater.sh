@@ -73,9 +73,6 @@ case "$arch" in
     x86_64)
         zipName="publish-linux-x64.zip"
         ;;
-    armv7l)
-        zipName="publish-linux-arm.zip"
-        ;;
     aarch64)
         zipName="publish-linux-arm64.zip"
         ;;
@@ -222,16 +219,14 @@ else
         exit 1
     fi
 
-    # 停止当前运行的程序
-    pkill -f "$programFileName" || true
+    # 停止当前运行的程序（程序名超过 Linux 15 字符 comm 上限，按锚定命令行匹配可执行文件，避免误杀其他脚本）
+    escapedProgramName="${programFileName//./\\.}"
+    pkill -f "(^|/)${escapedProgramName}(\$|[[:space:]])" || true
 
     # 复制解压后的文件到程序文件夹
     case "$arch" in
         x86_64)
             cp -Rf "$tempDir/publish-linux-x64/"* "$downloadDirectory/"
-            ;;
-        armv7l)
-            cp -Rf "$tempDir/publish-linux-arm/"* "$downloadDirectory/"
             ;;
         aarch64)
             cp -Rf "$tempDir/publish-linux-arm64/"* "$downloadDirectory/"

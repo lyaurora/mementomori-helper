@@ -23,7 +23,8 @@ internal class AListApi
 
     private async Task<TResp?> Post<TReq, TResp>(string url, TReq request)
     {
-        var response = await _httpClient.PostAsJsonAsync(url, request);
+        using var response = await _httpClient.PostAsJsonAsync(url, request);
+        response.EnsureSuccessStatusCode();
         var content = await response.Content.ReadAsStringAsync();
         var result = JsonSerializer.Deserialize<Response<TResp>>(content, new JsonSerializerOptions(JsonSerializerDefaults.Web));
         return result == null ? default : result.Data;
@@ -59,7 +60,7 @@ internal class AListApi
 
     public async Task FsPut(string path, byte[] data, string contentType)
     {
-        var httpRequestMessage = new HttpRequestMessage(HttpMethod.Put, "api/fs/put");
+        using var httpRequestMessage = new HttpRequestMessage(HttpMethod.Put, "api/fs/put");
         httpRequestMessage.Content = new ByteArrayContent(data);
         // use url encoded path
         httpRequestMessage.Content.Headers.Add("File-Path", UrlEncoder.Default.Encode(path));
@@ -67,9 +68,12 @@ internal class AListApi
         httpRequestMessage.Content.Headers.Add("Content-Type", contentType);
         httpRequestMessage.Content.Headers.Add("Content-Length", data.Length.ToString());
 
-        var response = await _httpClient.SendAsync(httpRequestMessage);
+        using var response = await _httpClient.SendAsync(httpRequestMessage);
+        response.EnsureSuccessStatusCode();
         var content = await response.Content.ReadAsStringAsync();
         var result = JsonSerializer.Deserialize<Response<object>>(content, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        if (result == null || result.Code != 200)
+            throw new IOException($"AList FsPut failed for {path}: code={result?.Code}, message={result?.Message}");
     }
 
     public async Task<FsListResponse?> FsList(string path)

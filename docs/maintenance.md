@@ -1,6 +1,6 @@
 # Maintaining this fork
 
-This fork targets .NET 10 LTS and aligns the used protocol models with the official Android client **5.1.1**. Legacy response members are retained so old logs and data remain readable. MiningQuest, web-store and UnionMission definitions provide protocol coverage; they do not enable automatic spending or event entry. UnionMission is the upcoming guild points/ranking event announced for 2026-10-29 as 「団結ミッション」 in the [official anniversary news](https://boi.jp/news/261015o.html).
+This fork targets .NET 10 LTS and aligns the used protocol models with the official Android client **5.2.0**. Legacy response members are retained so old logs and data remain readable. MiningQuest, web-store, EventPortal and UnionMission definitions provide protocol coverage; they do not enable automatic spending or event entry. UnionMission is the guild points/ranking event 「団結ミッション」 ([official anniversary news](https://boi.jp/news/261015o.html)).
 
 ## Build and verify
 
@@ -104,7 +104,9 @@ Home **执行输出** keeps the newest 100 entries, each with a time and an erro
 
 The log-in banners on Home, Character, Items, Shop and Gacha are computed from the live `LoginOk`/`Logining` state, and these pages reload their data once a login succeeds, so no refresh is needed.
 
-Each account's device id (`OrtegaUuid`) is stored per account in `appsettings.user.json` so it stays the same across restarts. Growth history is one `GrowthHistory/<UserId>.jsonl` file per account under the configuration directory; once a file passes 2 MB it is trimmed to the last 90 days and at most 5000 lines.
+Each account's device id (`OrtegaUuid`) is stored per account in `appsettings.user.json` so it stays the same across restarts, and the UI language choice persists in `GameConfig.Language`. Growth history is one `GrowthHistory/<UserId>.jsonl` file per account under the configuration directory; reads are cached in memory per account, snapshots are recorded post-merge, and once a file passes 2 MB it retains all `Snapshot` entries within 90 days plus the last 5000 detail lines (the UI dialog paginates 200 items at a time). Startup and hourly refreshes skip the three large unread enemy tables (`AutoBattleEnemyMB`, `BossBattleEnemyMB`, `TowerBattleEnemyMB`) and hourly refreshes only reload changed tables.
+
+The 5.2.0 sync adds `MissionTransitionDestinationType.WebStoreGuidanceGetWebCrystal = 604`, the `eventPortal/getEventPortal` request/response models so limited login bonuses and event missions hosted inside EventPortal / SubEventPortal are discovered automatically, and `LimitedEventType.BountyQuestRewardBonus` 2× detection for Fountain of Prayers refreshes.
 
 `GET /healthz` reports process readiness after initial Master loading. It does not assert that every account logged in or every game task succeeded; use the account/task status for that.
 

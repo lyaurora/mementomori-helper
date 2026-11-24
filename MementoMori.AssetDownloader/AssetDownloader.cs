@@ -66,7 +66,7 @@ internal class AssetDownloader : BackgroundService
     {
         // https://cdn-mememori.akamaized.net/asset/MementoMori/Raw/MusicPlayer/CHR_000048_SONG_JP.mp3
         var catalogUrl = "https://github.com/moonheart/mementomori-masterbook/raw/refs/heads/master/Master/DownloadRawDataMB.json";
-        var rawDatas = await _httpClient.GetFromJsonAsync<List<RawData>>(catalogUrl);
+        var rawDatas = await _httpClient.GetFromJsonAsync<List<RawData>>(catalogUrl, stoppingToken);
         if (rawDatas == null)
         {
             _logger.LogError("Failed to get raw data from cdn");
@@ -89,7 +89,7 @@ internal class AssetDownloader : BackgroundService
             }
 
             _logger.LogInformation($"Downloading {rawData.FilePath}");
-            var fileBytes = await _httpClient.GetByteArrayAsync($"https://cdn-mememori.akamaized.net/asset/MementoMori/Raw/{rawData.FilePath}");
+            var fileBytes = await _httpClient.GetByteArrayAsync($"https://cdn-mememori.akamaized.net/asset/MementoMori/Raw/{rawData.FilePath}", stoppingToken);
             _logger.LogInformation($"Uploading to {targetFile}");
             await aListApi.FsPut(targetFile, fileBytes, "application/octet-stream");
         }
@@ -105,23 +105,29 @@ internal class AssetDownloader : BackgroundService
         {
             FileName = _downloaderOption.AssetStutioCliPath,
             Arguments = $"{assetsToBeExtractPath} -t {_downloaderOption.ExportAssetType} -o {exportedAssetsPath}",
-            WorkingDirectory = Directory.GetCurrentDirectory()
+            WorkingDirectory = Directory.GetCurrentDirectory(),
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
         };
 
         _logger.LogInformation($"Start to execute {processStartInfo.FileName} {processStartInfo.Arguments}");
         _logger.LogInformation("This may take a long time, please wait patiently.");
 
-        var process = Process.Start(processStartInfo);
+        using var process = Process.Start(processStartInfo);
         if (process != null)
         {
-            process.OutputDataReceived += (sender, args) => Console.WriteLine(args.Data);
+            var stderrLines = new List<string>();
+            process.OutputDataReceived += (_, args) => { if (args.Data != null) Console.WriteLine(args.Data); };
+            process.ErrorDataReceived += (_, args) => { if (args.Data != null) lock (stderrLines) stderrLines.Add(args.Data); };
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
             await process.WaitForExitAsync(stoppingToken);
             if (process.ExitCode != 0)
             {
-                _logger.LogError($"Failed to execute {processStartInfo.FileName} {processStartInfo.Arguments}");
-                _logger.LogError(process.StandardOutput.ReadToEnd());
-                _logger.LogError(process.StandardError.ReadToEnd());
-                throw new Exception("Failed to execute AssetStudioCLI");
+                _logger.LogError($"Failed to execute {processStartInfo.FileName} {processStartInfo.Arguments} (exit code {process.ExitCode})");
+                if (stderrLines.Count > 0) _logger.LogError(string.Join(Environment.NewLine, stderrLines));
+                throw new Exception($"Failed to execute AssetStudioCLI (exit code {process.ExitCode})");
             }
         }
 
@@ -229,9 +235,9 @@ internal class AssetDownloader : BackgroundService
             lastVersion = (await File.ReadAllTextAsync(_downloaderOption.ApkVersionFile)).Trim();
         _logger.LogInformation($"Last version is {lastVersion}");
 
-        var html = await _httpClient.GetStringAsync("https://mememori-game.com/apps/vars.js");
+        var html = await _httpClient.GetStringAsync("https://mememori-game.com/apps/vars.js", stoppingToken);
         // '/apps/mementomori_2.14.1.apk'
-        var match = Regex.Match(html, @"/apps/mementomori_(?<version>\d+.\d+.\d+).apk");
+        var match = Regex.Match(html, @"/apps/mementomori_(?<version>\d+\.\d+\.\d+)\.apk");
         if (!match.Success)
         {
             _logger.LogError("Failed to get version from https://mememori-game.com/apps/vars.js");
@@ -254,12 +260,21 @@ internal class AssetDownloader : BackgroundService
         if (!File.Exists(apkPath))
         {
             _logger.LogInformation($"Downloading apk from {apkUrl}");
-            await using (var apkStream = await _httpClient.GetStreamAsync(apkUrl))
+            var tmpApkPath = $"{apkPath}.{Guid.NewGuid():N}.tmp";
+            try
             {
-                await using (var fileStream = File.Create(apkPath))
+                await using (var apkStream = await _httpClient.GetStreamAsync(apkUrl, stoppingToken))
                 {
-                    await apkStream.CopyToAsync(fileStream, stoppingToken);
+                    await using (var fileStream = File.Create(tmpApkPath))
+                    {
+                        await apkStream.CopyToAsync(fileStream, stoppingToken);
+                    }
                 }
+                File.Move(tmpApkPath, apkPath, true);
+            }
+            finally
+            {
+                if (File.Exists(tmpApkPath)) File.Delete(tmpApkPath);
             }
         }
 
@@ -350,7 +365,7 @@ internal class AssetDownloader : BackgroundService
                 _ => "application/octet-stream"
             };
             _logger.LogInformation($"Uploading to {targetFile} with content type {contentType}");
-            await aListApi.FsPut(targetFile, await File.ReadAllBytesAsync(file.FullName), contentType);
+            await aListApi.FsPut(targetFile, await File.ReadAllBytesAsync(file.FullName, ct), contentType);
         }
     }
 }
