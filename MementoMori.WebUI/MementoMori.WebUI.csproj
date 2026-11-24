@@ -24,6 +24,7 @@
         <ProjectReference Include="..\MementoMori.BlazorShared\MementoMori.BlazorShared.csproj" />
         <ProjectReference Include="..\MementoMori.Common\MementoMori.Common.csproj" />
         <ProjectReference Include="..\MementoMori\MementoMori.csproj" />
+        <InternalsVisibleTo Include="RegressionChecks" />
     </ItemGroup>
 
     <ItemGroup>

@@ -9,8 +9,27 @@ using MementoMori.Ortega.Share.Data.ApiInterface.Guild;
 using MementoMori.Ortega.Share.Data.ApiInterface.GuildNote;
 using MementoMori.Ortega.Share.Data.ApiInterface.UnionMission;
 using MementoMori.Ortega.Share.Data.ApiInterface.Auth;
+using MementoMori.Ortega.Share.Data.ApiInterface.EventPortal;
+using MementoMori.Ortega.Share.Data.ApiInterface.LoginBonus;
+using MementoMori.Ortega.Share.Data.ApiInterface.Mission;
+using MementoMori.Ortega.Share.Data.ApiInterface.TradeShop;
+using MementoMori.Ortega.Share.Data.ApiInterface.WeeklyTopics;
+using MementoMori.Ortega.Share.Data.ApiInterface.GuildTower;
+using MementoMori.Ortega.Share.Data.ApiInterface.DungeonBattle;
+using MementoMori.Ortega.Share.Data.ApiInterface.Battle;
+using MementoMori.Ortega.Share.Data.ApiInterface.LocalRaid;
+using MementoMori.Ortega.Share.Data.ApiInterface.User;
 using MementoMori.Ortega.Share.Data.Battle;
 using MementoMori.Ortega.Share.Data.Chat;
+using MementoMori.Ortega.Share.Data.DtoInfo;
+using MementoMori.Ortega.Share.Data.DungeonBattle;
+using MementoMori.Ortega.Share.Data.EventPortal;
+using MementoMori.Ortega.Share.Data.Item;
+using MementoMori.Ortega.Share.Data.MyPage;
+using MementoMori.Ortega.Share.Data.TradeShop;
+using MementoMori.WebUI.Services;
+using System.Globalization;
+using System.Text.Json;
 using MementoMori.Ortega.Share.Enums;
 using MementoMori.Ortega.Share.Enums.Battle.Skill;
 using MementoMori.Ortega.Share.Master.Data;
@@ -60,6 +79,12 @@ if (args is ["--benchmark-master", var masterDirectory])
     return;
 }
 
+if (args is ["--verify-master", var verifyMasterDir])
+{
+    VerifyLiveMasterDirectory(verifyMasterDir);
+    return;
+}
+
 var checks = new (string Name, Func<Task> Run)[]
 {
     ("account switching during initialization", CheckAccountSwitch),
@@ -77,20 +102,39 @@ var checks = new (string Name, Func<Task> Run)[]
     ("chat routing, history, reactions, delivery confirmation and cancellation", CheckChat),
     ("4.22/5.0 wire data, incremental sync and master rollback", CheckProtocol),
     ("master ID index preserves order and survives reload failure", CheckMasterIndex),
-    ("master download publishes valid files, skips corrupt ones, and rejects unusable data", CheckMasterDownload)
+    ("master download publishes valid files, skips corrupt ones, and rejects unusable data", CheckMasterDownload),
+    ("5.2.0 protocol, EventPortal login bonuses/missions, game-day reset and ranking formatting", Check520ProtocolAndEventPortal),
+    ("multi-account AppVersion propagation, handler safety and single-pass AutoLogin", CheckMultiAccountVersionAndAutoLogin),
+    ("shop multi-rule matching, free claims with empty rules and dialog rule dedup", CheckShopRulesAndDedup),
+    ("guild tower breaks unwinnable loop and refreshes reinforcement level requirements", CheckGuildTowerSafety),
+    ("dungeon error propagation, PreferTreasureChest, EventBattle-only grid fetch and cleared equip guard", CheckDungeonBattleFixes),
+    ("local raid immutability/0-count guard and bounty 2x LimitedEvent/solo remake check", CheckLocalRaidAndBounty2x),
+    ("growth history snapshot retention, post-merge snapshots, cache and AssetCache error safety", CheckGrowthHistoryAndAssetCache),
+    ("core sync merges, DisableAll deregistration, BattleLog/Bounty formatting, language persistence and stuck-present dedup", CheckCoreAndUiFixes)
 };
-foreach (var (name, run) in checks)
+var runDir = Directory.CreateTempSubdirectory("mementomori-checks-");
+var originalCwd = Directory.GetCurrentDirectory();
+Directory.SetCurrentDirectory(runDir.FullName);
+try
 {
-    try
+    foreach (var (name, run) in checks)
     {
-        await run().WaitAsync(TimeSpan.FromSeconds(10));
-        Console.WriteLine($"PASS: {name}");
+        try
+        {
+            await run().WaitAsync(TimeSpan.FromSeconds(10));
+            Console.WriteLine($"PASS: {name}");
+        }
+        catch (Exception e)
+        {
+            Environment.ExitCode = 1;
+            Console.Error.WriteLine($"FAIL: {name}: {e}");
+        }
     }
-    catch (Exception e)
-    {
-        Environment.ExitCode = 1;
-        Console.Error.WriteLine($"FAIL: {name}: {e}");
-    }
+}
+finally
+{
+    Directory.SetCurrentDirectory(originalCwd);
+    try { runDir.Delete(true); } catch { }
 }
 
 static async Task CheckUiRecovery()
@@ -1171,6 +1215,775 @@ static async Task CheckMasterDownload()
     finally { Directory.SetCurrentDirectory(previousDirectory); directory.Delete(true); }
 }
 
+static void VerifyLiveMasterDirectory(string masterDir)
+{
+    var tempDir = Directory.CreateTempSubdirectory("mementomori-verify-master-");
+    var prev = Directory.GetCurrentDirectory();
+    try
+    {
+        Directory.CreateSymbolicLink(Path.Combine(tempDir.FullName, "Master"), Path.GetFullPath(masterDir));
+        Directory.SetCurrentDirectory(tempDir.FullName);
+        Masters.TextResourceTable.SetLanguageType(LanguageType.zhCN);
+        var ok = Masters.LoadAllMasters();
+        Require(ok, "Masters.LoadAllMasters() returned false on live 5.2.0 Master directory");
+        Require(Masters.AutoBattleEnemyTable.Count() == 0 && Masters.BossBattleEnemyTable.Count() == 0 && Masters.TowerBattleEnemyTable.Count() == 0,
+            "Unused large enemy tables should be skipped during LoadAllMasters");
+        Require(Masters.CharacterTable.Count() > 0 && Masters.ItemTable.Count() > 0 && Masters.QuestTable.Count() > 0,
+            "Core master tables did not load");
+        Require(Masters.LimitedEventTable.Count() > 0 && Masters.LimitedLoginBonusTable.Count() > 0 && Masters.LimitedLoginBonusRewardListTable.Count() > 0,
+            "Event/login bonus tables did not load");
+        Require(Masters.TextResourceTable.Get("[ItemName10]") != "[ItemName10]" && Masters.TextResourceTable.Get("[ItemName6]") != "[ItemName6]",
+            "TextResourceZhCnMB did not resolve item names");
+        foreach (var lb in Masters.LimitedLoginBonusTable.GetArray())
+            Require(Masters.LimitedLoginBonusRewardListTable.GetById(lb.RewardListId) != null, $"Missing RewardListId {lb.RewardListId} for LimitedLoginBonus {lb.Id}");
+        foreach (var ar in Masters.AchieveRankingRewardTable.GetArray())
+            Require(!MementoMoriFuncs.FormatAchieveRankingTargetDescription(ar).Contains("{0}"), $"Unformatted placeholder in AchieveRankingReward {ar.Id}");
+        Console.WriteLine($"PASS: verified live 5.2.0 Master ({Masters.CharacterTable.Count()} characters, {Masters.QuestTable.Count()} quests, {Masters.LimitedEventTable.Count()} limited events; 3 large enemy tables skipped)");
+    }
+    finally
+    {
+        Directory.SetCurrentDirectory(prev);
+        tempDir.Delete(true);
+    }
+}
+
+static HttpResponseMessage MsgPackReply<T>(T response, string statusCode = "0")
+{
+    var msg = new HttpResponseMessage(HttpStatusCode.OK)
+    {
+        Content = new ByteArrayContent(MessagePackSerializer.Serialize(response))
+    };
+    msg.Headers.Add("ortegastatuscode", statusCode);
+    return msg;
+}
+
+static (MementoNetworkManager Network, MementoMoriFuncs Funcs) CreateOfflineAccount(
+    Writable<AuthOption>? auth = null, Writable<GameConfig>? config = null, Writable<PlayersOption>? players = null,
+    AccountManager? manager = null, TimeZoneAwareJobRegister? register = null, IServiceProvider? services = null,
+    Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>? handler = null)
+{
+    auth ??= new Writable<AuthOption>(new() { AuthUrl = "https://offline.invalid/api/", AppVersion = "5.2.0" });
+    config ??= new Writable<GameConfig>(new() { AutoRequestDelay = 0 });
+    players ??= new Writable<PlayersOption>(new());
+    manager ??= Construct<AccountManager>(auth, config, NullLogger<AccountManager>.Instance);
+    var network = Construct<MementoNetworkManager>(auth, config, NullLogger<MementoNetworkManager>.Instance);
+    network.TimeManager.SetTimeServerMb(MessagePackSerializer.Deserialize<TimeServerMB>(
+        MessagePackSerializer.ConvertFromJson("""{"DifferenceDateTimeFromUtc":"09:00:00"}""")));
+    Field(network, "_apiHost").SetValue(network, new Uri("https://offline.invalid/api/"));
+    if (handler != null) ReplaceClient(network, "_httpClient", new HttpClient(new Handler(handler)));
+    var funcs = Construct<MementoMoriFuncs>(manager!, auth, config, players, register!, services!, NullLogger<MementoMoriFuncs>.Instance);
+    funcs.NetworkManager = network;
+    return (network, funcs);
+}
+
+static async Task Check520ProtocolAndEventPortal()
+{
+    Require((int)MissionTransitionDestinationType.WebStoreGuidanceGetWebCrystal == 604, "5.2.0 enum WebStoreGuidanceGetWebCrystal value mismatch");
+
+    var portalReq = new GetEventPortalRequest { TransferSpotType = TransferSpotType.EventPortal };
+    var portalReqRt = MessagePackSerializer.Deserialize<GetEventPortalRequest>(MessagePackSerializer.Serialize(portalReq));
+    Require(portalReqRt.TransferSpotType == TransferSpotType.EventPortal, "GetEventPortalRequest roundtrip failed");
+
+    var portalResp = new GetEventPortalResponse
+    {
+        EventPortalId = 42,
+        InsideEventPortalBannerInfo =
+        [
+            new EventPortalBannerInfo { IsOpen = true, TransferDetailInfo = new() { TransferSpotType = TransferSpotType.LimitedLoginBonus, NumberInfo1 = 8 } },
+            new EventPortalBannerInfo { IsOpen = false, TransferDetailInfo = new() { TransferSpotType = TransferSpotType.LimitedLoginBonus, NumberInfo1 = 99 } }
+        ],
+        OutsideEventPortalBannerInfo =
+        [
+            new OutsideEventPortalBannerInfo
+            {
+                EventGroupId = 1,
+                EventPortalBannerInfo = new EventPortalBannerInfo { IsOpen = true, TransferDetailInfo = new() { TransferSpotType = TransferSpotType.EventMission } }
+            }
+        ],
+        EventPortalVideoInfo = new EventPortalVideoInfo { StartTime = "2026-11-20 04:00:00", EndTime = "2026-11-30 03:59:59", TitleTextKey = "[Title]" }
+    };
+    var portalRespRt = MessagePackSerializer.Deserialize<GetEventPortalResponse>(MessagePackSerializer.Serialize(portalResp));
+    Require(portalRespRt.EventPortalId == 42 && portalRespRt.InsideEventPortalBannerInfo.Count == 2 && portalRespRt.OutsideEventPortalBannerInfo.Count == 1,
+        "GetEventPortalResponse roundtrip failed");
+
+    // Verify GetLoginBonus discovers EventPortal limited login bonus AND uses RewardListId (7) rather than Id (8).
+    Masters.MonthlyLoginBonusTable.Load(MessagePackSerializer.ConvertFromJson("""[{"Id":1,"RewardListId":10}]"""));
+    Masters.MonthlyLoginBonusRewardListTable.Load(MessagePackSerializer.ConvertFromJson("""[{"Id":10,"DailyRewardList":[],"LoginCountRewardList":[]}]"""));
+    Masters.LimitedLoginBonusTable.Load(MessagePackSerializer.ConvertFromJson("""[{"Id":8,"RewardListId":7,"TitleTextKey":"[LimitedTitle]"}]"""));
+    Masters.LimitedLoginBonusRewardListTable.Load(MessagePackSerializer.ConvertFromJson("""[{"Id":7,"DailyRewardList":[{"Date":1}],"ExistSpecialReward":false}]"""));
+
+    var paths = new List<string>();
+    var claimedLimited = new List<(long Id, int Date)>();
+    var requestedMissionGroups = new List<MissionGroupType>();
+    MementoNetworkManager network = null!;
+    MementoMoriFuncs funcs = null!;
+    (network, funcs) = CreateOfflineAccount(handler: async (req, ct) =>
+    {
+        var path = req.RequestUri!.AbsolutePath;
+        paths.Add(path);
+        if (path.EndsWith("/loginBonus/getMonthlyLoginBonusInfo"))
+        {
+            var gameDay = (network.TimeManager.ServerNow - TimeSpan.FromHours(4)).Day;
+            return MsgPackReply(new GetMonthlyLoginBonusInfoResponse
+            {
+                MonthlyLoginBonusId = 1,
+                ReceivedDailyRewardDayList = [gameDay],
+                ReceivedLoginCountRewardDayList = []
+            });
+        }
+        if (path.EndsWith("/eventPortal/getEventPortal")) return MsgPackReply(portalResp);
+        if (path.EndsWith("/loginBonus/getLimitedLoginBonusInfo"))
+            return MsgPackReply(new GetLimitedLoginBonusInfoResponse { TotalLoginCount = 1, ReceivedDateList = [] });
+        if (path.EndsWith("/loginBonus/receiveDailyLimitedLoginBonus"))
+        {
+            var body = MessagePackSerializer.Deserialize<ReceiveDailyLimitedLoginBonusRequest>(await req.Content!.ReadAsByteArrayAsync(ct));
+            claimedLimited.Add((body.LimitedLoginBonusId, body.ReceiveDate));
+            return MsgPackReply(new ReceiveDailyLimitedLoginBonusResponse { RewardItemList = [] });
+        }
+        if (path.EndsWith("/guildInfo/getGuildId")) return MsgPackReply(new GetGuildIdResponse { GuildId = 0 });
+        if (path.EndsWith("/mission/getMissionInfo"))
+        {
+            var body = MessagePackSerializer.Deserialize<GetMissionInfoRequest>(await req.Content!.ReadAsByteArrayAsync(ct));
+            requestedMissionGroups.AddRange(body.TargetMissionGroupList);
+            return MsgPackReply(new GetMissionInfoResponse { MissionInfoDict = new() });
+        }
+        throw new InvalidOperationException($"Unexpected path: {path}");
+    });
+    using var _n = network;
+    using var _f = funcs;
+    typeof(MementoMoriFuncs).GetProperty(nameof(MementoMoriFuncs.Mypage))!.SetValue(funcs, new GetMypageResponse
+    {
+        MypageInfo = new DisplayMypageInfo
+        {
+            MypageIconInfos = [new MypageIconInfo { TransferDetailInfo = new TransferDetailInfo { TransferSpotType = TransferSpotType.EventPortal } }]
+        }
+    });
+
+    await funcs.GetLoginBonus();
+    Require(claimedLimited.SequenceEqual([(8L, 1)]), "EventPortal limited login bonus was not discovered or failed RewardListId lookup");
+    Require(paths.Count(p => p.EndsWith("/loginBonus/getMonthlyLoginBonusInfo")) == 1, "Redundant GetMonthlyLoginBonusInfo calls when nothing was claimed");
+
+    await funcs.GetMissionInfo();
+    Require(requestedMissionGroups.Contains(MissionGroupType.Limited), "EventPortal EventMission group was not added to GetMissionInfo");
+
+    // Verify AchieveRankingRewardMB {0} placeholder formatting
+    Masters.TextResourceTable.SetLanguageType(LanguageType.enUS);
+    Masters.TextResourceTable.Load(MessagePackSerializer.ConvertFromJson("""[{"StringKey":"[RankBP]","Text":"Reach {0} BP"},{"StringKey":"[RankStage]","Text":"Clear {0}"}]"""));
+    Masters.QuestTable.Load(MessagePackSerializer.ConvertFromJson("""[{"Id":100,"Memo":"10-12"}]"""));
+    var bpMb = MessagePackSerializer.Deserialize<AchieveRankingRewardMB>(
+        MessagePackSerializer.ConvertFromJson("""{"Id":1,"RankingDataType":1,"RequireValue":123456,"AchieveTargetDescriptionKey":"[RankBP]"}"""));
+    var stageMb = MessagePackSerializer.Deserialize<AchieveRankingRewardMB>(
+        MessagePackSerializer.ConvertFromJson("""{"Id":2,"RankingDataType":3,"RequireValue":100,"AchieveTargetDescriptionKey":"[RankStage]"}"""));
+    Require(MementoMoriFuncs.FormatAchieveRankingTargetDescription(bpMb) == "Reach 123,456 BP", "BattlePower AchieveRankingReward formatting failed");
+    Require(MementoMoriFuncs.FormatAchieveRankingTargetDescription(stageMb) == "Clear 10-12", "MainQuest AchieveRankingReward formatting failed");
+}
+
+static async Task CheckMultiAccountVersionAndAutoLogin()
+{
+    var sharedVersionField = typeof(MementoNetworkManager).GetField("_sharedAppVersion", BindingFlags.Static | BindingFlags.NonPublic)!;
+    var previousSharedVersion = sharedVersionField.GetValue(null);
+    try
+    {
+        sharedVersionField.SetValue(null, null);
+        using var handler = new MeMoriHttpClientHandler();
+        Require(handler.AppVersion == "", "MeMoriHttpClientHandler.AppVersion did not initialize to empty string");
+
+        var auth = new Writable<AuthOption>(new()
+        {
+            AuthUrl = "https://offline.invalid/api/",
+            AppVersion = "5.1.1",
+            Accounts = [new AccountInfo { UserId = 10, ClientKey = "ck", AutoLogin = true, AutoLoginWorldId = 1001 }]
+        });
+        var config = new Writable<GameConfig>(new() { AutoRequestDelay = 0 });
+        using var net1 = Construct<MementoNetworkManager>(auth, config, NullLogger<MementoNetworkManager>.Instance);
+        using var net2 = Construct<MementoNetworkManager>(auth, config, NullLogger<MementoNetworkManager>.Instance);
+
+        ReplaceClient(net1, "_httpClient", new HttpClient(new Handler((_, _) =>
+            Task.FromResult(MsgPackReply(new GetDataUriResponse { AppAssetVersionInfo = new AppAssetVersionInfo { Version = "5.2.0" } })))));
+        await net1.Initialize();
+        Require(net1.MoriHttpClientHandler.AppVersion == "5.2.0", "Initialize did not update account 1 AppVersion");
+
+        string? seenLoginVersion = null;
+        ReplaceClient(net2, "_httpClient", new HttpClient(new Handler(async (req, ct) =>
+        {
+            var login = MessagePackSerializer.Deserialize<LoginRequest>(await req.Content!.ReadAsByteArrayAsync(ct));
+            seenLoginVersion = login.AppVersion;
+            return MsgPackReply(new LoginResponse { PlayerDataInfoList = [] });
+        })));
+        await net2.GetPlayerDataInfoList(new LoginRequest { UserId = 20, ClientKey = "ck2", AppVersion = "5.1.1" });
+        Require(net2.MoriHttpClientHandler.AppVersion == "5.2.0" && seenLoginVersion == "5.2.0",
+            "Shared AppVersion did not propagate to second account");
+
+        // Verify AutoLogin only calls /auth/login ONCE (not twice back-to-back)
+        Masters.TimeServerTable.Load(MessagePackSerializer.ConvertFromJson("""[{"Id":1,"DifferenceDateTimeFromUtc":"09:00:00"}]"""));
+        Masters.OpenContentTable.Load(MessagePackSerializer.ConvertFromJson("""[]"""));
+        var manager = Construct<AccountManager>(auth, config, NullLogger<AccountManager>.Instance);
+        var factory = new StdSchedulerFactory();
+        var scheduler = await factory.GetScheduler();
+        try
+        {
+            var register = Construct<TimeZoneAwareJobRegister>(manager, config, factory, NullLogger<TimeZoneAwareJobRegister>.Instance);
+            var authLoginCalls = 0;
+            var (net3, funcs) = CreateOfflineAccount(auth, config, manager: manager, register: register, handler: (req, _) =>
+            {
+                var p = req.RequestUri!.AbsolutePath;
+                if (p.EndsWith("/auth/login"))
+                {
+                    authLoginCalls++;
+                    return Task.FromResult(MsgPackReply(new LoginResponse
+                    {
+                        PlayerDataInfoList = [new PlayerDataInfo { WorldId = 1001, PlayerId = 999, Password = "pw", Name = "Hero", PlayerRank = 100 }]
+                    }));
+                }
+                if (p.EndsWith("/auth/getServerHost"))
+                    return Task.FromResult(MsgPackReply(new GetServerHostResponse { ApiHost = "https://offline.invalid/api/", MagicOnionHost = "offline.invalid", MagicOnionPort = 443 }));
+                if (p.EndsWith("/user/loginPlayer"))
+                    return Task.FromResult(MsgPackReply(new LoginPlayerResponse { AuthTokenOfMagicOnion = "tok" }));
+                if (p.EndsWith("/user/getUserData"))
+                    return Task.FromResult(MsgPackReply(new GetUserDataResponse { UserSyncData = new UserSyncData { UserStatusDtoInfo = new() { PlayerId = 999, Name = "Hero", Rank = 100 } } }));
+                if (p.EndsWith("/user/getMypage"))
+                    return Task.FromResult(MsgPackReply(new GetMypageResponse { MypageInfo = new() { MypageIconInfos = [] } }));
+                if (p.EndsWith("/guildInfo/getGuildId"))
+                    return Task.FromResult(MsgPackReply(new GetGuildIdResponse { GuildId = 0 }));
+                if (p.EndsWith("/mission/getMissionInfo"))
+                    return Task.FromResult(MsgPackReply(new GetMissionInfoResponse { MissionInfoDict = new() }));
+                throw new InvalidOperationException($"Unexpected AutoLogin path: {p}");
+            });
+            using var _n3 = net3;
+            using var _f3 = funcs;
+            funcs.UserId = 10;
+            var accounts = (ConcurrentDictionary<long, Account>)Field(manager, "_accounts").GetValue(manager)!;
+            accounts[10] = new Account { AccountInfo = auth.Value.Accounts[0], NetworkManager = net3, Funcs = funcs };
+            await funcs.AutoLogin(manual: true);
+            Require(funcs.LoginOk && authLoginCalls == 1, $"AutoLogin called auth/login {authLoginCalls} times instead of 1");
+        }
+        finally { await scheduler.Shutdown(); }
+    }
+    finally
+    {
+        sharedVersionField.SetValue(null, previousSharedVersion);
+    }
+}
+
+static async Task CheckShopRulesAndDedup()
+{
+    var boughtIds = new List<long>();
+    var config = new Writable<GameConfig>(new()
+    {
+        AutoRequestDelay = 0,
+        Shop = new GameConfig.ShopConfig
+        {
+            AutoBuyItems =
+            [
+                new GameConfig.ShopAutoBuyItem { ShopTabId = 1, BuyItem = new UserItem { ItemType = ItemType.EquipmentRarityCrystal, ItemId = 1, ItemCount = 5 }, MinDiscountPercent = 20 },
+                new GameConfig.ShopAutoBuyItem { ShopTabId = 1, ConsumeItem = new UserItem { ItemType = ItemType.Gold, ItemId = 1, ItemCount = 0 }, MinDiscountPercent = 0 }
+            ]
+        }
+    });
+    var (network, funcs) = CreateOfflineAccount(config: config, handler: async (req, ct) =>
+    {
+        var path = req.RequestUri!.AbsolutePath;
+        if (path.EndsWith("/tradeShop/getList"))
+            return MsgPackReply(new MementoMori.Ortega.Share.Data.ApiInterface.TradeShop.GetListResponse
+            {
+                TradeShopTabInfoList =
+                [
+                    new TradeShopTabInfo
+                    {
+                        TradeShopTabId = 1,
+                        TradeShopItems =
+                        [
+                            // 0% off gold crystal: must NOT be shadowed by 20% crystal rule; should match gold rule!
+                            new TradeShopItem
+                            {
+                                TradeShopItemId = 101, SalePercent = 0, LimitTradeCount = 1,
+                                GiveItem = new UserItem { ItemType = ItemType.EquipmentRarityCrystal, ItemId = 1, ItemCount = 5 },
+                                ConsumeItem1 = new UserItem { ItemType = ItemType.Gold, ItemId = 1, ItemCount = 1000 }
+                            },
+                            // 10% off diamond crystal: neither rule matches (discount < 20 and not gold)
+                            new TradeShopItem
+                            {
+                                TradeShopItemId = 102, SalePercent = 10, LimitTradeCount = 1,
+                                GiveItem = new UserItem { ItemType = ItemType.EquipmentRarityCrystal, ItemId = 1, ItemCount = 5 },
+                                ConsumeItem1 = new UserItem { ItemType = ItemType.CurrencyFree, ItemId = 1, ItemCount = 100 }
+                            },
+                            // Free item
+                            new TradeShopItem
+                            {
+                                TradeShopItemId = 103, SalePercent = 0, LimitTradeCount = 1,
+                                GiveItem = new UserItem { ItemType = ItemType.Gold, ItemId = 1, ItemCount = 500 },
+                                ConsumeItem1 = null
+                            }
+                        ]
+                    }
+                ]
+            });
+        if (path.EndsWith("/weeklyTopics/getWeeklyTopicsInfo"))
+            return MsgPackReply(new GetWeeklyTopicsInfoResponse { ShopData = null });
+        if (path.EndsWith("/tradeShop/buyItem"))
+        {
+            var body = MessagePackSerializer.Deserialize<BuyItemRequest>(await req.Content!.ReadAsByteArrayAsync(ct));
+            boughtIds.AddRange(body.TradeShopItemInfos.Select(x => x.TradeShopItemId));
+            return MsgPackReply(new BuyItemResponse { UserSyncData = new UserSyncData { GivenItemCountInfoList = [] } });
+        }
+        throw new InvalidOperationException($"Unexpected shop path: {path}");
+    });
+    using var _n = network;
+    using var _f = funcs;
+    funcs.UserSyncData.UserItemDtoInfo =
+    [
+        new UserItemDtoInfo { ItemType = ItemType.Gold, ItemId = 1, ItemCount = 100000 },
+        new UserItemDtoInfo { ItemType = ItemType.CurrencyFree, ItemId = 1, ItemCount = 10000 }
+    ];
+
+    await funcs.AutoBuyShopItem();
+    Require(boughtIds.SequenceEqual([101L, 103L]), $"Shop multi-rule matching failed, bought: [{string.Join(",", boughtIds)}]");
+
+    // Empty rules still claim free items
+    boughtIds.Clear();
+    config.Value.Shop.AutoBuyItems.Clear();
+    await funcs.AutoBuyShopItem();
+    Require(boughtIds.SequenceEqual([103L]), "Empty AutoBuyItems skipped free shop item");
+
+    // Verify Shop.MatchesAutoBuyRule dedup handles all 3 rule shapes without cross-clobbering
+    var buyOnly = new GameConfig.ShopAutoBuyItem { ShopTabId = 1, BuyItem = new UserItem { ItemType = ItemType.EquipmentRarityCrystal, ItemId = 1, ItemCount = 5 } };
+    var bothRule = new GameConfig.ShopAutoBuyItem { ShopTabId = 1, BuyItem = new UserItem { ItemType = ItemType.EquipmentRarityCrystal, ItemId = 1, ItemCount = 5 }, ConsumeItem = new UserItem { ItemType = ItemType.Gold, ItemId = 1, ItemCount = 100 } };
+    var consumeOnly = new GameConfig.ShopAutoBuyItem { ShopTabId = 1, ConsumeItem = new UserItem { ItemType = ItemType.Gold, ItemId = 1, ItemCount = 0 } };
+    Require(!MementoMori.BlazorShared.Pages.Shop.MatchesAutoBuyRule(buyOnly, 1, bothRule.BuyItem, bothRule.ConsumeItem),
+        "Buy+Consume rule incorrectly clobbered Buy-only rule");
+    Require(MementoMori.BlazorShared.Pages.Shop.MatchesAutoBuyRule(bothRule, 1, bothRule.BuyItem, bothRule.ConsumeItem),
+        "Identical Buy+Consume rule failed to deduplicate");
+    Require(MementoMori.BlazorShared.Pages.Shop.MatchesAutoBuyRule(consumeOnly, 1, null, new UserItem { ItemType = ItemType.Gold, ItemId = 1, ItemCount = 0 }),
+        "Identical Consume-only rule failed to deduplicate");
+}
+
+static async Task CheckGuildTowerSafety()
+{
+    Masters.GuildTowerEventTable.Load(MessagePackSerializer.ConvertFromJson("""[{"Id":1,"EventNo":1,"StartTime":"2020-01-01 00:00:00","EndTime":"2099-01-01 00:00:00"}]"""));
+    Masters.GuildTowerFloorTable.Load(MessagePackSerializer.ConvertFromJson("""[{"Id":10,"EventNo":1,"FloorCount":1,"SelectableDifficultyList":[1,2],"FloorRewardList":[]}]"""));
+    Masters.GuildTowerReinforcementJobLevelTable.Load(MessagePackSerializer.ConvertFromJson(
+        $$"""[{"Id":1,"EventNo":1,"JobFlags":1,"Level":1,"RequiredMaterialList":[{"ItemType":{{(int)ItemType.Gold}},"ItemId":1,"ItemCount":10}]},{"Id":2,"EventNo":1,"JobFlags":1,"Level":2,"RequiredMaterialList":[{"ItemType":{{(int)ItemType.FriendPoint}},"ItemId":1,"ItemCount":5}]}]"""));
+    Masters.CharacterTable.Load(MessagePackSerializer.ConvertFromJson("""[{"Id":1,"JobFlags":1,"RarityFlags":1,"NameKey":"[C1]","InitialBattleParameter":{},"BaseParameterCoefficient":{}}]"""));
+    Masters.CharacterPotentialTable.Load(MessagePackSerializer.ConvertFromJson("""[{"Id":1,"CharacterLevel":100,"CharacterSubLevel":0,"TotalBaseParameter":1000}]"""));
+    Masters.CharacterPotentialCoefficientTable.Load(MessagePackSerializer.ConvertFromJson(
+        $$"""[{"Id":1,"InitialRarityFlags":{{(int)CharacterRarityFlags.N}},"RarityFlags":{{(int)CharacterRarityFlags.SSR}},"RarityCoefficientInfo":{} }]"""));
+    Masters.PlayerRankTable.Load(MessagePackSerializer.ConvertFromJson("""[{"Id":50,"Rank":50}]"""));
+
+    var players = new Writable<PlayersOption>(new()
+    {
+        [999] = new PlayerOption
+        {
+            PlayerId = 999,
+            GuildTower = new GuildTowerOption { AutoEntry = false, AutoChallenge = true, AutoChallengeRetryCount = 1, AutoReinforcement = true, AutoReceiveReward = false }
+        }
+    });
+    var battleCalls = 0;
+    var reinforcedLevels = new List<(int Level, ItemType ItemType)>();
+    var (network, funcs) = CreateOfflineAccount(players: players, handler: async (req, ct) =>
+    {
+        var path = req.RequestUri!.AbsolutePath;
+        if (path.EndsWith("/guildInfo/getGuildId")) return MsgPackReply(new GetGuildIdResponse { GuildId = 7 });
+        if (path.EndsWith("/guildTower/getGuildTowerInfo"))
+            return MsgPackReply(new GetGuildTowerInfoResponse
+            {
+                IsAlreadyEntryToday = true, TodayWinCount = 0, CurrentFloorMBId = 10,
+                GuildTowerEntryCharacterList = [new MementoMori.Ortega.Share.Data.GuildTower.GuildTowerEntryCharacter { CharacterGuid = "c1", TodayUseCount = 0 }],
+                ReinforcementJobDataList = [new MementoMori.Ortega.Share.Data.GuildTower.GuildTowerReinforcementJobData { JobFlags = JobFlags.Warrior, Level = 1, ConsumedMaterialItemList = [] }]
+            });
+        if (path.EndsWith("/guildTower/battle"))
+        {
+            battleCalls++;
+            return MsgPackReply(new MementoMori.Ortega.Share.Data.ApiInterface.GuildTower.BattleResponse
+            {
+                BattleResult = new MementoMori.Ortega.Share.Data.Battle.Result.BattleResult
+                {
+                    SimulationResult = new MementoMori.Ortega.Share.Data.Battle.Result.BattleSimulationResult
+                    {
+                        BattleEndInfo = new MementoMori.Ortega.Share.Data.Battle.Result.BattleEndInfo { WinGroupType = BattleFieldCharacterGroupType.Receiver }
+                    }
+                },
+                BattleRewardResult = new MementoMori.Ortega.Share.Data.Battle.Result.BattleRewardResult { DropItemList = [], FixedItemList = [] }
+            });
+        }
+        if (path.EndsWith("/guildTower/getReinforcementJobData"))
+            return MsgPackReply(new GetReinforcementJobDataResponse
+            {
+                ReinforcementJobDataList = [new MementoMori.Ortega.Share.Data.GuildTower.GuildTowerReinforcementJobData { JobFlags = JobFlags.Warrior, Level = 1, ConsumedMaterialItemList = [] }]
+            });
+        if (path.EndsWith("/guildTower/reinforceJob"))
+        {
+            var body = MessagePackSerializer.Deserialize<ReinforceJobRequest>(await req.Content!.ReadAsByteArrayAsync(ct));
+            reinforcedLevels.Add((body.Level, body.MaterialItemList[0].ItemType));
+            return MsgPackReply(new ReinforceJobResponse
+            {
+                ReinforcementJobData = new MementoMori.Ortega.Share.Data.GuildTower.GuildTowerReinforcementJobData { JobFlags = JobFlags.Warrior, Level = body.Level + 1, ConsumedMaterialItemList = [] }
+            });
+        }
+        throw new InvalidOperationException($"Unexpected GuildTower path: {path}");
+    });
+    using var _n = network;
+    using var _f = funcs;
+    network.PlayerId = 999;
+    funcs.UserId = 10;
+    funcs.UserSyncData.UserStatusDtoInfo = new() { PlayerId = 999, Rank = 50 };
+    funcs.UserSyncData.UserCharacterDtoInfos = [new() { Guid = "c1", CharacterId = 1, Level = 100, RarityFlags = CharacterRarityFlags.SSR }];
+    funcs.UserSyncData.UserCharacterCollectionDtoInfos = [];
+    funcs.UserSyncData.UserEquipmentDtoInfos = [];
+    funcs.UserSyncData.UserItemDtoInfo =
+    [
+        new() { ItemType = ItemType.Gold, ItemId = 1, ItemCount = 10 },
+        new() { ItemType = ItemType.FriendPoint, ItemId = 1, ItemCount = 5 }
+    ];
+
+    // BattlePowerCalculatorUtil uses Services.Get<AccountManager>() when scoring characters
+    var auth = new Writable<AuthOption>(new() { Accounts = [new AccountInfo { UserId = 10 }] });
+    var cfg = new Writable<GameConfig>(new());
+    var am = Construct<AccountManager>(auth, cfg, NullLogger<AccountManager>.Instance);
+    ((ConcurrentDictionary<long, Account>)Field(am, "_accounts").GetValue(am)!)[10] = new Account { Funcs = funcs, NetworkManager = network };
+    var servicesField = typeof(MementoMori.Common.Services).GetField("_serviceProvider", BindingFlags.Static | BindingFlags.NonPublic)!;
+    var prevServices = servicesField.GetValue(null) as IServiceProvider;
+    using var sp = new ServiceCollection().AddSingleton(am).BuildServiceProvider();
+    MementoMori.Common.Services.Setup(sp);
+    try
+    {
+        await funcs.AutoGuildTower();
+        Require(battleCalls == 2, $"Unwinnable GuildTower floor ran {battleCalls} battles instead of breaking after 2 difficulties");
+        Require(reinforcedLevels.SequenceEqual([(1, ItemType.Gold), (2, ItemType.FriendPoint)]),
+            $"GuildTower reinforcement did not advance across levels: {string.Join(", ", reinforcedLevels)}");
+    }
+    finally
+    {
+        servicesField.SetValue(null, prevServices);
+    }
+}
+
+static async Task CheckDungeonBattleFixes()
+{
+    // 1. Error inside AutoDungeonBattle propagates to JobRuns.Error (no longer swallowed)
+    var (network, funcs) = CreateOfflineAccount(handler: (_, _) =>
+    {
+        var resp = MsgPackReply(new ApiErrorResponse { ErrorCode = ErrorCode.DungeonBattleNotOpen }, statusCode: "1");
+        return Task.FromResult(resp);
+    });
+    using var _n = network;
+    using var _f = funcs;
+    funcs.LoginOk = true;
+    Field(funcs, "_loginGameDay").SetValue(funcs, (network.TimeManager.ServerNow - TimeSpan.FromHours(4) - TimeSpan.FromMinutes(5)).Date);
+    await funcs.ExecuteScheduledJob(funcs.AutoDungeonBattle, CancellationToken.None, jobName: "dungeon");
+    Require(funcs.JobRuns["dungeon"] is { Error: not null, FinishedAt: not null }, "Dungeon error was swallowed instead of failing JobRuns");
+
+    // 2. Cleared dungeon does NOT remove equipment even with AutoRemoveEquipment=true + event open,
+    //    and non-event battle nodes skip GetBattleGridDataRequest, and PreferTreasureChest toggles path choice.
+    Masters.DungeonBattleGridTable.Load(MessagePackSerializer.ConvertFromJson(
+        $$"""[{"Id":1,"DungeonGridType":{{(int)DungeonBattleGridType.Start}}},{"Id":2,"DungeonGridType":{{(int)DungeonBattleGridType.TreasureChest}}},{"Id":3,"DungeonGridType":{{(int)DungeonBattleGridType.BattleNormal}}}]"""));
+
+    var removedEquip = false;
+    var gridDataCalls = 0;
+    var selectedGridGuids = new List<string>();
+    var cleared = true;
+    var cfg = new Writable<GameConfig>(new()
+    {
+        AutoRequestDelay = 0,
+        DungeonBattle = new GameConfig.DungeonBattleConfig { AutoRemoveEquipment = true, PreferTreasureChest = true }
+    });
+    MementoNetworkManager network2 = null!;
+    MementoMoriFuncs funcs2 = null!;
+    (network2, funcs2) = CreateOfflineAccount(config: cfg, handler: async (req, ct) =>
+    {
+        var path = req.RequestUri!.AbsolutePath;
+        if (path.EndsWith("/badge/getCompetitionInfo"))
+            return MsgPackReply(new GetCompetitionInfoResponse { IsDungeonBattleEventOpen = true });
+        if (path.EndsWith("/equipment/removeEquipment"))
+        {
+            removedEquip = true;
+            return MsgPackReply(new MementoMori.Ortega.Share.Data.ApiInterface.Equipment.RemoveEquipmentResponse());
+        }
+        if (path.EndsWith("/dungeonBattle/getBattleGridData"))
+        {
+            gridDataCalls++;
+            return MsgPackReply(new GetBattleGridDataResponse { NormalRewardItemList = [] });
+        }
+        if (path.EndsWith("/dungeonBattle/selectGrid"))
+        {
+            var body = MessagePackSerializer.Deserialize<SelectGridRequest>(await req.Content!.ReadAsByteArrayAsync(ct));
+            selectedGridGuids.Add(body.DungeonGridGuid);
+            funcs2.CancelQuickAction(); // stop after verifying first choice
+            return MsgPackReply(new SelectGridResponse());
+        }
+        if (path.EndsWith("/dungeonBattle/getDungeonBattleInfo"))
+        {
+            // Minimal 11-row map (Y=0..10): Y=0 start, Y=1 has chest (X=0) and normal battle (X=1), Y=2..10 single nodes converging
+            var grids = new List<DungeonBattleGrid>
+            {
+                new() { DungeonGridGuid = "start", DungeonGridId = 1, X = 0, Y = 0 },
+                new() { DungeonGridGuid = "chest", DungeonGridId = 2, X = 0, Y = 1 },
+                new() { DungeonGridGuid = "battle", DungeonGridId = 3, X = 1, Y = 1 }
+            };
+            for (var y = 2; y <= 10; y++)
+                grids.Add(new() { DungeonGridGuid = $"g{y}", DungeonGridId = 3, X = 0, Y = y });
+            return MsgPackReply(new GetDungeonBattleInfoResponse
+            {
+                CurrentTermId = 1,
+                CurrentDungeonBattleLayer = new DungeonBattleLayer { LayerCount = 1, DungeonGrids = grids },
+                GridBattlePowerDict = new(),
+                UserDungeonBattleCharacterDtoInfos = [],
+                UserDungeonDtoInfo = new UserDungeonBattleDtoInfo
+                {
+                    CurrentGridGuid = "start",
+                    CurrentGridState = DungeonBattleGridState.Done,
+                    DoneRewardClearLayers = cleared ? [1, 2, 3] : [],
+                    RelicIds = []
+                }
+            });
+        }
+        throw new InvalidOperationException($"Unexpected dungeon path: {path}");
+    });
+    using var _n2 = network2;
+    using var _f2 = funcs2;
+    funcs2.LoginOk = true;
+    funcs2.IsNotClearDungeonBattleMap = false;
+    funcs2.UserSyncData.UserEquipmentDtoInfos = [new() { Guid = "e1", CharacterGuid = "c1", EquipmentId = 1 }];
+    await funcs2.AutoDungeonBattle();
+    Require(!removedEquip, "Already-cleared dungeon still stripped character equipment");
+
+    // Now test PreferTreasureChest = true vs false and zero GetBattleGridData calls for normal battles
+    cleared = false;
+    cfg.Value.DungeonBattle.AutoRemoveEquipment = false;
+    cfg.Value.DungeonBattle.PreferTreasureChest = true;
+    await funcs2.AutoDungeonBattle();
+    Require(selectedGridGuids.LastOrDefault() == "chest", "PreferTreasureChest=true did not pick TreasureChest grid");
+    Require(gridDataCalls == 0, $"Non-event battles triggered {gridDataCalls} GetBattleGridData requests");
+
+    cfg.Value.DungeonBattle.PreferTreasureChest = false;
+    await funcs2.AutoDungeonBattle();
+    Require(selectedGridGuids.LastOrDefault() == "battle", "PreferTreasureChest=false did not pick BattleNormal grid");
+}
+
+static async Task CheckLocalRaidAndBounty2x()
+{
+    // 1. LocalRaid: default RewardItems does NOT mutate GameConfig, and 0 remaining challenges exits BEFORE MagicOnion
+    var config = new Writable<GameConfig>(new() { AutoRequestDelay = 0, LocalRaid = new GameConfig.LocalRaidConfig { RewardItems = [] } });
+    var players = new Writable<PlayersOption>(new() { [999] = new PlayerOption { PlayerId = 999 } });
+    var raidInfoCalls = 0;
+    var (network, funcs) = CreateOfflineAccount(config: config, players: players, handler: (req, _) =>
+    {
+        if (req.RequestUri!.AbsolutePath.EndsWith("/localRaid/getLocalRaidInfo"))
+        {
+            raidInfoCalls++;
+            return Task.FromResult(MsgPackReply(new GetLocalRaidInfoResponse
+            {
+                UserSyncData = new UserSyncData { LocalRaidChallengeCount = 0 },
+                OpenLocalRaidQuestIds = [], OpenEventLocalRaidQuestIds = [], LocalRaidQuestInfos = []
+            }));
+        }
+        throw new InvalidOperationException($"Unexpected LocalRaid path: {req.RequestUri.AbsolutePath}");
+    });
+    using var _n = network;
+    using var _f = funcs;
+    await funcs.AutoLocalRaid();
+    Require(raidInfoCalls == 1, $"AutoLocalRaid did not pre-check getLocalRaidInfo before MagicOnion (calls={raidInfoCalls})");
+    Require(config.Value.LocalRaid.RewardItems.Count == 0, "AutoLocalRaid mutated shared GameConfig.LocalRaid.RewardItems");
+
+    // 2. BountyQuest 2x via LimitedEventMB (LimitedEventType.BountyQuestRewardBonus = 5)
+    Masters.BountyQuestEventTable.Load(MessagePackSerializer.ConvertFromJson("""[]"""));
+    Masters.LimitedEventTable.Load(MessagePackSerializer.ConvertFromJson(
+        $$"""[{"Id":103,"LimitedEventType":{{(int)LimitedEventType.BountyQuestRewardBonus}},"StartTime":"2020-01-01 00:00:00","EndTime":"2099-01-01 00:00:00"}]"""));
+    var bqList = new BountyQuest.GetListResponse
+    {
+        UserBoardRank = 8,
+        BountyQuestInfos = [new MementoMori.Ortega.Share.Data.BountyQuest.BountyQuestInfo { BountyQuestId = 1, BountyQuestType = BountyQuestType.Solo }],
+        UserBountyQuestDtoInfos = [new UserBountyQuestDtoInfo { BountyQuestId = 1, BountyQuestEndTime = 0 }]
+    };
+    var expected = MementoMoriFuncs.CalcBountyQuestExpectedDiamond(bqList, network.TimeManager);
+    Require(Math.Abs(expected - 26.0) < 0.001, $"LimitedEvent BountyQuestRewardBonus 2x expected 26, got {expected}");
+
+    // 3. RemakeBountyRequest ignores undispatched Team quest when all Solo quests are dispatched
+    Masters.OpenContentTable.Load(MessagePackSerializer.ConvertFromJson(
+        $$"""[{"OpenCommandType":{{(int)OpenCommandType.BountyQuest}},"OpenContentValue":1}]"""));
+    var remakeCalled = false;
+    var (network2, funcs2) = CreateOfflineAccount(handler: (req, _) =>
+    {
+        var p = req.RequestUri!.AbsolutePath;
+        if (p.EndsWith("/bountyQuest/getList"))
+            return Task.FromResult(MsgPackReply(new BountyQuest.GetListResponse
+            {
+                BountyQuestInfos =
+                [
+                    new() { BountyQuestId = 1, BountyQuestType = BountyQuestType.Solo },
+                    new() { BountyQuestId = 2, BountyQuestType = BountyQuestType.Team }
+                ],
+                UserBountyQuestDtoInfos =
+                [
+                    new() { BountyQuestId = 1, BountyQuestEndTime = 9999999999999 },
+                    new() { BountyQuestId = 2, BountyQuestEndTime = 0 }
+                ]
+            }));
+        if (p.EndsWith("/bountyQuest/remake")) { remakeCalled = true; return Task.FromResult(MsgPackReply(new BountyQuest.RemakeResponse())); }
+        throw new InvalidOperationException($"Unexpected bounty path: {p}");
+    });
+    using var _n2 = network2;
+    using var _f2 = funcs2;
+    funcs2.UserSyncData.UserBattleBossDtoInfo = new() { BossClearMaxQuestId = 10 };
+    await funcs2.RemakeBountyRequest();
+    Require(!remakeCalled, "RemakeBountyRequest spent diamonds when only a Team quest was undispatched");
+}
+
+static async Task CheckGrowthHistoryAndAssetCache()
+{
+    // 1. GrowthHistory.TrimGrowthLines retains ALL Snapshots within 90 days even when details exceed limit
+    var now = DateTimeOffset.UtcNow;
+    var jsonOpts = new JsonSerializerOptions { DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault };
+    var raw = new List<string>
+    {
+        JsonSerializer.Serialize(new GrowthEvent(now.AddDays(-25), "Snapshot", Values: new() { ["BattlePower"] = 100 }), jsonOpts),
+        JsonSerializer.Serialize(new GrowthEvent(now.AddDays(-10), "Snapshot", Values: new() { ["BattlePower"] = 200 }), jsonOpts),
+        JsonSerializer.Serialize(new GrowthEvent(now.AddDays(-100), "Snapshot", Values: new() { ["BattlePower"] = 50 }), jsonOpts)
+    };
+    for (var i = 0; i < 20; i++)
+        raw.Add(JsonSerializer.Serialize(new GrowthEvent(now.AddMinutes(-20 + i), "Reward", 1, 1, 0, i + 1), jsonOpts));
+    var trimmed = MementoMoriFuncs.TrimGrowthLines(raw, now, maxDetailLines: 5);
+    var parsed = trimmed.Select(l => JsonSerializer.Deserialize<GrowthEvent>(l, jsonOpts)!).ToList();
+    Require(parsed.Count(e => e.Kind == "Snapshot") == 2, "GrowthHistory trim dropped valid snapshots within 90 days");
+    Require(parsed.Count(e => e.Kind == "Reward") == 5, "GrowthHistory trim did not cap detail events");
+
+    // 2. Snapshot is recorded POST-MERGE and cached in memory
+    var tempDir = Directory.CreateTempSubdirectory("mementomori-growth-check-");
+    try
+    {
+        using var provider = new PhysicalFileProvider(tempDir.FullName);
+        using var sp = new ServiceCollection().AddSingleton<IFileProvider>(provider).BuildServiceProvider();
+        var (network, funcs) = CreateOfflineAccount(services: sp, handler: (_, _) =>
+            Task.FromResult(MsgPackReply(new GetUserDataResponse
+            {
+                UserSyncData = new UserSyncData { UserStatusDtoInfo = new() { PlayerId = 1, Rank = 55 } }
+            })));
+        using var _n = network;
+        using var _f = funcs;
+        funcs.UserId = 777;
+        funcs.UserSyncData.UserStatusDtoInfo = new() { PlayerId = 1, Rank = 50 };
+        await funcs.GetResponse<GetUserDataRequest, GetUserDataResponse>(new GetUserDataRequest());
+        var pendingField = Field(funcs, "_growthPendingWrites");
+        for (var i = 0; i < 100 && (int)pendingField.GetValue(funcs)! > 0; i++) await Task.Delay(10);
+        var history = funcs.GetGrowthHistory();
+        var snap = history.LastOrDefault(e => e.Kind == "Snapshot");
+        Require(snap?.Values?["Rank"] == 55, $"GrowthHistory Snapshot recorded stale pre-merge Rank ({snap?.Values?.GetValueOrDefault("Rank")}) instead of 55");
+    }
+    finally { tempDir.Delete(true); }
+
+    // 3. AssetCache.EnsureCachedAsync: missing parent dir on HttpRequestException returns 502 (not 500), coalesces concurrent fetches, and releases locks on pre-canceled ct
+    var cacheDir = Directory.CreateTempSubdirectory("mementomori-asset-check-");
+    try
+    {
+        var missingFile = Path.Combine(cacheDir.FullName, "nested", "dir", "icon.png");
+        var failFactory = new TestHttpClientFactory(() => new HttpClient(new Handler((_, _) => throw new HttpRequestException("upstream down"))));
+        var status = await AssetCache.EnsureCachedAsync(cacheDir.FullName, missingFile, "https://offline.invalid/icon.png", failFactory, CancellationToken.None);
+        Require(status == 502, $"AssetCache returned {status} instead of 502 on missing parent dir + HttpRequestException");
+        Require(!Directory.EnumerateFiles(cacheDir.FullName, "*.tmp", SearchOption.AllDirectories).Any(), "AssetCache left .tmp files behind");
+
+        // Pre-canceled token must not leak a lock entry
+        using var preCanceled = new CancellationTokenSource();
+        preCanceled.Cancel();
+        await Throws<OperationCanceledException>(() => AssetCache.EnsureCachedAsync(cacheDir.FullName, missingFile, "https://offline.invalid/icon.png", failFactory, preCanceled.Token));
+        Require(AssetCache.ActivePathLockCount == 0, $"AssetCache leaked {AssetCache.ActivePathLockCount} lock entries on canceled request");
+
+        // Concurrent miss deduplication
+        var fetchCalls = 0;
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var okFile = Path.Combine(cacheDir.FullName, "ok", "sprite.png");
+        var okFactory = new TestHttpClientFactory(() => new HttpClient(new Handler(async (_, _) =>
+        {
+            Interlocked.Increment(ref fetchCalls);
+            await gate.Task;
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent([1, 2, 3, 4]) };
+        })));
+        var t1 = AssetCache.EnsureCachedAsync(cacheDir.FullName, okFile, "https://offline.invalid/sprite.png", okFactory, CancellationToken.None);
+        var t2 = AssetCache.EnsureCachedAsync(cacheDir.FullName, okFile, "https://offline.invalid/sprite.png", okFactory, CancellationToken.None);
+        gate.SetResult();
+        var statuses = await Task.WhenAll(t1, t2);
+        Require(statuses.All(s => s == 200) && fetchCalls == 1, $"AssetCache concurrent miss made {fetchCalls} upstream fetches instead of 1");
+        Require(AssetCache.ActivePathLockCount == 0, $"AssetCache leaked {AssetCache.ActivePathLockCount} lock entries after concurrent fetch");
+    }
+    finally { cacheDir.Delete(true); }
+}
+
+static async Task CheckCoreAndUiFixes()
+{
+    // 1. UserSyncData: BlockPlayerIdList replaces on empty list (unblock works) and GivenItemCountInfoList handles null UserItemDtoInfo/UserStatusDtoInfo
+    var sync = new UserSyncData { BlockPlayerIdList = [100, 200] };
+    sync.UserItemEditorMergeUserSyncData(new UserSyncData
+    {
+        BlockPlayerIdList = [],
+        GivenItemCountInfoList = [new UserItem { ItemType = ItemType.Gold, ItemId = 1, ItemCount = 50 }]
+    });
+    Require(sync.BlockPlayerIdList.Count == 0, "BlockPlayerIdList failed to clear unblocked players");
+    Require(sync.UserItemDtoInfo is [{ ItemType: ItemType.Gold, ItemCount: 50 }], "GivenItemCountInfoList failed with null UserItemDtoInfo");
+
+    // 2. TimeZoneAwareJobRegister.DisableAll deregisters jobs even when LoginOk == false
+    var auth = new Writable<AuthOption>(new() { Accounts = [new AccountInfo { UserId = 1 }] });
+    var config = new Writable<GameConfig>(new() { AutoJob = new GameConfig.AutoJobModel { DisableAll = true } });
+    var manager = Construct<AccountManager>(auth, config, NullLogger<AccountManager>.Instance);
+    var factory = new StdSchedulerFactory();
+    var scheduler = await factory.GetScheduler();
+    try
+    {
+        var register = Construct<TimeZoneAwareJobRegister>(manager, config, factory, NullLogger<TimeZoneAwareJobRegister>.Instance);
+        using var funcs = Construct<MementoMoriFuncs>(manager, auth, config, register, NullLogger<MementoMoriFuncs>.Instance);
+        funcs.LoginOk = false;
+        ((ConcurrentDictionary<long, Account>)Field(manager, "_accounts").GetValue(manager)!)[1] = new Account { Funcs = funcs };
+        var jobKey = new JobKey($"1-{typeof(DailyJob).FullName}");
+        await scheduler.AddJob(JobBuilder.Create<DailyJob>().WithIdentity(jobKey).StoreDurably().Build(), true);
+        await register.RegisterJobs(1);
+        Require(!await scheduler.CheckExists(jobKey), "DisableAll did not deregister jobs when LoginOk == false");
+    }
+    finally { await scheduler.Shutdown(); }
+
+    // 3. BountyQuestList.FormatRemaining handles >= 24h and <= 0 cleanly
+    Require(MementoMori.BlazorShared.Components.BountyQuestList.FormatRemaining(0) == "00:00:00", "FormatRemaining(0) failed");
+    Require(MementoMori.BlazorShared.Components.BountyQuestList.FormatRemaining(-5000) == "00:00:00", "FormatRemaining(<0) failed");
+    Require(MementoMori.BlazorShared.Components.BountyQuestList.FormatRemaining((long)TimeSpan.FromHours(26).TotalMilliseconds) == "1d 02:00:00",
+        "FormatRemaining(>=24h) dropped days");
+
+    // 4. AccountManager: CurrentCulture updates TextResourceTable with 0 accounts, ChangeLanguage persists, DiscardTransientAccount cleans up
+    var langConfig = new Writable<GameConfig>(new());
+    var langAuth = new Writable<AuthOption>(new() { Accounts = [new AccountInfo { UserId = 1 }] });
+    var langMgr = Construct<AccountManager>(langAuth, langConfig, NullLogger<AccountManager>.Instance);
+    langMgr.ChangeLanguage("ja-JP");
+    Require(Masters.TextResourceTable.LanguageType == LanguageType.jaJP && langConfig.Value.Language == "ja-JP",
+        "AccountManager.ChangeLanguage did not update TextResourceTable with 0 accounts or persist language");
+    Require(langMgr.ResolveStartupCulture().Name == "ja-JP", "ResolveStartupCulture did not restore saved language");
+    var accDict = (ConcurrentDictionary<long, Account>)Field(langMgr, "_accounts").GetValue(langMgr)!;
+    accDict[999] = new Account();
+    langMgr.DiscardTransientAccount(999);
+    Require(!langMgr.Contains(999), "DiscardTransientAccount did not remove unsaved account");
+    accDict[1] = new Account();
+    langMgr.DiscardTransientAccount(1);
+    Require(langMgr.Contains(1), "DiscardTransientAccount removed a saved account");
+
+    // 5. PresentReceiveItem deduplicates repeated stuck presents within same game day
+    Masters.ItemTable.Load(MessagePackSerializer.ConvertFromJson(
+        $$"""[{"ItemType":{{(int)ItemType.QuestQuickTicket}},"ItemId":1,"MaxItemCount":10,"NameKey":"ticket"}]"""));
+    var (pNet, pFuncs) = CreateOfflineAccount(handler: (req, _) =>
+    {
+        var path = req.RequestUri!.AbsolutePath;
+        if (path.EndsWith("/present/getList"))
+            return Task.FromResult(MsgPackReply(new PresentApi.GetListResponse
+            {
+                userPresentDtoInfos =
+                [
+                    new UserPresentDtoInfo { Guid = "g1", Title = "StuckGift", IsReceived = false, ItemList = [new() { Item = new() { ItemType = ItemType.Gold, ItemId = 1, ItemCount = 1 } }] }
+                ]
+            }));
+        return Task.FromResult(MsgPackReply(new ApiErrorResponse { ErrorCode = ErrorCode.PresentReceiveOverLimitCountPresent }, statusCode: "1"));
+    });
+    using var _pn = pNet;
+    using var _pf = pFuncs;
+    await pFuncs.PresentReceiveItem();
+    var firstCount = pFuncs.MesssageList.Count(m => m.Message.Contains("StuckGift"));
+    await pFuncs.PresentReceiveItem();
+    var secondCount = pFuncs.MesssageList.Count(m => m.Message.Contains("StuckGift"));
+    Require(firstCount == 1 && secondCount == 1, "Repeated stuck presents were not deduplicated on the same game day");
+}
+
 static void ReplaceClient(MementoNetworkManager network, string field, HttpClient replacement)
 {
     ((HttpClient)Field(network, field).GetValue(network)!).Dispose();
@@ -1283,4 +2096,9 @@ sealed class CheckRenderer(IServiceProvider services) : Renderer(services, NullL
 sealed class Handler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> send) : HttpMessageHandler
 {
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) => send(request, cancellationToken);
+}
+
+sealed class TestHttpClientFactory(Func<HttpClient> create) : IHttpClientFactory
+{
+    public HttpClient CreateClient(string name) => create();
 }

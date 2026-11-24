@@ -8,5 +8,6 @@
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
         <ProjectReference Include="../../MementoMori.BlazorShared/MementoMori.BlazorShared.csproj" />
+        <ProjectReference Include="../../MementoMori.WebUI/MementoMori.WebUI.csproj" />
     </ItemGroup>
 </Project>
