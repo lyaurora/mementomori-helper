@@ -13,7 +13,7 @@ namespace MementoMori.Ortega.Share.Data.MyPage
 
 		public MypageIconInfo GetMypageIconInfoByTransferSpotType(TransferSpotType type)
         {
-            return MypageIconInfos.FirstOrDefault(d => d.TransferDetailInfo.TransferSpotType == type);
+            return MypageIconInfos?.FirstOrDefault(d => d.TransferDetailInfo?.TransferSpotType == type);
 		}
 	}
 }

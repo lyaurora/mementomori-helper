@@ -101,6 +101,7 @@ namespace MementoMori.Ortega.Share.Enums
 		RentalRaid = 2801,
         WebStoreGuidance = 602,
         WebStoreGuidanceFreeProduct = 603,
+        WebStoreGuidanceGetWebCrystal = 604,
         MiningQuest = 2901,
         ItemBoxConsumption = 804,
     }

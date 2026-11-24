@@ -45,9 +45,16 @@ public partial class MementoMoriFuncs
             if (guildTowerEventMb != null) missionGroupTypes.Add(MissionGroupType.GuildTower);
         }
 
-        foreach (var icon in Mypage.MypageInfo.MypageIconInfos)
+        foreach (var icon in Mypage?.MypageInfo?.MypageIconInfos ?? [])
         {
             if (icon.TransferDetailInfo != null && MissionIconGroups.TryGetValue(icon.TransferDetailInfo.TransferSpotType, out var group) && !missionGroupTypes.Contains(group))
+                missionGroupTypes.Add(group);
+        }
+
+        // 活动面板折叠在 EventPortal / SubEventPortal 内时，同步展开检测其开放的任务组
+        foreach (var banner in await GetEventPortalBannersAsync())
+        {
+            if (banner.TransferDetailInfo != null && MissionIconGroups.TryGetValue(banner.TransferDetailInfo.TransferSpotType, out var group) && !missionGroupTypes.Contains(group))
                 missionGroupTypes.Add(group);
         }
 
@@ -159,8 +166,15 @@ public partial class MementoMoriFuncs
                     }
 
                     if (!info.ExistReceivableTotalPointReward) return;
-                    var total = await GetResponse<UnionMissionReceiveTotalPointRewardRequest, UnionMissionReceiveTotalPointRewardResponse>(new UnionMissionReceiveTotalPointRewardRequest());
-                    total.RewardItemList?.PrintUserItems(log);
+                    try
+                    {
+                        var total = await GetResponse<UnionMissionReceiveTotalPointRewardRequest, UnionMissionReceiveTotalPointRewardResponse>(new UnionMissionReceiveTotalPointRewardRequest());
+                        total.RewardItemList?.PrintUserItems(log);
+                    }
+                    catch (ApiErrorException e) when (e.ErrorCode is not (ErrorCode.CommonNoSession or ErrorCode.CommonLoggedInAnotherDevice))
+                    {
+                        log(e.Message);
+                    }
                 }
                 catch (ApiErrorException e) when (e.ErrorCode is not (ErrorCode.CommonNoSession or ErrorCode.CommonLoggedInAnotherDevice))
                 {
@@ -203,12 +217,14 @@ public partial class MementoMoriFuncs
         });
     }
 
-    // 租借讨伐：别人借用我的分享角色攒的点数奖励，只在活动图标在主页时请求
+    // 租借讨伐：别人借用我的分享角色攒的点数奖励，只在活动图标在主页或 EventPortal 时请求
     public async Task ReceiveRentalRaidShareReward()
     {
         await ExecuteQuickAction(async (log, _) =>
         {
-            if (Mypage.MypageInfo?.GetMypageIconInfoByTransferSpotType(TransferSpotType.RentalRaid) == null) return;
+            var hasRentalRaid = Mypage?.MypageInfo?.GetMypageIconInfoByTransferSpotType(TransferSpotType.RentalRaid) != null
+                || (await GetEventPortalBannersAsync()).Any(b => b.TransferDetailInfo?.TransferSpotType == TransferSpotType.RentalRaid);
+            if (!hasRentalRaid) return;
             try
             {
                 var info = await GetResponse<GetShareRewardInfoRequest, GetShareRewardInfoResponse>(new GetShareRewardInfoRequest());
@@ -231,7 +247,7 @@ public partial class MementoMoriFuncs
         await ExecuteQuickAction(async (log, token) =>
         {
             await GetMissionInfo();
-            foreach (var pair in MissionInfoDict)
+            foreach (var pair in MissionInfoDict ?? [])
             {
                 if (pair.Value.UserMissionActivityDtoInfo == null) continue;
 
@@ -244,12 +260,30 @@ public partial class MementoMoriFuncs
                 if (maxRequiredCount <= 0) continue;
 
                 log(string.Format(ResourceStrings.RewardMissionMsg, pair.Key, maxRequiredCount));
-                var response = await GetResponse<RewardMissionActivityRequest, RewardMissionActivityResponse>(new RewardMissionActivityRequest
-                    {MissionGroupType = pair.Key, RequiredCount = maxRequiredCount});
-                response.RewardInfo.ItemList.PrintUserItems(log);
-                response.RewardInfo.CharacterList.PrintCharacterDtos(log);
+                try
+                {
+                    var response = await GetResponse<RewardMissionActivityRequest, RewardMissionActivityResponse>(new RewardMissionActivityRequest
+                        {MissionGroupType = pair.Key, RequiredCount = maxRequiredCount});
+                    response.RewardInfo?.ItemList?.PrintUserItems(log);
+                    response.RewardInfo?.CharacterList?.PrintCharacterDtos(log);
+                }
+                catch (ApiErrorException e) when (e.ErrorCode is not (ErrorCode.CommonNoSession or ErrorCode.CommonLoggedInAnotherDevice))
+                {
+                    log(e.Message);
+                }
             }
         });
+    }
+
+    internal static string FormatAchieveRankingTargetDescription(Ortega.Share.Master.Data.AchieveRankingRewardMB mb)
+    {
+        var arg = mb.RankingDataType switch
+        {
+            RankingDataType.PlayerBattlePower => mb.RequireValue.ToString("N0"),
+            RankingDataType.PlayerMainQuest => QuestTable.GetById(mb.RequireValue)?.Memo ?? mb.RequireValue.ToString(),
+            _ => mb.RequireValue.ToString()
+        };
+        return TextResourceTable.Get(mb.AchieveTargetDescriptionKey, arg);
     }
 
     public async Task ReceiveAchievementReward()
@@ -257,15 +291,16 @@ public partial class MementoMoriFuncs
         await ExecuteQuickAction(async (log, token) =>
         {
             await GetResponse<GetPlayerRankingRequest, GetPlayerRankingResponse>(new GetPlayerRankingRequest());
-            foreach (var (rankingDataType, mbId) in UserSyncData.ReceivableAchieveRankingRewardIdMap)
+            var receivedIds = UserSyncData.ReceivedAchieveRankingRewardIdList ?? [];
+            foreach (var (rankingDataType, mbId) in UserSyncData.ReceivableAchieveRankingRewardIdMap ?? [])
             {
                 foreach (var mb in AchieveRankingRewardTable.GetByRankingDataType(rankingDataType))
                 {
-                    if (mb.Id > mbId || UserSyncData.ReceivedAchieveRankingRewardIdList.Contains(mb.Id)) continue;
+                    if (mb.Id > mbId || receivedIds.Contains(mb.Id)) continue;
 
                     var response = await GetResponse<ReceiveAchieveRankingRewardRequest, ReceiveAchieveRankingRewardResponse>(new ReceiveAchieveRankingRewardRequest
                         {AchieveRankingRewardMBId = mb.Id});
-                    log($"{TextResourceTable.Get(mb.AchieveTargetDescriptionKey)}");
+                    log(FormatAchieveRankingTargetDescription(mb));
                     response.RewardItemList.PrintUserItems(log);
                 }
             }
