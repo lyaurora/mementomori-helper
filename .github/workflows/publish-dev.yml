@@ -10,7 +10,7 @@ permissions:
 
 concurrency:
   group: helper-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/v') }}
 
 jobs:
   check:
@@ -36,13 +36,25 @@ jobs:
       - uses: actions/checkout@v7
       - uses: docker/setup-qemu-action@v4
       - uses: docker/setup-buildx-action@v4
+      - name: Resolve version
+        id: ver
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=1.0.0" >> "$GITHUB_OUTPUT"
+          fi
       - uses: docker/metadata-action@v6
         id: meta
         with:
           images: ghcr.io/${{ github.repository }}
+          flavor: |
+            latest=auto
           tags: |
             type=raw,value=dev,enable={{is_default_branch}}
             type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
             type=sha
       - uses: docker/login-action@v4
         with:
@@ -53,6 +65,8 @@ jobs:
         with:
           context: .
           file: MementoMori.WebUI/Dockerfile
+          build-args: |
+            VERSION=${{ steps.ver.outputs.version }}
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
@@ -60,13 +74,12 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  publish-desktop:
+  build-desktop:
     needs: check
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
-    permissions:
-      contents: write
     strategy:
+      fail-fast: false
       matrix:
         rid: [win-x64, linux-x64, linux-arm64, osx-x64, osx-arm64]
     steps:
@@ -78,11 +91,186 @@ jobs:
         env:
           RELEASE_TAG: ${{ github.ref_name }}
           TARGET_RID: ${{ matrix.rid }}
-        run: dotnet publish MementoMori.WebUI/MementoMori.WebUI.csproj -c Release -r "$TARGET_RID" -o "publish-$TARGET_RID" --self-contained -p:Version="${RELEASE_TAG#v}" -p:PublishSingleFile=true -p:IncludeAllContentForSelfExtract=true -p:EnableCompressionInSingleFile=true
+        run: |
+          set -euo pipefail
+          OUT="publish-$TARGET_RID"
+          VERSION="${RELEASE_TAG#v}"
+          dotnet publish MementoMori.WebUI/MementoMori.WebUI.csproj \
+            -c Release \
+            -r "$TARGET_RID" \
+            -o "$OUT" \
+            --self-contained \
+            -p:Version="$VERSION" \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:EnableCompressionInSingleFile=true \
+            -p:DebugType=none \
+            -p:DebugSymbols=false
+          rm -f "$OUT"/*.pdb
+          test -f "$OUT/MementoMori.WebUI.staticwebassets.endpoints.json"
+          find "$OUT/wwwroot/_framework" -name 'blazor.web*.js' | grep -q .
+      - name: Add launcher and updater scripts
+        env:
+          TARGET_RID: ${{ matrix.rid }}
+        run: |
+          set -euo pipefail
+          OUT="publish-$TARGET_RID"
+          if [[ "$TARGET_RID" == win-* ]]; then
+            cp updater.ps1 "$OUT/updater.ps1"
+            cat <<'EOF' | sed 's/$/\r/' > "$OUT/start.bat"
+          @echo off
+          cd /d "%~dp0"
+          if not defined ASPNETCORE_URLS set ASPNETCORE_URLS=http://127.0.0.1:5290
+          echo First start downloads game master data and may take a minute.
+          echo WebUI URL: %ASPNETCORE_URLS%
+          echo Close this window to stop.
+          set "OPEN_URL=%ASPNETCORE_URLS%"
+          start "" /b powershell -NoProfile -WindowStyle Hidden -Command "$u = ($env:OPEN_URL -split ';')[0].TrimEnd('/'); if ($u -match '://(\*|0\.0\.0\.0|\+|\[::\]):') { $u = $u -replace '://(\*|0\.0\.0\.0|\+|\[::\]):', '://127.0.0.1:' }; for ($i=0; $i -lt 150; $i++) { Start-Sleep 2; try { if ((Invoke-WebRequest -UseBasicParsing ($u + '/healthz') -TimeoutSec 5).StatusCode -eq 200) { Start-Process $u; break } } catch {} }"
+          MementoMori.WebUI.exe %*
+          pause
+          EOF
+          else
+            if [[ "$TARGET_RID" == linux-* ]]; then
+              cp updater.sh "$OUT/updater.sh"
+              chmod +x "$OUT/updater.sh"
+            fi
+            cat <<'EOF' > "$OUT/start.sh"
+          #!/usr/bin/env bash
+          set -euo pipefail
+          cd "$(dirname "$0")"
+          export ASPNETCORE_URLS="${ASPNETCORE_URLS:-http://127.0.0.1:5290}"
+          echo "First start downloads game master data and may take a minute."
+          echo "WebUI URL: $ASPNETCORE_URLS"
+
+          open_url="${ASPNETCORE_URLS%%;*}"
+          open_url="${open_url%/}"
+          open_url="$(printf '%s' "$open_url" | sed -E 's#://(\*|0\.0\.0\.0|\+|\[::\]):#://127.0.0.1:#')"
+
+          open_cmd=""
+          if command -v open >/dev/null 2>&1; then
+            open_cmd="open"
+          elif [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ] && command -v xdg-open >/dev/null 2>&1; then
+            open_cmd="xdg-open"
+          fi
+
+          if [ -n "$open_cmd" ] && command -v curl >/dev/null 2>&1; then
+            (
+              for _ in $(seq 1 150); do
+                if curl -sf -o /dev/null "$open_url/healthz"; then
+                  "$open_cmd" "$open_url" >/dev/null 2>&1 || true
+                  break
+                fi
+                sleep 2
+              done
+            ) &
+          fi
+
+          exec ./MementoMori.WebUI "$@"
+          EOF
+            chmod +x "$OUT/start.sh" "$OUT/MementoMori.WebUI"
+          fi
+      - name: Smoke test Linux binary
+        if: matrix.rid == 'linux-x64'
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          ACTUAL="$(./publish-linux-x64/MementoMori.WebUI --version)"
+          EXPECTED="${RELEASE_TAG#v}"
+          echo "Binary version: $ACTUAL (expected: $EXPECTED)"
+          test "$ACTUAL" = "$EXPECTED"
       - name: Archive
         env:
           TARGET_RID: ${{ matrix.rid }}
         run: zip -qr "publish-$TARGET_RID.zip" "publish-$TARGET_RID"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: desktop-${{ matrix.rid }}
+          path: publish-${{ matrix.rid }}.zip
+
+  build-android:
+    needs: check
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: windows-latest
+    steps:
+      - name: Check signing secrets
+        id: check-secrets
+        shell: pwsh
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64_ENCODED }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:KEYSTORE_BASE64) -or [string]::IsNullOrWhiteSpace($env:KEYSTORE_PASSWORD)) {
+            Write-Warning 'KEYSTORE_BASE64_ENCODED / KEYSTORE_PASSWORD not configured; skipping Android APK in this release.'
+            'has_keystore=false' | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          } else {
+            'has_keystore=true' | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          }
+      - uses: actions/checkout@v7
+        if: steps.check-secrets.outputs.has_keystore == 'true'
+      - uses: actions/setup-dotnet@v6
+        if: steps.check-secrets.outputs.has_keystore == 'true'
+        with:
+          dotnet-version: 10.0.x
+      - name: Install MAUI Android workload and SDK dependencies
+        if: steps.check-secrets.outputs.has_keystore == 'true'
+        shell: pwsh
+        run: |
+          dotnet workload install maui-android
+          dotnet build MementoMori.Maui/MementoMori.Maui.csproj -t:InstallAndroidDependencies -f net10.0-android -p:AcceptAndroidSDKLicenses=True
+      - name: Prepare signing key
+        if: steps.check-secrets.outputs.has_keystore == 'true'
+        shell: pwsh
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64_ENCODED }}
+        run: |
+          [IO.File]::WriteAllBytes('MementoMori.Maui/mementomori-helper.keystore', [Convert]::FromBase64String($env:KEYSTORE_BASE64))
+      - name: Publish APK
+        if: steps.check-secrets.outputs.has_keystore == 'true'
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          BUILD_NUMBER: ${{ github.run_number }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          $displayVersion = $env:RELEASE_TAG -replace '^v', ''
+          dotnet publish MementoMori.Maui/MementoMori.Maui.csproj `
+            -c Release `
+            -f net10.0-android `
+            -p:AndroidSigningStorePass=env:KEYSTORE_PASSWORD `
+            -p:AndroidSigningKeyPass=env:KEYSTORE_PASSWORD `
+            -p:ApplicationDisplayVersion=$displayVersion `
+            -p:ApplicationVersion=$env:BUILD_NUMBER `
+            -o publish-android
+          $signed = Get-ChildItem -Path publish-android -Filter '*-Signed.apk' | Select-Object -First 1
+          if (-not $signed) { throw 'Signed APK not found in publish-android.' }
+          Copy-Item $signed.FullName 'publish-android/MementoMori-android.apk'
+      - uses: actions/upload-artifact@v7
+        if: steps.check-secrets.outputs.has_keystore == 'true'
+        with:
+          name: android-apk
+          path: publish-android/MementoMori-android.apk
+
+  publish-release:
+    needs: [build-desktop, build-android, publish-docker]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: release-assets
+          merge-multiple: true
+      - name: Generate checksums
+        run: |
+          set -euo pipefail
+          cd release-assets
+          rm -f SHA256SUMS.txt
+          LC_ALL=C sha256sum $(LC_ALL=C ls -1) > SHA256SUMS.txt
+          ls -lh
+          cat SHA256SUMS.txt
       - uses: softprops/action-gh-release@v3
         with:
-          files: publish-${{ matrix.rid }}.zip
+          generate_release_notes: true
+          files: release-assets/*

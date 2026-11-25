@@ -6,7 +6,7 @@ on:
       version:
         description: Android display version
         required: true
-        default: 1.0.0
+        default: 1.15.0
 
 permissions:
   contents: read
@@ -19,20 +19,40 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
-      - run: dotnet workload install maui
+      - name: Install MAUI Android workload and SDK dependencies
+        shell: pwsh
+        run: |
+          dotnet workload install maui-android
+          dotnet build MementoMori.Maui/MementoMori.Maui.csproj -t:InstallAndroidDependencies -f net10.0-android -p:AcceptAndroidSDKLicenses=True
       - name: Prepare signing key
+        shell: pwsh
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64_ENCODED }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: |
-          if (!$env:KEYSTORE_BASE64) { throw 'Configure KEYSTORE_BASE64_ENCODED and KEYSTORE_PASSWORD before publishing Android.' }
+          if ([string]::IsNullOrWhiteSpace($env:KEYSTORE_BASE64) -or [string]::IsNullOrWhiteSpace($env:KEYSTORE_PASSWORD)) {
+            throw 'Configure KEYSTORE_BASE64_ENCODED and KEYSTORE_PASSWORD before publishing Android.'
+          }
           [IO.File]::WriteAllBytes('MementoMori.Maui/mementomori-helper.keystore', [Convert]::FromBase64String($env:KEYSTORE_BASE64))
       - name: Publish
+        shell: pwsh
         env:
           DISPLAY_VERSION: ${{ inputs.version }}
           BUILD_NUMBER: ${{ github.run_number }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-        run: dotnet publish MementoMori.Maui/MementoMori.Maui.csproj -c Release -f net10.0-android -p:AndroidSigningStorePass=env:KEYSTORE_PASSWORD -p:AndroidSigningKeyPass=env:KEYSTORE_PASSWORD -p:ApplicationDisplayVersion=$env:DISPLAY_VERSION -p:ApplicationVersion=$env:BUILD_NUMBER -o publish-android
+        run: |
+          dotnet publish MementoMori.Maui/MementoMori.Maui.csproj `
+            -c Release `
+            -f net10.0-android `
+            -p:AndroidSigningStorePass=env:KEYSTORE_PASSWORD `
+            -p:AndroidSigningKeyPass=env:KEYSTORE_PASSWORD `
+            -p:ApplicationDisplayVersion=$env:DISPLAY_VERSION `
+            -p:ApplicationVersion=$env:BUILD_NUMBER `
+            -o publish-android
+          $signed = Get-ChildItem -Path publish-android -Filter '*-Signed.apk' | Select-Object -First 1
+          if (-not $signed) { throw 'Signed APK not found in publish-android.' }
+          Copy-Item $signed.FullName 'publish-android/MementoMori-android.apk'
       - uses: actions/upload-artifact@v7
         with:
           name: android
-          path: publish-android/*-Signed.apk
+          path: publish-android/MementoMori-android.apk

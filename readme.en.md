@@ -3,10 +3,11 @@
 # MementoMori Game Assistant
 
 [![Build](https://img.shields.io/github/actions/workflow/status/lyaurora/mementomori-helper/publish-dev.yml?branch=master)](https://github.com/lyaurora/mementomori-helper/actions/workflows/publish-dev.yml)
+[![Release](https://img.shields.io/github/v/release/lyaurora/mementomori-helper)](https://github.com/lyaurora/mementomori-helper/releases/latest)
 
-A web assistant for Memento Mori: it claims rewards and runs dailies on a schedule, and lets you view characters and items, buy, invoke and chat from a browser.
+A cross-platform assistant for Memento Mori: it claims rewards and runs dailies on a schedule, and lets you view characters and items, buy, invoke and chat from a browser or the Android app.
 
-This is a maintained fork of [moonheart/mementomori-helper](https://github.com/moonheart/mementomori-helper) that keeps the original WebUI. It runs on .NET 10, its game protocol is synced to client 5.1.1, and the UI is available in English, 简体中文, 繁體中文, 日本語 and 한국어.
+This is a maintained fork of [moonheart/mementomori-helper](https://github.com/moonheart/mementomori-helper) that keeps the original Blazor WebUI and MAUI Android app. It runs on .NET 10, its game protocol is synced to client **5.2.0**, and the UI is available in English, 简体中文, 繁體中文, 日本語 and 한국어. Prebuilt packages are published for Windows / Linux / macOS, multi-arch Docker images, and Android APK.
 
 ## **Disclaimer**
 
@@ -103,9 +104,46 @@ The appearance can follow the system or be set to light or dark, and the app bar
 
 ## Installation
 
-Docker Compose is recommended. This repository does not currently publish release archives.
+Pick the option that fits your setup (**Docker Compose** is recommended for 24/7 server hosting; **Desktop releases** are the easiest way to run locally):
 
-### Option 1: Docker Compose, built from source
+### Option 1: Prebuilt desktop archive (Windows / Linux / macOS, no SDK or Docker needed)
+
+Download the self-contained archive for your platform from [Releases](https://github.com/lyaurora/mementomori-helper/releases/latest) (`SHA256SUMS.txt` is included for verification):
+
+| Platform | Archive | How to start |
+| --- | --- | --- |
+| Windows x64 | `publish-win-x64.zip` | Unzip and run `start.bat` |
+| Linux x64 / arm64 | `publish-linux-x64.zip` / `publish-linux-arm64.zip` | Unzip and run `./start.sh` |
+| macOS Intel / Apple Silicon | `publish-osx-x64.zip` / `publish-osx-arm64.zip` | Unzip and run `./start.sh` |
+
+- `start.bat` / `start.sh` listens on `http://127.0.0.1:5290` by default and opens the browser once ready (the first start downloads game Master data and may take about a minute). Set `ASPNETCORE_URLS` to override the listen address.
+- Configuration and data are stored in the current working directory (you can also launch the binary from a separate working directory to isolate data).
+- **macOS note**: if Gatekeeper warns about an unverified binary on first launch, run `xattr -dr com.apple.quarantine .` inside the extracted folder before starting `./start.sh`.
+
+### Option 2: Docker Compose (recommended for 24/7 hosting)
+
+Multi-arch images (`linux/amd64`, `linux/arm64`) are published to GHCR:
+
+- `ghcr.io/lyaurora/mementomori-helper:latest`: latest formal release (version tags such as `:1.15.0` are also published)
+- `ghcr.io/lyaurora/mementomori-helper:dev`: rolling builds from `master`
+
+**Prebuilt image**: prepare the data directories (see [examples/docker-compose](examples/docker-compose/Readme.md) for details):
+
+```sh
+mkdir -p config Master BattleLogs
+test -f config/appsettings.user.json || printf '{}\n' > config/appsettings.user.json
+chmod 600 config/appsettings.user.json
+```
+
+Replace `build`, `image` and `pull_policy` in [examples/docker-compose/docker-compose.yml](examples/docker-compose/docker-compose.yml) with:
+
+```yaml
+    image: ghcr.io/lyaurora/mementomori-helper:latest
+```
+
+Then run `docker compose up -d` and open `http://127.0.0.1:5290`.
+
+**Build from source**:
 
 ```sh
 git clone https://github.com/lyaurora/mementomori-helper.git
@@ -116,17 +154,14 @@ chmod 600 config/appsettings.user.json
 docker compose up -d --build
 ```
 
-Then open `http://127.0.0.1:5290`. See [examples/docker-compose](examples/docker-compose/Readme.md) for more.
+### Option 3: Android app (APK)
 
-### Option 2: Docker Compose, prebuilt image
+Download and install `MementoMori-android.apk` from [Releases](https://github.com/lyaurora/mementomori-helper/releases/latest).
 
-CI publishes the master branch to `ghcr.io/lyaurora/mementomori-helper:dev` (linux/amd64, linux/arm64). After preparing the directories above, replace `build`, `image` and `pull_policy` in the example `docker-compose.yml` with:
+- This fork uses its own package ID (`io.github.lyaurora.mementomorihelper`) and signing key. It can coexist with the upstream app and cannot directly overwrite an upstream install.
+- Android battery optimization may suspend background scheduled jobs; use Docker or an always-on desktop host for reliable 24/7 automation.
 
-```yaml
-    image: ghcr.io/lyaurora/mementomori-helper:dev
-```
-
-### Option 3: Run directly
+### Option 4: Run from source (developers)
 
 Install the .NET 10 SDK selected by [global.json](global.json), then:
 
@@ -135,9 +170,10 @@ cd MementoMori.WebUI
 dotnet run -c Release
 ```
 
-By default it listens on port 5290 on all interfaces (`http://0.0.0.0:5290`) and keeps its configuration and data in the current directory.
+By default it listens on `http://0.0.0.0:5290` and stores configuration and data in the current directory.
 
-> The WebUI has no login of its own. The example publishes the port on loopback only. For remote access use SSH, Tailscale or an authenticating reverse proxy; do not expose it directly to the internet.
+> [!WARNING]
+> The WebUI has no login of its own. The compose example and launcher scripts bind to loopback (`127.0.0.1:5290`) by default. For remote access use SSH, Tailscale or an authenticating reverse proxy; do not expose it directly to the internet.
 
 ## Adding an account
 
@@ -163,16 +199,16 @@ Times are in the server time of the account's world and can be changed under **O
 
 ### Daily Job
 
-- Claim login bonuses, the VIP daily gift, Monthly Boost, auto-battle rewards and the Presents Box
+- Claim login bonuses (including limited EventPortal bonuses), the VIP daily gift, Monthly Boost, auto-battle rewards and the Presents Box
 - Send and receive Friend Points
 - Reinforce equipment once (switch, on by default): picks the lowest-level equipped item that is below its cap
 - Sweep the boss and the Tower of Infinity 3 times each
 - High-speed battle: the daily free one, plus Monthly Boost uses if active
 - Guild check-in, Guild Raid, Guild Tree, Guild Battle rewards
 - Friend management, friend campaign rewards, achievement rewards, character Memories
-- Fountain of Prayers claim and dispatch
+- Fountain of Prayers claim and dispatch (detects 2x reward events)
 - Cave of Space-Time (switch, on by default)
-- Mission and medal rewards, rental raid share rewards
+- Mission and medal rewards (including EventPortal missions and completed Union Mission panels/point rewards), rental raid share rewards
 - Use Normal Items (switch, on by default), free invoke (switch, on by default)
 - Character Awaken (switch, on by default): R to R+ and SR to SR+; locked and level-linked characters are never used as material
 
@@ -259,7 +295,9 @@ Check **Options - Job Status** first: the account must be logged in, **Disable A
 
 ### How do I upgrade?
 
-Docker Compose: update the code and run `docker compose up -d --build` again, or with the prebuilt image run `docker compose pull && docker compose up -d`. Configuration, Master data and battle logs stay in the mounted directories.
+- **Desktop archive**: run the bundled `updater.ps1` (Windows PowerShell) or `./updater.sh` (Linux, requires `curl`, `wget`, `jq`, `unzip`), or extract the new archive over the existing directory (`appsettings.user.json`, `Master` and `BattleLogs` are preserved).
+- **Docker Compose**: run `docker compose pull && docker compose up -d` for prebuilt images, or `git pull && docker compose up -d --build` when building from source. Configuration, Master data and battle logs stay in the mounted directories.
+- **Android**: download and install the newer `MementoMori-android.apk` directly over the existing app to keep your settings.
 
 ## Maintenance
 

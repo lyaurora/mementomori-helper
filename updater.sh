@@ -143,9 +143,15 @@ if [ -z "$latestVersionStr" ] || [ "$latestVersionStr" = "null" ]; then
 fi
 
 # 检查当前版本是否与最新版本相同
-currentVersion=$(strings "$downloadDirectory/$programFileName" | grep -o 'MementoMori.WebUI/[0-9]\+\.[0-9]\+\.[0-9]\+' | awk '!seen[$0]++' | sed 's/MementoMori.WebUI\///')
+currentVersion=""
+if [ -x "$downloadDirectory/$programFileName" ]; then
+    currentVersion=$("$downloadDirectory/$programFileName" --version 2>/dev/null | head -n 1 | tr -d '\r' | sed 's/^v//' || true)
+fi
+if [ -z "$currentVersion" ] && [ -f "$downloadDirectory/$programFileName" ] && command -v strings &> /dev/null; then
+    currentVersion=$(strings "$downloadDirectory/$programFileName" | grep -o 'MementoMori\.WebUI/[0-9]\+\.[0-9]\+\.[0-9]\+' | awk '!seen[$0]++' | sed 's/MementoMori\.WebUI\///' | head -n 1 || true)
+fi
 
-if [ "$(printf '%s\n' "$currentVersion" "$latestVersion" | sort -V | head -n 1)" = "$latestVersion" ]; then
+if [ -n "$currentVersion" ] && [ "$(printf '%s\n' "$currentVersion" "$latestVersion" | sort -V | head -n 1)" = "$latestVersion" ]; then
     case "$lang" in
         zh_CN|zh_SG)
             echo -e "${GREEN}程序已经是最新版本 ($latestVersion). 无需更新.${NC}"
@@ -232,6 +238,10 @@ else
             cp -Rf "$tempDir/publish-linux-arm64/"* "$downloadDirectory/"
             ;;
     esac
+
+    chmod +x "$downloadDirectory/$programFileName"
+    [ -f "$downloadDirectory/start.sh" ] && chmod +x "$downloadDirectory/start.sh"
+    [ -f "$downloadDirectory/updater.sh" ] && chmod +x "$downloadDirectory/updater.sh"
 
     # 删去临时文件夹与下载的包
     rm -rf "$tempDir" "$downloadPath"

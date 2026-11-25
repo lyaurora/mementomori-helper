@@ -25,7 +25,7 @@
         <ApplicationTitle>MementoMori.Maui</ApplicationTitle>
 
         <!-- App Identifier -->
-        <ApplicationId>com.companyname.mementomori.maui</ApplicationId>
+        <ApplicationId>io.github.lyaurora.mementomorihelper</ApplicationId>
 
         <!-- Versions -->
         <ApplicationDisplayVersion>1.0.0</ApplicationDisplayVersion>
@@ -46,7 +46,7 @@
       <AndroidKeyStore>True</AndroidKeyStore>
       <AndroidSigningKeyAlias>mementomori-helper</AndroidSigningKeyAlias>
       <AndroidEnableMultiDex>True</AndroidEnableMultiDex>
-      <ApplicationId>io.github.moonheart.mementomorihelper</ApplicationId>
+      <ApplicationId>io.github.lyaurora.mementomorihelper</ApplicationId>
       <ApplicationTitle>MementoMori Helper</ApplicationTitle>
       <ApplicationDisplayVersion>1.0.0</ApplicationDisplayVersion>
       <ApplicationVersion>1</ApplicationVersion>

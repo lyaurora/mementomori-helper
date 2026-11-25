@@ -25,7 +25,12 @@ namespace MementoMori.Maui
             builder.Configuration.AddJsonFile(new EmbeddedFileProvider(typeof(App).Assembly), "appsettings.json", false, false);
             builder.Configuration.AddJsonFile(fileProvider, "appsettings.user.json", true, true);
             builder.Services.AddMauiBlazorWebView();
-            builder.Services.AddMudServices();
+            builder.Services.AddMudServices(config =>
+            {
+                // Keep the MudBlazor 7 popover behaviour: clicks outside an open menu/select only close it, and lists flip only when opened.
+                config.PopoverOptions.ModalOverlay = true;
+                config.PopoverOptions.OverflowBehavior = OverflowBehavior.FlipOnOpen;
+            });
 
             builder.Services.AddMementoMori();
             builder.Services.AddMementoMoriBlazorShared();

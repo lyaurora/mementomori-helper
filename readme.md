@@ -3,10 +3,11 @@
 # MementoMori 游戏助手
 
 [![Build](https://img.shields.io/github/actions/workflow/status/lyaurora/mementomori-helper/publish-dev.yml?branch=master)](https://github.com/lyaurora/mementomori-helper/actions/workflows/publish-dev.yml)
+[![Release](https://img.shields.io/github/v/release/lyaurora/mementomori-helper)](https://github.com/lyaurora/mementomori-helper/releases/latest)
 
-《メメントモリ》的网页版助手：定时领取奖励、完成日常，也可以在浏览器里查看角色和物品、购买、抽卡和聊天。
+《メメントモリ》的跨平台助手：定时领取奖励、完成日常，也可以在浏览器或 Android 客户端里查看角色和物品、购买、抽卡和聊天。
 
-本项目是 [moonheart/mementomori-helper](https://github.com/moonheart/mementomori-helper) 的维护分支，继续维护原有的 WebUI。运行于 .NET 10，游戏协议已同步到客户端 5.1.1，界面支持简体中文、繁體中文、English、日本語、한국어。
+本项目是 [moonheart/mementomori-helper](https://github.com/moonheart/mementomori-helper) 的维护分支，继续维护原有的 Blazor WebUI 与 MAUI Android 客户端。运行于 .NET 10，游戏协议已同步到客户端 **5.2.0**，界面支持简体中文、繁體中文、English、日本語、한국어。提供 Windows / Linux / macOS 独立压缩包、多架构 Docker 镜像与 Android APK。
 
 ## **免责声明**
 
@@ -103,9 +104,46 @@
 
 ## 部署
 
-推荐使用 Docker Compose。本仓库目前没有发布 Release 压缩包。
+按使用场景选择一种方式即可（服务器 24 小时挂机推荐 **Docker Compose**，本地电脑直接用推荐 **桌面端预编译包**）：
 
-### 方式 1：Docker Compose，从源码构建
+### 方式 1：桌面端预编译包（Windows / Linux / macOS，免安装环境）
+
+前往 [Releases](https://github.com/lyaurora/mementomori-helper/releases/latest) 下载对应系统的自包含压缩包（同时提供 `SHA256SUMS.txt` 校验）：
+
+| 平台 | 文件名 | 启动方式 |
+| --- | --- | --- |
+| Windows x64 | `publish-win-x64.zip` | 解压后双击 `start.bat` |
+| Linux x64 / arm64 | `publish-linux-x64.zip` / `publish-linux-arm64.zip` | 解压后运行 `./start.sh` |
+| macOS Intel / Apple Silicon | `publish-osx-x64.zip` / `publish-osx-arm64.zip` | 解压后运行 `./start.sh` |
+
+- `start.bat` / `start.sh` 默认监听 `http://127.0.0.1:5290` 并在就绪后自动打开浏览器（首次启动需下载游戏 Master 数据，可能需要 1 分钟左右）；可通过环境变量 `ASPNETCORE_URLS` 覆盖监听地址。
+- 配置和数据保存在程序所在目录（也可在独立工作目录中直接执行可执行文件来隔离数据）。
+- **macOS 提示**：首次运行若提示“无法验证开发者”，请在解压目录执行 `xattr -dr com.apple.quarantine .` 后再运行 `./start.sh`。
+
+### 方式 2：Docker Compose（推荐服务器长期运行）
+
+支持 `linux/amd64`、`linux/arm64` 多架构镜像：
+
+- `ghcr.io/lyaurora/mementomori-helper:latest`：最新正式版（也支持固定版本如 `:1.15.0`）
+- `ghcr.io/lyaurora/mementomori-helper:dev`：`master` 分支自动构建的滚动版本
+
+**使用预构建镜像**：准备目录并拉取运行（完整示例见 [examples/docker-compose](examples/docker-compose/Readme.md)）：
+
+```sh
+mkdir -p config Master BattleLogs
+test -f config/appsettings.user.json || printf '{}\n' > config/appsettings.user.json
+chmod 600 config/appsettings.user.json
+```
+
+将 [examples/docker-compose/docker-compose.yml](examples/docker-compose/docker-compose.yml) 中的 `build`、`image` 和 `pull_policy` 替换为：
+
+```yaml
+    image: ghcr.io/lyaurora/mementomori-helper:latest
+```
+
+然后运行 `docker compose up -d`，打开 `http://127.0.0.1:5290`。
+
+**从源码构建**：
 
 ```sh
 git clone https://github.com/lyaurora/mementomori-helper.git
@@ -116,17 +154,14 @@ chmod 600 config/appsettings.user.json
 docker compose up -d --build
 ```
 
-然后打开 `http://127.0.0.1:5290`。更多说明见 [examples/docker-compose](examples/docker-compose/Readme.md)。
+### 方式 3：Android 客户端（APK）
 
-### 方式 2：Docker Compose，使用预构建镜像
+在 [Releases](https://github.com/lyaurora/mementomori-helper/releases/latest) 下载 `MementoMori-android.apk` 安装即可。
 
-CI 会把 master 分支发布到 `ghcr.io/lyaurora/mementomori-helper:dev`（linux/amd64、linux/arm64）。准备好上面的目录后，把示例 `docker-compose.yml` 中的 `build`、`image` 和 `pull_policy` 换成：
+- 本分支使用独立包名 `io.github.lyaurora.mementomorihelper` 与独立签名密钥，可与原版应用共存，无法直接覆盖原版安装。
+- Android 系统省电策略可能限制后台定时任务；如需稳定 24 小时挂机，建议使用 Docker 或常开电脑运行桌面版。
 
-```yaml
-    image: ghcr.io/lyaurora/mementomori-helper:dev
-```
-
-### 方式 3：直接运行
+### 方式 4：从源码直接运行（开发者）
 
 安装 [global.json](global.json) 指定的 .NET 10 SDK，然后：
 
@@ -135,9 +170,10 @@ cd MementoMori.WebUI
 dotnet run -c Release
 ```
 
-默认监听所有网卡的 5290 端口（`http://0.0.0.0:5290`），配置和数据保存在当前目录。
+默认监听 `http://0.0.0.0:5290`，配置和数据保存在当前目录。
 
-> WebUI 本身没有登录验证。示例只把端口发布到本机，需要远程访问时请通过 SSH、Tailscale 或带认证的反向代理，不要直接暴露到公网。
+> [!WARNING]
+> WebUI 本身没有登录验证。示例和启动脚本默认只监听本机（`127.0.0.1:5290`），需要远程访问时请通过 SSH、Tailscale 或带认证的反向代理，不要直接暴露到公网。
 
 ## 添加账号
 
@@ -163,16 +199,16 @@ dotnet run -c Release
 
 ### 每日任务
 
-- 领取签到奖励、VIP 每日福利、每月强化组合包、自动战斗报酬、礼物箱
+- 领取签到奖励（含限定活动入口的登录奖励）、VIP 每日福利、每月强化组合包、自动战斗报酬、礼物箱
 - 赠送和领取友情点数
 - 强化一次装备（开关，默认开）：选择已装备且等级最低、未达上限的装备
 - 挑战首领和无穷之塔各扫荡 3 次
 - 高速战斗：每日免费一次，有月卡时再用月卡次数
 - 公会签到、公会讨伐战、公会树、领取公会战奖励
 - 好友管理、好友活动奖励、成就奖励、角色回忆
-- 祈愿之泉领取和远征
+- 祈愿之泉领取和远征（自动识别 2 倍报酬活动）
 - 时空洞窟（开关，默认开）
-- 领取任务奖励和奖章奖励、租借讨伐分享奖励
+- 领取任务奖励（含活动任务与团结任务已完成面板/累计点数奖励）和奖章奖励、租借讨伐分享奖励
 - 使用固定物品（开关，默认开）、免费召唤（开关，默认开）
 - 角色进化（开关，默认开）：R 合成 R+，SR 合成 SR+；已锁定或在等级链接中的角色不会被当作素材
 
@@ -259,7 +295,9 @@ $$score=\sum weight\times\frac{count}{count_{max}}$$
 
 ### 如何升级？
 
-Docker Compose：更新代码后重新运行 `docker compose up -d --build`，或在使用预构建镜像时运行 `docker compose pull && docker compose up -d`。配置、Master 和战斗记录都保存在挂载的目录中。
+- **桌面端预编译包**：Windows 可直接运行解压目录内的 `updater.ps1`（PowerShell），Linux 可运行 `./updater.sh`（需已安装 `curl`、`wget`、`jq`、`unzip`）；也可以直接下载新版压缩包覆盖解压，原有的 `appsettings.user.json`、`Master`、`BattleLogs` 等数据不会被覆盖。
+- **Docker Compose**：使用预构建镜像时运行 `docker compose pull && docker compose up -d`；源码构建时更新代码后运行 `docker compose up -d --build`。配置、Master 和战斗记录均保存在挂载目录中。
+- **Android**：下载新版 `MementoMori-android.apk` 直接覆盖安装即可保留配置。
 
 ## 维护
 

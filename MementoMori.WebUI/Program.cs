@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Reflection;
 using MementoMori;
 using MementoMori.Common;
 using MementoMori.Jobs;
@@ -24,6 +25,15 @@ internal class Program
 {
     public static void Main(string[] args)
     {
+        if (args is ["--version" or "-v"])
+        {
+            var version = typeof(Program).Assembly
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+                ?? typeof(Program).Assembly.GetName().Version?.ToString()
+                ?? "0.0.0";
+            Console.WriteLine(version.Split('+')[0]);
+            return;
+        }
         if (args is ["--healthcheck", var healthUrl])
         {
             using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
@@ -36,7 +46,16 @@ internal class Program
             catch (OperationCanceledException) { Environment.ExitCode = 1; }
             return;
         }
-        var builder = WebApplication.CreateBuilder(args);
+        var baseDirectory = AppContext.BaseDirectory;
+        var currentDirectory = Directory.GetCurrentDirectory();
+        var useBaseDirectoryAsContentRoot = !Directory.Exists(Path.Combine(currentDirectory, "wwwroot"))
+            && Directory.Exists(Path.Combine(baseDirectory, "wwwroot"))
+            && File.Exists(Path.Combine(baseDirectory, "MementoMori.WebUI.staticwebassets.endpoints.json"));
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+        {
+            Args = args,
+            ContentRootPath = useBaseDirectoryAsContentRoot ? baseDirectory : null
+        });
 
         var configDirectory = Path.GetFullPath(builder.Configuration["ConfigDirectory"] ?? Directory.GetCurrentDirectory());
         Directory.CreateDirectory(configDirectory);

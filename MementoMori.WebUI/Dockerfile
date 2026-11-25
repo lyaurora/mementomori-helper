@@ -1,5 +1,6 @@
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG TARGETARCH
+ARG VERSION=1.0.0
 WORKDIR /src
 COPY global.json ./
 COPY MementoMori.WebUI/MementoMori.WebUI.csproj MementoMori.WebUI/
@@ -9,7 +10,7 @@ COPY MementoMori/MementoMori.csproj MementoMori/
 COPY MementoMori.Ortega/MementoMori.Ortega.csproj MementoMori.Ortega/
 RUN dotnet restore MementoMori.WebUI/MementoMori.WebUI.csproj -a $TARGETARCH
 COPY . .
-RUN dotnet publish MementoMori.WebUI/MementoMori.WebUI.csproj -c Release -a $TARGETARCH --no-restore -o /app/publish /p:UseAppHost=false
+RUN dotnet publish MementoMori.WebUI/MementoMori.WebUI.csproj -c Release -a $TARGETARCH --no-restore -o /app/publish /p:UseAppHost=false /p:Version=$VERSION
 RUN find /app/publish/wwwroot/_framework -name 'blazor.web*.js' | grep -q .
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
