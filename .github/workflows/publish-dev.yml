@@ -185,7 +185,7 @@ jobs:
         run: zip -qr "publish-$TARGET_RID.zip" "publish-$TARGET_RID"
       - uses: actions/upload-artifact@v7
         with:
-          name: desktop-${{ matrix.rid }}
+          name: release-desktop-${{ matrix.rid }}
           path: publish-${{ matrix.rid }}.zip
 
   build-android:
@@ -248,7 +248,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: steps.check-secrets.outputs.has_keystore == 'true'
         with:
-          name: android-apk
+          name: release-android-apk
           path: publish-android/MementoMori-android.apk
 
   publish-release:
@@ -260,6 +260,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v8
         with:
+          pattern: release-*
           path: release-assets
           merge-multiple: true
       - name: Generate checksums
