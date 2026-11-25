@@ -9,11 +9,12 @@
     --app-selected-background: color-mix(in srgb, var(--mud-palette-primary) 12%, var(--mud-palette-surface));
 }
 html[data-theme="dark"] {
-    --app-card-line: rgba(255,236,214,.09);
-    --app-card-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 14px 30px -18px rgb(0 0 0 / .8);
+    --app-card-line: rgba(255,250,244,.075);
+    --app-card-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 12px 28px -16px rgb(0 0 0 / .65);
     --app-overlay-shadow: 0 16px 40px -14px rgb(0 0 0 / .7), 0 2px 6px rgb(0 0 0 / .2);
-    --app-text-3: #A39788;
+    --app-text-3: #8A867E;
     --app-dot: #FF6B5B;
+    --app-selected-background: color-mix(in srgb, var(--mud-palette-primary) 14%, var(--mud-palette-surface));
 }
 * { scrollbar-width: thin; scrollbar-color: var(--mud-palette-lines-inputs) transparent; }
 body { background: var(--mud-palette-background); color: var(--mud-palette-text-primary); font-family: var(--mud-typography-default-family); }
@@ -510,9 +511,27 @@ h1:focus-visible, .mud-dialog .fixed.pointer-events-none:focus-visible { outline
 .mud-popover:has(> .mud-list) { overflow: hidden; }
 /* MudBlazor fixes lists at 300px; in a short (landscape) viewport that covered the field and the app bar. */
 .mud-popover.mud-popover-open:has(> .mud-list) { max-height: min(300px, 38dvh) !important; }
-html[data-theme="dark"] :is(.app-content, .mud-dialog) .mud-button-filled-primary:not(:disabled), html[data-theme="dark"] .mud-message-box .mud-button-text-primary:not(:disabled) { color: var(--mud-palette-primary); background: color-mix(in srgb, var(--mud-palette-primary) 14%, var(--mud-palette-surface)); }
-/* Dark: a column of on-switches in full accent is loud; mute the large fills, keep small accents bright. */
-html[data-theme="dark"] :is(.app-content, .mud-dialog) .mud-switch-base.mud-checked + .mud-switch-track { background: color-mix(in srgb, var(--mud-palette-primary) 70%, var(--mud-palette-surface)) !important; }
+html[data-theme="dark"] :is(.app-content, .mud-dialog) .mud-button-filled-primary:not(:disabled), html[data-theme="dark"] .mud-message-box .mud-button-text-primary:not(:disabled) {
+    color: #F5B87B;
+    background: color-mix(in srgb, var(--mud-palette-primary) 17%, var(--mud-palette-surface));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mud-palette-primary) 34%, transparent);
+}
+@media (hover: hover) and (pointer: fine) {
+    html[data-theme="dark"] :is(.app-content, .mud-dialog) .mud-button-filled-primary:not(:disabled):hover, html[data-theme="dark"] .mud-message-box .mud-button-text-primary:not(:disabled):hover {
+        background: color-mix(in srgb, var(--mud-palette-primary) 24%, var(--mud-palette-surface));
+    }
+}
+/* Dark: recessed disabled filled buttons so disabled never reads brighter than enabled secondary buttons. */
+html[data-theme="dark"] :is(.app-content, .mud-dialog) .mud-button-filled:disabled:not(.gacha-draw-button) {
+    background: transparent !important;
+    box-shadow: inset 0 0 0 1px var(--mud-palette-lines-default);
+}
+/* Dark: calm copper track with a crisp light thumb on ON switches; clearer recessed track on OFF switches. */
+html[data-theme="dark"] :is(.app-content, .mud-dialog) .mud-switch-base.mud-checked + .mud-switch-track { background: #B06C31 !important; }
+html[data-theme="dark"] :is(.app-content, .mud-dialog) .mud-switch-span .mud-switch-base.mud-checked [class*="mud-switch-thumb-"] { background: #F7F4EE; }
+html[data-theme="dark"] :is(.app-content, .mud-dialog) .mud-switch-base.mud-checked [class*="mud-switch-thumb-"]::after { background: #8D511E; }
+html[data-theme="dark"] :is(.app-content, .mud-dialog) .mud-switch-base:not(.mud-checked) + .mud-switch-track { background: #252422 !important; }
+html[data-theme="dark"] :is(.app-content, .mud-dialog) .mud-switch-span .mud-switch-base:not(.mud-checked) [class*="mud-switch-thumb-"] { background: #9A968E; }
 /* Focus/open inputs: 1px accent border + soft glow (MudBlazor default is a 2px ring). */
 .mud-input.mud-input-outlined .mud-input-outlined-border { border-width: 1px !important; }
 .mud-input.mud-input-outlined.mud-disabled .mud-input-outlined-border { border-color: var(--mud-palette-lines-default); }

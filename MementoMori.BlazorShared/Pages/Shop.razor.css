@@ -63,6 +63,9 @@
 .shop-page ::deep .shop-buy-button:not(:disabled) { background: color-mix(in srgb, var(--mud-palette-primary) 18%, var(--mud-palette-surface)); color: color-mix(in srgb, var(--mud-palette-primary) 75%, var(--mud-palette-text-primary)); box-shadow: none; }
 .shop-page ::deep .shop-buy-button:not(:disabled):hover { background: color-mix(in srgb, var(--mud-palette-primary) 25%, var(--mud-palette-surface)); }
 .shop-page ::deep .shop-buy-button .shop-icon { background: color-mix(in srgb, var(--mud-palette-surface) 60%, transparent); }
+html[data-theme="dark"] .shop-page ::deep .shop-buy-button:not(:disabled) { background: color-mix(in srgb, var(--mud-palette-primary) 17%, var(--mud-palette-surface)); color: #F5B87B; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mud-palette-primary) 34%, transparent); }
+html[data-theme="dark"] .shop-page ::deep .shop-buy-button:not(:disabled):hover { background: color-mix(in srgb, var(--mud-palette-primary) 24%, var(--mud-palette-surface)); }
+html[data-theme="dark"] .shop-page ::deep .shop-buy-button .shop-icon { background: rgb(0 0 0 / .25); }
 .shop-page ::deep .shop-buy-button:focus-visible { outline: 2px solid var(--mud-palette-primary); outline-offset: 2px; }
 .shop-page ::deep .shop-icon-fallback { display: inline-grid; place-items: center; width: 20px; height: 20px; color: var(--mud-palette-primary); background: var(--app-selected-background); }
 .shop-page ::deep .shop-icon-fallback .mud-icon-root { font-size: 15px; }

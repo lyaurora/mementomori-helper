@@ -16,7 +16,7 @@
 /* fixed light block in both themes: the title ink is dark, so a failed or missing banner (e.g. #14) stays readable */
 .gacha-art { position: relative; aspect-ratio: 300 / 156; overflow: hidden; background: #EDE5DA; box-shadow: inset 0 -1px 0 var(--mud-palette-lines-default); }
 .gacha-art > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scale(1.09); }
-html[data-theme="dark"] .gacha-art > img { filter: brightness(.92); }
+html[data-theme="dark"] .gacha-art > img { filter: brightness(.88) saturate(.96); }
 .gacha-art-title { position: absolute; left: 16px; top: 50%; max-width: 58%; margin: 0; transform: translateY(-50%); color: #2A231C; font-size: 1.1875rem; font-weight: 800; line-height: 1.25; letter-spacing: .02em; overflow-wrap: anywhere; text-shadow: 0 0 6px #FFFDF8, 0 0 12px #FFFDF8, 0 0 2px #FFFDF8; }
 .gacha-icon.is-element { position: absolute; left: 10px; top: 10px; width: 28px; height: 28px; border-radius: 50%; background: rgba(255, 253, 248, .85); }
 .gacha-icon.is-element img { width: 22px; height: 22px; }
