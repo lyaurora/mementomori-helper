@@ -81,9 +81,29 @@
 }
 
 .battle-log-page ::deep .battle-log-file .mud-input-root {
+    height: auto;
     white-space: normal;
     overflow-wrap: anywhere;
     line-height: 1.55;
+}
+
+/* Closed file select: lay out name, result and timestamp on one row (wrapping cleanly on narrow screens) so the time is never clipped. */
+.battle-log-page ::deep .battle-log-file .mud-input-slot .battle-log-option {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .15rem .65rem;
+    padding: 0;
+}
+
+.battle-log-page ::deep .battle-log-file .mud-input-slot .battle-log-option-heading {
+    flex: 1 1 auto;
+    justify-content: flex-start;
+    gap: .5rem;
+}
+
+.battle-log-page ::deep .battle-log-file .mud-input-slot .battle-log-option-time {
+    flex-shrink: 0;
 }
 
 .battle-log-option { display: flex; flex-direction: column; gap: .2rem; min-width: 0; width: 100%; padding: .15rem 0; }

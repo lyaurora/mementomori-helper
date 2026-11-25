@@ -72,9 +72,9 @@
                 </div>
                 @{
                     var createTime = "";
-                    if (Funcs.LoginOk)
+                    if (Funcs.LoginOk && status != null)
                     {
-                        createTime = (status?.CreateAt.ToDateTimeOffset() - NetworkManager.TimeManager.DiffFromUtc).ToString();
+                        createTime = (status.CreateAt.ToDateTimeOffset() - NetworkManager.TimeManager.DiffFromUtc).ToString("yyyy-MM-dd HH:mm:ss");
                     }
                 }
                 <div class="hero-idline">
@@ -179,7 +179,7 @@
                     </MudTabPanel>
                     <MudTabPanel Text="@Tr("[CommonHeaderTowerBattleLabel]")">
                         <div class="quick-action-content quick-action-form">
-                            <MudSelect T="TowerType" Label="@ResourceStrings.TowerType" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="@Funcs.SelectedAutoTowerType" ToStringFunc="@(t => t == TowerType.None ? ResourceStrings.NotSelected : Tr(t))">
+                            <MudSelect T="TowerType" Label="@ResourceStrings.TowerType" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="@Funcs.SelectedAutoTowerType" @bind-Value:after="() => selectedTargetTowerLayer = 0" ToStringFunc="@(t => t == TowerType.None ? ResourceStrings.NotSelected : Tr(t))">
                                 @foreach (var type in Funcs.GetAvailableTower())
                                 {
                                     <MudSelectItem T="TowerType" Value="@type">@(Tr(type))</MudSelectItem>

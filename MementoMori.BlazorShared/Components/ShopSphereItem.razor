@@ -7,6 +7,10 @@
 @using MementoMori.Ortega.Share.Data.TradeShop
 @using MementoMori.Ortega.Share.Master.Data
 @inject IDialogService DialogService
+@if (SelectedSphere != null)
+{
+    <span class="shop-sphere-icon"><SphereIcon SphereMb="SelectedSphere" Size="48" /></span>
+}
 <MudCard Elevation="2">
     <MudCardHeader>
         <CardHeaderContent>
@@ -113,10 +117,18 @@
         }
     }
 
+    private SphereMB? SelectedSphere => SphereMb == null ? null : Masters.SphereTable.GetByCategoryIdAndLevel(SphereMb.CategoryId, _buyLv) ?? SphereMb;
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        if (SphereMb != null) _itemName = Masters.TextResourceTable.Get(SphereMb.NameKey);
+    }
+
     protected override Task AccountChanged()
     {
         ViewModel = Funcs;
-        _itemName = Masters.TextResourceTable.Get(SphereMb.NameKey);
+        if (SphereMb != null) _itemName = Masters.TextResourceTable.Get(SphereMb.NameKey);
         return Task.CompletedTask;
     }
 

@@ -98,6 +98,15 @@ html[data-theme="dark"] .home-cols ::deep .bq-rarity.is-lr { color: #F08DB5; }
 /* One chip height across the quick card: 36px like the header buttons (touch keeps the 40px from site.css). */
 .home-cols ::deep .home-quick .quick-action-list .mud-button { min-height: 36px; }
 @media (pointer: coarse) { .home-cols ::deep .home-quick .quick-action-list .mud-button { min-height: 40px; } }
+/* Phones: keep Sync User Info + Login on one row with Character Info down to 360px (including wider mobile CJK fonts). */
+@media (max-width: 599.98px) {
+    .home-cols ::deep .home-hero .mud-card-header { column-gap: 4px; }
+    .home-cols ::deep .home-hero .mud-card-header > .panel-title { gap: 6px; }
+    .home-cols ::deep .home-hero .mud-card-header > .mud-paper { gap: 4px; }
+    .home-cols ::deep .home-hero .mud-card-header > .mud-paper .mud-button-root { padding-inline: 8px; }
+    .home-cols ::deep .home-hero .mud-card-header > .mud-paper .mud-button-text { padding-inline: 6px; }
+    .home-cols ::deep .home-hero .mud-card-header > .mud-paper .mud-button-icon-start { margin-inline: -2px 4px; }
+}
 /* Phones: small currency tiles get ~16px more for the number so 8-digit balances (99,999,999) stay inside the tile. */
 @media (max-width: 430px) {
     .home-cols ::deep .tile:not(.is-wide) { gap: 8px; padding-inline: 10px 8px; }

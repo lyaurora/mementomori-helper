@@ -1555,6 +1555,15 @@ static async Task CheckShopRulesAndDedup()
         "Identical Buy+Consume rule failed to deduplicate");
     Require(MementoMori.BlazorShared.Pages.Shop.MatchesAutoBuyRule(consumeOnly, 1, null, new UserItem { ItemType = ItemType.Gold, ItemId = 1, ItemCount = 0 }),
         "Identical Consume-only rule failed to deduplicate");
+
+    // Shop AutoBuy BuyItem select must distinguish same item type/id with different ItemCount (e.g. guild shop x20 vs x30)
+    var countComparer = new MementoMori.BlazorShared.Pages.Shop.UserItemWithCountComparer();
+    var rune20 = new UserItem { ItemType = ItemType.ExchangePlaceItem, ItemId = 4, ItemCount = 20 };
+    var rune30 = new UserItem { ItemType = ItemType.ExchangePlaceItem, ItemId = 4, ItemCount = 30 };
+    var rune30Copy = new UserItem { ItemType = ItemType.ExchangePlaceItem, ItemId = 4, ItemCount = 30 };
+    Require(!countComparer.Equals(rune20, rune30), "UserItemWithCountComparer collapsed distinct ItemCount tiers");
+    Require(countComparer.Equals(rune30, rune30Copy) && countComparer.GetHashCode(rune30) == countComparer.GetHashCode(rune30Copy),
+        "UserItemWithCountComparer failed equal check for identical ItemCount");
 }
 
 static async Task CheckGuildTowerSafety()

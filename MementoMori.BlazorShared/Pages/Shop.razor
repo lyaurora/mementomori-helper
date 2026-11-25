@@ -59,7 +59,7 @@
                         {
                             var itemMb = Masters.ItemTable.GetByItemTypeAndItemId(item.ItemType, item.ItemId);
                             var count = Funcs.UserSyncData.GetUserItemCount(item.ItemType, item.ItemId, true);
-                            var itemName = Masters.TextResourceTable.Get(itemMb.NameKey);
+                            var itemName = itemMb == null ? ItemUtil.GetItemName(item.ItemType, item.ItemId) : Masters.TextResourceTable.Get(itemMb.NameKey);
                             <MudChip T="string" Class="shop-balance-chip" title="@($"{itemName} × {count:N0}")">
                                 @ItemIcon(item.ItemType, item.ItemId, 22)<span class="shop-balance-text"><b>@Compact(count)</b><span class="shop-balance-name">@itemName</span></span>
                             </MudChip>
@@ -154,7 +154,6 @@
                             @foreach (var sphere in listByLevel)
                             {
                                 <MudItem>
-                                    <span class="shop-sphere-icon"><SphereIcon SphereMb="sphere" Size="48" /></span>
                                     <ShopSphereItem SphereMb="sphere" Tab="tab" OnPurchased="RefreshExpired"></ShopSphereItem>
                                 </MudItem>
                             }
@@ -182,8 +181,8 @@
         {
         var tab = _tradeShopTabInfoList[_selectedTabIndex];
         <div class="shop-auto-buy-fields">
-        <MudSelect Label="@ResourceStrings.ShopAutoBuyItems" T="UserItem" @bind-Value="_selectedAutoBuyItem" Comparer="@(new UserItemComparer())" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="@ResourceStrings.No_setting_means_buying_any_item">
-            @foreach (var item in tab.TradeShopItems?.OrderBy(d => d.SortOrder).ToArray() ?? Array.Empty<TradeShopItem>())
+        <MudSelect Label="@ResourceStrings.ShopAutoBuyItems" T="UserItem" @bind-Value="_selectedAutoBuyItem" Comparer="@(new UserItemWithCountComparer())" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="@ResourceStrings.No_setting_means_buying_any_item">
+            @foreach (var item in (tab.TradeShopItems ?? []).OrderBy(d => d.SortOrder).DistinctBy(d => (d.GiveItem.ItemType, d.GiveItem.ItemId, d.GiveItem.ItemCount)))
             {
                 <MudSelectItem T="UserItem" Value="item.GiveItem">@($"{ItemUtil.GetItemName(item.GiveItem)}×{item.GiveItem.ItemCount}")</MudSelectItem>
             }
@@ -474,6 +473,22 @@
         public int GetHashCode(UserItem obj)
         {
             return HashCode.Combine(obj.ItemId, (int) obj.ItemType);
+        }
+    }
+
+    internal sealed class UserItemWithCountComparer : IEqualityComparer<UserItem>
+    {
+        public bool Equals(UserItem? x, UserItem? y)
+        {
+            if (ReferenceEquals(x, y)) return true;
+            if (ReferenceEquals(x, null)) return false;
+            if (ReferenceEquals(y, null)) return false;
+            return x.ItemId == y.ItemId && x.ItemType == y.ItemType && x.ItemCount == y.ItemCount;
+        }
+
+        public int GetHashCode(UserItem obj)
+        {
+            return HashCode.Combine(obj.ItemId, (int) obj.ItemType, obj.ItemCount);
         }
     }
 

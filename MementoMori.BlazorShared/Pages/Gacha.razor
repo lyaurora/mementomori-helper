@@ -97,7 +97,7 @@
                         {
                             var cost = button.ConsumeUserItem;
                             var isFree = cost == null || cost.ItemCount == 0;
-                            var itemName = isFree ? Tr("[CommonFreeLabel]") : cost!.GetItemName();
+                            var itemName = isFree ? Tr("[GachaFree]") : cost!.GetItemName();
                             var isShort = !isFree && sync.GetUserItemCount(cost!.ItemType, cost.ItemId, true) < cost.ItemCount;
                             // ponytail: LotteryCount can be 0 (no master table for buttons); game buttons are 1x or 10x, so the cheapest same-item button is 1x and any dearer one 10x (discounted 10x like relic 1,800 still reads 10). Breaks if a 5x button appears.
                             var minCost = isFree ? 0 : buttons.Where(b => b.ConsumeUserItem != null && b.ConsumeUserItem.ItemCount > 0 && b.ConsumeUserItem.ItemType == cost!.ItemType && b.ConsumeUserItem.ItemId == cost.ItemId).Min(b => b.ConsumeUserItem.ItemCount);
@@ -242,7 +242,7 @@
             string confirm;
             if (cost == null || cost.ItemCount == 0)
             {
-                confirm = $"{Masters.TextResourceTable.Get(Masters.GachaCaseUiTable.GetById(gachaCaseInfo.GachaCaseUiId)?.NameKey)}: {Tr("[CommonFreeLabel]")}";
+                confirm = $"{Masters.TextResourceTable.Get(Masters.GachaCaseUiTable.GetById(gachaCaseInfo.GachaCaseUiId)?.NameKey)}: {Tr("[GachaFree]")}";
             }
             else
             {

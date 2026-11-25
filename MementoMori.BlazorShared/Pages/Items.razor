@@ -149,7 +149,7 @@
                         <MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="new Func<UserItemExtensions.UserItemInfo, object>(x => x.ItemRarityFlags)">@Masters.TextResourceTable.Get("[CharacterSortTypeRarity]")</MudTableSortLabel>
                     </MudTh>
                     <MudTh Class="item-number-column">
-                        <MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="new Func<UserItemExtensions.UserItemInfo, object>(x => x.MaxItemCount)">@ResourceStrings.ItemLimitCount</MudTableSortLabel>
+                        <MudTableSortLabel SortBy="new Func<UserItemExtensions.UserItemInfo, object>(x => x.MaxItemCount)">@ResourceStrings.ItemLimitCount</MudTableSortLabel>
                     </MudTh>
                     <MudTh Class="item-number-column">
                         <MudTableSortLabel SortBy="new Func<UserItemExtensions.UserItemInfo, object>(x => x.Count)">@Masters.TextResourceTable.Get("[CommonOwnCurrencyLabel]")</MudTableSortLabel>
@@ -169,23 +169,23 @@
                    ItemType.Sphere
                }; }
             <MudTable Class="items-table items-sphere-table" Dense="true" HorizontalScrollbar="true" Virtualize="true"
-                      Items="@((ViewModel.UserSyncData?.UserItemDtoInfo ?? []).Where(d => types.Contains(d.ItemType) && d.ItemCount > 0).Select(d => d.ToSphereInfo()).Where(d => d.SphereMB != null))">
+                      Items="@((ViewModel.UserSyncData?.UserItemDtoInfo ?? []).Where(d => types.Contains(d.ItemType) && d.ItemCount > 0).Select(d => d.ToSphereInfo()).Where(d => d.SphereMB != null).OrderByDescending(d => d.SphereMB.RarityFlags).ThenByDescending(d => d.SphereMB.Lv))">
                 <HeaderContent>
                     <MudTh Class="item-name-column">
                         <MudTableSortLabel SortBy="new Func<UserItemExtensions.SphereInfo, object>(x => x.Name)">@ResourceStrings.Name</MudTableSortLabel>
                     </MudTh>
                     <MudTh Class="item-rarity-column">
-                        <MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="new Func<UserItemExtensions.SphereInfo, object>(x => x.SphereMB.RarityFlags)">@Masters.TextResourceTable.Get("[CharacterSortTypeRarity]")</MudTableSortLabel>
+                        <MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="new Func<UserItemExtensions.SphereInfo, object>(x => (x.SphereMB.RarityFlags, x.SphereMB.Lv))">@Masters.TextResourceTable.Get("[CharacterSortTypeRarity]")</MudTableSortLabel>
                     </MudTh>
                     <MudTh Class="item-number-column">
-                        <MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="new Func<UserItemExtensions.SphereInfo, object>(x => x.SphereMB.Lv)">@Masters.TextResourceTable.Get("[EquipmentSphereSynthesisSphereLv]")</MudTableSortLabel>
+                        <MudTableSortLabel SortBy="new Func<UserItemExtensions.SphereInfo, object>(x => x.SphereMB.Lv)">@Masters.TextResourceTable.Get("[EquipmentSphereSynthesisSphereLv]")</MudTableSortLabel>
                     </MudTh>
                     @* Type and value share one column per group: two separate value columns were both titled 能力数值. *@
                     <MudTh Class="item-text-column">
-                        <MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="new Func<UserItemExtensions.SphereInfo, object>(x => (x.SphereMB.BaseParameterChangeInfo?.BaseParameterType, x.SphereMB.BaseParameterChangeInfo?.Value))">@Masters.TextResourceTable.Get("[CharacterEquipmentBasicEffect]")</MudTableSortLabel>
+                        <MudTableSortLabel SortBy="new Func<UserItemExtensions.SphereInfo, object>(x => (x.SphereMB.BaseParameterChangeInfo?.BaseParameterType, x.SphereMB.BaseParameterChangeInfo?.Value))">@Masters.TextResourceTable.Get("[CharacterEquipmentBasicEffect]")</MudTableSortLabel>
                     </MudTh>
                     <MudTh Class="item-text-column">
-                        <MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="new Func<UserItemExtensions.SphereInfo, object>(x => (x.SphereMB.BattleParameterChangeInfo?.BattleParameterType, x.SphereMB.BattleParameterChangeInfo?.Value))">@Masters.TextResourceTable.Get("[CharacterDetailTabBattleParameter]")</MudTableSortLabel>
+                        <MudTableSortLabel SortBy="new Func<UserItemExtensions.SphereInfo, object>(x => (x.SphereMB.BattleParameterChangeInfo?.BattleParameterType, x.SphereMB.BattleParameterChangeInfo?.Value))">@Masters.TextResourceTable.Get("[CharacterDetailTabBattleParameter]")</MudTableSortLabel>
                     </MudTh>
                     <MudTh Class="item-number-column">
                         <MudTableSortLabel SortBy="new Func<UserItemExtensions.SphereInfo, object>(x => x.Count)">@Masters.TextResourceTable.Get("[CommonOwnCurrencyLabel]")</MudTableSortLabel>
@@ -216,7 +216,7 @@
                         <MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="new Func<UserItemExtensions.UserItemInfo, object>(x => x.ItemRarityFlags)">@Masters.TextResourceTable.Get("[CharacterSortTypeRarity]")</MudTableSortLabel>
                     </MudTh>
                     <MudTh Class="item-number-column">
-                        <MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="new Func<UserItemExtensions.UserItemInfo, object>(x => x.MaxItemCount)">@ResourceStrings.ItemLimitCount</MudTableSortLabel>
+                        <MudTableSortLabel SortBy="new Func<UserItemExtensions.UserItemInfo, object>(x => x.MaxItemCount)">@ResourceStrings.ItemLimitCount</MudTableSortLabel>
                     </MudTh>
                     <MudTh Class="item-number-column">
                         <MudTableSortLabel SortBy="new Func<UserItemExtensions.UserItemInfo, object>(x => x.Count)">@Masters.TextResourceTable.Get("[CommonOwnCurrencyLabel]")</MudTableSortLabel>

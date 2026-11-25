@@ -31,7 +31,7 @@
     };
 }
 <div style="width:@(Size)px; height:@(Size)px;">
-    <div class="character-icon" style="transform:scale(@(scale));">
+    <div class="character-icon" style="transform:scale(@(scale.ToString(System.Globalization.CultureInfo.InvariantCulture)));">
         <div class="icon-background"></div>
         <div class="icon-avatar" style="background-image: url(@AtlasManager.GetCharacterIcon(UserCharacterInfo.CharacterId));"></div>
         <div class="icon-border" style="border-image-source: url(@sprite);filter: @(filter);"></div>
