@@ -74,7 +74,7 @@ The app-bar **外观模式** menu offers **跟随系统**, **浅色** and **深�
 
 Enhanced navigation reapplies the current browser theme after Blazor patches the document, including sidebar clicks before the interactive connection is ready.
 
-The UI uses MudBlazor 9.12. `Program.cs` sets `PopoverOptions.ModalOverlay` and `OverflowBehavior.FlipOnOpen` globally to keep the 7.15 popover behavior (a click outside only closes the menu), and `site.css` targets the v9 DOM, so re-check those selectors and the dropdowns when upgrading MudBlazor.
+The UI uses MudBlazor 9.14. `Program.cs` sets `PopoverOptions.ModalOverlay` and `OverflowBehavior.FlipOnOpen` globally to keep the 7.15 popover behavior (a click outside only closes the menu), and `site.css` targets the v9 DOM, so re-check those selectors and the dropdowns when upgrading MudBlazor.
 
 README screenshots (`images/intro*.png`) come from a test account. Before capturing, mask player IDs, comments, transfer and friend codes, other players' names and avatars, and chat text.
 
