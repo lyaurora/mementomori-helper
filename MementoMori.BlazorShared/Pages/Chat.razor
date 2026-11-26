@@ -22,7 +22,7 @@
 
     @if (!Funcs.LoginOk)
     {
-        <MudAlert Severity="Severity.Info">@ResourceStrings.PleaseLogin <MudLink Href="/" Typo="Typo.body1">@Tr("[CommonFooterHomeButtonLabel]")</MudLink></MudAlert>
+        <MudAlert Severity="Severity.Info">@ResourceStrings.PleaseLogin <MudLink Href="" Typo="Typo.body1">@Tr("[CommonFooterHomeButtonLabel]")</MudLink></MudAlert>
     }
     @if (!string.IsNullOrEmpty(_error ?? _snapshot.Error))
     {

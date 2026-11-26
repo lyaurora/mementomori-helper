@@ -32,10 +32,11 @@ public static partial class AssetCache
     [GeneratedRegex(@"^Addressable(Convert|Local)Assets/[A-Za-z0-9_\-/]+\.(png|jpg|jpeg|webp)$")]
     private static partial Regex SafePath();
 
-    public static void MapAssetCache(this WebApplication app, string configDirectory)
+    public static void MapAssetCache(this WebApplication app, string configDirectory, string pathBase = "")
     {
         var root = Path.Combine(configDirectory, "AssetCache");
-        AtlasManager.LocalAssetsUrl = "/assets";
+        var normalizedBase = string.IsNullOrWhiteSpace(pathBase) ? "" : "/" + pathBase.Trim().Trim('/');
+        AtlasManager.LocalAssetsUrl = $"{normalizedBase}/assets";
 
         app.MapGet("/assets/{**path}", async (string path, HttpContext ctx, IWritableOptions<GameConfig> config, IHttpClientFactory http, CancellationToken ct) =>
         {

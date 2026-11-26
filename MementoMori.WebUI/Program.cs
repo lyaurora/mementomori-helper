@@ -20,6 +20,7 @@ using MudBlazor;
 using MagicOnion;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
 
 internal class Program
 {
@@ -117,12 +118,19 @@ internal class Program
         Services.Setup(app.Services);
 
         // Configure the HTTP request pipeline.
+        app.UseForwardedHeaders(new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+        });
+        var pathBase = NormalizePathBase(builder.Configuration["PathBase"]);
+        if (!string.IsNullOrEmpty(pathBase)) app.UsePathBase(pathBase);
+
         if (!app.Environment.IsDevelopment()) app.UseExceptionHandler("/Error");
 
         app.UseStaticFiles();
         app.MapStaticAssets();
         app.UseAntiforgery();
-        app.MapAssetCache(configDirectory);
+        app.MapAssetCache(configDirectory, pathBase);
         app.MapGet("/healthz", () => Results.Ok(new { status = "ready" }));
         app.MapRazorComponents<App>()
             .AddAdditionalAssemblies(typeof(Index).Assembly)
@@ -134,6 +142,13 @@ internal class Program
 
         InitializeAsync(app.Services).ConfigureAwait(false).GetAwaiter().GetResult();
         app.Run();
+    }
+
+    internal static string NormalizePathBase(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return "";
+        var trimmed = raw.Trim().Trim('/');
+        return string.IsNullOrEmpty(trimmed) ? "" : "/" + trimmed;
     }
 
     private static async Task InitializeAsync(IServiceProvider sp)

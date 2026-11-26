@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <base href="/" />
+    <base href="@BaseHref" />
     <link rel="icon" href="@Assets["_content/MementoMori.BlazorShared/app-icon.png"]" type="image/png" />
     <link rel="apple-touch-icon" href="@Assets["_content/MementoMori.BlazorShared/apple-touch-icon.png"]" />
     <link href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" rel="stylesheet" />
@@ -81,3 +81,12 @@
     </script>
 </body>
 </html>
+
+@code {
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private string BaseHref => HttpContext?.Request.PathBase.HasValue == true
+        ? $"{HttpContext.Request.PathBase.Value!.TrimEnd('/')}/"
+        : "/";
+}

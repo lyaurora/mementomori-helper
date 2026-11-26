@@ -6,7 +6,6 @@
 }
 
     .character-icon .icon-background {
-        background-image: url(/assets/AddressableLocalAssets/Atlas/plate_character.png);
         background-size: contain;
         height: 100%;
         width: 100%;
