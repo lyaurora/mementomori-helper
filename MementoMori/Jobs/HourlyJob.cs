@@ -34,6 +34,7 @@ public partial class HourlyJob : IJob
             await account.Funcs.ReceiveRentalRaidShareReward();
             await account.Funcs.ReceivePopularityVoteReward();
             await account.Funcs.ReceiveEquipmentSynchroMissionReward();
+            if (_gameConfig.Value.AutoJob.AutoBookSort) await account.Funcs.AutoBookSort();
             if (_gameConfig.Value.AutoJob.AutoReadMemories) await account.Funcs.ReadAllMemories();
             if (_gameConfig.Value.AutoJob.AutoFreeGacha) await account.Funcs.FreeGacha();
             if (_gameConfig.Value.AutoJob.AutoUseItems) await account.Funcs.AutoUseItems();

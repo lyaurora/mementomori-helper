@@ -7,12 +7,21 @@ namespace MementoMori.Ortega.Share.Master.Table
 	{
 		public BookSortBonusFloorRewardMB GetByFloor(int floor)
 		{
+			var array = GetArray();
+			if (array == null) return null;
+			foreach (var item in array)
+			{
+				if (item != null && floor >= item.StartFloor && (item.EndFloor == 0 || floor <= item.EndFloor))
+				{
+					return item;
+				}
+			}
 			return null;
 		}
 
 		public IReadOnlyList<BookSortBonusFloorSelectItems> GetSelectItemsListByFloor(int floor)
 		{
-			return null;
+			return GetByFloor(floor)?.SelectItemsList;
 		}
 	}
 }

@@ -3189,5 +3189,23 @@ namespace MementoMori.Common.Localization {
         public static string BattleUnit => ResourceManager.GetString("BattleUnit", resourceCulture);
         public static string BattleVictory => ResourceManager.GetString("BattleVictory", resourceCulture);
         public static string BattleYourTeam => ResourceManager.GetString("BattleYourTeam", resourceCulture);
+        public static string AutoBookSort => ResourceManager.GetString("AutoBookSort", resourceCulture);
+        public static string BookSortBonusFloorRewards => ResourceManager.GetString("BookSortBonusFloorRewards", resourceCulture);
+        public static string BookSortFinished => ResourceManager.GetString("BookSortFinished", resourceCulture);
+        public static string BookSortFloorCleared => ResourceManager.GetString("BookSortFloorCleared", resourceCulture);
+        public static string BookSortFloorFromFormat => ResourceManager.GetString("BookSortFloorFromFormat", resourceCulture);
+        public static string BookSortFloorRangeFormat => ResourceManager.GetString("BookSortFloorRangeFormat", resourceCulture);
+        public static string BookSortKeyAndRewardFound => ResourceManager.GetString("BookSortKeyAndRewardFound", resourceCulture);
+        public static string BookSortMissionRewardsClaimed => ResourceManager.GetString("BookSortMissionRewardsClaimed", resourceCulture);
+        public static string BookSortNotActive => ResourceManager.GetString("BookSortNotActive", resourceCulture);
+        public static string BookSortNothingLeft => ResourceManager.GetString("BookSortNothingLeft", resourceCulture);
+        public static string BookSortPausedForBonusReward => ResourceManager.GetString("BookSortPausedForBonusReward", resourceCulture);
+        public static string BookSortRewardAutoFirst => ResourceManager.GetString("BookSortRewardAutoFirst", resourceCulture);
+        public static string BookSortRewardFloor => ResourceManager.GetString("BookSortRewardFloor", resourceCulture);
+        public static string BookSortRewardPauseManual => ResourceManager.GetString("BookSortRewardPauseManual", resourceCulture);
+        public static string BookSortStarting => ResourceManager.GetString("BookSortStarting", resourceCulture);
+        public static string BookSortUseBigItem => ResourceManager.GetString("BookSortUseBigItem", resourceCulture);
+        public static string BookSortUseDuster => ResourceManager.GetString("BookSortUseDuster", resourceCulture);
+        public static string BookSortUseLargeItems => ResourceManager.GetString("BookSortUseLargeItems", resourceCulture);
     }
 }

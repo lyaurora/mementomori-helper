@@ -805,4 +805,22 @@
   <data name="BattleUnit" xml:space="preserve"><value>Unit</value></data>
   <data name="BattleVictory" xml:space="preserve"><value>Victory</value></data>
   <data name="BattleYourTeam" xml:space="preserve"><value>Your team</value></data>
+  <data name="AutoBookSort" xml:space="preserve"><value>Book Sort Auto Clean</value></data>
+  <data name="BookSortBonusFloorRewards" xml:space="preserve"><value>Bonus floor reward selection</value></data>
+  <data name="BookSortFinished" xml:space="preserve"><value>Book Sort auto clean finished.</value></data>
+  <data name="BookSortFloorCleared" xml:space="preserve"><value>Floor {0}: all cells cleared, advancing floor</value></data>
+  <data name="BookSortFloorFromFormat" xml:space="preserve"><value>Floor {0}+</value></data>
+  <data name="BookSortFloorRangeFormat" xml:space="preserve"><value>Floors {0}–{1}</value></data>
+  <data name="BookSortKeyAndRewardFound" xml:space="preserve"><value>Floor {0}: key and grand prize found, advancing floor</value></data>
+  <data name="BookSortMissionRewardsClaimed" xml:space="preserve"><value>Claimed {0} Book Sort mission reward(s)</value></data>
+  <data name="BookSortNotActive" xml:space="preserve"><value>Book Sort event is not active.</value></data>
+  <data name="BookSortNothingLeft" xml:space="preserve"><value>No usable Book Sort items left.</value></data>
+  <data name="BookSortPausedForBonusReward" xml:space="preserve"><value>Floor {0} (Bonus): paused for manual reward selection.</value></data>
+  <data name="BookSortRewardAutoFirst" xml:space="preserve"><value>Auto (first eligible)</value></data>
+  <data name="BookSortRewardFloor" xml:space="preserve"><value>Floor {0}: selecting bonus reward {1}</value></data>
+  <data name="BookSortRewardPauseManual" xml:space="preserve"><value>Pause for manual selection</value></data>
+  <data name="BookSortStarting" xml:space="preserve"><value>Starting Book Sort auto clean...</value></data>
+  <data name="BookSortUseBigItem" xml:space="preserve"><value>Using clean item #{0} at cell {1} (opens {2} cells)</value></data>
+  <data name="BookSortUseDuster" xml:space="preserve"><value>Bulk cleaning remaining cells with duster</value></data>
+  <data name="BookSortUseLargeItems" xml:space="preserve"><value>Use multi-cell cleaning items</value></data>
 </root>

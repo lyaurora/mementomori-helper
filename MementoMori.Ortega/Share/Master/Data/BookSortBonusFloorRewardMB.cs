@@ -38,12 +38,31 @@ namespace MementoMori.Ortega.Share.Master.Data
 
 		public List<BookSortBonusFloorSelectItems> GetItemsByMaxClearQuestId(long maxClearQuestId)
 		{
-			return null;
+			var result = new List<BookSortBonusFloorSelectItems>();
+			if (SelectItemsList == null) return result;
+			foreach (var item in SelectItemsList)
+			{
+				if (item != null && item.StartMaxClearQuestId <= maxClearQuestId && (item.EndMaxClearQuestId == 0 || item.EndMaxClearQuestId >= maxClearQuestId))
+				{
+					result.Add(item);
+				}
+			}
+			return result;
 		}
 
 		public List<int> GetSelectableIndexList(long maxClearQuestId)
 		{
-			return null;
+			var result = new List<int>();
+			if (SelectItemsList == null) return result;
+			for (var i = 0; i < SelectItemsList.Count; i++)
+			{
+				var item = SelectItemsList[i];
+				if (item != null && item.StartMaxClearQuestId <= maxClearQuestId && (item.EndMaxClearQuestId == 0 || item.EndMaxClearQuestId >= maxClearQuestId))
+				{
+					result.Add(i);
+				}
+			}
+			return result;
 		}
 	}
 }

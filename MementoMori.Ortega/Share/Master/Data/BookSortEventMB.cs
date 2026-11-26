@@ -92,7 +92,9 @@ namespace MementoMori.Ortega.Share.Master.Data
 
 		public bool IsBonusFloor(int floor)
 		{
-			return false;
+			if (floor <= 0) return false;
+			if (BonusFloorList != null && BonusFloorList.Contains(floor)) return true;
+			return BonusFloorRepeat > 0 && floor % BonusFloorRepeat == 0;
 		}
 	}
 }

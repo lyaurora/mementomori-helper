@@ -11,6 +11,8 @@ public class PlayerOption
 
     public GuildTowerOption GuildTower { get; set; } = new();
 
+    public BookSortOption BookSort { get; set; } = new();
+
     public BountyQuestOption BountyQuest { get; set; } = new();
 
     public GameConfig.GachaConfigModel GachaConfig { get; set; } = new();
@@ -64,6 +66,18 @@ public class GuildTowerOption
     public int AutoChallengeRetryCount { get; set; } = 10;
     public bool AutoReinforcement { get; set; }
     public bool AutoReceiveReward { get; set; }
+}
+
+public class BookSortOption
+{
+    public const int AutoFirstEligible = -1;
+    public const int PauseForManual = -2;
+
+    /// <summary>按 BookSortBonusFloorRewardMB.Id 记录奖励层自选索引（-1=首选高价值，-2=暂停等待手动，>=0=指定 SelectItemsList 索引）。</summary>
+    public Dictionary<long, int> BonusFloorRewardChoices { get; set; } = [];
+
+    /// <summary>是否自动使用多格清扫道具（关闭时仅用普通掸子批量开，保留多格道具手动使用）。</summary>
+    public bool UseLargeUnlockItems { get; set; } = true;
 }
 
 public class FriendManageOption

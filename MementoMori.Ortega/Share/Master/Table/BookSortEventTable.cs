@@ -6,7 +6,8 @@ namespace MementoMori.Ortega.Share.Master.Table
 	{
 		public BookSortEventMB GetByInTime(OrtegaTimeManager timeManager)
 		{
-			return null;
+			if (timeManager == null) throw new ArgumentNullException(nameof(timeManager));
+			return GetArray().FirstOrDefault(timeManager.IsInTime);
 		}
 	}
 }

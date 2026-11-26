@@ -54,6 +54,7 @@
             <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@Tr("[CommonHeaderGuildRaidLabel]")" @bind-Value="AutoJob__AutoGuildRaid" Color="Color.Primary"></MudSwitch>
             <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@Tr("[GuildRaidReleaseConfirmTitle]")" @bind-Value="AutoJob__AutoOpenGuildRaid" Color="Color.Primary"></MudSwitch>
             <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@Tr("[CharacterDetailMemory]")" @bind-Value="AutoJob__AutoReadMemories" Color="Color.Primary"></MudSwitch>
+            <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@ResourceStrings.AutoBookSort" @bind-Value="AutoJob__AutoBookSort" Color="Color.Primary"></MudSwitch>
             <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@Tr("[CommonHeaderLocalRaidLabel]")" @bind-Value="AutoJob__AutoLocalRaid" Color="Color.Primary"></MudSwitch>
             @* <MudSwitch Label="@ResourceStrings.Deploy_defense" @bind-Value="AutoJob__AutoDeployGuildDefense" Color="Color.Primary"></MudSwitch> *@
             <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@Tr("[GachaRelicChangeTitle]")" @bind-Value="AutoJob__AutoChangeGachaRelic" Color="Color.Primary"></MudSwitch>
@@ -139,6 +140,12 @@
     {
         get => WritableGameConfig.Value.AutoJob.AutoReadMemories;
         set => _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.AutoReadMemories = value));
+    }
+
+    public bool AutoJob__AutoBookSort
+    {
+        get => WritableGameConfig.Value.AutoJob.AutoBookSort;
+        set => _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.AutoBookSort = value));
     }
 
     public bool AutoJob__AutoLocalRaid

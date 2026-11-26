@@ -412,6 +412,7 @@ public partial class MementoMoriFuncs : ReactiveObject, IDisposable
             await ReceiveRentalRaidShareReward();
             await ReceivePopularityVoteReward();
             await ReceiveEquipmentSynchroMissionReward();
+            if (GameConfig.AutoJob.AutoBookSort) await AutoBookSort();
             if (GameConfig.AutoJob.AutoUseItems) await AutoUseItems();
             if (GameConfig.AutoJob.AutoFreeGacha) await FreeGacha();
             if (GameConfig.AutoJob.AutoUseItems) await AutoUseItems();

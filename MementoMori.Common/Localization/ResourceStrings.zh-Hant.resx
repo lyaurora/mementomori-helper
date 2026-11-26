@@ -805,4 +805,22 @@
   <data name="BattleUnit" xml:space="preserve"><value>角色</value></data>
   <data name="BattleVictory" xml:space="preserve"><value>勝利</value></data>
   <data name="BattleYourTeam" xml:space="preserve"><value>我方隊伍</value></data>
+  <data name="AutoBookSort" xml:space="preserve"><value>書庫大掃除</value></data>
+  <data name="BookSortBonusFloorRewards" xml:space="preserve"><value>獎勵層自選大獎</value></data>
+  <data name="BookSortFinished" xml:space="preserve"><value>書庫大掃除完成。</value></data>
+  <data name="BookSortFloorCleared" xml:space="preserve"><value>第 {0} 層已全部清掃，前往下一層</value></data>
+  <data name="BookSortFloorFromFormat" xml:space="preserve"><value>第 {0} 層以上</value></data>
+  <data name="BookSortFloorRangeFormat" xml:space="preserve"><value>第 {0} ~ {1} 層</value></data>
+  <data name="BookSortKeyAndRewardFound" xml:space="preserve"><value>第 {0} 層已找到鑰匙與大獎，前往下一層</value></data>
+  <data name="BookSortMissionRewardsClaimed" xml:space="preserve"><value>領取了 {0} 項書庫任務獎勵</value></data>
+  <data name="BookSortNotActive" xml:space="preserve"><value>目前不在書庫大掃除活動期間。</value></data>
+  <data name="BookSortNothingLeft" xml:space="preserve"><value>沒有可用的書庫大掃除道具了。</value></data>
+  <data name="BookSortPausedForBonusReward" xml:space="preserve"><value>第 {0} 層（獎勵層）：已設定為等待手動選擇大獎，暫停自動清掃</value></data>
+  <data name="BookSortRewardAutoFirst" xml:space="preserve"><value>自動（首選高價值）</value></data>
+  <data name="BookSortRewardFloor" xml:space="preserve"><value>第 {0} 層（獎勵層）：自動選擇獎勵 {1}</value></data>
+  <data name="BookSortRewardPauseManual" xml:space="preserve"><value>暫停等待手動選擇</value></data>
+  <data name="BookSortStarting" xml:space="preserve"><value>開始執行書庫大掃除...</value></data>
+  <data name="BookSortUseBigItem" xml:space="preserve"><value>使用大掃除道具 #{0} 於格子 {1}（預計開 {2} 格）</value></data>
+  <data name="BookSortUseDuster" xml:space="preserve"><value>使用普通撢子批次清掃剩餘格子</value></data>
+  <data name="BookSortUseLargeItems" xml:space="preserve"><value>使用多格清掃道具</value></data>
 </root>

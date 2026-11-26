@@ -132,6 +132,7 @@ public class GameConfig
         public bool AutoGuildRaid { get; set; } = true;
         public bool AutoOpenGuildRaid { get; set; }
         public bool AutoReadMemories { get; set; } = true;
+        public bool AutoBookSort { get; set; }
         public bool AutoLocalRaid { get; set; }
         public bool AutoDeployGuildDefense { get; set; }
         public bool AutoChangeGachaRelic { get; set; }

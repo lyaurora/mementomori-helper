@@ -32,5 +32,16 @@ namespace MementoMori
             var end = DateTime.Parse(hasStartEndTime.EndTime, CultureInfo.InvariantCulture);
             return now >= start && now <= end;
         }
+
+        public bool IsInTime(IHasStartEndTimeZone data)
+        {
+            var localNow = ServerNow;
+            var jstNow = DateTime.UtcNow.AddHours(9);
+            var startNow = data.StartEndTimeZoneType is StartEndTimeZoneType.LocalStartLocalEnd or StartEndTimeZoneType.LocalStartJstEnd ? localNow : jstNow;
+            var endNow = data.StartEndTimeZoneType is StartEndTimeZoneType.LocalStartLocalEnd or StartEndTimeZoneType.JstStartLocalEnd ? localNow : jstNow;
+            var start = DateTime.Parse(data.StartTime, CultureInfo.InvariantCulture);
+            var end = DateTime.Parse(data.EndTime, CultureInfo.InvariantCulture);
+            return startNow >= start && endNow <= end;
+        }
     }
 }

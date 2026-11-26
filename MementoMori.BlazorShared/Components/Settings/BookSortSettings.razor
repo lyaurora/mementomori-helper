@@ -1,0 +1,108 @@
+@using MementoMori.BlazorShared.Components
+@using MementoMori.Common.Localization
+@using MementoMori.Option
+@using MementoMori.Ortega.Common.Utils
+@using MementoMori.Ortega.Share
+@using MementoMori.Ortega.Share.Data.Item
+@using MementoMori.Ortega.Share.Extensions
+@using MementoMori.Ortega.Share.Master.Data
+
+@inject IWritableOptions<PlayersOption> PlayersOptions
+@inherits MementoMori.BlazorShared.Models.AccountComponent
+
+<MudCard>
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Class="panel-title">
+                <MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.AutoStories" aria-hidden="true" />
+                <span>@ResourceStrings.AutoBookSort <span class="panel-scope is-account"><PlayerAvatar IconId="@(Funcs?.UserSyncData?.UserStatusDtoInfo?.MainCharacterIconId ?? 0)" Name="@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name)" Size="16" />@(Funcs?.UserSyncData?.UserStatusDtoInfo?.Name)</span></span>
+                <SettingSaved @ref="_saved" />
+            </MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent Class="settings-form">
+        <MudSwitch T="bool" Class="settings-toggle" LabelPlacement="Placement.Start"
+                   Label="@ResourceStrings.BookSortUseLargeItems"
+                   @bind-Value="_useLargeUnlockItems" @bind-Value:after="Save" Color="Color.Primary" />
+
+        @{
+            var tiers = Masters.BookSortBonusFloorRewardTable.GetArray()
+                .Where(r => r != null && r.SelectItemsList is { Count: > 0 })
+                .OrderBy(r => r.StartFloor)
+                .ToList();
+            var maxClearQuestId = Funcs?.UserSyncData?.UserBattleBossDtoInfo?.BossClearMaxQuestId ?? 0;
+        }
+        @if (tiers.Count > 0)
+        {
+            <div class="setting-section">
+                <MudText Class="setting-field-label">@ResourceStrings.BookSortBonusFloorRewards</MudText>
+                @foreach (var tier in tiers)
+                {
+                    var eligible = tier.GetSelectableIndexList(maxClearQuestId);
+                    if (eligible.Count == 0) continue;
+                    var tierLabel = tier.EndFloor > 0
+                        ? string.Format(ResourceStrings.BookSortFloorRangeFormat, tier.StartFloor, tier.EndFloor)
+                        : string.Format(ResourceStrings.BookSortFloorFromFormat, tier.StartFloor);
+                    var selectedValue = GetChoice(tier.Id, eligible);
+
+                    <MudSelect T="int" @key="tier.Id" Label="@tierLabel" Variant="Variant.Outlined" Margin="Margin.Dense"
+                               Value="selectedValue" ValueChanged="v => ChoiceChanged(tier.Id, v)">
+                        <MudSelectItem T="int" Value="BookSortOption.AutoFirstEligible">@ResourceStrings.BookSortRewardAutoFirst</MudSelectItem>
+                        <MudSelectItem T="int" Value="BookSortOption.PauseForManual">@ResourceStrings.BookSortRewardPauseManual</MudSelectItem>
+                        @foreach (var idx in eligible)
+                        {
+                            <MudSelectItem T="int" Value="idx">@FormatReward(tier.SelectItemsList[idx])</MudSelectItem>
+                        }
+                    </MudSelect>
+                }
+            </div>
+        }
+    </MudCardContent>
+</MudCard>
+
+@code {
+    SettingSaved _saved = null!;
+    bool _useLargeUnlockItems = true;
+    Dictionary<long, int> _choices = [];
+
+    protected override Task AccountChanged()
+    {
+        var playerOpt = PlayersOptions.Value.TryGetValue(NetworkManager.PlayerId, out var saved)
+            ? saved
+            : new PlayerOption { PlayerId = NetworkManager.PlayerId };
+        var opt = playerOpt.BookSort ?? new BookSortOption();
+        _useLargeUnlockItems = opt.UseLargeUnlockItems;
+        _choices = new Dictionary<long, int>(opt.BonusFloorRewardChoices ?? []);
+        return Task.CompletedTask;
+    }
+
+    private int GetChoice(long tierId, List<int> eligible)
+    {
+        if (!_choices.TryGetValue(tierId, out var choice)) return BookSortOption.AutoFirstEligible;
+        if (choice is BookSortOption.AutoFirstEligible or BookSortOption.PauseForManual) return choice;
+        return eligible.Contains(choice) ? choice : BookSortOption.AutoFirstEligible;
+    }
+
+    private void ChoiceChanged(long tierId, int value)
+    {
+        if (value == BookSortOption.AutoFirstEligible)
+            _choices.Remove(tierId);
+        else
+            _choices[tierId] = value;
+        Save();
+    }
+
+    private static string FormatReward(BookSortBonusFloorSelectItems selectItem)
+    {
+        if (selectItem?.ItemList is not { Count: > 0 } items) return "-";
+        return string.Join(" + ", items.Select(x => $"{ItemUtil.GetItemName(x.ItemType, x.ItemId)} ×{x.ItemCount}"));
+    }
+
+    private void Save() => _saved.Run(() => PlayersOptions.Update(opt =>
+    {
+        var playerOpt = opt.GetOrAdd(NetworkManager.PlayerId, id => new PlayerOption { PlayerId = id });
+        playerOpt.BookSort ??= new BookSortOption();
+        playerOpt.BookSort.UseLargeUnlockItems = _useLargeUnlockItems;
+        playerOpt.BookSort.BonusFloorRewardChoices = new Dictionary<long, int>(_choices);
+    }));
+}

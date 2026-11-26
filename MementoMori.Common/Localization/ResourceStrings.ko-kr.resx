@@ -699,4 +699,22 @@
   <data name="BattleUnit" xml:space="preserve"><value>캐릭터</value></data>
   <data name="BattleVictory" xml:space="preserve"><value>승리</value></data>
   <data name="BattleYourTeam" xml:space="preserve"><value>아군 팀</value></data>
+  <data name="AutoBookSort" xml:space="preserve"><value>서고 대청소 자동</value></data>
+  <data name="BookSortBonusFloorRewards" xml:space="preserve"><value>보너스 층 선택 보상</value></data>
+  <data name="BookSortFinished" xml:space="preserve"><value>서고 대청소 자동 실행이 완료되었습니다.</value></data>
+  <data name="BookSortFloorCleared" xml:space="preserve"><value>{0}층: 모든 칸 개방 완료, 다음 층으로 이동</value></data>
+  <data name="BookSortFloorFromFormat" xml:space="preserve"><value>{0}층 이상</value></data>
+  <data name="BookSortFloorRangeFormat" xml:space="preserve"><value>{0}~{1}층</value></data>
+  <data name="BookSortKeyAndRewardFound" xml:space="preserve"><value>{0}층: 열쇠와 핵심 보상 획득, 다음 층으로 이동</value></data>
+  <data name="BookSortMissionRewardsClaimed" xml:space="preserve"><value>서고 정리 미션 보상 {0}건을 수령했습니다</value></data>
+  <data name="BookSortNotActive" xml:space="preserve"><value>현재 서고 대청소 이벤트 기간이 아닙니다.</value></data>
+  <data name="BookSortNothingLeft" xml:space="preserve"><value>사용 가능한 서고 대청소 아이템이 없습니다.</value></data>
+  <data name="BookSortPausedForBonusReward" xml:space="preserve"><value>{0}층(보너스): 수동 보상 선택 설정으로 일시 정지했습니다.</value></data>
+  <data name="BookSortRewardAutoFirst" xml:space="preserve"><value>자동 (첫 번째 보상 우선)</value></data>
+  <data name="BookSortRewardFloor" xml:space="preserve"><value>{0}층(보너스 층): 보상 {1} 선택</value></data>
+  <data name="BookSortRewardPauseManual" xml:space="preserve"><value>수동 선택을 위해 일시 정지</value></data>
+  <data name="BookSortStarting" xml:space="preserve"><value>서고 대청소 자동 실행을 시작합니다...</value></data>
+  <data name="BookSortUseBigItem" xml:space="preserve"><value>청소 아이템 #{0}을(를) 칸 {1}에 사용({2}칸 개방)</value></data>
+  <data name="BookSortUseDuster" xml:space="preserve"><value>일반 먼지떨이로 남은 칸을 일괄 개방합니다</value></data>
+  <data name="BookSortUseLargeItems" xml:space="preserve"><value>다중 칸 청소 아이템 사용</value></data>
 </root>
