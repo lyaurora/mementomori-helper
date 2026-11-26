@@ -14,6 +14,7 @@
     window.mementoTheme = {
         apply,
         getMode: () => mode,
+        getResolvedTheme: () => document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light',
         setMode: value => {
             mode = value === 'light' || value === 'dark' ? value : 'system';
             apply();

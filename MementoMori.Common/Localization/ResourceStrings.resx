@@ -876,4 +876,7 @@
   <data name="PlayerProfileRemoveFriendConfirm" xml:space="preserve"><value>Remove {0} from your friends list?</value></data>
   <data name="PlayerProfileTitle" xml:space="preserve"><value>Player Info</value></data>
   <data name="PlayerProfileUnblocked" xml:space="preserve"><value>Player unblocked</value></data>
+  <data name="AndroidKeepAliveStop" xml:space="preserve"><value>Stop</value></data>
+  <data name="AndroidKeepAliveText" xml:space="preserve"><value>Scheduled automation keeps running in the background.</value></data>
+  <data name="AndroidKeepAliveTitle" xml:space="preserve"><value>MementoMori Helper is running</value></data>
 </root>

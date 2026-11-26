@@ -3260,5 +3260,8 @@ namespace MementoMori.Common.Localization {
         public static string PlayerProfileRemoveFriendConfirm => ResourceManager.GetString("PlayerProfileRemoveFriendConfirm", resourceCulture);
         public static string PlayerProfileTitle => ResourceManager.GetString("PlayerProfileTitle", resourceCulture);
         public static string PlayerProfileUnblocked => ResourceManager.GetString("PlayerProfileUnblocked", resourceCulture);
+        public static string AndroidKeepAliveStop => ResourceManager.GetString("AndroidKeepAliveStop", resourceCulture);
+        public static string AndroidKeepAliveText => ResourceManager.GetString("AndroidKeepAliveText", resourceCulture);
+        public static string AndroidKeepAliveTitle => ResourceManager.GetString("AndroidKeepAliveTitle", resourceCulture);
     }
 }

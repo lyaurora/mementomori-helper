@@ -770,4 +770,7 @@
   <data name="PlayerProfileRemoveFriendConfirm" xml:space="preserve"><value>{0} さんをフレンドから解除しますか？</value></data>
   <data name="PlayerProfileTitle" xml:space="preserve"><value>プレイヤー情報</value></data>
   <data name="PlayerProfileUnblocked" xml:space="preserve"><value>ブロックを解除しました</value></data>
+  <data name="AndroidKeepAliveStop" xml:space="preserve"><value>停止</value></data>
+  <data name="AndroidKeepAliveText" xml:space="preserve"><value>定期自動タスクをバックグラウンドで維持しています。</value></data>
+  <data name="AndroidKeepAliveTitle" xml:space="preserve"><value>MementoMori Helper 実行中</value></data>
 </root>

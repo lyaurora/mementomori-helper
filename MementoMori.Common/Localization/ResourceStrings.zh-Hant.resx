@@ -876,4 +876,7 @@
   <data name="PlayerProfileRemoveFriendConfirm" xml:space="preserve"><value>確定要與 {0} 解除好友關係嗎？</value></data>
   <data name="PlayerProfileTitle" xml:space="preserve"><value>玩家資訊</value></data>
   <data name="PlayerProfileUnblocked" xml:space="preserve"><value>已取消封鎖</value></data>
+  <data name="AndroidKeepAliveStop" xml:space="preserve"><value>停止</value></data>
+  <data name="AndroidKeepAliveText" xml:space="preserve"><value>定時自動化任務正在背景保持執行。</value></data>
+  <data name="AndroidKeepAliveTitle" xml:space="preserve"><value>MementoMori 助手執行中</value></data>
 </root>

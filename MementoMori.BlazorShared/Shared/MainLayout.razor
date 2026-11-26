@@ -1,6 +1,7 @@
 ﻿@inject AccountSelection AccountSelection
 @using MementoMori.Common.Localization
 @using MementoMori.BlazorShared.Components
+@using MementoMori.BlazorShared.UI
 @using static MementoMori.Ortega.Share.Masters
 @using System.Globalization
 @using DynamicData.Binding
@@ -14,6 +15,7 @@
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JS
 @inject ISnackbar Snackbar
+@inject PlatformThemeSync PlatformThemeSync
 
 <MudThemeProvider Theme="_theme" IsDarkMode="false" ObserveSystemDarkModeChange="false" DefaultScrollbar="true"/>
 <MudThemeProvider Theme="DarkTheme" IsDarkMode="true" ObserveSystemDarkModeChange="false" DefaultScrollbar="true"/>
@@ -285,6 +287,8 @@
                 await JS.InvokeVoidAsync("document.documentElement.classList.remove", "app-booting");
                 var saved = await JS.InvokeAsync<string?>("mementoTheme.getMode");
                 if (saved is "light" or "dark") _themeMode = saved;
+                var resolved = await JS.InvokeAsync<string?>("mementoTheme.getResolvedTheme");
+                PlatformThemeSync.NotifyTheme(_themeMode, resolved == "dark");
             }
             catch (JSException) { }
             if (_disposed) return;
@@ -302,6 +306,8 @@
         {
             if (!await JS.InvokeAsync<bool>("mementoTheme.setMode", mode))
                 Snackbar.Add(ResourceStrings.ThemeSaveFailed, Severity.Warning);
+            var resolved = await JS.InvokeAsync<string?>("mementoTheme.getResolvedTheme");
+            PlatformThemeSync.NotifyTheme(_themeMode, resolved == "dark");
         }
         catch (JSDisconnectedException) { }
         catch (JSException) { Snackbar.Add(ResourceStrings.ThemeSaveFailed, Severity.Warning); }
