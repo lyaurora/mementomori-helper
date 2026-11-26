@@ -17,16 +17,24 @@ using MementoMori.Ortega.Share.Data.ApiInterface.WeeklyTopics;
 using MementoMori.Ortega.Share.Data.ApiInterface.GuildTower;
 using MementoMori.Ortega.Share.Data.ApiInterface.DungeonBattle;
 using MementoMori.Ortega.Share.Data.ApiInterface.Battle;
+using MementoMori.Ortega.Share.Data.ApiInterface.BookSort;
+using MementoMori.Ortega.Share.Data.ApiInterface.EquipmentSynchro;
+using MementoMori.Ortega.Share.Data.ApiInterface.Friend;
 using MementoMori.Ortega.Share.Data.ApiInterface.LocalRaid;
+using MementoMori.Ortega.Share.Data.ApiInterface.TowerBattle;
 using MementoMori.Ortega.Share.Data.ApiInterface.User;
 using MementoMori.Ortega.Share.Data.Battle;
+using MementoMori.Ortega.Share.Data.Battle.Result;
 using MementoMori.Ortega.Share.Data.Chat;
 using MementoMori.Ortega.Share.Data.DtoInfo;
 using MementoMori.Ortega.Share.Data.DungeonBattle;
 using MementoMori.Ortega.Share.Data.EventPortal;
 using MementoMori.Ortega.Share.Data.Item;
+using MementoMori.Ortega.Share.Data.LocalRaid;
 using MementoMori.Ortega.Share.Data.MyPage;
+using MementoMori.Ortega.Share.Data.PopularityVote;
 using MementoMori.Ortega.Share.Data.TradeShop;
+using PopularityVoteApi = MementoMori.Ortega.Share.Data.ApiInterface.PopularityVote;
 using MementoMori.WebUI.Services;
 using System.Globalization;
 using System.Text.Json;
@@ -52,6 +60,7 @@ using MementoMori.Ortega.Share.MagicOnionShare.Interfaces.Sender;
 using MementoMori.Ortega.Share.MagicOnionShare.Request;
 using MementoMori.Ortega.Share.MagicOnionShare.Response;
 using MementoMori.BlazorShared.Models;
+using MementoMori.BlazorShared.UI;
 using MementoMori.Funcs;
 using MementoMori.Jobs;
 using MementoMori.Option;
@@ -110,7 +119,9 @@ var checks = new (string Name, Func<Task> Run)[]
     ("dungeon error propagation, PreferTreasureChest, EventBattle-only grid fetch and cleared equip guard", CheckDungeonBattleFixes),
     ("local raid immutability/0-count guard and bounty 2x LimitedEvent/solo remake check", CheckLocalRaidAndBounty2x),
     ("growth history snapshot retention, post-merge snapshots, cache and AssetCache error safety", CheckGrowthHistoryAndAssetCache),
-    ("core sync merges, DisableAll deregistration, BattleLog/Bounty formatting, language persistence and stuck-present dedup", CheckCoreAndUiFixes)
+    ("core sync merges, DisableAll deregistration, BattleLog/Bounty formatting, language persistence and stuck-present dedup", CheckCoreAndUiFixes),
+    ("upstream ports: tower remaining sweeps, optional WeeklyTopics, text fallback, freebies/toggles, LocalRaid options and BattleLog summary", CheckUpstreamPortedFixes),
+    ("guild overview, player profile/friend/block APIs, BookSort automation, PathBase and platform theme sync", CheckGuildProfileBookSortAndPathBase)
 };
 var runDir = Directory.CreateTempSubdirectory("mementomori-checks-");
 var originalCwd = Directory.GetCurrentDirectory();
@@ -1991,6 +2002,490 @@ static async Task CheckCoreAndUiFixes()
     await pFuncs.PresentReceiveItem();
     var secondCount = pFuncs.MesssageList.Count(m => m.Message.Contains("StuckGift"));
     Require(firstCount == 1 && secondCount == 1, "Repeated stuck presents were not deduplicated on the same game day");
+}
+
+static async Task CheckUpstreamPortedFixes()
+{
+    // 1. InfiniteTowerQuick sweeps only remaining free attempts (3 - TodayBattleCount) and alerts on diamond spend
+    Masters.VipTable.Load(MessagePackSerializer.ConvertFromJson("""[{"Lv":1,"IsQuickBossBattleAvailable":true}]"""));
+    var quickCounts = new List<int>();
+    var chargeDiamonds = false;
+    var (tNet, tFuncs) = CreateOfflineAccount(handler: async (req, ct) =>
+    {
+        var path = req.RequestUri!.AbsolutePath;
+        if (path.EndsWith("/towerBattle/quick"))
+        {
+            var body = MessagePackSerializer.Deserialize<TowerBattleQuickRequest>(await req.Content!.ReadAsByteArrayAsync(ct));
+            quickCounts.Add(body.QuickCount);
+            return MsgPackReply(new TowerBattleQuickResponse
+            {
+                UserSyncData = chargeDiamonds
+                    ? new UserSyncData { UserItemDtoInfo = [new() { ItemType = ItemType.CurrencyFree, ItemId = 1, ItemCount = 900 }] }
+                    : null
+            });
+        }
+        throw new InvalidOperationException($"Unexpected tower path: {path}");
+    });
+    using var _tn = tNet;
+    using var _tf = tFuncs;
+    tFuncs.UserSyncData.UserStatusDtoInfo = new() { PlayerId = 1, Vip = 1 };
+    tFuncs.UserSyncData.UserItemDtoInfo = [new() { ItemType = ItemType.CurrencyFree, ItemId = 1, ItemCount = 1000 }];
+    tFuncs.UserSyncData.UserTowerBattleDtoInfos = [new() { TowerType = TowerType.Infinite, MaxTowerBattleId = 50, TodayBattleCount = 1 }];
+    await tFuncs.InfiniteTowerQuick();
+    Require(quickCounts.SequenceEqual([2]), $"InfiniteTowerQuick swept [{string.Join(",", quickCounts)}] instead of remaining 2");
+    Require(!tFuncs.MesssageList.Any(m => m.IsError), "InfiniteTowerQuick flagged an error when no diamonds were spent");
+
+    tFuncs.UserSyncData.UserTowerBattleDtoInfos = [new() { TowerType = TowerType.Infinite, MaxTowerBattleId = 50, TodayBattleCount = 3 }];
+    await tFuncs.InfiniteTowerQuick();
+    Require(quickCounts.SequenceEqual([2]), "InfiniteTowerQuick sent a request even with 0 remaining attempts");
+
+    chargeDiamonds = true;
+    tFuncs.UserSyncData.UserTowerBattleDtoInfos = [new() { TowerType = TowerType.Infinite, MaxTowerBattleId = 50, TodayBattleCount = 2 }];
+    await tFuncs.InfiniteTowerQuick();
+    Require(quickCounts.SequenceEqual([2, 1]), "InfiniteTowerQuick did not sweep the 1 remaining attempt");
+    Require(tFuncs.MesssageList.Any(m => m.IsError && m.Message.Contains("100")), "InfiniteTowerQuick did not warn when diamonds dropped by 100");
+
+    // 2. Shop AutoBuy and Shop page tolerate WeeklyTopics API errors and still process regular shop tabs
+    var bought = new List<string>();
+    var (sNet, sFuncs) = CreateOfflineAccount(handler: async (req, ct) =>
+    {
+        var path = req.RequestUri!.AbsolutePath;
+        if (path.EndsWith("/tradeShop/getList"))
+            return MsgPackReply(new MementoMori.Ortega.Share.Data.ApiInterface.TradeShop.GetListResponse
+            {
+                TradeShopTabInfoList =
+                [
+                    new TradeShopTabInfo
+                    {
+                        TradeShopTabId = 1,
+                        TradeShopItems =
+                        [
+                            new TradeShopItem
+                            {
+                                TradeShopItemId = 10001,
+                                GiveItem = new UserItem { ItemType = ItemType.Gold, ItemId = 1, ItemCount = 100 },
+                                ConsumeItem1 = null,
+                                ConsumeItem2 = null,
+                                LimitTradeCount = 1,
+                                TradeCount = 0
+                            }
+                        ]
+                    }
+                ]
+            });
+        if (path.EndsWith("/weeklyTopics/getWeeklyTopicsInfo"))
+            return MsgPackReply(new ApiErrorResponse { ErrorCode = ErrorCode.CommonApiInvalidRequest }, statusCode: "1");
+        if (path.EndsWith("/tradeShop/buyItem"))
+        {
+            var body = MessagePackSerializer.Deserialize<BuyItemRequest>(await req.Content!.ReadAsByteArrayAsync(ct));
+            bought.Add($"{body.TradeShopTabId}:{body.TradeShopItemInfos[0].TradeShopItemId}");
+            return MsgPackReply(new BuyItemResponse { TradeShopItems = [] });
+        }
+        throw new InvalidOperationException($"Unexpected shop path: {path}");
+    });
+    using var _sn = sNet;
+    using var _sf = sFuncs;
+    await sFuncs.AutoBuyShopItem();
+    Require(bought.SequenceEqual(["1:10001"]), "AutoBuyShopItem aborted regular tabs when WeeklyTopics failed");
+
+    Masters.TradeShopTabTable.Load(MessagePackSerializer.ConvertFromJson("""[{"Id":1,"SortOrder":1,"TabNameKey":"tab1"}]"""));
+    using var shopPage = new MementoMori.BlazorShared.Pages.Shop();
+    Field(shopPage, "Funcs").SetValue(shopPage, sFuncs);
+    var getShopInfo = shopPage.GetType().GetMethod("GetShopInfo", BindingFlags.Instance | BindingFlags.NonPublic)!;
+    await (Task)getShopInfo.Invoke(shopPage, [CancellationToken.None])!;
+    var tabs = (List<TradeShopTabInfo>)Field(shopPage, "_tradeShopTabInfoList").GetValue(shopPage)!;
+    Require(tabs.Count == 1 && tabs[0].TradeShopTabId == 1, "Shop page failed to load regular tabs when WeeklyTopics failed");
+
+    // 3. TextResourceTable fills missing/blank non-English entries from English fallback
+    var textTable = new TextResourceTable();
+    textTable.SetLanguageType(LanguageType.zhCN);
+    var zhBytes = MessagePackSerializer.ConvertFromJson(
+        """[{"Id":1,"StringKey":"k_ok","Text":"正常"},{"Id":2,"StringKey":"k_empty","Text":""},{"Id":3,"StringKey":"k_space","Text":"   "}]""");
+    var enBytes = MessagePackSerializer.ConvertFromJson(
+        """[{"Id":1,"StringKey":"k_ok","Text":"Normal"},{"Id":2,"StringKey":"k_empty","Text":"English Empty"},{"Id":3,"StringKey":"k_space","Text":"English Space"},{"Id":4,"StringKey":"k_missing","Text":"English Missing"}]""");
+    textTable.Load(zhBytes, enBytes);
+    Require(textTable.Get("k_ok") == "正常", "TextResourceTable overwrote non-empty primary text");
+    Require(textTable.Get("k_empty") == "English Empty", "TextResourceTable did not fill empty primary entry from English");
+    Require(textTable.Get("k_space") == "English Space", "TextResourceTable did not fill whitespace primary entry from English");
+    Require(textTable.Get("k_missing") == "English Missing", "TextResourceTable did not fill missing primary entry from English");
+
+    // 4. Freebies (PopularityVote + EquipmentSynchro) and AutoGuildRaid / AutoReadMemories switches
+    Masters.OpenContentTable.Load(MessagePackSerializer.ConvertFromJson(
+        $$"""[{"OpenCommandType":{{(int)OpenCommandType.EquipmentSynchro}},"OpenContentValue":100}]"""));
+    var voteRewardCalled = 0;
+    var synchroCalled = 0;
+    var synchroUnavailable = false;
+    var (fNet, fFuncs) = CreateOfflineAccount(handler: async (req, ct) =>
+    {
+        var path = req.RequestUri!.AbsolutePath;
+        if (path.EndsWith("/popularityVote/getInfo"))
+            return MsgPackReply(new PopularityVoteApi.GetInfoResponse
+            {
+                TotalVoteCount = 50,
+                PopularityVoteRewardInfoList =
+                [
+                    new PopularityVoteRewardInfo { GoalVoteCount = 10, IsReceived = true },
+                    new PopularityVoteRewardInfo { GoalVoteCount = 30, IsReceived = false },
+                    new PopularityVoteRewardInfo { GoalVoteCount = 100, IsReceived = false }
+                ]
+            });
+        if (path.EndsWith("/popularityVote/rewardVoteItem"))
+        {
+            var body = MessagePackSerializer.Deserialize<PopularityVoteApi.RewardVoteItemRequest>(await req.Content!.ReadAsByteArrayAsync(ct));
+            Require(body.IsAllReward, "PopularityVote reward did not request IsAllReward=true");
+            voteRewardCalled++;
+            return MsgPackReply(new PopularityVoteApi.RewardVoteItemResponse
+            {
+                RewardItemList = [new UserItem { ItemType = ItemType.Gold, ItemId = 1, ItemCount = 500 }]
+            });
+        }
+        if (path.EndsWith("/equipmentSynchro/rewardMission"))
+        {
+            var body = MessagePackSerializer.Deserialize<EquipmentSynchroRewardMissionRequest>(await req.Content!.ReadAsByteArrayAsync(ct));
+            Require(body.IsBulk, "EquipmentSynchro reward did not request IsBulk=true");
+            synchroCalled++;
+            if (synchroUnavailable)
+                return MsgPackReply(new ApiErrorResponse { ErrorCode = ErrorCode.EquipmentSynchroMissionUnavailableReward }, statusCode: "1");
+            return MsgPackReply(new EquipmentSynchroRewardMissionResponse
+            {
+                RewardItem = new UserItem { ItemType = ItemType.CurrencyFree, ItemId = 1, ItemCount = 100 }
+            });
+        }
+        throw new InvalidOperationException($"Unexpected freebie path: {path}");
+    });
+    using var _fn = fNet;
+    using var _ff = fFuncs;
+    // Without Mypage icon, PopularityVote is skipped
+    await fFuncs.ReceivePopularityVoteReward();
+    Require(voteRewardCalled == 0, "PopularityVote queried server without active icon");
+    fFuncs.Mypage.MypageInfo = new DisplayMypageInfo
+    {
+        MypageIconInfos = [new MypageIconInfo { TransferDetailInfo = new TransferDetailInfo { TransferSpotType = TransferSpotType.PopularityVote } }]
+    };
+    await fFuncs.ReceivePopularityVoteReward();
+    Require(voteRewardCalled == 1, "PopularityVote did not claim eligible vote count reward");
+
+    // EquipmentSynchro skipped when quest progress below unlock or 0 synchro items
+    fFuncs.UserSyncData.UserBattleBossDtoInfo = new() { BossClearMaxQuestId = 50 };
+    await fFuncs.ReceiveEquipmentSynchroMissionReward();
+    Require(synchroCalled == 0, "EquipmentSynchro called before unlock quest");
+    fFuncs.UserSyncData.UserBattleBossDtoInfo = new() { BossClearMaxQuestId = 150 };
+    fFuncs.UserSyncData.UserEquipmentStatusDtoInfo = new() { SynchroMaxPossessionCount = 0 };
+    await fFuncs.ReceiveEquipmentSynchroMissionReward();
+    Require(synchroCalled == 0, "EquipmentSynchro called with SynchroMaxPossessionCount == 0");
+    fFuncs.UserSyncData.UserEquipmentStatusDtoInfo = new() { SynchroMaxPossessionCount = 5 };
+    await fFuncs.ReceiveEquipmentSynchroMissionReward();
+    Require(synchroCalled == 1, "EquipmentSynchro did not claim bulk mission reward");
+    synchroUnavailable = true;
+    await fFuncs.ReceiveEquipmentSynchroMissionReward();
+    Require(synchroCalled == 2 && !fFuncs.MesssageList.Any(m => m.IsError), "EquipmentSynchro unavailable reward logged as error");
+
+    // AutoGuildRaid / AutoReadMemories defaults & config toggles
+    var defaultAutoJob = new GameConfig.AutoJobModel();
+    Require(defaultAutoJob.AutoGuildRaid && defaultAutoJob.AutoReadMemories, "AutoGuildRaid and AutoReadMemories should default to true");
+
+    // 5. LocalRaid PR #134 config defaults, quest level pinning, lower-quest stepping and dead-room tracking
+    var defaultRaid = new GameConfig.LocalRaidConfig();
+    Require(!defaultRaid.HostWhenNoRoom && defaultRaid.JoinWaitMinutes == 10 && defaultRaid.RoomWaitMinutes == 3
+            && defaultRaid.MaxSoloLosses == 3 && defaultRaid.MaxTaskMinutes == 20 && !defaultRaid.DropToLowerQuest
+            && defaultRaid.LowerQuestAfterMinutes == 3 && defaultRaid.QuestLevel == 0,
+        "LocalRaidConfig defaults do not match PR #134 specification");
+
+    var raidResp = new GetLocalRaidInfoResponse
+    {
+        OpenLocalRaidQuestIds = [10, 20, 30],
+        OpenEventLocalRaidQuestIds = [],
+        LocalRaidQuestInfos =
+        [
+            new LocalRaidQuestInfo { Id = 10, Level = 100, FixedBattleRewards = [new UserItem { ItemType = ItemType.ExchangePlaceItem, ItemId = 4, ItemCount = 5 }] },
+            new LocalRaidQuestInfo { Id = 20, Level = 150, FixedBattleRewards = [new UserItem { ItemType = ItemType.ExchangePlaceItem, ItemId = 4, ItemCount = 10 }] },
+            new LocalRaidQuestInfo { Id = 30, Level = 200, FixedBattleRewards = [new UserItem { ItemType = ItemType.ExchangePlaceItem, ItemId = 4, ItemCount = 20 }] }
+        ]
+    };
+    var weights = new List<GameConfig.WeightedItem> { new(ItemType.ExchangePlaceItem, 4, 4) };
+    Require(MementoMoriFuncs.SelectLocalRaidQuestId(raidResp, weights, 0, 0) == 30, "Auto LocalRaid quest did not pick highest weighted quest");
+    Require(MementoMoriFuncs.SelectLocalRaidQuestId(raidResp, weights, 0, 1) == 20, "LocalRaid step 1 did not drop to Lv 150 quest");
+    Require(MementoMoriFuncs.SelectLocalRaidQuestId(raidResp, weights, 0, 2) == 10, "LocalRaid step 2 did not drop to Lv 100 quest");
+    Require(!MementoMoriFuncs.HasLowerLocalRaidQuest(raidResp, weights, 0, 2), "HasLowerLocalRaidQuest stayed true at lowest quest");
+    Require(MementoMoriFuncs.SelectLocalRaidQuestId(raidResp, weights, 175, 0) == 20, "Pinned QuestLevel=175 did not pick closest lower quest (Lv 150)");
+    Require(MementoMoriFuncs.SelectLocalRaidQuestId(raidResp, weights, 50, 0) == 10, "Pinned QuestLevel below all quests did not fall back to lowest quest");
+
+    var joinReceiver = new LocalRaidJoinRoomReceiver(null!, _ => { }, default, TimeSpan.FromMinutes(5));
+    var joinClock = (Stopwatch)Field(joinReceiver, "_startSw").GetValue(joinReceiver)!;
+    joinClock.Stop();
+    Field(joinClock, "_elapsed").SetValue(joinClock, Stopwatch.Frequency * 180); // 3 min < 5 min
+    joinClock.Start();
+    joinReceiver.OnError(ErrorCode.MagicOnionLocalRaidJoinRandomRoomNotExistRoom);
+    Require(!joinReceiver.IsMaxTimeExceeded, "LocalRaidJoinRoomReceiver timed out before custom 5-minute maxWait");
+    Field(joinClock, "_elapsed").SetValue(joinClock, Stopwatch.Frequency * 305); // > 5 min
+    joinReceiver.OnError(ErrorCode.MagicOnionLocalRaidJoinRandomRoomNotExistRoom);
+    Require(joinReceiver.IsMaxTimeExceeded, "LocalRaidJoinRoomReceiver did not time out after custom 5-minute maxWait");
+
+    using var ch = GrpcChannel.ForAddress("http://offline.invalid");
+    var onion = new OrtegaMagicOnionClient(ch, 1, "offline", null!);
+    var proxy = DispatchProxy.Create<IOrtegaSender, ChatHubProxy>();
+    Field(onion, "_sender").SetValue(onion, proxy);
+    Field(onion, "_state").SetValue(onion, MementoMori.Ortega.Common.Enums.HubClientState.Ready);
+    try
+    {
+        var roomReceiver = new LocalRaidJoinRoomReceiver(onion, _ => { }, default, TimeSpan.FromMinutes(5)) { QuestId = 30 };
+        roomReceiver.OnJoinRoom(new());
+        Require(roomReceiver.InRoomSw is { IsRunning: true }, "OnJoinRoom did not start InRoomSw");
+        roomReceiver.OnStartBattle();
+        Require(roomReceiver.InRoomSw == null, "OnStartBattle did not clear InRoomSw");
+    }
+    finally { await onion.DisposeAsync(); }
+
+    // 6. BattleLog native summary helpers (parsing, side sorting, skipped enemy table fallback, number formatting)
+    var tokenGuid = Guid.NewGuid().ToString("N");
+    var parsedEntry = MementoMori.BlazorShared.Pages.BattleLog.ParseLogEntry($"/tmp/main-18-24-win-1700000000000-{tokenGuid}.json");
+    Require(parsedEntry is { Type: MementoMori.BlazorShared.Pages.BattleLog.BattleLogType.Main, Target: "18-24", Win: true },
+        "BattleLog.ParseLogEntry failed on valid main quest filename");
+    var sim = new BattleSimulationResult
+    {
+        BattleCharacterReports =
+        [
+            new BattleCharacterReport { GroupType = BattleFieldCharacterGroupType.Attacker, UnitType = UnitType.Character, UnitId = 1, TotalGiveDamage = 500 },
+            new BattleCharacterReport { GroupType = BattleFieldCharacterGroupType.Attacker, UnitType = UnitType.Character, UnitId = 2, TotalGiveDamage = 2500 },
+            new BattleCharacterReport { GroupType = BattleFieldCharacterGroupType.Receiver, UnitType = UnitType.BossBattleEnemy, UnitId = 999999, TotalGiveDamage = 1200 }
+        ]
+    };
+    var attackers = MementoMori.BlazorShared.Pages.BattleLog.GetSideReports(sim, BattleFieldCharacterGroupType.Attacker);
+    Require(attackers.Select(a => a.UnitId).SequenceEqual([2L, 1L]), "BattleLog.GetSideReports did not sort descending by damage");
+    var emptyReports = MementoMori.BlazorShared.Pages.BattleLog.GetSideReports(new BattleSimulationResult(), BattleFieldCharacterGroupType.Attacker);
+    Require(emptyReports.Count == 0, "BattleLog.GetSideReports failed on null BattleCharacterReports");
+    var enemyName = MementoMori.BlazorShared.Pages.BattleLog.GetUnitName(sim.BattleCharacterReports[2]);
+    Require(enemyName.Contains("#999999"), $"BattleLog.GetUnitName failed fallback for skipped enemy table: {enemyName}");
+    Require(MementoMori.BlazorShared.Pages.BattleLog.FormatShortNumber(1_500_000_000L) == "1.5B"
+            && MementoMori.BlazorShared.Pages.BattleLog.FormatShortNumber(2_500_000L) == "2.5M"
+            && MementoMori.BlazorShared.Pages.BattleLog.FormatShortNumber(4_200L) == "4.2K"
+            && MementoMori.BlazorShared.Pages.BattleLog.FormatShortNumber(950L) == "950",
+        "BattleLog.FormatShortNumber formatting mismatch");
+}
+
+static async Task CheckGuildProfileBookSortAndPathBase()
+{
+    // 1. 5.2.0 PlayerInfo, Friend, Block and BookSort wire paths + round-trip serialization
+    var wirePaths = new (Type Req, string ExpectedUri)[]
+    {
+        (typeof(GetPlayerInfoRequest), "user/getPlayerInfo"),
+        (typeof(GetFriendStatusRequest), "friend/getFriendStatus"),
+        (typeof(SearchFriendRequest), "friend/searchFriend"),
+        (typeof(ApplyFriendRequest), "friend/applyFriend"),
+        (typeof(ReplyFriendRequest), "friend/replyFriend"),
+        (typeof(UpdateBlockListRequest), "friend/updateBlockList"),
+        (typeof(BookSortGetInfoRequest), "bookSort/getInfo"),
+        (typeof(BookSortSelectBonusFloorRewardRequest), "bookSort/selectBonusFloorReward"),
+        (typeof(BookSortUnlockGridCellRequest), "bookSort/unlockGridCell"),
+        (typeof(BookSortBulkUnlockGridCellRequest), "bookSort/bulkUnlockGridCell"),
+        (typeof(BookSortUpFloorRequest), "bookSort/upFloor")
+    };
+    foreach (var (reqType, expectedUri) in wirePaths)
+    {
+        var attr = reqType.GetCustomAttribute<OrtegaApiAttribute>();
+        Require(attr != null && attr.Uri == expectedUri, $"{reqType.Name} OrtegaApi URI mismatch: {attr?.Uri}");
+    }
+
+    var playerInfoReq = MessagePackSerializer.Deserialize<GetPlayerInfoRequest>(
+        MessagePackSerializer.Serialize(new GetPlayerInfoRequest { PlayerIds = [12345L], DeckUseContentType = DeckUseContentType.Auto, IsGlobal = true }));
+    Require(playerInfoReq.PlayerIds.SequenceEqual([12345L]) && playerInfoReq.DeckUseContentType == DeckUseContentType.Auto && playerInfoReq.IsGlobal,
+        "GetPlayerInfoRequest round-trip failed");
+    var blockResp = MessagePackSerializer.Deserialize<UpdateBlockListResponse>(
+        MessagePackSerializer.Serialize(new UpdateBlockListResponse { UserSyncData = new UserSyncData { BlockPlayerIdList = [42L] } }));
+    Require(blockResp.UserSyncData.BlockPlayerIdList.SequenceEqual([42L]), "UpdateBlockListResponse round-trip failed");
+
+    // 2. BookSort table helpers, bonus floor selection, and large-item placement tie-breaking
+    Require(!new GameConfig.AutoJobModel().AutoBookSort, "AutoBookSort should default to false");
+    Masters.BookSortEventTable.Load(MessagePackSerializer.ConvertFromJson(
+        """[{"Id":1,"StartEndTimeZoneType":0,"StartTime":"2020-01-01 00:00:00","EndTime":"2099-01-01 00:00:00","BonusFloorRepeat":5,"BonusFloorList":[5,10]}]"""));
+    Masters.BookSortBonusFloorRewardTable.Load(MessagePackSerializer.ConvertFromJson(
+        """[{"Id":1,"StartFloor":1,"EndFloor":20,"SelectItemsList":[{"StartMaxClearQuestId":1,"EndMaxClearQuestId":100,"ItemList":[]},{"StartMaxClearQuestId":1,"EndMaxClearQuestId":200,"ItemList":[]},{"StartMaxClearQuestId":300,"EndMaxClearQuestId":999,"ItemList":[]}]}]"""));
+    var activeEvent = Masters.BookSortEventTable.GetArray().Single();
+    Require(activeEvent.IsBonusFloor(5) && activeEvent.IsBonusFloor(15) && !activeEvent.IsBonusFloor(3),
+        "BookSortEventMB.IsBonusFloor failed");
+    var bonusMb = Masters.BookSortBonusFloorRewardTable.GetByFloor(5);
+    var bonusList = Masters.BookSortBonusFloorRewardTable.GetSelectItemsListByFloor(5);
+    Require(bonusMb != null && bonusMb.GetSelectableIndexList(50).SequenceEqual([0, 1]) && bonusMb.GetSelectableIndexList(150).SequenceEqual([1]),
+        "BookSortBonusFloorRewardMB.GetSelectableIndexList mismatch");
+    Require(MementoMoriFuncs.SelectBestBonusFloorRewardIndex(bonusList, 150) == 1,
+        "SelectBestBonusFloorRewardIndex did not pick matching quest tier");
+    Require(MementoMoriFuncs.SelectBestBonusFloorRewardIndex(bonusList, 50) == 0,
+        "SelectBestBonusFloorRewardIndex should default to first eligible high-value reward");
+    Require(MementoMoriFuncs.ResolveBonusFloorRewardIndex(bonusMb, 50, new BookSortOption()) == 0
+            && MementoMoriFuncs.ResolveBonusFloorRewardIndex(bonusMb, 50, new BookSortOption { BonusFloorRewardChoices = new() { [1] = 1 } }) == 1
+            && MementoMoriFuncs.ResolveBonusFloorRewardIndex(bonusMb, 50, new BookSortOption { BonusFloorRewardChoices = new() { [1] = BookSortOption.PauseForManual } }) == BookSortOption.PauseForManual
+            && MementoMoriFuncs.ResolveBonusFloorRewardIndex(bonusMb, 150, new BookSortOption { BonusFloorRewardChoices = new() { [1] = 0 } }) == 1,
+        "ResolveBonusFloorRewardIndex option/fallback/pause mismatch");
+
+    // Only cells 0 and 1 locked -> 2x1 (area 2, yield 2) should beat 3x3 (area 9, yield 2) on equal yield
+    var allExceptTwo = Enumerable.Range(2, 33).ToHashSet();
+    var tieItems = new UserItem[]
+    {
+        new() { ItemType = ItemType.BookSortGridCellUnlockItem, ItemId = 8, ItemCount = 1 }, // 3x3 (area 9)
+        new() { ItemType = ItemType.BookSortGridCellUnlockItem, ItemId = 2, ItemCount = 1 }, // 2x1 (area 2)
+    };
+    var tieMove = MementoMoriFuncs.PickBestLargeUnlockMove(tieItems, allExceptTwo);
+    Require(tieMove is { ItemId: 2, GridCellIndex: 0, Yield: 2, Area: 2 },
+        $"BookSort tie-breaker should pick smaller 2x1 item on equal yield, got {tieMove}");
+
+    // End-to-end offline AutoBookSort: bonus pick -> big item -> duster -> mission claim -> upFloor
+    var calls = new List<string>();
+    var floor = 5;
+    var bonusSelected = -1;
+    var winAndKey = false;
+    var missionClaimed = false;
+    var bPlayers = new Writable<PlayersOption>(new());
+    var (bNet, bFuncs) = CreateOfflineAccount(players: bPlayers, handler: async (req, ct) =>
+    {
+        var path = req.RequestUri!.AbsolutePath;
+        if (path.EndsWith("/bookSort/getInfo"))
+        {
+            calls.Add("getInfo");
+            return MsgPackReply(new BookSortGetInfoResponse
+            {
+                BookSortSyncData = new BookSortSyncData
+                {
+                    CurrentFloor = floor,
+                    SelectedBonusFloorRewardIndex = bonusSelected,
+                    UnlockedGridCellInfoList = winAndKey
+                        ? [new UnlockedGridCellInfo { GridCellIndex = 0, IsWin = true, IsKey = true }]
+                        : Enumerable.Range(2, 33).Select(i => new UnlockedGridCellInfo { GridCellIndex = i }).ToList()
+                }
+            });
+        }
+        if (path.EndsWith("/bookSort/selectBonusFloorReward"))
+        {
+            var body = MessagePackSerializer.Deserialize<BookSortSelectBonusFloorRewardRequest>(await req.Content!.ReadAsByteArrayAsync(ct));
+            calls.Add($"select:{body.BonusFloorRewardIndex}");
+            bonusSelected = body.BonusFloorRewardIndex;
+            return MsgPackReply(new BookSortSelectBonusFloorRewardResponse { BookSortSyncData = new BookSortSyncData { CurrentFloor = floor, SelectedBonusFloorRewardIndex = bonusSelected } });
+        }
+        if (path.EndsWith("/bookSort/unlockGridCell"))
+        {
+            var body = MessagePackSerializer.Deserialize<BookSortUnlockGridCellRequest>(await req.Content!.ReadAsByteArrayAsync(ct));
+            calls.Add($"unlock:{body.GridCellUnlockItemId}@{body.GridCellIndex}");
+            return MsgPackReply(new BookSortUnlockGridCellResponse
+            {
+                UserSyncData = new UserSyncData
+                {
+                    UserItemDtoInfo =
+                    [
+                        new UserItemDtoInfo { ItemType = ItemType.BookSortGridCellUnlockItem, ItemId = 2, ItemCount = 0 },
+                        new UserItemDtoInfo { ItemType = ItemType.BookSortGridCellUnlockItem, ItemId = 1, ItemCount = 1 }
+                    ]
+                }
+            });
+        }
+        if (path.EndsWith("/bookSort/bulkUnlockGridCell"))
+        {
+            calls.Add("bulk");
+            winAndKey = true;
+            return MsgPackReply(new BookSortBulkUnlockGridCellResponse
+            {
+                UserSyncData = new UserSyncData
+                {
+                    UserItemDtoInfo = [new UserItemDtoInfo { ItemType = ItemType.BookSortGridCellUnlockItem, ItemId = 1, ItemCount = 0 }]
+                }
+            });
+        }
+        if (path.EndsWith("/bookSort/upFloor"))
+        {
+            calls.Add("upFloor");
+            floor++;
+            bonusSelected = -1;
+            winAndKey = false;
+            return MsgPackReply(new BookSortUpFloorResponse { BookSortSyncData = new BookSortSyncData { CurrentFloor = floor } });
+        }
+        if (path.EndsWith("/mission/getMissionInfo"))
+        {
+            calls.Add("missions");
+            return MsgPackReply(new GetMissionInfoResponse
+            {
+                MissionInfoDict = missionClaimed
+                    ? new()
+                    : new()
+                    {
+                        [MissionGroupType.BookSort] = new()
+                        {
+                            UserMissionDtoInfoDict = new()
+                            {
+                                [MissionType.BookSort] = [new UserMissionDtoInfo { MissionStatusHistory = new() { [MissionStatusType.NotReceived] = [9001L] } }]
+                            }
+                        }
+                    }
+            });
+        }
+        if (path.EndsWith("/mission/rewardMission"))
+        {
+            calls.Add("claimMission");
+            missionClaimed = true;
+            return MsgPackReply(new RewardMissionResponse { RewardInfo = new() { ItemList = [] } });
+        }
+        throw new InvalidOperationException($"Unexpected BookSort path: {path}");
+    });
+    using var _bn = bNet;
+    using var _bf = bFuncs;
+    bFuncs.UserSyncData.UserBattleBossDtoInfo = new() { BossClearMaxQuestId = 150 };
+    bFuncs.UserSyncData.UserItemDtoInfo =
+    [
+        new UserItemDtoInfo { ItemType = ItemType.BookSortGridCellUnlockItem, ItemId = 2, ItemCount = 1 }
+    ];
+    await bFuncs.AutoBookSort();
+    Require(calls.Contains("select:1") && calls.Contains("unlock:2@0") && calls.Contains("bulk")
+            && calls.Contains("upFloor") && calls.Contains("claimMission"),
+        $"AutoBookSort flow mismatch: [{string.Join(", ", calls)}]");
+
+    // PauseForManual stops without selecting; UseLargeUnlockItems=false skips multi-cell unlock
+    calls.Clear();
+    floor = 5;
+    bonusSelected = -1;
+    winAndKey = false;
+    bPlayers.Value[bNet.PlayerId] = new PlayerOption
+    {
+        PlayerId = bNet.PlayerId,
+        BookSort = new BookSortOption { BonusFloorRewardChoices = new() { [1] = BookSortOption.PauseForManual } }
+    };
+    await bFuncs.AutoBookSort();
+    Require(calls.SequenceEqual(["getInfo"]), $"BookSort PauseForManual should stop before selecting, got [{string.Join(", ", calls)}]");
+
+    calls.Clear();
+    bPlayers.Value[bNet.PlayerId].BookSort.BonusFloorRewardChoices[1] = BookSortOption.AutoFirstEligible;
+    bPlayers.Value[bNet.PlayerId].BookSort.UseLargeUnlockItems = false;
+    bFuncs.UserSyncData.UserItemDtoInfo =
+    [
+        new UserItemDtoInfo { ItemType = ItemType.BookSortGridCellUnlockItem, ItemId = 2, ItemCount = 1 },
+        new UserItemDtoInfo { ItemType = ItemType.BookSortGridCellUnlockItem, ItemId = 1, ItemCount = 1 }
+    ];
+    await bFuncs.AutoBookSort();
+    Require(calls.Contains("select:1") && !calls.Any(c => c.StartsWith("unlock:")) && calls.Contains("bulk"),
+        $"BookSort UseLargeUnlockItems=false should skip multi-cell items, got [{string.Join(", ", calls)}]");
+
+    // 3. Guild helpers, PathBase normalization, and PlatformThemeSync
+    Require(MementoMori.BlazorShared.Pages.Guild.PositionOrder(PlayerGuildPositionType.Leader)
+            < MementoMori.BlazorShared.Pages.Guild.PositionOrder(PlayerGuildPositionType.SubLeader)
+            && MementoMori.BlazorShared.Pages.Guild.PositionOrder(PlayerGuildPositionType.Veteran)
+            < MementoMori.BlazorShared.Pages.Guild.PositionOrder(PlayerGuildPositionType.Member),
+        "Guild.PositionOrder sorting mismatch");
+    Require(MementoMori.BlazorShared.Pages.Guild.FormatSinceLogin(TimeSpan.FromMinutes(25)) == "25m"
+            && MementoMori.BlazorShared.Pages.Guild.FormatSinceLogin(TimeSpan.FromHours(5)) == "5h"
+            && MementoMori.BlazorShared.Pages.Guild.FormatSinceLogin(TimeSpan.FromDays(3)) == "3d"
+            && MementoMori.BlazorShared.Pages.Guild.FormatSinceLogin(TimeSpan.FromDays(7)) == "7d+"
+            && MementoMori.BlazorShared.Pages.Guild.FormatSinceLogin(TimeSpan.MaxValue) == "7d+",
+        "Guild.FormatSinceLogin mismatch");
+
+    var normalize = typeof(MementoMori.WebUI.Services.AssetCache).Assembly.GetType("Program")!
+        .GetMethod("NormalizePathBase", BindingFlags.Static | BindingFlags.NonPublic)!;
+    Require((string)normalize.Invoke(null, [null])! == ""
+            && (string)normalize.Invoke(null, ["/"])! == ""
+            && (string)normalize.Invoke(null, ["mm/"])! == "/mm"
+            && (string)normalize.Invoke(null, ["/sub/mm/"])! == "/sub/mm",
+        "Program.NormalizePathBase normalization failed");
+
+    var themeSync = new PlatformThemeSync();
+    bool? observedDark = null;
+    themeSync.ThemeChanged += dark => observedDark = dark;
+    themeSync.NotifyTheme("dark", true);
+    Require(observedDark == true && themeSync.Mode == "dark", "PlatformThemeSync did not notify theme change");
 }
 
 static void ReplaceClient(MementoNetworkManager network, string field, HttpClient replacement)
