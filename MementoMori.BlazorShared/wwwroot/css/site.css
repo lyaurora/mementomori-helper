@@ -167,28 +167,28 @@ button, input, textarea, select { font-family: inherit; }
 .settings-toggle .mud-input-control-input-container { width: 100%; }
 .settings-toggle .mud-switch {
     width: 100%;
-    min-height: 44px;
+    min-height: 36px;
     margin: 0;
-    padding: .6rem 0;
-    gap: .85rem;
+    padding: .35rem 0;
+    gap: .75rem;
     justify-content: space-between;
     border-bottom: 1px solid var(--mud-palette-divider-light);
 }
 .settings-toggle:last-child .mud-switch, .settings-toggle:has(+ .setting-section) .mud-switch { border-bottom: 0; }
 .settings-toggle .mud-switch .mud-switch-span { margin: 0; }
-.settings-toggle .mud-switch > .mud-typography { min-width: 0; flex: 1; text-align: start; overflow-wrap: anywhere; line-height: 1.6; }
+.settings-toggle .mud-switch > .mud-typography { min-width: 0; flex: 1; text-align: start; overflow-wrap: anywhere; line-height: 1.45; }
 .settings-toggle-list .master-toggle { width: calc(100% + 1.5rem); max-width: none; margin-inline: -.75rem; }
-.settings-toggle-list .master-toggle .mud-switch { padding: .75rem; background: var(--mud-palette-background-gray); border: 1px solid var(--mud-palette-lines-default); border-radius: 14px; font-weight: 600; }
-.settings-toggle-divider { margin: .6rem 0; opacity: 0; }
-.settings-form > * + *, .mud-dialog .settings-form > * + * { margin-top: .85rem; }
+.settings-toggle-list .master-toggle .mud-switch { padding: .6rem .75rem; background: var(--mud-palette-background-gray); border: 1px solid var(--mud-palette-lines-default); border-radius: 14px; font-weight: 600; }
+.settings-toggle-divider { margin: .35rem 0; opacity: 0; }
+.settings-form > * + *, .mud-dialog .settings-form > * + * { margin-top: .65rem; }
 .settings-form > .settings-toggle + .settings-toggle { margin-top: 0; }
 .settings-form > .mud-input-control { width: 100%; }
-.settings-form .mud-input-helper-text { padding: .3rem 0 0; }
+.settings-form .mud-input-helper-text { padding: .15rem 0 0; font-size: .72rem; line-height: 1.4; }
 .settings-form .mud-input-control-helper-container { padding-inline: 0 !important; }
 :is(.settings-form, .setting-dialog-fields, .shop-page, .shop-auto-buy-fields, .equipment-training, .quick-action-form, .battle-log-controls, .mud-dialog, .cron-body) .mud-input-control-input-container:has(> .mud-input-label) {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    row-gap: .4rem;
+    row-gap: .25rem;
 }
 :is(.settings-form, .setting-dialog-fields, .shop-page, .shop-auto-buy-fields, .equipment-training, .quick-action-form, .battle-log-controls, .mud-dialog, .cron-body) .mud-input-control-input-container > .mud-input-label {
     grid-row: 1;
@@ -197,8 +197,8 @@ button, input, textarea, select { font-family: inherit; }
     max-width: none !important;
     padding: 0 !important;
     transform: none !important;
-    font-size: .8125rem;
-    line-height: 1.6;
+    font-size: .8rem;
+    line-height: 1.45;
     color: var(--mud-palette-text-secondary);
     white-space: normal;
     overflow: visible;
@@ -210,8 +210,8 @@ button, input, textarea, select { font-family: inherit; }
 :is(.settings-form, .setting-dialog-fields, .shop-page, .shop-auto-buy-fields, .equipment-training, .quick-action-form, .battle-log-controls, .mud-dialog, .cron-body) .mud-shrink:not(:focus-within) ~ label.mud-input-label.mud-input-label-inputcontrol:not(.mud-disabled) { color: var(--mud-palette-text-secondary); }
 /* MudBlazor 9 cuts a notch in the outline for the floating label; the label sits above the field here, so drop the notch. */
 :is(.settings-form, .setting-dialog-fields, .shop-page, .shop-auto-buy-fields, .equipment-training, .quick-action-form, .battle-log-controls, .mud-dialog, .cron-body) .mud-input-control-input-container:has(> .mud-input-label) .mud-input-outlined-border legend { display: none; }
-.setting-section { border-top: 1px solid var(--mud-palette-lines-default); padding-top: 1rem; }
-.setting-field-label { display: block; margin-bottom: .65rem; font-size: .8125rem; font-weight: 500; line-height: 1.65; color: var(--mud-palette-text-secondary); }
+.setting-section { border-top: 1px solid var(--mud-palette-lines-default); padding-top: .75rem; }
+.setting-field-label { display: block; margin-bottom: .45rem; font-size: .8rem; font-weight: 500; line-height: 1.45; color: var(--mud-palette-text-secondary); }
 .setting-choice-group { min-width: 0; display: flex; flex-wrap: wrap; gap: .4rem; padding: 0; margin: 0; border: 0; }
 .setting-choice-group legend { padding: 0; margin-bottom: .65rem; font-size: .8125rem; font-weight: 500; line-height: 1.65; color: var(--mud-palette-text-secondary); }
 /* Selection controls: one look for every choice button (segment, chip), one for picker cards, see selection-ui/proposal.md. */
@@ -239,18 +239,18 @@ button, input, textarea, select { font-family: inherit; }
 @media (pointer: coarse) { .app-choice, .setting-choice-group .setting-choice { min-height: 40px; } }
 .setting-item-list { border: 1px solid var(--mud-palette-lines-default); border-radius: .6rem; overflow: hidden; }
 .setting-item-list:empty { display: none; }
-.setting-item-row { display: flex; align-items: center; gap: .75rem; min-height: 48px; padding: .65rem .75rem; }
+.setting-item-row { display: flex; align-items: center; gap: .65rem; min-height: 42px; padding: .5rem .65rem; }
 .setting-item-row + .setting-item-row { border-top: 1px solid var(--mud-palette-divider-light); }
-.setting-item-text { flex: 1; min-width: 0; font-size: .8125rem; line-height: 1.7; overflow-wrap: anywhere; }
+.setting-item-text { flex: 1; min-width: 0; font-size: .8125rem; line-height: 1.55; overflow-wrap: anywhere; }
 .setting-item-remove { flex-shrink: 0; }
-.setting-weight-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .35rem .75rem; }
+.setting-weight-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .45rem .6rem; }
 .setting-weight-list .mud-input-control { min-width: 0; }
 .setting-weight-list > .setting-field-label { grid-column: 1 / -1; margin-bottom: 0; }
-.setting-pair-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem .75rem; align-items: start; }
+.setting-pair-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem .65rem; align-items: start; }
 .setting-pair-grid .mud-input-control { min-width: 0; width: 100%; }
-.setting-section > .settings-toggle:first-child { margin-top: -.35rem; }
-.setting-section > .settings-toggle + .mud-input-control { margin-top: .65rem; }
-@media (max-width: 420px) { .setting-pair-grid { grid-template-columns: minmax(0, 1fr); } }
+.setting-section > .settings-toggle:first-child { margin-top: -.2rem; }
+.setting-section > .settings-toggle + .mud-input-control { margin-top: .5rem; }
+@media (max-width: 319.98px) { .setting-pair-grid, .setting-weight-list { grid-template-columns: minmax(0, 1fr); } }
 .cron-fields .cron-field + .cron-field { margin-top: .85rem; }
 .cron-fields input { font-family: var(--app-mono); font-size: .8125rem; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
 .setting-filter-header { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: 0 0 .6rem; }
@@ -340,6 +340,8 @@ button, input, textarea, select { font-family: inherit; }
 /* Home / Settings column layout: three independent columns; mobile restores row order via `order`. */
 .home-cols, .settings-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; align-items: start; }
 :is(.home-cols, .settings-cols) > .col { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+.settings-cols { gap: 20px; }
+.settings-cols > .col { gap: 20px; }
 .tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .tile { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 10px 12px; border-radius: 14px; background: var(--mud-palette-background-gray); }
 .tile-art { display: grid; place-items: center; flex: none; width: 36px; height: 36px; }
@@ -438,6 +440,7 @@ button, input, textarea, select { font-family: inherit; }
     .app-content .quick-action-list .mud-button, .app-content .quick-actions-tabs .mud-tab { min-height: 40px; }
     .app-content .account-row > .mud-icon-button { width: 36px; min-height: 40px; }
     .app-content .mud-card-header-actions .mud-icon-button { width: 40px; height: 40px; }
+    .settings-toggle .mud-switch { min-height: 42px; padding: .45rem 0; }
     /* Small icon buttons (remove, reactions, sticker close) are 26px; the stacked 20px number spinners go, the numeric keyboard covers them. */
     .setting-item-remove, :is(.chat-page, .chat-guild-dialog, .shop-auto-buy-fields) .mud-icon-button-size-small { min-width: 36px; min-height: 36px; }
     .mud-input-control.mud-input-number-control .mud-input-numeric-spin { display: none; }
@@ -459,11 +462,11 @@ h1:focus-visible, .mud-dialog .fixed.pointer-events-none:focus-visible { outline
     :is(.home-cols, .settings-cols) > .col:nth-child(3) { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
 }
 @media (max-width: 899.98px) {
-    .home-cols, .settings-cols { display: flex; flex-direction: column; align-items: stretch; gap: 14px; }
+    .home-cols, .settings-cols { display: flex; flex-direction: column; align-items: stretch; gap: 12px; }
     :is(.home-cols, .settings-cols) > .col, :is(.home-cols, .settings-cols) > .col:nth-child(3) { display: contents; }
-    .app-content .mud-card-header { padding: 14px 16px 0 16px; }
-    .app-content .mud-card-content { padding: 12px 16px 16px; }
-    .app-content .mud-card-actions { padding: 0 16px 16px; }
+    .app-content .mud-card-header { padding: 12px 14px 0 14px; }
+    .app-content .mud-card-content { padding: 10px 14px 14px; }
+    .app-content .mud-card-actions { padding: 0 14px 14px; }
     .tile-value { font-size: 1rem; }
     .tile.is-wide .tile-value { font-size: 1.375rem; }
 }

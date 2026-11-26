@@ -20,7 +20,7 @@
 }
 @* order:N keeps the original mobile single-column reading order (and orders cards within each desktop column). *@
 <div class="settings-cols">
-    @* Owner-fixed tops (account / auto-job switches / cron); the rest balanced by measured height at 1707 zh-CN. *@
+    @* Owner-fixed tops (account / auto-job switches / cron); the rest balanced by measured height at desktop zh-CN. *@
     <div class="col">
         <div style="order:1"><AccountManagement/></div>
         <div style="order:4"><AutoJobNextExecution @ref="_autoJobNextExecution"/></div>
@@ -30,6 +30,7 @@
             <div style="order:8"><LocalRaidSettings @key="NetworkManager.PlayerId"/></div>
             <div style="order:13"><FriendManageSettings @key="NetworkManager.PlayerId"/></div>
         }
+        <div style="order:10"><ItemsSetting/></div>
     </div>
     <div class="col">
         <div style="order:2"><AutoJobSwitch UserId="AccountSelection.CurrentUserId" OnJobsChanged="RefreshJobs"/></div>
@@ -38,7 +39,6 @@
             <div style="order:11"><PvpSettings LeagueType="0" @key="NetworkManager.PlayerId"/></div>
             <div style="order:12"><PvpSettings LeagueType="1" @key="NetworkManager.PlayerId"/></div>
             <div style="order:14"><GuildTowerSettings @key="NetworkManager.PlayerId"/></div>
-            <div style="order:15"><BookSortSettings @key="NetworkManager.PlayerId"/></div>
         }
         <div style="order:16">
             <MudCard>
@@ -61,9 +61,9 @@
         {
             <div style="order:5"><GachaSettings @key="NetworkManager.PlayerId"/></div>
             <div style="order:6"><BountyQuest @key="NetworkManager.PlayerId"/></div>
+            <div style="order:15"><BookSortSettings @key="NetworkManager.PlayerId"/></div>
         }
         <div style="order:9"><ShopSettings/></div>
-        <div style="order:10"><ItemsSetting/></div>
     </div>
 </div>
 

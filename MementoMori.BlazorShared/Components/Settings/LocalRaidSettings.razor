@@ -1,4 +1,5 @@
-﻿@using MementoMori.BlazorShared.Components
+﻿@using System.Globalization
+@using MementoMori.BlazorShared.Components
 @using MementoMori.Ortega.Share
 @using MementoMori.Common.Localization
 @using MementoMori.Option
@@ -71,13 +72,20 @@
             @foreach (var reward in _localRaidRewardItems)
             {
                 var icon = Atlas.GetItemIcon(reward.ItemType, reward.ItemId);
-                <div class="setting-weight-field">
-                    @if (icon != null)
-                    {
-                        <span class="setting-item-art"><img src="@icon" @key="icon" width="22" height="22" loading="lazy" decoding="async" alt="" onerror="this.remove()"></span>
-                    }
-                    <MudNumericField T="double?" Label="@ItemUtil.GetItemName(reward.ItemType, reward.ItemId)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" DebounceInterval="500" Value="reward.Weight" ValueChanged="v => WeightChanged(reward, v)"/>
-                </div>
+                var itemName = ItemUtil.GetItemName(reward.ItemType, reward.ItemId);
+                <label class="setting-weight-pill" title="@itemName">
+                    <span class="setting-weight-meta">
+                        @if (icon != null)
+                        {
+                            <span class="setting-item-art"><img src="@icon" @key="icon" width="20" height="20" loading="lazy" decoding="async" alt="" onerror="this.remove()"></span>
+                        }
+                        <span class="setting-weight-name">@itemName</span>
+                    </span>
+                    <input class="setting-weight-input" type="number" inputmode="decimal" min="0" step="any"
+                           aria-label="@itemName"
+                           value="@reward.Weight.ToString(CultureInfo.InvariantCulture)"
+                           @onchange="e => WeightInputChanged(reward, e.Value?.ToString())" />
+                </label>
             }
         </div>
     </MudCardContent>
@@ -136,7 +144,17 @@
     }
 
 
-    // An emptied weight field (mid-typing) keeps the old weight instead of saving 0.
+    // An emptied or invalid weight field keeps the old weight instead of saving 0.
+    private void WeightInputChanged(GameConfig.WeightedItem reward, string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return;
+        if (!double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
+            && !double.TryParse(raw, NumberStyles.Float, CultureInfo.CurrentCulture, out parsed))
+            return;
+        if (double.IsNaN(parsed) || double.IsInfinity(parsed) || parsed < 0) return;
+        WeightChanged(reward, parsed);
+    }
+
     private void WeightChanged(GameConfig.WeightedItem reward, double? weight)
     {
         if (weight is not { } w) return;
