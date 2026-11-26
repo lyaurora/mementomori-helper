@@ -44,7 +44,7 @@ public partial class MementoMoriFuncs
             var questStep = 0; // 0 = 起始关卡；DropToLowerQuest 时每步降一档
 
             // 先查询幻影神殿信息：若挑战次数已用尽或无可用任务，直接返回而不建立 MagicOnion 连接
-            var prefetchedInfo = await GetResponse<GetLocalRaidInfoRequest, GetLocalRaidInfoResponse>(new GetLocalRaidInfoRequest());
+            var prefetchedInfo = await GetResponse<GetLocalRaidInfoRequest, GetLocalRaidInfoResponse>(new GetLocalRaidInfoRequest(), token);
             var lastInfo = prefetchedInfo;
             var initialRemaining = prefetchedInfo.UserSyncData?.LocalRaidChallengeCount ?? UserSyncData?.LocalRaidChallengeCount;
             if (initialRemaining is <= 0)

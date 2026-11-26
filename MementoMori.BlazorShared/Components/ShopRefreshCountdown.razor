@@ -8,6 +8,7 @@
     [Parameter] public EventCallback OnExpired { get; set; }
 
     private readonly CancellationTokenSource _cts = new();
+    private int _disposed;
     private long _firedFor;
 
     protected override void OnInitialized() => _ = Tick();
@@ -19,6 +20,7 @@
         {
             while (await timer.WaitForNextTickAsync(_cts.Token))
             {
+                if (Volatile.Read(ref _disposed) != 0) return;
                 await InvokeAsync(StateHasChanged);
                 // Fire once per deadline; a stale deadline from the server cannot cause a request loop.
                 if (Remaining() <= TimeSpan.Zero && _firedFor != ExpirationTimeStamp)
@@ -29,6 +31,7 @@
             }
         }
         catch (OperationCanceledException) { }
+        catch (ObjectDisposedException) { }
     }
 
     private TimeSpan Remaining()
@@ -47,5 +50,10 @@
         return $"{Masters.TextResourceTable.Get("[ExchangeRemainingTimeLabel]").TrimEnd(':', '：', ' ')}: {time}";
     }
 
-    public void Dispose() { _cts.Cancel(); _cts.Dispose(); }
+    public void Dispose()
+    {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+        try { _cts.Cancel(); }
+        finally { _cts.Dispose(); }
+    }
 }

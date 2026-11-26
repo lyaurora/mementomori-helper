@@ -57,7 +57,13 @@ public partial class BattleLog
     {
         if (!_pendingReplayPush || !_showReplay || _selectedResult == null) return;
         _pendingReplayPush = false;
-        await JS.InvokeVoidAsync("showBattleLog", SerializeViewerJson(_selectedResult));
+        try
+        {
+            await JS.InvokeVoidAsync("showBattleLog", SerializeViewerJson(_selectedResult));
+        }
+        catch (JSDisconnectedException) { }
+        catch (JSException) { }
+        catch (TaskCanceledException) { }
     }
 
     private void ReloadLogs()

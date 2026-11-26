@@ -254,6 +254,14 @@ public partial class Chat
         }
         catch (JSDisconnectedException) { }
         catch (OperationCanceledException) when (_disposed) { }
+        catch (JSException)
+        {
+            if (!_disposed && _restoreChannel)
+            {
+                RestoreChannel(null);
+                StateHasChanged();
+            }
+        }
     }
 
     private void RestoreChannel(string? saved)
