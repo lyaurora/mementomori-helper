@@ -664,4 +664,7 @@
   <data name="DungeonBattleLayerProgress" xml:space="preserve"><value>{0}층 완료 ({1}단계)</value></data>
   <data name="PresentUnclaimableRepeated" xml:space="preserve"><value>수령할 수 없는 선물이 {0}개 남아 있습니다 (세부 내역은 오늘 이미 표시됨)</value></data>
   <data name="LoadMore" xml:space="preserve"><value>더 불러오기 ({0}개 남음)</value></data>
+  <data name="TowerInfiniteSpentDiamonds" xml:space="preserve"><value>무한의 탑 소탕 중 예상치 않게 다이아 {0}개를 소비했습니다</value></data>
+  <data name="PopularityVoteReward" xml:space="preserve"><value>인기 투표 보상</value></data>
+  <data name="EquipmentSynchroMissionReward" xml:space="preserve"><value>장비 싱크로 미션 보상</value></data>
 </root>

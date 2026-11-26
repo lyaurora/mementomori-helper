@@ -3154,5 +3154,8 @@ namespace MementoMori.Common.Localization {
                 return ResourceManager.GetString("LoadMore", resourceCulture);
             }
         }
+        public static string TowerInfiniteSpentDiamonds => ResourceManager.GetString("TowerInfiniteSpentDiamonds", resourceCulture);
+        public static string PopularityVoteReward => ResourceManager.GetString("PopularityVoteReward", resourceCulture);
+        public static string EquipmentSynchroMissionReward => ResourceManager.GetString("EquipmentSynchroMissionReward", resourceCulture);
     }
 }

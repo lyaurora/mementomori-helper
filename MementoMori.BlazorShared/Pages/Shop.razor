@@ -4,6 +4,7 @@
 @inject AtlasManager AtlasManager
 @using MementoMori.BlazorShared.Components
 @using MementoMori.Common.Localization
+@using MementoMori.Exceptions
 @using MementoMori.Funcs
 @using MementoMori.Option
 @using MementoMori.Ortega.Common.Utils
@@ -272,7 +273,15 @@
     {
         var funcs = Funcs;
         var listResponse = await funcs.GetResponse<GetListRequest, GetListResponse>(new GetListRequest(), token);
-        var weeklyTopicInfo = await funcs.GetResponse<GetWeeklyTopicsInfoRequest, GetWeeklyTopicsInfoResponse>(new GetWeeklyTopicsInfoRequest(), token);
+        GetWeeklyTopicsInfoResponse? weeklyTopicInfo = null;
+        try
+        {
+            weeklyTopicInfo = await funcs.GetResponse<GetWeeklyTopicsInfoRequest, GetWeeklyTopicsInfoResponse>(new GetWeeklyTopicsInfoRequest(), token);
+        }
+        catch (ApiErrorException e) when (e.ErrorCode is not (ErrorCode.CommonNoSession or ErrorCode.CommonLoggedInAnotherDevice))
+        {
+            // Weekly topics may not be unlocked on every account; still load the regular shop tabs.
+        }
         token.ThrowIfCancellationRequested();
         _tradeShopTabInfoList = (listResponse.TradeShopTabInfoList ?? [])
             .Where(d => Masters.TradeShopTabTable.GetById(d.TradeShopTabId) != null) // a tab newer than our master data: hide it until the hourly refresh

@@ -664,4 +664,7 @@
   <data name="DungeonBattleLayerProgress" xml:space="preserve"><value>第{0}階層クリア（{1}ステップ）</value></data>
   <data name="PresentUnclaimableRepeated" xml:space="preserve"><value>受け取れないプレゼントが {0} 件残っています（詳細は本日表示済み）</value></data>
   <data name="LoadMore" xml:space="preserve"><value>さらに読み込む（残り {0} 件）</value></data>
+  <data name="TowerInfiniteSpentDiamonds" xml:space="preserve"><value>無窮の塔の掃討で想定外にダイヤを {0} 個消費しました</value></data>
+  <data name="PopularityVoteReward" xml:space="preserve"><value>人気投票報酬</value></data>
+  <data name="EquipmentSynchroMissionReward" xml:space="preserve"><value>武具シンクロミッション報酬</value></data>
 </root>

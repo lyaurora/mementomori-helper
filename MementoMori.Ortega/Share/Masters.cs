@@ -479,7 +479,9 @@ public static class Masters
         foreach (var table in GetAllTables())
         {
             if (UnusedLargeTables.Contains(table)) continue;
-            if (!names.Contains(table.GetMasterBookName())) continue;
+            var matched = names.Contains(table.GetMasterBookName())
+                          || (ReferenceEquals(table, TextResourceTable) && TextResourceTable.LanguageType != LanguageType.enUS && names.Contains("TextResourceEnUsMB"));
+            if (!matched) continue;
             if (!TryLoadTable(table)) ok = false;
         }
 

@@ -129,7 +129,9 @@ public class GameConfig
         public bool AutoUseItems { get; set; }
         public bool AutoFreeGacha { get; set; }
         public bool AutoRankUpCharacter { get; set; }
+        public bool AutoGuildRaid { get; set; } = true;
         public bool AutoOpenGuildRaid { get; set; }
+        public bool AutoReadMemories { get; set; } = true;
         public bool AutoLocalRaid { get; set; }
         public bool AutoDeployGuildDefense { get; set; }
         public bool AutoChangeGachaRelic { get; set; }

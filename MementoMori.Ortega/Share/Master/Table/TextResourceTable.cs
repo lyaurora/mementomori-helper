@@ -12,15 +12,52 @@ public class TextResourceTable : ITable
     private Dictionary<string, string> _cached = new();
     private LanguageType _languageType;
 
-    public bool Load() => Load(File.ReadAllBytes($"./Master/{GetMasterBookName()}"));
+    public bool Load()
+    {
+        var primary = File.ReadAllBytes($"./Master/{GetMasterBookName()}");
+        byte[] fallback = null;
+        if (LanguageType != LanguageType.enUS)
+        {
+            var enPath = $"./Master/{GetMbName(LanguageType.enUS)}";
+            if (File.Exists(enPath))
+            {
+                try { fallback = File.ReadAllBytes(enPath); }
+                catch (IOException) { }
+                catch (UnauthorizedAccessException) { }
+            }
+        }
 
-    public bool Load(byte[] binaryData)
+        try
+        {
+            return Load(primary, fallback);
+        }
+        catch (MessagePackSerializationException) when (fallback != null)
+        {
+            // A broken English fallback file must never block loading the selected language table.
+            return Load(primary, null);
+        }
+    }
+
+    public bool Load(byte[] binaryData) => Load(binaryData, null);
+
+    public bool Load(byte[] binaryData, byte[] fallbackEnglishData)
     {
         var languageType = LanguageType;
         using var stream = new MemoryStream(binaryData);
         var resources = Deserialize(languageType, stream);
         var next = new Dictionary<string, string>();
         foreach (var resource in resources) next[resource.StringKey] = resource.Text;
+        if (fallbackEnglishData != null && languageType != LanguageType.enUS)
+        {
+            using var fallbackStream = new MemoryStream(fallbackEnglishData);
+            var english = Deserialize(LanguageType.enUS, fallbackStream);
+            foreach (var entry in english)
+            {
+                if (string.IsNullOrWhiteSpace(entry.Text)) continue;
+                if (!next.TryGetValue(entry.StringKey, out var value) || string.IsNullOrWhiteSpace(value))
+                    next[entry.StringKey] = entry.Text;
+            }
+        }
         Interlocked.Exchange(ref _cached, next);
         return true;
     }

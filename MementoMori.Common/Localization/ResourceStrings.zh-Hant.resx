@@ -770,4 +770,7 @@
   <data name="DungeonBattleLayerProgress" xml:space="preserve"><value>第 {0} 層完成（共 {1} 步）</value></data>
   <data name="PresentUnclaimableRepeated" xml:space="preserve"><value>仍有 {0} 個禮物暫不可領取（詳情今日已提示）</value></data>
   <data name="LoadMore" xml:space="preserve"><value>載入更多（剩餘 {0} 條）</value></data>
+  <data name="TowerInfiniteSpentDiamonds" xml:space="preserve"><value>無窮之塔掃蕩意外消耗了 {0} 鑽石</value></data>
+  <data name="PopularityVoteReward" xml:space="preserve"><value>人氣投票獎勵</value></data>
+  <data name="EquipmentSynchroMissionReward" xml:space="preserve"><value>裝備同步任務獎勵</value></data>
 </root>

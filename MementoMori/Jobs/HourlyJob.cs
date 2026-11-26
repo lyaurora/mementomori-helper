@@ -25,14 +25,16 @@ public partial class HourlyJob : IJob
             await account.Funcs.BountyQuestStartAuto();
             await account.Funcs.PresentReceiveItem();
             await account.Funcs.GetAutoBattleReward();
-            await account.Funcs.GuildRaid();
+            if (_gameConfig.Value.AutoJob.AutoGuildRaid) await account.Funcs.GuildRaid();
             await account.Funcs.AutoGuildTower();
             await account.Funcs.ReceiveGvgReward();
             await account.Funcs.BulkTransferFriendPoint();
             await account.Funcs.CompleteMissions();
             await account.Funcs.RewardMissonActivity();
             await account.Funcs.ReceiveRentalRaidShareReward();
-            await account.Funcs.ReadAllMemories();
+            await account.Funcs.ReceivePopularityVoteReward();
+            await account.Funcs.ReceiveEquipmentSynchroMissionReward();
+            if (_gameConfig.Value.AutoJob.AutoReadMemories) await account.Funcs.ReadAllMemories();
             if (_gameConfig.Value.AutoJob.AutoFreeGacha) await account.Funcs.FreeGacha();
             if (_gameConfig.Value.AutoJob.AutoUseItems) await account.Funcs.AutoUseItems();
         }, context.CancellationToken, jobName: context.JobDetail.Key.Name, retryAfterRelogin: true);

@@ -770,4 +770,7 @@
   <data name="DungeonBattleLayerProgress" xml:space="preserve"><value>Layer {0} cleared ({1} steps)</value></data>
   <data name="PresentUnclaimableRepeated" xml:space="preserve"><value>{0} unclaimable presents remain (details already shown today)</value></data>
   <data name="LoadMore" xml:space="preserve"><value>Load more ({0} remaining)</value></data>
+  <data name="TowerInfiniteSpentDiamonds" xml:space="preserve"><value>Tower of Infinity sweep spent {0} diamonds unexpectedly</value></data>
+  <data name="PopularityVoteReward" xml:space="preserve"><value>Popularity vote rewards</value></data>
+  <data name="EquipmentSynchroMissionReward" xml:space="preserve"><value>Gear synchro mission rewards</value></data>
 </root>

@@ -1,4 +1,6 @@
-﻿using MementoMori.Ortega.Share.Data.ApiInterface.Equipment;
+﻿using MementoMori.Exceptions;
+using MementoMori.Ortega.Share.Data.ApiInterface.Equipment;
+using MementoMori.Ortega.Share.Data.ApiInterface.EquipmentSynchro;
 
 namespace MementoMori.Funcs;
 
@@ -51,6 +53,33 @@ public partial class MementoMoriFuncs
             {
                 var response = await GetResponse<ReinforcementRequest, ReinforcementResponse>(new ReinforcementRequest {EquipmentGuid = equipmentDtoInfo.Guid, NumberOfTimes = 1});
                 log($"{TextResourceTable.Get("[CommonReinforceLabel]")} {ResourceStrings.Finished}");
+            }
+        });
+    }
+
+    // 装备同步：一键领取装备同步任务奖励（未解锁或无可领奖励时静默跳过）
+    public async Task ReceiveEquipmentSynchroMissionReward()
+    {
+        await ExecuteQuickAction(async (log, _) =>
+        {
+            if (OpenContentTable.GetByOpenCommandType(OpenCommandType.EquipmentSynchro) is { } oc
+                && (UserSyncData.UserBattleBossDtoInfo?.BossClearMaxQuestId ?? 0) < oc.OpenContentValue)
+                return;
+            if (UserSyncData.UserEquipmentStatusDtoInfo is { SynchroMaxPossessionCount: <= 0 }) return;
+            try
+            {
+                var response = await GetResponse<EquipmentSynchroRewardMissionRequest, EquipmentSynchroRewardMissionResponse>(
+                    new EquipmentSynchroRewardMissionRequest { IsBulk = true });
+                if (response.RewardItem is { ItemCount: > 0 })
+                {
+                    log(ResourceStrings.EquipmentSynchroMissionReward);
+                    new[] { response.RewardItem }.PrintUserItems(log);
+                }
+            }
+            catch (ApiErrorException e) when (e.ErrorCode is not (ErrorCode.CommonNoSession or ErrorCode.CommonLoggedInAnotherDevice))
+            {
+                if (e.ErrorCode is not (ErrorCode.EquipmentSynchroNotOpen or ErrorCode.EquipmentSynchroMissionUnavailableReward))
+                    log(e.Message);
             }
         });
     }

@@ -1,4 +1,5 @@
 ﻿using MementoMori.Exceptions;
+using MementoMori.Ortega.Custom;
 using MementoMori.Ortega.Share.Data.ApiInterface.TowerBattle;
 
 namespace MementoMori.Funcs;
@@ -101,15 +102,24 @@ public partial class MementoMoriFuncs
             try
             {
                 var tower = UserSyncData.UserTowerBattleDtoInfos?.FirstOrDefault(d => d.TowerType == TowerType.Infinite);
-                if (tower == null) return;
+                if (tower == null || tower.MaxTowerBattleId <= 0) return;
                 log($"{TextResourceTable.Get("[CommonHeaderTowerBattleLabel]")}:");
 
+                // 每天 3 次免费，只扫当天剩余次数（避免已手动打过后再传 3 导致整次扫荡报错）
+                var remaining = 3 - tower.TodayBattleCount;
+                if (remaining <= 0)
+                {
+                    log(TextResourceTable.GetErrorCodeMessage(ErrorCode.TowerBattleNotEnoughChallengeCount));
+                    return;
+                }
+
+                var diamondsBefore = UserSyncData.GetUserItemCount(ItemType.CurrencyFree, isAnyCurrency: true);
                 if (IsBossBattleQuickAvailable)
                 {
                     var bossQuickResponse = await GetResponse<TowerBattleQuickRequest, TowerBattleQuickResponse>(
                         new TowerBattleQuickRequest
                         {
-                            TargetTowerType = TowerType.Infinite, TowerBattleQuestId = tower.MaxTowerBattleId, QuickCount = 3
+                            TargetTowerType = TowerType.Infinite, TowerBattleQuestId = tower.MaxTowerBattleId, QuickCount = remaining
                         });
                     if (bossQuickResponse.BattleRewardResult != null)
                     {
@@ -119,7 +129,7 @@ public partial class MementoMoriFuncs
                 }
                 else
                 {
-                    for (var i = 0; i < 3; i++)
+                    for (var i = 0; i < remaining; i++)
                     {
                         var bossQuickResponse = await GetResponse<StartRequest, StartResponse>(
                             new StartRequest
@@ -133,6 +143,9 @@ public partial class MementoMoriFuncs
                         }
                     }
                 }
+
+                var spentDiamonds = diamondsBefore - UserSyncData.GetUserItemCount(ItemType.CurrencyFree, isAnyCurrency: true);
+                if (spentDiamonds > 0) AddError(string.Format(ResourceStrings.TowerInfiniteSpentDiamonds, spentDiamonds));
             }
             catch (ApiErrorException e) when (e.ErrorCode == ErrorCode.TowerBattleNotEnoughChallengeCount)
             {

@@ -6,6 +6,7 @@ using MementoMori.Ortega.Share.Data.ApiInterface.RentalRaid;
 using MementoMori.Ortega.Share.Data.Mission;
 using MementoMori.Ortega.Share.Data.ApiInterface.UnionMission;
 using MementoMori.Ortega.Share.Data.UnionMission;
+using PopularityVoteApi = MementoMori.Ortega.Share.Data.ApiInterface.PopularityVote;
 
 namespace MementoMori.Funcs;
 
@@ -238,6 +239,31 @@ public partial class MementoMoriFuncs
             catch (ApiErrorException e) when (e.ErrorCode is not (ErrorCode.CommonNoSession or ErrorCode.CommonLoggedInAnotherDevice))
             {
                 log(e.Message);
+            }
+        });
+    }
+
+    // 人气投票：累计投票数达标奖励，只在活动图标在主页或 EventPortal 时请求
+    public async Task ReceivePopularityVoteReward()
+    {
+        await ExecuteQuickAction(async (log, _) =>
+        {
+            var hasPopularityVote = Mypage?.MypageInfo?.GetMypageIconInfoByTransferSpotType(TransferSpotType.PopularityVote) != null
+                || (await GetEventPortalBannersAsync()).Any(b => b.TransferDetailInfo?.TransferSpotType == TransferSpotType.PopularityVote);
+            if (!hasPopularityVote) return;
+            try
+            {
+                var info = await GetResponse<PopularityVoteApi.GetInfoRequest, PopularityVoteApi.GetInfoResponse>(new PopularityVoteApi.GetInfoRequest());
+                if (info.PopularityVoteRewardInfoList?.Any(r => !r.IsReceived && r.GoalVoteCount > 0 && r.GoalVoteCount <= info.TotalVoteCount) != true) return;
+                var response = await GetResponse<PopularityVoteApi.RewardVoteItemRequest, PopularityVoteApi.RewardVoteItemResponse>(
+                    new PopularityVoteApi.RewardVoteItemRequest { IsAllReward = true });
+                log(ResourceStrings.PopularityVoteReward);
+                response.RewardItemList?.PrintUserItems(log);
+            }
+            catch (ApiErrorException e) when (e.ErrorCode is not (ErrorCode.CommonNoSession or ErrorCode.CommonLoggedInAnotherDevice))
+            {
+                if (e.ErrorCode is not (ErrorCode.PopularityVoteUnavailable or ErrorCode.PopularityVoteNotFoundVoteCountReward or ErrorCode.PopularityVoteAlreadyRewardGoalVoteCountItem))
+                    log(e.Message);
             }
         });
     }

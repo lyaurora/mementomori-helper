@@ -49,7 +49,15 @@ public partial class MementoMoriFuncs
             log(ResourceStrings.ShopAutoBuyItems);
             var tabInfoList = listResponse.TradeShopTabInfoList?.ToList() ?? [];
 
-            var weeklyTopicInfo = await GetResponse<GetWeeklyTopicsInfoRequest, GetWeeklyTopicsInfoResponse>(new GetWeeklyTopicsInfoRequest());
+            GetWeeklyTopicsInfoResponse? weeklyTopicInfo = null;
+            try
+            {
+                weeklyTopicInfo = await GetResponse<GetWeeklyTopicsInfoRequest, GetWeeklyTopicsInfoResponse>(new GetWeeklyTopicsInfoRequest());
+            }
+            catch (ApiErrorException e) when (e.ErrorCode is not (ErrorCode.CommonNoSession or ErrorCode.CommonLoggedInAnotherDevice))
+            {
+                log(e.Message);
+            }
             if (weeklyTopicInfo?.ShopData?.TradeShopItemList != null)
             {
                 foreach (var tradeShopItems in weeklyTopicInfo.ShopData.TradeShopItemList.GroupBy(d => d.TradeShopItemId / 10000))

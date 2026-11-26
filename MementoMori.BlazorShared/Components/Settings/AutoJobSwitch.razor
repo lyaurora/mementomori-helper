@@ -51,7 +51,9 @@
             <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@ResourceStrings.UseNormalItems" @bind-Value="AutoJob__AutoUseItems" Color="Color.Primary"></MudSwitch>
             <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@string.Format(ResourceStrings.FreeGachaFormat, Tr("[CommonFooterGachaButtonLabel]"))" @bind-Value="AutoJob__AutoFreeGacha" Color="Color.Primary"></MudSwitch>
             <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@Tr("[CharacterMenuTabCharacterRankUp]")" @bind-Value="AutoJob__AutoRankUpCharacter" Color="Color.Primary"></MudSwitch>
+            <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@Tr("[CommonHeaderGuildRaidLabel]")" @bind-Value="AutoJob__AutoGuildRaid" Color="Color.Primary"></MudSwitch>
             <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@Tr("[GuildRaidReleaseConfirmTitle]")" @bind-Value="AutoJob__AutoOpenGuildRaid" Color="Color.Primary"></MudSwitch>
+            <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@Tr("[CharacterDetailMemory]")" @bind-Value="AutoJob__AutoReadMemories" Color="Color.Primary"></MudSwitch>
             <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@Tr("[CommonHeaderLocalRaidLabel]")" @bind-Value="AutoJob__AutoLocalRaid" Color="Color.Primary"></MudSwitch>
             @* <MudSwitch Label="@ResourceStrings.Deploy_defense" @bind-Value="AutoJob__AutoDeployGuildDefense" Color="Color.Primary"></MudSwitch> *@
             <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@Tr("[GachaRelicChangeTitle]")" @bind-Value="AutoJob__AutoChangeGachaRelic" Color="Color.Primary"></MudSwitch>
@@ -121,10 +123,22 @@
         set => _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.AutoRankUpCharacter = value));
     }
 
+    public bool AutoJob__AutoGuildRaid
+    {
+        get => WritableGameConfig.Value.AutoJob.AutoGuildRaid;
+        set => _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.AutoGuildRaid = value));
+    }
+
     public bool AutoJob__AutoOpenGuildRaid
     {
         get => WritableGameConfig.Value.AutoJob.AutoOpenGuildRaid;
         set => _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.AutoOpenGuildRaid = value));
+    }
+
+    public bool AutoJob__AutoReadMemories
+    {
+        get => WritableGameConfig.Value.AutoJob.AutoReadMemories;
+        set => _saved.Run(() => WritableGameConfig.Update(x => x.AutoJob.AutoReadMemories = value));
     }
 
     public bool AutoJob__AutoLocalRaid
