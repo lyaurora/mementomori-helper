@@ -823,4 +823,57 @@
   <data name="BookSortUseBigItem" xml:space="preserve"><value>使用大扫除道具 #{0} 于格子 {1}（预计开 {2} 格）</value></data>
   <data name="BookSortUseDuster" xml:space="preserve"><value>使用普通掸子批量清扫剩余格子</value></data>
   <data name="BookSortUseLargeItems" xml:space="preserve"><value>使用多格清扫道具</value></data>
+  <data name="GuildContribution" xml:space="preserve"><value>周期贡献</value></data>
+  <data name="GuildCumulativeFame" xml:space="preserve"><value>累计名声</value></data>
+  <data name="GuildExp" xml:space="preserve"><value>公会经验</value></data>
+  <data name="GuildFame" xml:space="preserve"><value>公会名声</value></data>
+  <data name="GuildGvgCastles" xml:space="preserve"><value>城池（大/中/小）</value></data>
+  <data name="GuildGvgClaimableRewardsFormat" xml:space="preserve"><value>有 {0} 处城池奖励可领取</value></data>
+  <data name="GuildGvgClaimedRewardsFormat" xml:space="preserve"><value>已领取 {0} 处城池奖励</value></data>
+  <data name="GuildGvgCurrentRank" xml:space="preserve"><value>当前排名</value></data>
+  <data name="GuildGvgDeclarations" xml:space="preserve"><value>剩余宣战</value></data>
+  <data name="GuildGvgNotQualified" xml:space="preserve"><value>未开放</value></data>
+  <data name="GuildGvgQualified" xml:space="preserve"><value>已开放</value></data>
+  <data name="GuildGvgTodayRank" xml:space="preserve"><value>今日排名</value></data>
+  <data name="GuildLevel" xml:space="preserve"><value>公会等级</value></data>
+  <data name="GuildLoadFailed" xml:space="preserve"><value>加载公会信息失败</value></data>
+  <data name="GuildMembers" xml:space="preserve"><value>成员</value></data>
+  <data name="GuildNoMatchingMembers" xml:space="preserve"><value>没有匹配的成员</value></data>
+  <data name="GuildRaidMyMaxDamage" xml:space="preserve"><value>个人最高伤害</value></data>
+  <data name="GuildRaidNoneOpen" xml:space="preserve"><value>当前没有开放中的公会讨伐 Boss。</value></data>
+  <data name="GuildRaidReleaseFame" xml:space="preserve"><value>开放所需积分</value></data>
+  <data name="GuildRaidTopDamage" xml:space="preserve"><value>伤害排行（前 5）</value></data>
+  <data name="GuildRaidTotalAttacksFormat" xml:space="preserve"><value>公会今日总挑战 {0} 次</value></data>
+  <data name="GuildRaidTotalDamage" xml:space="preserve"><value>公会总伤害</value></data>
+  <data name="GuildReload" xml:space="preserve"><value>刷新</value></data>
+  <data name="GuildSearchMember" xml:space="preserve"><value>搜索成员...</value></data>
+  <data name="GuildSortActivity" xml:space="preserve"><value>活跃</value></data>
+  <data name="GuildSortFame" xml:space="preserve"><value>贡献</value></data>
+  <data name="GuildSortLabel" xml:space="preserve"><value>成员排序</value></data>
+  <data name="GuildSortPower" xml:space="preserve"><value>战力</value></data>
+  <data name="GuildSortRole" xml:space="preserve"><value>职位</value></data>
+  <data name="GuildTabMembers" xml:space="preserve"><value>成员</value></data>
+  <data name="GuildTodayChallengesFormat" xml:space="preserve"><value>今日 {0} 次</value></data>
+  <data name="GuildTotalPower" xml:space="preserve"><value>公会总战力</value></data>
+  <data name="GuildTowerChallenge" xml:space="preserve"><value>一键挑战公会树</value></data>
+  <data name="GuildTowerClosed" xml:space="preserve"><value>公会树当前未开放。</value></data>
+  <data name="GuildTowerCombo" xml:space="preserve"><value>连击数</value></data>
+  <data name="GuildTowerCurrentFloor" xml:space="preserve"><value>当前层数</value></data>
+  <data name="GuildTowerTodayWins" xml:space="preserve"><value>今日胜利</value></data>
+  <data name="PlayerProfileAcceptFriend" xml:space="preserve"><value>同意好友</value></data>
+  <data name="PlayerProfileAddFriend" xml:space="preserve"><value>申请好友</value></data>
+  <data name="PlayerProfileBlockConfirm" xml:space="preserve"><value>确定要屏蔽 {0} 吗？屏蔽后将隐藏其聊天消息与留言。</value></data>
+  <data name="PlayerProfileBlocked" xml:space="preserve"><value>已屏蔽该玩家</value></data>
+  <data name="PlayerProfileCancelFriendRequest" xml:space="preserve"><value>取消申请</value></data>
+  <data name="PlayerProfileFriendAccepted" xml:space="preserve"><value>已同意好友申请</value></data>
+  <data name="PlayerProfileFriendRejected" xml:space="preserve"><value>已拒绝好友申请</value></data>
+  <data name="PlayerProfileFriendRemoved" xml:space="preserve"><value>已解除好友</value></data>
+  <data name="PlayerProfileFriendRequestCanceled" xml:space="preserve"><value>已取消好友申请</value></data>
+  <data name="PlayerProfileFriendRequested" xml:space="preserve"><value>已发送好友申请</value></data>
+  <data name="PlayerProfileIdCopied" xml:space="preserve"><value>已复制玩家 ID</value></data>
+  <data name="PlayerProfileRejectFriend" xml:space="preserve"><value>拒绝</value></data>
+  <data name="PlayerProfileRemoveFriend" xml:space="preserve"><value>解除好友</value></data>
+  <data name="PlayerProfileRemoveFriendConfirm" xml:space="preserve"><value>确定要与 {0} 解除好友关系吗？</value></data>
+  <data name="PlayerProfileTitle" xml:space="preserve"><value>玩家信息</value></data>
+  <data name="PlayerProfileUnblocked" xml:space="preserve"><value>已取消屏蔽</value></data>
 </root>

@@ -11,9 +11,9 @@
     var sprite = AtlasManager.GetCharacterFrame(UserCharacterInfo.RarityFlags);
     var deco = AtlasManager.GetCharacterFrameDecoration(UserCharacterInfo.RarityFlags);
     var characterMb = Masters.CharacterTable.GetById(UserCharacterInfo.CharacterId);
-    var element = AtlasManager.GetIconCharacterElement(characterMb.ElementType);
+    var element = characterMb != null ? AtlasManager.GetIconCharacterElement(characterMb.ElementType) : null;
     var scale = Size / 128.0; // 128 默认大小
-    var isLevelLinkMember = AccountSelection.Current.Funcs.UserSyncData.IsLevelLinkMember(UserCharacterInfo.Guid);
+    var isLevelLinkMember = CheckLevelLink && AccountSelection.Current.Funcs.UserSyncData.IsLevelLinkMember(UserCharacterInfo.Guid);
     var level = isLevelLinkMember ? AccountSelection.Current.Funcs.UserSyncData.GetLevelLinkLevel(UserCharacterInfo.CharacterId) : UserCharacterInfo.Level;
     var filter = UserCharacterInfo.RarityFlags switch
     {
@@ -99,5 +99,8 @@
 
     [Parameter]
     public int Size { get; set; } = 128;
+
+    [Parameter]
+    public bool CheckLevelLink { get; set; } = true;
 
 }

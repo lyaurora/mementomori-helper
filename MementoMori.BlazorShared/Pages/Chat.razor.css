@@ -35,6 +35,33 @@
 .chat-message { display: flex; align-items: flex-start; gap: .55rem; margin-bottom: .85rem; }
 .chat-message.own { flex-direction: row-reverse; }
 .chat-message-avatar { padding-top: .1rem; flex-shrink: 0; }
+.chat-avatar-btn {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    border-radius: .5rem;
+    cursor: pointer;
+    display: inline-flex;
+    transition: transform .12s ease, box-shadow .12s ease;
+}
+.chat-avatar-btn:hover:not(:disabled),
+.chat-avatar-trigger:hover {
+    transform: scale(1.06);
+}
+.chat-avatar-btn:focus-visible {
+    outline: 2px solid var(--mud-palette-primary);
+    outline-offset: 2px;
+}
+.chat-avatar-btn:disabled {
+    cursor: default;
+}
+.chat-avatar-trigger {
+    display: inline-flex;
+    flex-shrink: 0;
+    border-radius: .5rem;
+    cursor: pointer;
+    transition: transform .12s ease;
+}
 .chat-message-content { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; width: max-content; max-width: min(720px, calc(100% - 46px)); }
 .own .chat-message-content { align-items: flex-end; }
 .chat-message-meta { display: flex; flex-wrap: wrap; gap: .5rem; font-size: .75rem; color: var(--app-text-3); margin-bottom: .35rem; }

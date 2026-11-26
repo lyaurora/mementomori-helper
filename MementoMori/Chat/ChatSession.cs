@@ -164,6 +164,9 @@ public sealed class ChatSession(MementoMoriFuncs funcs) : IDisposable
 
     private void Notify() => _changed.OnNext(Unit.Default);
 
+    /// <summary>屏蔽列表更新后刷新聊天视图过滤结果。</summary>
+    public void NotifyBlockListChanged() => Notify();
+
     private async Task Run(CancellationToken token)
     {
         var failures = 0;

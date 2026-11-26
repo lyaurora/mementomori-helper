@@ -374,6 +374,8 @@ button, input, textarea, select { font-family: inherit; }
 .app-form-dialog, .mud-dialog:has(.use-item-dialog), .mud-dialog:has(.gacha-select-grid) { width: 480px; max-width: calc(100vw - 32px); }
 .mud-dialog.mud-message-box { width: min(420px, calc(100vw - 32px)); }
 .mud-dialog.mud-message-box .mud-dialog-content { padding-block: 16px; }
+.mud-dialog.player-profile-dialog { width: min(740px, calc(100vw - 24px)); max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); overflow: hidden; }
+.mud-dialog.player-profile-dialog .mud-dialog-content { padding: 0 !important; overflow-x: hidden; overflow-y: auto; max-height: calc(100dvh - 24px); }
 .app-content .job-runs-table { max-height: 24rem; overflow-y: auto; }
 .app-content .job-runs-table thead th { position: sticky; top: 0; z-index: 1; }
 .job-runs-table table { width: 100%; table-layout: fixed; }

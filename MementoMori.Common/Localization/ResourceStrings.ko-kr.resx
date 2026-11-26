@@ -717,4 +717,57 @@
   <data name="BookSortUseBigItem" xml:space="preserve"><value>청소 아이템 #{0}을(를) 칸 {1}에 사용({2}칸 개방)</value></data>
   <data name="BookSortUseDuster" xml:space="preserve"><value>일반 먼지떨이로 남은 칸을 일괄 개방합니다</value></data>
   <data name="BookSortUseLargeItems" xml:space="preserve"><value>다중 칸 청소 아이템 사용</value></data>
+  <data name="GuildContribution" xml:space="preserve"><value>기간 공헌</value></data>
+  <data name="GuildCumulativeFame" xml:space="preserve"><value>누적 명성</value></data>
+  <data name="GuildExp" xml:space="preserve"><value>길드 경험치</value></data>
+  <data name="GuildFame" xml:space="preserve"><value>길드 명성</value></data>
+  <data name="GuildGvgCastles" xml:space="preserve"><value>성채 (대/중/소)</value></data>
+  <data name="GuildGvgClaimableRewardsFormat" xml:space="preserve"><value>수령 가능한 성채 보상이 {0}건 있습니다</value></data>
+  <data name="GuildGvgClaimedRewardsFormat" xml:space="preserve"><value>성채 보상 {0}건 수령 완료</value></data>
+  <data name="GuildGvgCurrentRank" xml:space="preserve"><value>현재 순위</value></data>
+  <data name="GuildGvgDeclarations" xml:space="preserve"><value>남은 선전포고</value></data>
+  <data name="GuildGvgNotQualified" xml:space="preserve"><value>미개방</value></data>
+  <data name="GuildGvgQualified" xml:space="preserve"><value>참가 가능</value></data>
+  <data name="GuildGvgTodayRank" xml:space="preserve"><value>오늘 순위</value></data>
+  <data name="GuildLevel" xml:space="preserve"><value>길드 레벨</value></data>
+  <data name="GuildLoadFailed" xml:space="preserve"><value>길드 정보를 불러오지 못했습니다</value></data>
+  <data name="GuildMembers" xml:space="preserve"><value>길드원</value></data>
+  <data name="GuildNoMatchingMembers" xml:space="preserve"><value>일치하는 멤버가 없습니다</value></data>
+  <data name="GuildRaidMyMaxDamage" xml:space="preserve"><value>내 최고 피해</value></data>
+  <data name="GuildRaidNoneOpen" xml:space="preserve"><value>현재 진행 중인 길드 레이드가 없습니다.</value></data>
+  <data name="GuildRaidReleaseFame" xml:space="preserve"><value>개방 필요 포인트</value></data>
+  <data name="GuildRaidTopDamage" xml:space="preserve"><value>피해 순위 (상위 5명)</value></data>
+  <data name="GuildRaidTotalAttacksFormat" xml:space="preserve"><value>길드 오늘 총 도전 {0}회</value></data>
+  <data name="GuildRaidTotalDamage" xml:space="preserve"><value>길드 총 피해</value></data>
+  <data name="GuildReload" xml:space="preserve"><value>새로고침</value></data>
+  <data name="GuildSearchMember" xml:space="preserve"><value>멤버 검색...</value></data>
+  <data name="GuildSortActivity" xml:space="preserve"><value>활동</value></data>
+  <data name="GuildSortFame" xml:space="preserve"><value>공헌</value></data>
+  <data name="GuildSortLabel" xml:space="preserve"><value>멤버 정렬</value></data>
+  <data name="GuildSortPower" xml:space="preserve"><value>전투력</value></data>
+  <data name="GuildSortRole" xml:space="preserve"><value>직위</value></data>
+  <data name="GuildTabMembers" xml:space="preserve"><value>멤버</value></data>
+  <data name="GuildTodayChallengesFormat" xml:space="preserve"><value>오늘 {0}회</value></data>
+  <data name="GuildTotalPower" xml:space="preserve"><value>총 전투력</value></data>
+  <data name="GuildTowerChallenge" xml:space="preserve"><value>길드 트리 도전</value></data>
+  <data name="GuildTowerClosed" xml:space="preserve"><value>길드 트리는 현재 진행 중이 아닙니다.</value></data>
+  <data name="GuildTowerCombo" xml:space="preserve"><value>콤보</value></data>
+  <data name="GuildTowerCurrentFloor" xml:space="preserve"><value>현재 층수</value></data>
+  <data name="GuildTowerTodayWins" xml:space="preserve"><value>오늘 승리</value></data>
+  <data name="PlayerProfileAcceptFriend" xml:space="preserve"><value>수락</value></data>
+  <data name="PlayerProfileAddFriend" xml:space="preserve"><value>친구 신청</value></data>
+  <data name="PlayerProfileBlockConfirm" xml:space="preserve"><value>{0}님을 차단할까요? 메시지와 코멘트가 숨겨집니다.</value></data>
+  <data name="PlayerProfileBlocked" xml:space="preserve"><value>플레이어를 차단했습니다</value></data>
+  <data name="PlayerProfileCancelFriendRequest" xml:space="preserve"><value>신청 취소</value></data>
+  <data name="PlayerProfileFriendAccepted" xml:space="preserve"><value>친구 신청을 수락했습니다</value></data>
+  <data name="PlayerProfileFriendRejected" xml:space="preserve"><value>친구 신청을 거절했습니다</value></data>
+  <data name="PlayerProfileFriendRemoved" xml:space="preserve"><value>친구를 삭제했습니다</value></data>
+  <data name="PlayerProfileFriendRequestCanceled" xml:space="preserve"><value>친구 신청을 취소했습니다</value></data>
+  <data name="PlayerProfileFriendRequested" xml:space="preserve"><value>친구 신청을 보냈습니다</value></data>
+  <data name="PlayerProfileIdCopied" xml:space="preserve"><value>플레이어 ID를 복사했습니다</value></data>
+  <data name="PlayerProfileRejectFriend" xml:space="preserve"><value>거절</value></data>
+  <data name="PlayerProfileRemoveFriend" xml:space="preserve"><value>친구 삭제</value></data>
+  <data name="PlayerProfileRemoveFriendConfirm" xml:space="preserve"><value>{0}님을 친구 목록에서 삭제할까요?</value></data>
+  <data name="PlayerProfileTitle" xml:space="preserve"><value>플레이어 정보</value></data>
+  <data name="PlayerProfileUnblocked" xml:space="preserve"><value>차단을 해제했습니다</value></data>
 </root>

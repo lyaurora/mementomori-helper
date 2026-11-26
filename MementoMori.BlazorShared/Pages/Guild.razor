@@ -1,7 +1,518 @@
 ﻿@page "/Guild"
-<PageTitle>公会</PageTitle>
-<h3>公会</h3>
+@inherits AccountComponent
+@implements IDisposable
+@using MementoMori.BlazorShared.Components
+@using MementoMori.Common.Localization
+@using MementoMori.Ortega.Share
+@using MementoMori.Ortega.Share.Data.Guild
+@using MementoMori.Ortega.Share.Enums
+
+<PageTitle>@Tr("[CommonGuildLabel]")</PageTitle>
+
+<div class="guild-page">
+    @if (!Funcs.LoginOk)
+    {
+        <MudAlert Severity="Severity.Info">@ResourceStrings.PleaseLogin <MudLink Href="" Typo="Typo.body1">@Tr("[CommonFooterHomeButtonLabel]")</MudLink></MudAlert>
+    }
+    else if (_loading && _baseInfo == null)
+    {
+        <div class="guild-loading">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        </div>
+    }
+    else if (_noGuild || _baseInfo?.GuildSyncData?.GuildInfo == null)
+    {
+        <MudCard Class="guild-empty-card">
+            <MudCardContent>
+                <div class="guild-empty-content">
+                    <MudIcon Icon="@Icons.Material.Outlined.Groups" Class="guild-empty-icon" />
+                    <MudText Typo="Typo.h6">@(_noGuild ? Tr("[RankingNotGuild]") : (_error ?? ResourceStrings.GuildLoadFailed))</MudText>
+                    @if (!string.IsNullOrEmpty(_error) && _noGuild)
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Warning">@_error</MudText>
+                    }
+                    <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Refresh" OnClick="ReloadAsync" Disabled="_loading">
+                        @ResourceStrings.GuildReload
+                    </MudButton>
+                </div>
+            </MudCardContent>
+        </MudCard>
+    }
+    else
+    {
+        var sync = _baseInfo.GuildSyncData;
+        var info = sync.GuildInfo;
+        var overview = info.GuildOverView;
+        var members = SortedMembers;
+        var levelMb = Masters.GuildLevelTable.GetArray().FirstOrDefault(x => x.Level == info.GuildLevel);
+        var nextLevelMb = Masters.GuildLevelTable.GetArray().FirstOrDefault(x => x.Level == info.GuildLevel + 1);
+        var memberCount = members.Count > 0 ? members.Count : info.GuildMemberCount;
+        var maxMembers = levelMb?.NumberOfPossibleJoinPeople ?? 0;
+
+        <div class="guild-header">
+            <div class="guild-header-main">
+                <div class="guild-title-row">
+                    <MudText Typo="Typo.h5">@(overview?.GuildName ?? Tr("[CommonGuildLabel]"))</MudText>
+                    <span class="guild-level-pill">Lv.@info.GuildLevel</span>
+                    @if (info.GuildId > 0)
+                    {
+                        <span class="guild-id-pill">ID @info.GuildId</span>
+                    }
+                </div>
+                @if (!string.IsNullOrWhiteSpace(overview?.GuildDescription))
+                {
+                    <p class="guild-desc">@overview.GuildDescription</p>
+                }
+                @if (overview != null && (overview.CommunicationPolicyType != GuildCommunicationPolicyType.None
+                     || overview.EventPolicyType != GuildEventPolicyType.None
+                     || overview.GuildBattlePolicyType != GuildBattlePolicyType.None
+                     || overview.RequireBattlePower > 0))
+                {
+                    <div class="guild-policy-row">
+                        @if (overview.CommunicationPolicyType != GuildCommunicationPolicyType.None)
+                        {
+                            <span class="guild-policy-chip">@Tr("[GuildCommunicationPolicyLabel]"): @Tr($"[GuildCommunicationPolicyType{overview.CommunicationPolicyType}]")</span>
+                        }
+                        @if (overview.EventPolicyType != GuildEventPolicyType.None)
+                        {
+                            <span class="guild-policy-chip">@Tr("[GuildEventPolicyLabel]"): @Tr($"[GuildEventPolicyType{overview.EventPolicyType}]")</span>
+                        }
+                        @if (overview.GuildBattlePolicyType != GuildBattlePolicyType.None)
+                        {
+                            <span class="guild-policy-chip">@Tr("[GuildBattlePolicyLabel]"): @Tr($"[GuildBattlePolicyType{overview.GuildBattlePolicyType}]")</span>
+                        }
+                        @if (overview.RequireBattlePower > 0)
+                        {
+                            <span class="guild-policy-chip">@Tr("[CommonBattlePowerMoreThanFormat]", FormatCompact(overview.RequireBattlePower))</span>
+                        }
+                    </div>
+                }
+            </div>
+            <div class="guild-header-actions">
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Chat" OnClick="OpenGuildChat">
+                    @Tr("[CommonHeaderChatLabel]")
+                </MudButton>
+                <MudIconButton Icon="@Icons.Material.Filled.Refresh" Size="Size.Small" OnClick="ReloadAsync" Disabled="_loading"
+                               title="@ResourceStrings.GuildReload" aria-label="@ResourceStrings.GuildReload" />
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <MudAlert Severity="Severity.Warning" Dense="true">@_error</MudAlert>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(sync.GuildAnnouncement))
+        {
+            <div class="guild-announcement">
+                <MudIcon Icon="@Icons.Material.Outlined.Campaign" Size="Size.Small" />
+                <span>@sync.GuildAnnouncement</span>
+            </div>
+        }
+
+        <div class="guild-kpi-grid">
+            <div class="guild-kpi">
+                <span class="guild-kpi-label"><MudIcon Icon="@Icons.Material.Outlined.Group" Size="Size.Small" />@ResourceStrings.GuildMembers</span>
+                <span class="guild-kpi-value">@(maxMembers > 0 ? $"{memberCount} / {maxMembers}" : memberCount.ToString())</span>
+            </div>
+            <div class="guild-kpi">
+                <span class="guild-kpi-label"><MudIcon Icon="@Icons.Material.Outlined.TrendingUp" Size="Size.Small" />@ResourceStrings.GuildLevel</span>
+                <span class="guild-kpi-value">Lv.@info.GuildLevel</span>
+            </div>
+            <div class="guild-kpi">
+                <span class="guild-kpi-label"><MudIcon Icon="@Icons.Material.Outlined.EmojiEvents" Size="Size.Small" />@ResourceStrings.GuildTotalPower</span>
+                <span class="guild-kpi-value" title="@sync.GuildBattlePower.ToString("N0")">@FormatCompact(sync.GuildBattlePower)</span>
+            </div>
+            <div class="guild-kpi">
+                <span class="guild-kpi-label"><MudIcon Icon="@Icons.Material.Outlined.MilitaryTech" Size="Size.Small" />@ResourceStrings.GuildFame</span>
+                <span class="guild-kpi-value" title="@info.GuildFame.ToString("N0")">@info.GuildFame.ToString("N0")</span>
+            </div>
+        </div>
+
+        <MudCard Class="guild-checkin-card">
+            <MudCardContent>
+                <div class="guild-checkin-bar">
+                    <div class="guild-exp-meta">
+                        <span class="guild-exp-label">@ResourceStrings.GuildExp</span>
+                        <strong>@info.GuildExp.ToString("N0")</strong>
+                        @if (nextLevelMb != null)
+                        {
+                            <span class="guild-exp-sub">/ @nextLevelMb.RequiredTotalExp.ToString("N0")</span>
+                        }
+                        else if (levelMb != null)
+                        {
+                            <span class="guild-exp-max">MAX</span>
+                        }
+                    </div>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                               StartIcon="@Icons.Material.Outlined.CardGiftcard"
+                               Disabled="@(Funcs.IsQuickActionExecuting || _actionBusy)"
+                               OnClick="() => RunActionAsync(Funcs.GuildCheckin)">
+                        @Tr("[MissionName533]")
+                    </MudButton>
+                </div>
+            </MudCardContent>
+        </MudCard>
+
+        <MudTabs Class="guild-tabs" Elevation="0" Rounded="true" ApplyEffectsToContainer="false" TabPanelsClass="guild-tab-panel">
+            <MudTabPanel Text="@($"{ResourceStrings.GuildTabMembers} ({members.Count})")" Icon="@Icons.Material.Outlined.Group">
+                <div class="guild-member-toolbar">
+                    <div class="guild-sort-group" role="group" aria-label="@ResourceStrings.GuildSortLabel">
+                        @foreach (var (mode, label) in SortModes)
+                        {
+                            <button type="button" class="guild-sort-pill @(_sortMode == mode ? "is-active" : "")"
+                                    @onclick="() => SetSortMode(mode)">@label</button>
+                        }
+                    </div>
+                    <MudSpacer />
+                    <div class="guild-member-search">
+                        <MudTextField T="string" @bind-Value="_memberSearch" Placeholder="@ResourceStrings.GuildSearchMember"
+                                      Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start"
+                                      AdornmentIcon="@Icons.Material.Outlined.Search" Immediate="true" />
+                    </div>
+                </div>
+                <div class="guild-member-grid">
+                    @foreach (var member in FilteredMembers)
+                    {
+                        var isMe = member.PlayerId == Funcs.NetworkManager.PlayerId;
+                        var isOnline = member.LastLoginTime < TimeSpan.FromMinutes(2);
+                        <div class="guild-member-card @(isMe ? "is-self" : "")" @key="member.PlayerId">
+                            <button type="button" class="guild-avatar-btn" title="@ResourceStrings.PlayerProfileTitle"
+                                    @onclick="() => OpenMemberProfile(member)">
+                                <PlayerAvatar IconId="member.MainCharacterIconId" Name="@member.PlayerName" Size="48" />
+                            </button>
+                            <div class="guild-member-body">
+                                <div class="guild-member-top">
+                                    <button type="button" class="guild-member-name" @onclick="() => OpenMemberProfile(member)">
+                                        @member.PlayerName@(isMe ? ResourceStrings.Me : "")
+                                    </button>
+                                    <span class="guild-role-badge @RoleClass(member.PlayerGuildPositionType)">@PositionLabel(member.PlayerGuildPositionType)</span>
+                                    <span class="guild-login-pill @(isOnline ? "is-online" : "")">
+                                        @if (isOnline)
+                                        {
+                                            <span class="guild-online-dot"></span>@Tr("[Online]")
+                                        }
+                                        else
+                                        {
+                                            @FormatSinceLogin(member.LastLoginTime)
+                                        }
+                                    </span>
+                                </div>
+                                <div class="guild-member-meta">
+                                    <span>Lv.@member.PlayerLevel</span>
+                                    <span title="@member.BattlePower.ToString("N0")">@Tr("[CommonBattlePowerLabel]") <b>@FormatCompact(member.BattlePower)</b></span>
+                                    @if (member.LatestQuestId > 0)
+                                    {
+                                        <span>@Tr("[ChatMainQuest]") @FormatQuest(member.LatestQuestId)</span>
+                                    }
+                                    <span title="@(member.CumulativeGuildFame > 0 ? $"{ResourceStrings.GuildCumulativeFame}: {member.CumulativeGuildFame:N0}" : null)">@ResourceStrings.GuildContribution @member.GuildPeriodTotalFame.ToString("N0")</span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                @if (FilteredMembers.Count == 0)
+                {
+                    <div class="guild-empty-inline">@ResourceStrings.GuildNoMatchingMembers</div>
+                }
+            </MudTabPanel>
+
+            <MudTabPanel Text="@Tr("[GuildTowerTitle]")" Icon="@Icons.Material.Outlined.Castle">
+                @{
+                    var towerOpen = IsGuildTowerOpen;
+                }
+                <MudCard Class="guild-section-card">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <div class="guild-raid-head">
+                                <MudText Class="panel-title">
+                                    <MudIcon Class="panel-title-icon" Icon="@Icons.Material.Outlined.Castle" />
+                                    <span>@Tr("[GuildTowerTitle]")</span>
+                                </MudText>
+                                <span class="guild-role-badge @(towerOpen ? "is-veteran" : "is-member")">
+                                    @(towerOpen ? ResourceStrings.GuildGvgQualified : ResourceStrings.GuildGvgNotQualified)
+                                </span>
+                            </div>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <div class="guild-tower-content">
+                            @if (towerOpen)
+                            {
+                                <div class="guild-sub-stats">
+                                    <div class="guild-sub-stat">
+                                        <span class="guild-sub-stat-label">@ResourceStrings.GuildTowerCurrentFloor</span>
+                                        <span class="guild-sub-stat-value is-accent">@Tr("[TowerBattleFloorFormat]", _baseInfo.GuildTowerCurrentFloor)</span>
+                                    </div>
+                                    <div class="guild-sub-stat">
+                                        <span class="guild-sub-stat-label">@ResourceStrings.GuildTowerTodayWins</span>
+                                        <span class="guild-sub-stat-value">@_baseInfo.GuildTowerTodayWinCount</span>
+                                    </div>
+                                    @if (_baseInfo.GuildTowerComboData is { ComboCount: > 0 } combo)
+                                    {
+                                        <div class="guild-sub-stat">
+                                            <span class="guild-sub-stat-label">@ResourceStrings.GuildTowerCombo</span>
+                                            <span class="guild-sub-stat-value">@combo.ComboCount</span>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="guild-action-row">
+                                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                                               StartIcon="@Icons.Material.Outlined.SportsMma"
+                                               Disabled="@(Funcs.IsQuickActionExecuting || _actionBusy)"
+                                               OnClick="() => RunActionAsync(Funcs.AutoGuildTower)">
+                                        @ResourceStrings.GuildTowerChallenge
+                                    </MudButton>
+                                </div>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.body2" Class="guild-muted">@ResourceStrings.GuildTowerClosed</MudText>
+                            }
+                        </div>
+                    </MudCardContent>
+                </MudCard>
+            </MudTabPanel>
+
+            <MudTabPanel Text="@Tr("[CommonHeaderGuildRaidLabel]")" Icon="@Icons.Material.Outlined.Whatshot">
+                @if (_raids.Count == 0)
+                {
+                    <MudCard Class="guild-section-card">
+                        <MudCardContent>
+                            <MudText Typo="Typo.body2" Class="guild-muted">@ResourceStrings.GuildRaidNoneOpen</MudText>
+                        </MudCardContent>
+                    </MudCard>
+                }
+                else
+                {
+                    <div class="guild-raid-list">
+                        @foreach (var raid in _raids)
+                        {
+                            var boss = raid.GuildRaidBossInfo;
+                            var dto = raid.GuildRaidDtoInfo;
+                            var bossType = dto?.BossType ?? GuildRaidBossType.Normal;
+                            var bossMb = ResolveRaidBossMb(bossType);
+                            var bossName = ResolveRaidBossName(raid, bossMb);
+                            var bossIconId = bossMb is { UnitIconType: UnitIconType.Character, UnitIconId: > 0 } ? bossMb.UnitIconId : 0;
+                            var maxHp = boss?.MaxHp ?? 0;
+                            var curHp = boss?.CurrentHp ?? 0;
+                            var hpPercent = maxHp > 0 ? Math.Clamp((double)curHp / maxHp * 100d, 0d, 100d) : 0d;
+                            var topRanks = raid.GuildRaidUserRankingInfos?.OrderByDescending(r => r.TotalDamage).Take(5).ToList() ?? [];
+                            var topMaxDamage = topRanks.FirstOrDefault()?.TotalDamage ?? 1;
+
+                            <MudCard Class="guild-section-card" @key="@(boss?.BossGuid ?? bossType.ToString())">
+                                <MudCardHeader>
+                                    <CardHeaderContent>
+                                        <div class="guild-raid-head">
+                                            <div class="guild-raid-boss-id">
+                                                @if (bossIconId > 0)
+                                                {
+                                                    <PlayerAvatar IconId="bossIconId" Name="@bossName" Size="38" />
+                                                }
+                                                <div>
+                                                    <MudText Typo="Typo.h6">@bossName</MudText>
+                                                    @if (raid.IsOpen && dto is { TotalChallengeCount: > 0 })
+                                                    {
+                                                        <span class="guild-muted">@string.Format(ResourceStrings.GuildRaidTotalAttacksFormat, dto.TotalChallengeCount)</span>
+                                                    }
+                                                </div>
+                                            </div>
+                                            @if (raid.IsOpen)
+                                            {
+                                                <span class="guild-role-badge is-accent">@string.Format(ResourceStrings.GuildTodayChallengesFormat, raid.UserGuildRaidDtoInfo?.ChallengeCount ?? 0)</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="guild-role-badge is-member">@ResourceStrings.GuildGvgNotQualified</span>
+                                            }
+                                        </div>
+                                    </CardHeaderContent>
+                                </MudCardHeader>
+                                <MudCardContent>
+                                    <div class="guild-raid-body">
+                                        @if (raid.IsOpen)
+                                        {
+                                            @if (maxHp > 0)
+                                            {
+                                                <div class="guild-raid-hp">
+                                                    <div class="guild-raid-row">
+                                                        <span>HP</span>
+                                                        <span class="guild-num">@FormatCompact(curHp) / @FormatCompact(maxHp) (@hpPercent.ToString("0.#")%)</span>
+                                                    </div>
+                                                    <MudProgressLinear Color="Color.Primary" Value="@hpPercent" Rounded="true" Size="Size.Medium" />
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="guild-raid-row">
+                                                    <span>@ResourceStrings.GuildRaidTotalDamage</span>
+                                                    <strong class="guild-num" title="@((dto?.TotalDamage ?? 0).ToString("N0"))">@FormatCompact(dto?.TotalDamage ?? 0)</strong>
+                                                </div>
+                                            }
+                                            <div class="guild-raid-row">
+                                                <span>@ResourceStrings.GuildRaidMyMaxDamage</span>
+                                                <strong class="guild-num" title="@((raid.UserGuildRaidDtoInfo?.MaxDamage ?? 0).ToString("N0"))">@FormatCompact(raid.UserGuildRaidDtoInfo?.MaxDamage ?? 0)</strong>
+                                            </div>
+                                            @if (topRanks.Count > 0)
+                                            {
+                                                <div class="guild-raid-ranks">
+                                                    <div class="guild-raid-rank-title">@ResourceStrings.GuildRaidTopDamage</div>
+                                                    @for (var i = 0; i < topRanks.Count; i++)
+                                                    {
+                                                        var r = topRanks[i];
+                                                        var pct = topMaxDamage > 0 ? Math.Clamp((double)r.TotalDamage / topMaxDamage * 100d, 3d, 100d) : 0d;
+                                                        <div class="guild-raid-rank-item">
+                                                            <div class="guild-raid-rank-row">
+                                                                <span class="guild-raid-rank-no">#@(i + 1)</span>
+                                                                <button type="button" class="guild-avatar-btn" title="@ResourceStrings.PlayerProfileTitle"
+                                                                        @onclick="() => OpenPlayerProfile(r.PlayerId, r.PlayerName, r.MainCharacterIconId)">
+                                                                    <PlayerAvatar IconId="r.MainCharacterIconId" Name="@r.PlayerName" Size="24" />
+                                                                </button>
+                                                                <button type="button" class="guild-member-name is-inline"
+                                                                        @onclick="() => OpenPlayerProfile(r.PlayerId, r.PlayerName, r.MainCharacterIconId)">
+                                                                    @r.PlayerName
+                                                                </button>
+                                                                <span class="guild-num" title="@r.TotalDamage.ToString("N0")">@FormatCompact(r.TotalDamage)</span>
+                                                            </div>
+                                                            <div class="guild-raid-rank-bar"><div style="@($"width:{pct:0.#}%")"></div></div>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            var needFame = bossMb?.ReleasableGuildFame ?? 0;
+                                            if (needFame > 0)
+                                            {
+                                                var famePct = Math.Clamp((double)info.GuildFame / needFame * 100d, 0d, 100d);
+                                                <div class="guild-raid-hp">
+                                                    <div class="guild-raid-row">
+                                                        <span>@ResourceStrings.GuildRaidReleaseFame</span>
+                                                        <span class="guild-num">@info.GuildFame.ToString("N0") / @needFame.ToString("N0")</span>
+                                                    </div>
+                                                    <MudProgressLinear Color="@(info.GuildFame >= needFame ? Color.Success : Color.Primary)" Value="@famePct" Rounded="true" Size="Size.Medium" />
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <MudText Typo="Typo.body2" Class="guild-muted">@ResourceStrings.GuildRaidNoneOpen</MudText>
+                                            }
+                                        }
+                                    </div>
+                                </MudCardContent>
+                            </MudCard>
+                        }
+                    </div>
+                }
+                <div class="guild-action-row mt-3">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                               StartIcon="@Icons.Material.Outlined.Whatshot"
+                               Disabled="@(Funcs.IsQuickActionExecuting || _actionBusy)"
+                               OnClick="() => RunActionAsync(Funcs.GuildRaid)">
+                        @Tr("[CommonHeaderGuildRaidLabel]")
+                    </MudButton>
+                    @if (CanOpenRaid)
+                    {
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small"
+                                   StartIcon="@Icons.Material.Outlined.PlayArrow"
+                                   Disabled="@(Funcs.IsQuickActionExecuting || _actionBusy)"
+                                   OnClick="() => RunActionAsync(Funcs.OpenGuildRaid)">
+                            @Tr("[GuildRaidReleaseConfirmTitle]")
+                        </MudButton>
+                    }
+                </div>
+            </MudTabPanel>
+
+            <MudTabPanel Text="@Tr("[BattleTypeGvG]")" Icon="@Icons.Material.Outlined.Shield">
+                <div class="guild-gvg-grid">
+                    @RenderGvgCard(Tr("[CommonHeaderGvgLabel]"), _baseInfo.LocalGuildGvgInfo)
+                    @if (_baseInfo.GlobalGuildGvgInfo != null)
+                    {
+                        @RenderGvgCard(Tr("[CommonHeaderGlobalGvgLabel]"), _baseInfo.GlobalGuildGvgInfo)
+                    }
+                </div>
+                <div class="guild-action-row mt-3">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                               StartIcon="@Icons.Material.Outlined.CardGiftcard"
+                               Disabled="@(Funcs.IsQuickActionExecuting || _actionBusy)"
+                               OnClick="() => RunActionAsync(Funcs.ReceiveGvgReward)">
+                        @($"{Tr("[CommonHeaderGvgLabel]")} {Tr("[GuildRewardTitle]")}")
+                    </MudButton>
+                    @if (_baseInfo.LocalGuildGvgInfo?.IsOpen == true)
+                    {
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small"
+                                   StartIcon="@Icons.Material.Outlined.Security"
+                                   Disabled="@(Funcs.IsQuickActionExecuting || _actionBusy)"
+                                   OnClick="() => RunActionAsync(Funcs.SetupLocalGvgDefense)">
+                            @ResourceStrings.Deploy_defense
+                        </MudButton>
+                    }
+                </div>
+            </MudTabPanel>
+        </MudTabs>
+    }
+</div>
 
 @code {
-    
+    private RenderFragment RenderGvgCard(string title, GuildGvgInfo? gvg) => __builder =>
+    {
+        <MudCard Class="guild-section-card">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <div class="guild-raid-head">
+                        <MudText Typo="Typo.h6">@title</MudText>
+                        <span class="guild-role-badge @(gvg?.IsOpen == true ? "is-veteran" : "is-member")">
+                            @(gvg?.IsOpen == true ? ResourceStrings.GuildGvgQualified : ResourceStrings.GuildGvgNotQualified)
+                        </span>
+                    </div>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                @if (gvg != null)
+                {
+                    <div class="guild-sub-stats">
+                        <div class="guild-sub-stat">
+                            <span class="guild-sub-stat-label">@ResourceStrings.GuildGvgTodayRank</span>
+                            <span class="guild-sub-stat-value">@(gvg.TodayRanking > 0 ? $"#{gvg.TodayRanking}" : "-")</span>
+                        </div>
+                        <div class="guild-sub-stat">
+                            <span class="guild-sub-stat-label">@ResourceStrings.GuildGvgCurrentRank</span>
+                            <span class="guild-sub-stat-value">@(gvg.CurrentRanking > 0 ? $"#{gvg.CurrentRanking}" : "-")</span>
+                        </div>
+                        <div class="guild-sub-stat">
+                            <span class="guild-sub-stat-label">@ResourceStrings.GuildGvgCastles</span>
+                            <div class="guild-castle-pills">
+                                <span class="guild-castle-pill is-l">@gvg.CastleCountLarge</span>
+                                <span class="guild-castle-pill is-m">@gvg.CastleCountMedium</span>
+                                <span class="guild-castle-pill is-s">@gvg.CastleCountSmall</span>
+                            </div>
+                        </div>
+                        <div class="guild-sub-stat">
+                            <span class="guild-sub-stat-label">@ResourceStrings.GuildGvgDeclarations</span>
+                            <span class="guild-sub-stat-value">@gvg.RemainingDeclarationCount</span>
+                        </div>
+                    </div>
+                    @if (gvg.CanGetCastleRewardInfoList is { Count: > 0 } rewards)
+                    {
+                        <div class="guild-gvg-reward-hint">
+                            <MudIcon Icon="@Icons.Material.Outlined.CardGiftcard" Size="Size.Small" />
+                            <span>@string.Format(ResourceStrings.GuildGvgClaimableRewardsFormat, rewards.Count)</span>
+                        </div>
+                    }
+                    else if (gvg.GotCastleRewardInfoList is { Count: > 0 } claimed)
+                    {
+                        <div class="guild-gvg-claimed-hint">
+                            <MudIcon Icon="@Icons.Material.Outlined.CheckCircleOutline" Size="Size.Small" />
+                            <span>@string.Format(ResourceStrings.GuildGvgClaimedRewardsFormat, claimed.Count)</span>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2" Class="guild-muted">-</MudText>
+                }
+            </MudCardContent>
+        </MudCard>
+    };
 }

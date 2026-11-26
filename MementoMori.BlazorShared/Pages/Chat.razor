@@ -103,7 +103,10 @@
                 {
                     <button type="button" class="chat-contact @(contact.PlayerInfo.PlayerId == _target ? "selected" : "")"
                             @onclick="() => SelectPrivate(contact.PlayerInfo.PlayerId)" disabled="@_busy">
-                        <PlayerAvatar IconId="contact.PlayerInfo.MainCharacterIconId" Name="@contact.PlayerInfo.PlayerName" Size="32" />
+                        <span class="chat-avatar-trigger" title="@ResourceStrings.PlayerProfileTitle"
+                              @onclick="() => OpenPlayerInfo(contact.PlayerInfo)" @onclick:stopPropagation="true">
+                            <PlayerAvatar IconId="contact.PlayerInfo.MainCharacterIconId" Name="@contact.PlayerInfo.PlayerName" Size="32" />
+                        </span>
                         <span class="chat-contact-copy"><span>@PlayerName(contact.PlayerInfo.PlayerName, contact.PlayerInfo.PlayerId)</span><small>@contact.PlayerInfo.PlayerId</small></span>
                         @if (contact.ExistUnread) { <span class="chat-unread" aria-label="@ResourceStrings.Unread">●</span> }
                     </button>
@@ -124,6 +127,8 @@
                 }
                 @if (_channel == ChatType.Private && _target > 0)
                 {
+                    var currentContact = _snapshot.Contacts.FirstOrDefault(c => c.PlayerInfo.PlayerId == _target)?.PlayerInfo;
+                    <MudButton OnClick="() => currentContact != null ? OpenPlayerInfo(currentContact) : OpenPlayerInfo(_target, null, 0)" Disabled="@(!Funcs.LoginOk)" Size="Size.Small" StartIcon="@Icons.Material.Outlined.Badge">@ResourceStrings.PlayerProfileTitle</MudButton>
                     <MudButton OnClick="RemovePrivate" Disabled="@(_busy || !_snapshot.Connected)" Size="Size.Small">@Tr("[ChatPlayerListRemoveDialogTitle]")</MudButton>
                 }
             </div>
@@ -160,10 +165,16 @@
                     }
                     var own = message.PlayerId > 0 && message.PlayerId == _snapshot.PlayerId;
                     <article class="chat-message @(own ? "own" : "")" @key="(message.PlayerId, message.LocalTimeStamp)">
-                        <div class="chat-message-avatar"><PlayerAvatar IconId="message.CharacterId" Name="@message.PlayerName" /></div>
+                        <div class="chat-message-avatar">
+                            <button type="button" class="chat-avatar-btn" title="@ResourceStrings.PlayerProfileTitle"
+                                    @onclick="() => OpenPlayerInfo(message.PlayerId, message.PlayerName, message.CharacterId)"
+                                    disabled="@(!Funcs.LoginOk || message.PlayerId <= 0)">
+                                <PlayerAvatar IconId="message.CharacterId" Name="@message.PlayerName" />
+                            </button>
+                        </div>
                         <div class="chat-message-content">
                         <div class="chat-message-meta">
-                            <button class="chat-sender" type="button" @onclick="() => StartPrivate(message.PlayerId)" disabled="@(own || message.PlayerId <= 0 || _busy)">
+                            <button class="chat-sender" type="button" @onclick="() => OpenPlayerInfo(message.PlayerId, message.PlayerName, message.CharacterId)" disabled="@(!Funcs.LoginOk || message.PlayerId <= 0)">
                                 @PlayerName(message.PlayerName, message.PlayerId)@(own ? ResourceStrings.Me : "")
                             </button>
                             @if (!string.IsNullOrEmpty(message.GuildName)) { <span>[@message.GuildName]</span> }
@@ -328,7 +339,11 @@
                             var menuKey = (message.PlayerId, message.LocalTimeStamp);
                             <article class="chat-announcement chat-guild-card" @key="menuKey">
                                 <div class="chat-card-heading">
-                                    <PlayerAvatar IconId="message.CharacterId" Name="@message.PlayerName" Size="28" />
+                                    <button type="button" class="chat-avatar-btn" title="@ResourceStrings.PlayerProfileTitle"
+                                            @onclick="() => OpenPlayerInfo(message.PlayerId, message.PlayerName, message.CharacterId)"
+                                            disabled="@(!Funcs.LoginOk || message.PlayerId <= 0)">
+                                        <PlayerAvatar IconId="message.CharacterId" Name="@message.PlayerName" Size="28" />
+                                    </button>
                                     <strong>@PlayerName(message.PlayerName, message.PlayerId)</strong>
                                     <MudSpacer />
                                     @if (CanDeleteAnnouncement(message))
@@ -456,7 +471,11 @@
                             var index = _guildNotes.IndexOf(note);
                             <article class="chat-note-entry chat-guild-card" @key="note.GuildNoteId">
                                 <div class="chat-card-heading">
-                                    <PlayerAvatar IconId="note.IconId" Name="@note.PlayerName" Size="28" />
+                                    <button type="button" class="chat-avatar-btn" title="@ResourceStrings.PlayerProfileTitle"
+                                            @onclick="() => OpenPlayerInfo(note.PlayerId, note.PlayerName, note.IconId)"
+                                            disabled="@(!Funcs.LoginOk || note.PlayerId <= 0 || note.IsDeletedPlayer)">
+                                        <PlayerAvatar IconId="note.IconId" Name="@note.PlayerName" Size="28" />
+                                    </button>
                                     <strong>@(string.IsNullOrWhiteSpace(note.Title) ? ResourceStrings.UntitledNote : note.Title)</strong>
                                     @if (note.GuildNoteCategoryType == GuildNoteCategoryType.Priority) { <span class="chat-survey-status open">@Tr(GuildNoteCategoryType.Priority)</span> }
                                 </div>

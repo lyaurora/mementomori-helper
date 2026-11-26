@@ -21,6 +21,21 @@ namespace MementoMori.WebUI.UI
             return $"{AssetsUrl}/AddressableConvertAssets/CharacterIcon/CHR_{characterId:000000}/CHR_{characterId:000000}_00_s.png";
         }
 
+        public string GetCharacterFullArt(long characterId)
+        {
+            return $"{AssetsUrl}/AddressableConvertAssets/CharacterIcon/CHR_{characterId:000000}/CHR_{characterId:000000}_00_l.png";
+        }
+
+        public string GetCharacterMediumArt(long characterId)
+        {
+            return $"{AssetsUrl}/AddressableConvertAssets/CharacterIcon/CHR_{characterId:000000}/CHR_{characterId:000000}_00_m.png";
+        }
+
+        public string GetCharacterWideArt(long characterId)
+        {
+            return $"{AssetsUrl}/AddressableConvertAssets/CharacterIcon/CHR_{characterId:000000}/CHR_{characterId:000000}_00_w.png";
+        }
+
         public string? GetPlayerIcon(long iconId)
         {
             if (iconId == 0) return null;

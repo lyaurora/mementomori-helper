@@ -12,6 +12,7 @@ public sealed class AccountSelection : ReactiveObject, IDisposable
     private readonly IDisposable _subscription;
     private long _userId;
     public Dictionary<long, ChatType> ChatChannels { get; } = new();
+    public Dictionary<long, long> PendingPrivateChatTargets { get; } = new();
     public (int TextSize, int StickerSize)? ChatAppearance { get; set; }
 
     public AccountSelection(AccountManager manager)

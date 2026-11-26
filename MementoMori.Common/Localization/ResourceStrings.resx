@@ -823,4 +823,57 @@
   <data name="BookSortUseBigItem" xml:space="preserve"><value>Using clean item #{0} at cell {1} (opens {2} cells)</value></data>
   <data name="BookSortUseDuster" xml:space="preserve"><value>Bulk cleaning remaining cells with duster</value></data>
   <data name="BookSortUseLargeItems" xml:space="preserve"><value>Use multi-cell cleaning items</value></data>
+  <data name="GuildContribution" xml:space="preserve"><value>Contribution</value></data>
+  <data name="GuildCumulativeFame" xml:space="preserve"><value>Cumulative Fame</value></data>
+  <data name="GuildExp" xml:space="preserve"><value>Guild EXP</value></data>
+  <data name="GuildFame" xml:space="preserve"><value>Guild Fame</value></data>
+  <data name="GuildGvgCastles" xml:space="preserve"><value>Castles (L/M/S)</value></data>
+  <data name="GuildGvgClaimableRewardsFormat" xml:space="preserve"><value>{0} castle reward(s) ready to claim</value></data>
+  <data name="GuildGvgClaimedRewardsFormat" xml:space="preserve"><value>Claimed {0} castle reward(s)</value></data>
+  <data name="GuildGvgCurrentRank" xml:space="preserve"><value>Current Rank</value></data>
+  <data name="GuildGvgDeclarations" xml:space="preserve"><value>Declarations Left</value></data>
+  <data name="GuildGvgNotQualified" xml:space="preserve"><value>Closed / Not Qualified</value></data>
+  <data name="GuildGvgQualified" xml:space="preserve"><value>Qualified / Open</value></data>
+  <data name="GuildGvgTodayRank" xml:space="preserve"><value>Today's Rank</value></data>
+  <data name="GuildLevel" xml:space="preserve"><value>Guild Level</value></data>
+  <data name="GuildLoadFailed" xml:space="preserve"><value>Failed to load guild info</value></data>
+  <data name="GuildMembers" xml:space="preserve"><value>Members</value></data>
+  <data name="GuildNoMatchingMembers" xml:space="preserve"><value>No matching members</value></data>
+  <data name="GuildRaidMyMaxDamage" xml:space="preserve"><value>My Best Damage</value></data>
+  <data name="GuildRaidNoneOpen" xml:space="preserve"><value>No Guild Raid boss is currently open.</value></data>
+  <data name="GuildRaidReleaseFame" xml:space="preserve"><value>Fame to Release</value></data>
+  <data name="GuildRaidTopDamage" xml:space="preserve"><value>Top Damage</value></data>
+  <data name="GuildRaidTotalAttacksFormat" xml:space="preserve"><value>{0} guild attack(s) today</value></data>
+  <data name="GuildRaidTotalDamage" xml:space="preserve"><value>Guild Total Damage</value></data>
+  <data name="GuildReload" xml:space="preserve"><value>Reload</value></data>
+  <data name="GuildSearchMember" xml:space="preserve"><value>Search member...</value></data>
+  <data name="GuildSortActivity" xml:space="preserve"><value>Activity</value></data>
+  <data name="GuildSortFame" xml:space="preserve"><value>Contribution</value></data>
+  <data name="GuildSortLabel" xml:space="preserve"><value>Sort members</value></data>
+  <data name="GuildSortPower" xml:space="preserve"><value>Power</value></data>
+  <data name="GuildSortRole" xml:space="preserve"><value>Role</value></data>
+  <data name="GuildTabMembers" xml:space="preserve"><value>Members</value></data>
+  <data name="GuildTodayChallengesFormat" xml:space="preserve"><value>Today: {0}x</value></data>
+  <data name="GuildTotalPower" xml:space="preserve"><value>Total Power</value></data>
+  <data name="GuildTowerChallenge" xml:space="preserve"><value>Challenge Guild Tree</value></data>
+  <data name="GuildTowerClosed" xml:space="preserve"><value>Guild Tree event is not currently active.</value></data>
+  <data name="GuildTowerCombo" xml:space="preserve"><value>Combo</value></data>
+  <data name="GuildTowerCurrentFloor" xml:space="preserve"><value>Current Floor</value></data>
+  <data name="GuildTowerTodayWins" xml:space="preserve"><value>Today's Wins</value></data>
+  <data name="PlayerProfileAcceptFriend" xml:space="preserve"><value>Accept</value></data>
+  <data name="PlayerProfileAddFriend" xml:space="preserve"><value>Add Friend</value></data>
+  <data name="PlayerProfileBlockConfirm" xml:space="preserve"><value>Block {0}? Their messages and profile comment will be hidden.</value></data>
+  <data name="PlayerProfileBlocked" xml:space="preserve"><value>Player blocked</value></data>
+  <data name="PlayerProfileCancelFriendRequest" xml:space="preserve"><value>Cancel Request</value></data>
+  <data name="PlayerProfileFriendAccepted" xml:space="preserve"><value>Friend request accepted</value></data>
+  <data name="PlayerProfileFriendRejected" xml:space="preserve"><value>Friend request declined</value></data>
+  <data name="PlayerProfileFriendRemoved" xml:space="preserve"><value>Friend removed</value></data>
+  <data name="PlayerProfileFriendRequestCanceled" xml:space="preserve"><value>Friend request canceled</value></data>
+  <data name="PlayerProfileFriendRequested" xml:space="preserve"><value>Friend request sent</value></data>
+  <data name="PlayerProfileIdCopied" xml:space="preserve"><value>Player ID copied</value></data>
+  <data name="PlayerProfileRejectFriend" xml:space="preserve"><value>Decline</value></data>
+  <data name="PlayerProfileRemoveFriend" xml:space="preserve"><value>Remove Friend</value></data>
+  <data name="PlayerProfileRemoveFriendConfirm" xml:space="preserve"><value>Remove {0} from your friends list?</value></data>
+  <data name="PlayerProfileTitle" xml:space="preserve"><value>Player Info</value></data>
+  <data name="PlayerProfileUnblocked" xml:space="preserve"><value>Player unblocked</value></data>
 </root>

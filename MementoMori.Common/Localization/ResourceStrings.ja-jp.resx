@@ -717,4 +717,57 @@
   <data name="BookSortUseBigItem" xml:space="preserve"><value>清掃アイテム #{0} をマス {1} に使用（{2}マス開放）</value></data>
   <data name="BookSortUseDuster" xml:space="preserve"><value>通常アイテムで残りマスを一括開放します</value></data>
   <data name="BookSortUseLargeItems" xml:space="preserve"><value>複数マス清掃アイテムを使用</value></data>
+  <data name="GuildContribution" xml:space="preserve"><value>期間貢献</value></data>
+  <data name="GuildCumulativeFame" xml:space="preserve"><value>累計名声</value></data>
+  <data name="GuildExp" xml:space="preserve"><value>ギルドEXP</value></data>
+  <data name="GuildFame" xml:space="preserve"><value>ギルド名声</value></data>
+  <data name="GuildGvgCastles" xml:space="preserve"><value>拠点（大/中/小）</value></data>
+  <data name="GuildGvgClaimableRewardsFormat" xml:space="preserve"><value>受取可能な拠点報酬が {0} 件あります</value></data>
+  <data name="GuildGvgClaimedRewardsFormat" xml:space="preserve"><value>{0} 件の拠点報酬を受取済み</value></data>
+  <data name="GuildGvgCurrentRank" xml:space="preserve"><value>現在の順位</value></data>
+  <data name="GuildGvgDeclarations" xml:space="preserve"><value>残り布告数</value></data>
+  <data name="GuildGvgNotQualified" xml:space="preserve"><value>未開催</value></data>
+  <data name="GuildGvgQualified" xml:space="preserve"><value>開催中</value></data>
+  <data name="GuildGvgTodayRank" xml:space="preserve"><value>本日の順位</value></data>
+  <data name="GuildLevel" xml:space="preserve"><value>ギルドLv</value></data>
+  <data name="GuildLoadFailed" xml:space="preserve"><value>ギルド情報の読み込みに失敗しました</value></data>
+  <data name="GuildMembers" xml:space="preserve"><value>メンバー</value></data>
+  <data name="GuildNoMatchingMembers" xml:space="preserve"><value>該当するメンバーがいません</value></data>
+  <data name="GuildRaidMyMaxDamage" xml:space="preserve"><value>自己最高ダメージ</value></data>
+  <data name="GuildRaidNoneOpen" xml:space="preserve"><value>現在開催中のギルドレイドはありません。</value></data>
+  <data name="GuildRaidReleaseFame" xml:space="preserve"><value>開放必要ポイント</value></data>
+  <data name="GuildRaidTopDamage" xml:space="preserve"><value>ダメージ上位（TOP 5）</value></data>
+  <data name="GuildRaidTotalAttacksFormat" xml:space="preserve"><value>ギルド総挑戦数 {0} 回</value></data>
+  <data name="GuildRaidTotalDamage" xml:space="preserve"><value>ギルド総ダメージ</value></data>
+  <data name="GuildReload" xml:space="preserve"><value>再読み込み</value></data>
+  <data name="GuildSearchMember" xml:space="preserve"><value>メンバーを検索...</value></data>
+  <data name="GuildSortActivity" xml:space="preserve"><value>最終ログイン</value></data>
+  <data name="GuildSortFame" xml:space="preserve"><value>貢献</value></data>
+  <data name="GuildSortLabel" xml:space="preserve"><value>メンバー並び替え</value></data>
+  <data name="GuildSortPower" xml:space="preserve"><value>戦闘力</value></data>
+  <data name="GuildSortRole" xml:space="preserve"><value>役職</value></data>
+  <data name="GuildTabMembers" xml:space="preserve"><value>メンバー</value></data>
+  <data name="GuildTodayChallengesFormat" xml:space="preserve"><value>本日 {0} 回</value></data>
+  <data name="GuildTotalPower" xml:space="preserve"><value>総戦闘力</value></data>
+  <data name="GuildTowerChallenge" xml:space="preserve"><value>ギルドツリーに挑戦</value></data>
+  <data name="GuildTowerClosed" xml:space="preserve"><value>ギルドツリーは現在開催されていません。</value></data>
+  <data name="GuildTowerCombo" xml:space="preserve"><value>コンボ数</value></data>
+  <data name="GuildTowerCurrentFloor" xml:space="preserve"><value>現在階層</value></data>
+  <data name="GuildTowerTodayWins" xml:space="preserve"><value>本日の勝利数</value></data>
+  <data name="PlayerProfileAcceptFriend" xml:space="preserve"><value>承認</value></data>
+  <data name="PlayerProfileAddFriend" xml:space="preserve"><value>フレンド申請</value></data>
+  <data name="PlayerProfileBlockConfirm" xml:space="preserve"><value>{0} さんをブロックしますか？メッセージやコメントが非表示になります。</value></data>
+  <data name="PlayerProfileBlocked" xml:space="preserve"><value>プレイヤーをブロックしました</value></data>
+  <data name="PlayerProfileCancelFriendRequest" xml:space="preserve"><value>申請取消</value></data>
+  <data name="PlayerProfileFriendAccepted" xml:space="preserve"><value>フレンド申請を承認しました</value></data>
+  <data name="PlayerProfileFriendRejected" xml:space="preserve"><value>フレンド申請を拒否しました</value></data>
+  <data name="PlayerProfileFriendRemoved" xml:space="preserve"><value>フレンドを解除しました</value></data>
+  <data name="PlayerProfileFriendRequestCanceled" xml:space="preserve"><value>フレンド申請を取り消しました</value></data>
+  <data name="PlayerProfileFriendRequested" xml:space="preserve"><value>フレンド申請を送信しました</value></data>
+  <data name="PlayerProfileIdCopied" xml:space="preserve"><value>プレイヤーIDをコピーしました</value></data>
+  <data name="PlayerProfileRejectFriend" xml:space="preserve"><value>拒否</value></data>
+  <data name="PlayerProfileRemoveFriend" xml:space="preserve"><value>フレンド解除</value></data>
+  <data name="PlayerProfileRemoveFriendConfirm" xml:space="preserve"><value>{0} さんをフレンドから解除しますか？</value></data>
+  <data name="PlayerProfileTitle" xml:space="preserve"><value>プレイヤー情報</value></data>
+  <data name="PlayerProfileUnblocked" xml:space="preserve"><value>ブロックを解除しました</value></data>
 </root>

@@ -1,0 +1,630 @@
+@using MementoMori.BlazorShared.Models
+@using MementoMori.Common.Localization
+@using MementoMori.Exceptions
+@using MementoMori.Ortega.Share
+@using MementoMori.Ortega.Share.Data.ApiInterface.Friend
+@using MementoMori.Ortega.Share.Data.ApiInterface.User
+@using MementoMori.Ortega.Share.Data.Player
+@using MementoMori.Ortega.Share.Enums
+@inject AccountSelection AccountSelection
+@inject IDialogService DialogService
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+@inject MementoMori.WebUI.UI.AtlasManager Atlas
+
+<MudDialog Class="player-profile-dialog" ContentClass="profile-dialog-content">
+    <DialogContent>
+        <div class="profile-shell @(BgCharacterId > 0 ? "has-art" : "")">
+            <button type="button" class="profile-close-btn" @onclick="Close" aria-label="@Tr("[CommonCloseLabel]")" title="@Tr("[CommonCloseLabel]")">
+                <MudIcon Icon="@Icons.Material.Filled.Close" Size="Size.Small" />
+            </button>
+
+            @if (BgCharacterId > 0)
+            {
+                var fullArt = Atlas.GetCharacterFullArt(BgCharacterId);
+                var medArt = Atlas.GetCharacterMediumArt(BgCharacterId);
+                var charName = Masters.CharacterTable.GetCharacterName(BgCharacterId);
+                <aside class="profile-stage" aria-hidden="true">
+                    @if (!_artFailed)
+                    {
+                        <img class="profile-stage-img" src="@(_useMediumArt ? medArt : fullArt)" alt="" loading="eager" decoding="async" @onerror="OnArtError" />
+                    }
+                    <div class="profile-stage-scrim"></div>
+                    @if (WorldNumber > 0)
+                    {
+                        <span class="profile-stage-world">@Tr("[CommonWorldFormat]", WorldNumber)</span>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(charName) && !charName.StartsWith('['))
+                    {
+                        <span class="profile-stage-caption">@charName</span>
+                    }
+                </aside>
+            }
+
+            <div class="profile-main">
+                @if (_loading && _info == null)
+                {
+                    <div class="profile-loading">
+                        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Medium" />
+                    </div>
+                }
+                else
+                {
+                    @if (!string.IsNullOrEmpty(_error))
+                    {
+                        <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-3">@_error</MudAlert>
+                    }
+
+                    <div class="profile-hero">
+                        <PlayerAvatar IconId="@DisplayIconId" Name="@DisplayName" Size="56" />
+                        <div class="profile-identity">
+                            <div class="profile-name-row">
+                                <span class="profile-name">@DisplayName</span>
+                                @if (IsSelf)
+                                {
+                                    <span class="profile-tag is-accent">@ResourceStrings.Me.Trim()</span>
+                                }
+                                @if (_isBlocked)
+                                {
+                                    <span class="profile-tag is-danger">@Tr("[FriendTabBlock]")</span>
+                                }
+                                else if (_friendStatus == FriendStatusType.Friend)
+                                {
+                                    <span class="profile-tag is-success">@Tr("[FriendTabFriend]")</span>
+                                }
+                                else if (_friendStatus == FriendStatusType.Applying)
+                                {
+                                    <span class="profile-tag">@Tr("[FriendTabApplying]")</span>
+                                }
+                                else if (_friendStatus == FriendStatusType.Receive)
+                                {
+                                    <span class="profile-tag is-accent">@Tr("[FriendTabApprovalPending]")</span>
+                                }
+                            </div>
+
+                            <div class="profile-sub-row">
+                                <span class="profile-id">@Tr("[CommonPlayerIdLabel]") @PlayerId</span>
+                                <button type="button" class="profile-copy-btn" title="@Tr("[CommonCopyLabel]")" aria-label="@Tr("[CommonCopyLabel]")" @onclick="CopyPlayerId">
+                                    <MudIcon Icon="@Icons.Material.Outlined.ContentCopy" Style="font-size: 14px;" />
+                                </button>
+                                @if (_info != null && BgCharacterId <= 0 && WorldNumber > 0)
+                                {
+                                    <span class="profile-dot">·</span>
+                                    <span>@Tr("[CommonWorldFormat]", WorldNumber)</span>
+                                }
+                            </div>
+
+                            <div class="profile-meta-line">
+                                @if (_info is { PlayerLevel: > 0 })
+                                {
+                                    <span class="profile-meta-item profile-level">Lv.@_info.PlayerLevel</span>
+                                }
+                                @if (_info is { PrevLegendLeagueClass: not LegendLeagueClassType.None })
+                                {
+                                    <span class="profile-meta-item">@Tr(_info.PrevLegendLeagueClass)</span>
+                                }
+                                @if (_info != null)
+                                {
+                                    var isOnline = _info.LastLoginTime < TimeSpan.FromMinutes(2);
+                                    <span class="profile-meta-item profile-login @(isOnline ? "is-online" : "")">
+                                        @if (isOnline)
+                                        {
+                                            <span class="profile-online-dot"></span>@Tr("[Online]")
+                                        }
+                                        else
+                                        {
+                                            @($"{Tr("[SelectWorldLastLogin]")} {FormatSinceLogin(_info.LastLoginTime)}")
+                                        }
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (_info != null)
+                    {
+                        <div class="profile-stats">
+                            <div class="profile-stat">
+                                <span class="profile-stat-label">@Tr("[CommonBattlePowerLabel]")</span>
+                                <span class="profile-stat-value is-strong" title="@_info.BattlePower.ToString("N0")">@FormatCompact(_info.BattlePower)</span>
+                            </div>
+                            <div class="profile-stat">
+                                <span class="profile-stat-label">@Tr("[ChatMainQuest]")</span>
+                                <span class="profile-stat-value">@FormatQuest(_info.LatestQuestId)</span>
+                            </div>
+                            <div class="profile-stat">
+                                <span class="profile-stat-label">@Tr("[MyPagePlayerInformationBelongingGuildLabel]")</span>
+                                <span class="profile-stat-value" title="@(_info.CumulativeGuildFame > 0 ? $"{ResourceStrings.GuildCumulativeFame}: {_info.CumulativeGuildFame:N0}" : null)">
+                                    @if (!string.IsNullOrWhiteSpace(_info.GuildName))
+                                    {
+                                        <span class="profile-guild-name">@_info.GuildName</span>
+                                        @if (_info.PlayerGuildPositionType != PlayerGuildPositionType.None)
+                                        {
+                                            <span class="profile-guild-role">@PositionLabel(_info.PlayerGuildPositionType)</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
+                                </span>
+                            </div>
+                            <div class="profile-stat">
+                                <span class="profile-stat-label">@Tr("[CommonHeaderTowerBattleLabel]")</span>
+                                <span class="profile-stat-value">@(_info.LatestTowerBattleQuestId > 0 ? Tr("[TowerBattleFloorFormat]", _info.LatestTowerBattleQuestId) : "-")</span>
+                            </div>
+                        </div>
+
+                        @if (_info.BattleLeagueRankingToday > 0 || _info.LegendLeagueRankingToday > 0
+                             || _info.CommunicationPolicyType != PlayerCommunicationPolicyType.None
+                             || _info.EventPolicyType != PlayerEventPolicyType.None
+                             || _info.GuildBattlePolicyType != PlayerGuildBattlePolicyType.None)
+                        {
+                            <div class="profile-meta-pills">
+                                @if (_info.BattleLeagueRankingToday > 0)
+                                {
+                                    <span class="profile-meta-pill is-rank">@Tr("[BattleTypeBattleLeague]") <b>#@_info.BattleLeagueRankingToday</b></span>
+                                }
+                                @if (_info.LegendLeagueRankingToday > 0)
+                                {
+                                    <span class="profile-meta-pill is-rank">@Tr("[BattleTypeLegendLeague]") <b>#@_info.LegendLeagueRankingToday</b></span>
+                                }
+                                @if (_info.CommunicationPolicyType != PlayerCommunicationPolicyType.None)
+                                {
+                                    <span class="profile-meta-pill">@Tr("[PlayerCommunicationPolicyLabel]"): @Tr($"[PlayerCommunicationPolicyType{_info.CommunicationPolicyType}]")</span>
+                                }
+                                @if (_info.EventPolicyType != PlayerEventPolicyType.None)
+                                {
+                                    <span class="profile-meta-pill">@Tr("[PlayerEventPolicyLabel]"): @Tr($"[PlayerEventPolicyType{_info.EventPolicyType}]")</span>
+                                }
+                                @if (_info.GuildBattlePolicyType != PlayerGuildBattlePolicyType.None)
+                                {
+                                    <span class="profile-meta-pill">@Tr("[PlayerGuildBattlePolicyLabel]"): @Tr($"[PlayerGuildBattlePolicyType{_info.GuildBattlePolicyType}]")</span>
+                                }
+                            </div>
+                        }
+
+                        @if (_info.DeckUserCharacterInfoList is { Count: > 0 } deck)
+                        {
+                            <div class="profile-section">
+                                <div class="profile-section-title">@Tr("[DialogPlayerInformationAutoBattleFormationLabel]")</div>
+                                <div class="profile-deck">
+                                    @foreach (var ch in deck.Take(5))
+                                    {
+                                        var chName = Masters.CharacterTable.GetCharacterName(ch.CharacterId);
+                                        <div class="profile-deck-slot" title="@($"{chName} · Lv.{ch.Level}")">
+                                            <CharacterIcon UserCharacterInfo="ch" Size="72" CheckLevelLink="false" />
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <div class="profile-section">
+                            <div class="profile-section-title">@Tr("[MyPagePlayerInformationCommentLabel]")</div>
+                            @if (_isBlocked)
+                            {
+                                <div class="profile-comment is-muted">@Tr("[BlockedPlayerCommentHidden]")</div>
+                            }
+                            else if (!string.IsNullOrWhiteSpace(_info.Comment))
+                            {
+                                <div class="profile-comment">@_info.Comment</div>
+                            }
+                            else
+                            {
+                                <div class="profile-comment is-muted">-</div>
+                            }
+                        </div>
+                    }
+                    else if (_loading)
+                    {
+                        <div class="profile-loading">
+                            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Small" />
+                        </div>
+                    }
+
+                    @if (!IsSelf && Funcs is { LoginOk: true } && PlayerId > 0)
+                    {
+                        <div class="profile-actions">
+                            <button type="button" class="profile-action-primary" disabled="@(_busy || _isBlocked)" @onclick="StartPrivateChat">
+                                <MudIcon Icon="@Icons.Material.Outlined.ChatBubbleOutline" Style="font-size: 16px;" />
+                                <span>@Tr("[PlayerInformationPrivateChatLabel]")</span>
+                            </button>
+
+                            @if (!IsGlobal)
+                            {
+                                @switch (_friendStatus)
+                                {
+                                    case FriendStatusType.Friend:
+                                        <MudButton Variant="Variant.Outlined" Color="Color.Warning" Size="Size.Small"
+                                                   StartIcon="@Icons.Material.Outlined.PersonRemove"
+                                                   Disabled="_busy" OnClick="RemoveFriend">
+                                            @ResourceStrings.PlayerProfileRemoveFriend
+                                        </MudButton>
+                                        break;
+                                    case FriendStatusType.Applying:
+                                        <MudButton Variant="Variant.Outlined" Size="Size.Small"
+                                                   StartIcon="@Icons.Material.Outlined.CancelScheduleSend"
+                                                   Disabled="_busy" OnClick="() => ApplyFriend(false)">
+                                            @ResourceStrings.PlayerProfileCancelFriendRequest
+                                        </MudButton>
+                                        break;
+                                    case FriendStatusType.Receive:
+                                        <MudButton Variant="Variant.Outlined" Color="Color.Success" Size="Size.Small"
+                                                   StartIcon="@Icons.Material.Outlined.Check"
+                                                   Disabled="_busy" OnClick="() => ReplyFriend(true)">
+                                            @ResourceStrings.PlayerProfileAcceptFriend
+                                        </MudButton>
+                                        <MudButton Variant="Variant.Outlined" Size="Size.Small"
+                                                   StartIcon="@Icons.Material.Outlined.Close"
+                                                   Disabled="_busy" OnClick="() => ReplyFriend(false)">
+                                            @ResourceStrings.PlayerProfileRejectFriend
+                                        </MudButton>
+                                        break;
+                                    default:
+                                        <MudButton Variant="Variant.Outlined" Size="Size.Small"
+                                                   StartIcon="@Icons.Material.Outlined.PersonAdd"
+                                                   Disabled="@(_busy || _isBlocked)" OnClick="() => ApplyFriend(true)">
+                                            @ResourceStrings.PlayerProfileAddFriend
+                                        </MudButton>
+                                        break;
+                                }
+                            }
+
+                            <MudButton Variant="Variant.Outlined" Color="@(_isBlocked ? Color.Default : Color.Error)" Size="Size.Small"
+                                       StartIcon="@(_isBlocked ? Icons.Material.Outlined.LockOpen : Icons.Material.Outlined.Block)"
+                                       Disabled="_busy" OnClick="ToggleBlock">
+                                @Tr(_isBlocked ? "[BlockRelease]" : "[UserBlock]")
+                            </MudButton>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter] public long PlayerId { get; set; }
+    [Parameter] public PlayerInfo? InitialPlayerInfo { get; set; }
+    [Parameter] public string? FallbackName { get; set; }
+    [Parameter] public long FallbackIconId { get; set; }
+    [Parameter] public bool IsGlobal { get; set; }
+    [Parameter] public EventCallback<long> OnStartPrivateChat { get; set; }
+    [Parameter] public EventCallback OnBlockStateChanged { get; set; }
+
+    private MementoMori.Funcs.MementoMoriFuncs? Funcs => AccountSelection.Current?.Funcs;
+    private bool IsSelf => Funcs != null && PlayerId > 0 && PlayerId == Funcs.NetworkManager.PlayerId;
+    private string DisplayName => !string.IsNullOrWhiteSpace(_info?.PlayerName)
+        ? _info.PlayerName
+        : !string.IsNullOrWhiteSpace(FallbackName) ? FallbackName : $"#{PlayerId}";
+    private long DisplayIconId => _info is { MainCharacterIconId: not 0 } ? _info.MainCharacterIconId : FallbackIconId;
+
+    private long BgCharacterId
+    {
+        get
+        {
+            if (_info is { BackgroundCharacterId: > 0 }) return _info.BackgroundCharacterId;
+            if (DisplayIconId > 0) return DisplayIconId;
+            if (DisplayIconId < 0)
+            {
+                var special = Masters.SpecialIconItemTable.GetById(DisplayIconId & long.MaxValue);
+                if (special is { CharacterId: > 0 }) return special.CharacterId;
+            }
+            return 0;
+        }
+    }
+
+    private long WorldNumber => PlayerId > 1000 ? PlayerId % 1000 : 0;
+
+    private PlayerInfo? _info;
+    private FriendStatusType _friendStatus = FriendStatusType.None;
+    private bool _isBlocked;
+    private bool _loading = true;
+    private bool _busy;
+    private bool _useMediumArt;
+    private bool _artFailed;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _info = InitialPlayerInfo;
+        if (_info != null)
+        {
+            _friendStatus = _info.FriendStatus;
+            _isBlocked = _info.IsBlock;
+        }
+        SyncLocalBlockFlag();
+        await LoadProfileAsync();
+    }
+
+    private void OnArtError()
+    {
+        if (!_useMediumArt) _useMediumArt = true;
+        else _artFailed = true;
+    }
+
+    private void SyncLocalBlockFlag()
+    {
+        if (Funcs?.UserSyncData?.BlockPlayerIdList is { } blocked)
+        {
+            _isBlocked = blocked.Contains(PlayerId);
+        }
+    }
+
+    private async Task LoadProfileAsync()
+    {
+        var funcs = Funcs;
+        if (funcs == null || !funcs.LoginOk || PlayerId <= 0)
+        {
+            _loading = false;
+            return;
+        }
+
+        _loading = true;
+        _error = null;
+        try
+        {
+            PlayerInfo? fetched = null;
+            try
+            {
+                var resp = await funcs.GetResponse<GetPlayerInfoRequest, GetPlayerInfoResponse>(new GetPlayerInfoRequest
+                {
+                    PlayerIds = [PlayerId],
+                    DeckUseContentType = DeckUseContentType.Auto,
+                    IsGlobal = IsGlobal
+                });
+                fetched = resp.PlayerInfos?.FirstOrDefault(p => p.PlayerId == PlayerId) ?? resp.PlayerInfos?.FirstOrDefault();
+            }
+            catch (ApiErrorException e) when (!IsGlobal && e.ErrorCode is not (ErrorCode.CommonNoSession or ErrorCode.CommonLoggedInAnotherDevice))
+            {
+                var fallback = await funcs.GetResponse<SearchFriendRequest, SearchFriendResponse>(new SearchFriendRequest { SearchPlayerId = PlayerId });
+                fetched = fallback.PlayerInfo;
+            }
+
+            if (fetched != null)
+            {
+                if (_info != null)
+                {
+                    if (fetched.GuildPeriodTotalFame == 0 && _info.GuildPeriodTotalFame > 0) fetched.GuildPeriodTotalFame = _info.GuildPeriodTotalFame;
+                    if (fetched.PlayerGuildPositionType == PlayerGuildPositionType.None && _info.PlayerGuildPositionType != PlayerGuildPositionType.None)
+                        fetched.PlayerGuildPositionType = _info.PlayerGuildPositionType;
+                }
+                _info = fetched;
+                if (fetched.FriendStatus != FriendStatusType.None) _friendStatus = fetched.FriendStatus;
+                if (fetched.IsBlock) _isBlocked = true;
+            }
+            else if (_info == null)
+            {
+                _error = Tr("[DialogPlayerInformationCannotConfirmMessage]");
+            }
+
+            if (!IsSelf && !IsGlobal)
+            {
+                try
+                {
+                    var statusResp = await funcs.GetResponse<GetFriendStatusRequest, GetFriendStatusResponse>(
+                        new GetFriendStatusRequest { TargetPlayerIdList = [PlayerId] });
+                    var status = statusResp.FriendStatusInfoList?.FirstOrDefault(s => s.PlayerId == PlayerId);
+                    if (status != null) _friendStatus = status.FriendStatusType;
+                }
+                catch (ApiErrorException)
+                {
+                }
+            }
+
+            SyncLocalBlockFlag();
+        }
+        catch (Exception e)
+        {
+            _error = e.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task StartPrivateChat()
+    {
+        if (IsSelf || _isBlocked || PlayerId <= 0) return;
+        MudDialog.Close();
+        if (OnStartPrivateChat.HasDelegate)
+        {
+            await OnStartPrivateChat.InvokeAsync(PlayerId);
+            return;
+        }
+
+        var userId = AccountSelection.CurrentUserId;
+        if (userId > 0)
+        {
+            AccountSelection.ChatChannels[userId] = ChatType.Private;
+            AccountSelection.PendingPrivateChatTargets[userId] = PlayerId;
+        }
+        NavigationManager.NavigateTo("Chat");
+    }
+
+    private async Task ApplyFriend(bool isApply)
+    {
+        var funcs = Funcs;
+        if (funcs == null || _busy) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            await funcs.GetResponse<ApplyFriendRequest, ApplyFriendResponse>(new ApplyFriendRequest
+            {
+                TargetPlayerId = PlayerId,
+                IsApply = isApply
+            });
+            _friendStatus = isApply ? FriendStatusType.Applying : FriendStatusType.Stranger;
+            Snackbar.Add(isApply ? ResourceStrings.PlayerProfileFriendRequested : ResourceStrings.PlayerProfileFriendRequestCanceled, Severity.Success);
+        }
+        catch (Exception e)
+        {
+            _error = e.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task ReplyFriend(bool approve)
+    {
+        var funcs = Funcs;
+        if (funcs == null || _busy) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var resp = await funcs.GetResponse<ReplyFriendRequest, ReplyFriendResponse>(new ReplyFriendRequest
+            {
+                TargetPlayerId = PlayerId,
+                IsApproval = approve
+            });
+            if (resp.IsSuccess)
+            {
+                _friendStatus = approve ? FriendStatusType.Friend : FriendStatusType.Stranger;
+                Snackbar.Add(approve ? ResourceStrings.PlayerProfileFriendAccepted : ResourceStrings.PlayerProfileFriendRejected, Severity.Success);
+            }
+            else if (resp.ErrorMessageId > 0)
+            {
+                _error = Masters.TextResourceTable.GetErrorCodeMessage((ErrorCode)resp.ErrorMessageId);
+            }
+        }
+        catch (Exception e)
+        {
+            _error = e.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task RemoveFriend()
+    {
+        var funcs = Funcs;
+        if (funcs == null || _busy) return;
+        var confirm = await DialogService.ShowMessageBoxAsync(
+            ResourceStrings.PlayerProfileRemoveFriend,
+            string.Format(ResourceStrings.PlayerProfileRemoveFriendConfirm, DisplayName),
+            yesText: Tr("[RemoveFriendConfirmationButton]"),
+            cancelText: Tr("[CommonCancelLabel]"));
+        if (confirm != true) return;
+
+        _busy = true;
+        _error = null;
+        try
+        {
+            await funcs.GetResponse<RemoveFriendRequest, RemoveFriendResponse>(new RemoveFriendRequest
+            {
+                TargetPlayerId = PlayerId
+            });
+            _friendStatus = FriendStatusType.Stranger;
+            Snackbar.Add(ResourceStrings.PlayerProfileFriendRemoved, Severity.Info);
+        }
+        catch (Exception e)
+        {
+            _error = e.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task ToggleBlock()
+    {
+        var funcs = Funcs;
+        if (funcs == null || _busy) return;
+        var nextBlock = !_isBlocked;
+        if (nextBlock)
+        {
+            var confirm = await DialogService.ShowMessageBoxAsync(
+                Tr("[UserBlock]"),
+                string.Format(ResourceStrings.PlayerProfileBlockConfirm, DisplayName),
+                yesText: Tr("[UserBlock]"),
+                cancelText: Tr("[CommonCancelLabel]"));
+            if (confirm != true) return;
+        }
+
+        _busy = true;
+        _error = null;
+        try
+        {
+            await funcs.GetResponse<UpdateBlockListRequest, UpdateBlockListResponse>(new UpdateBlockListRequest
+            {
+                TargetPlayerId = PlayerId,
+                IsBlock = nextBlock
+            });
+            _isBlocked = nextBlock;
+            if (nextBlock && _friendStatus == FriendStatusType.Friend) _friendStatus = FriendStatusType.Stranger;
+            SyncLocalBlockFlag();
+            funcs.Chat.NotifyBlockListChanged();
+            if (OnBlockStateChanged.HasDelegate) await OnBlockStateChanged.InvokeAsync();
+            Snackbar.Add(nextBlock ? ResourceStrings.PlayerProfileBlocked : ResourceStrings.PlayerProfileUnblocked, Severity.Info);
+        }
+        catch (Exception e)
+        {
+            _error = e.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task CopyPlayerId()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", PlayerId.ToString());
+            Snackbar.Add(ResourceStrings.PlayerProfileIdCopied, Severity.Success);
+        }
+        catch (JSException)
+        {
+            Snackbar.Add(PlayerId.ToString(), Severity.Info);
+        }
+    }
+
+    private void Close() => MudDialog.Close();
+
+    private static string FormatQuest(long questId)
+    {
+        if (questId <= 0) return "-";
+        var quest = Masters.QuestTable.GetById(questId);
+        return !string.IsNullOrWhiteSpace(quest?.Memo) ? quest.Memo : questId.ToString();
+    }
+
+    private static string FormatCompact(long value) => value switch
+    {
+        >= 1_000_000_000 => $"{value / 1_000_000_000d:0.##}B",
+        >= 1_000_000 => $"{value / 1_000_000d:0.##}M",
+        >= 10_000 => $"{value / 1_000d:0.#}K",
+        _ => value.ToString("N0")
+    };
+
+    private static string FormatSinceLogin(TimeSpan elapsed)
+    {
+        if (elapsed >= TimeSpan.FromDays(7)) return "7d+";
+        var totalMinutes = (long)Math.Max(0, elapsed.TotalMinutes);
+        if (totalMinutes < 60) return $"{totalMinutes}m";
+        if (totalMinutes < 60 * 24) return $"{totalMinutes / 60}h";
+        return $"{totalMinutes / 1440}d";
+    }
+
+    private static string PositionLabel(PlayerGuildPositionType position) => position switch
+    {
+        PlayerGuildPositionType.Leader => Tr("[PlayerGuildPositionTypeLeader]"),
+        PlayerGuildPositionType.SubLeader => Tr("[PlayerGuildPositionTypeSubLeader]"),
+        PlayerGuildPositionType.Commander => Tr("[PlayerGuildPositionTypeCommander]"),
+        PlayerGuildPositionType.Veteran => Tr("[PlayerGuildPositionTypeVeteran]"),
+        PlayerGuildPositionType.Member => Tr("[PlayerGuildPositionTypeMember]"),
+        _ => ""
+    };
+}

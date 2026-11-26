@@ -33,6 +33,7 @@ public partial class Chat
 
     private static readonly ChatType[] Channels = [ChatType.World, ChatType.Guild, ChatType.SvS, ChatType.Block, ChatType.Private];
     private static readonly DialogOptions GuildDialogOptions = new() { FullWidth = true, MaxWidth = MaxWidth.Medium, BackdropClick = false, CloseOnEscapeKey = false };
+    private static readonly DialogOptions PlayerProfileDialogOptions = new() { FullWidth = true, MaxWidth = MaxWidth.Medium, CloseButton = false, NoHeader = true };
     private readonly Dictionary<(ChatType, long), string> _drafts = new();
     private ChatSession _chat = null!;
     private ChatSession.Snapshot _snapshot = new(false, ResourceStrings.ChatNotConnected, null, 0, [], []);
@@ -48,6 +49,7 @@ public partial class Chat
     private ChatType? _savedChannel;
     private bool _restoreChannel;
     private long _target;
+    private long _pendingPrivateTarget;
     private int _revision;
     private int _operationVersion;
     private bool _interactive, _disposed, _busy, _showSettings, _showGuildInfo, _showPlayers, _showEmoticons, _noOlder;
@@ -98,8 +100,18 @@ public partial class Chat
         TrackAccountSubscription(Disposable.Create(() => _privateLease?.Dispose()));
         _privateLease = null;
         _chat = Funcs.Chat;
-        _restoreChannel = !AccountSelection.ChatChannels.TryGetValue(ViewAccountId, out _channel);
-        if (_restoreChannel) _channel = ChatType.World;
+        _pendingPrivateTarget = AccountSelection.PendingPrivateChatTargets.Remove(ViewAccountId, out var queuedTarget) ? queuedTarget : 0;
+        if (_pendingPrivateTarget > 0)
+        {
+            _channel = ChatType.Private;
+            _restoreChannel = false;
+            AccountSelection.ChatChannels[ViewAccountId] = ChatType.Private;
+        }
+        else
+        {
+            _restoreChannel = !AccountSelection.ChatChannels.TryGetValue(ViewAccountId, out _channel);
+            if (_restoreChannel) _channel = ChatType.World;
+        }
         _savedChannel = _restoreChannel ? null : _channel;
         (_textSize, _stickerSize) = AccountSelection.ChatAppearance ?? (16, 48);
         _target = 0;
@@ -134,6 +146,7 @@ public partial class Chat
             {
                 if (_disposed || revision != _revision || chat != _chat) return;
                 RefreshSnapshot();
+                TryConsumePendingPrivateTarget();
                 StateHasChanged();
             });
         }
@@ -202,6 +215,7 @@ public partial class Chat
                 _stickerSize = Math.Clamp(appearance.StickerSize, 24, 96);
                 AccountSelection.ChatAppearance = (_textSize, _stickerSize);
                 if (revision == _revision && _restoreChannel) RestoreChannel(await channelTask);
+                if (revision == _revision) TryConsumePendingPrivateTarget();
                 StateHasChanged();
                 return;
             }
@@ -340,6 +354,55 @@ public partial class Chat
         _noOlder = false;
         _showPlayers = false;
         _scrollMode = "end";
+    }
+
+    private void TryConsumePendingPrivateTarget()
+    {
+        if (_pendingPrivateTarget <= 0 || !_snapshot.Connected || _busy) return;
+        var target = _pendingPrivateTarget;
+        _pendingPrivateTarget = 0;
+        _ = StartPrivate(target);
+    }
+
+    private Task OpenPlayerInfo(PlayerInfo playerInfo) => OpenPlayerInfo(playerInfo.PlayerId, playerInfo.PlayerName, playerInfo.MainCharacterIconId, playerInfo);
+
+    private async Task OpenPlayerInfo(long playerId, string? fallbackName, long fallbackIconId, PlayerInfo? initialInfo = null)
+    {
+        if (!Funcs.LoginOk || playerId <= 0) return;
+        var isGlobal = _channel is ChatType.SvS or ChatType.Block;
+        var parameters = new DialogParameters<PlayerInfoDialog>
+        {
+            { x => x.PlayerId, playerId },
+            { x => x.InitialPlayerInfo, initialInfo },
+            { x => x.FallbackName, fallbackName },
+            { x => x.FallbackIconId, fallbackIconId },
+            { x => x.IsGlobal, isGlobal },
+            { x => x.OnStartPrivateChat, EventCallback.Factory.Create<long>(this, StartPrivateFromProfile) },
+            { x => x.OnBlockStateChanged, EventCallback.Factory.Create(this, HandleBlockStateChanged) }
+        };
+        await DialogService.ShowAsync<PlayerInfoDialog>(ResourceStrings.PlayerProfileTitle, parameters, PlayerProfileDialogOptions);
+    }
+
+    private async Task StartPrivateFromProfile(long targetPlayerId)
+    {
+        if (_showGuildInfo && _guildDialog != null)
+        {
+            _showGuildInfo = false;
+            try { await _guildDialog.CloseAsync(); } catch (Exception) { }
+        }
+        await StartPrivate(targetPlayerId);
+    }
+
+    private void HandleBlockStateChanged()
+    {
+        if (_channel == ChatType.Private && _target > 0 && Funcs.UserSyncData?.BlockPlayerIdList?.Contains(_target) == true)
+        {
+            _privateLease?.Dispose();
+            _privateLease = null;
+            _target = 0;
+        }
+        RefreshSnapshot();
+        StateHasChanged();
     }
 
     private Task StartPrivate(long target) => Run(async (chat, token) =>
