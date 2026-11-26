@@ -63,6 +63,10 @@ namespace MementoMori.Ortega.Share.Master.Data
 
 		public bool IsActiveGroup(DateTime localDateTime)
 		{
+			if (string.IsNullOrWhiteSpace(this.StartTime) || string.IsNullOrWhiteSpace(this.EndTime))
+			{
+				return false;
+			}
 			bool flag = this.StartTime.ToDateTime() <= localDateTime;
 			if (!flag)
 			{
@@ -74,34 +78,24 @@ namespace MementoMori.Ortega.Share.Master.Data
 
 		public bool IsOpenedGrandBattle(DateTime localDateTime)
 		{
-			// for (;;)
-			// {
-			// 	IReadOnlyList<StartEndTime> readOnlyList = this.<GrandBattleDateTimeList>k__BackingField;
-			// 	if (typeof(StringExtension).TypeHandle != 0)
-			// 	{
-			// 		DateTime dateTime;
-			// 		DateTime dateTime2;
-			// 		if (dateTime <= localDateTime && localDateTime < dateTime2)
-			// 		{
-			// 			break;
-			// 		}
-			// 	}
-			// 	else
-			// 	{
-			// 		if ("{il2cpp array field local6->}" != (ulong)0L)
-			// 		{
-			// 		}
-			// 		ulong num;
-			// 		if (num == (ulong)0L)
-			// 		{
-			// 			goto Block_3;
-			// 		}
-			// 	}
-			// }
-			// return true;
-			// Block_3:
-			// throw new NullReferenceException();
-			throw new NotImplementedException();
+			if (this.GrandBattleDateTimeList == null)
+			{
+				return false;
+			}
+			foreach (var range in this.GrandBattleDateTimeList)
+			{
+				if (range == null || string.IsNullOrWhiteSpace(range.StartTime) || string.IsNullOrWhiteSpace(range.EndTime))
+				{
+					continue;
+				}
+				var start = range.StartTime.ToDateTime();
+				var end = range.EndTime.ToDateTime();
+				if (start <= localDateTime && localDateTime <= end)
+				{
+					return true;
+				}
+			}
+			return false;
 		}
 
 		public bool IsOpenedLegendLeague(DateTime localDateTime)
@@ -122,33 +116,22 @@ namespace MementoMori.Ortega.Share.Master.Data
 
         public bool IsAfterStartGrandBattle(DateTime localDateTime)
 		{
-			// for (;;)
-			// {
-			// 	IReadOnlyList<StartEndTime> readOnlyList = this.<GrandBattleDateTimeList>k__BackingField;
-			// 	if (typeof(StringExtension).TypeHandle != 0)
-			// 	{
-			// 		DateTime dateTime;
-			// 		if (dateTime <= localDateTime)
-			// 		{
-			// 			break;
-			// 		}
-			// 	}
-			// 	else
-			// 	{
-			// 		if ("{il2cpp array field local6->}" != (ulong)0L)
-			// 		{
-			// 		}
-			// 		ulong num;
-			// 		if (num == (ulong)0L)
-			// 		{
-			// 			goto Block_2;
-			// 		}
-			// 	}
-			// }
-			// return true;
-			// Block_2:
-			// throw new NullReferenceException();
-			throw new NotImplementedException();
+			if (this.GrandBattleDateTimeList == null)
+			{
+				return false;
+			}
+			foreach (var range in this.GrandBattleDateTimeList)
+			{
+				if (range == null || string.IsNullOrWhiteSpace(range.StartTime))
+				{
+					continue;
+				}
+				if (range.StartTime.ToDateTime() <= localDateTime)
+				{
+					return true;
+				}
+			}
+			return false;
 		}
 	}
 }

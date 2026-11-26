@@ -144,12 +144,6 @@
                             <span class="guild-exp-max">MAX</span>
                         }
                     </div>
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
-                               StartIcon="@Icons.Material.Outlined.CardGiftcard"
-                               Disabled="@(Funcs.IsQuickActionExecuting || _actionBusy)"
-                               OnClick="() => RunActionAsync(Funcs.GuildCheckin)">
-                        @Tr("[MissionName533]")
-                    </MudButton>
                 </div>
             </MudCardContent>
         </MudCard>
@@ -175,7 +169,7 @@
                     @foreach (var member in FilteredMembers)
                     {
                         var isMe = member.PlayerId == Funcs.NetworkManager.PlayerId;
-                        var isOnline = member.LastLoginTime < TimeSpan.FromMinutes(2);
+                        var isOnline = IsMemberOnline(member.LastLoginTime);
                         <div class="guild-member-card @(isMe ? "is-self" : "")" @key="member.PlayerId">
                             <button type="button" class="guild-avatar-btn" title="@ResourceStrings.PlayerProfileTitle"
                                     @onclick="() => OpenMemberProfile(member)">
@@ -260,7 +254,7 @@
                                     <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
                                                StartIcon="@Icons.Material.Outlined.SportsMma"
                                                Disabled="@(Funcs.IsQuickActionExecuting || _actionBusy)"
-                                               OnClick="() => RunActionAsync(Funcs.AutoGuildTower)">
+                                               OnClick="() => RunActionAsync(Funcs.AutoGuildTower, ResourceStrings.GuildTowerChallenge)">
                                         @ResourceStrings.GuildTowerChallenge
                                     </MudButton>
                                 </div>
@@ -409,7 +403,7 @@
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
                                StartIcon="@Icons.Material.Outlined.Whatshot"
                                Disabled="@(Funcs.IsQuickActionExecuting || _actionBusy)"
-                               OnClick="() => RunActionAsync(Funcs.GuildRaid)">
+                               OnClick='() => RunActionAsync(Funcs.GuildRaid, Tr("[CommonHeaderGuildRaidLabel]"))'>
                         @Tr("[CommonHeaderGuildRaidLabel]")
                     </MudButton>
                     @if (CanOpenRaid)
@@ -417,7 +411,7 @@
                         <MudButton Variant="Variant.Outlined" Size="Size.Small"
                                    StartIcon="@Icons.Material.Outlined.PlayArrow"
                                    Disabled="@(Funcs.IsQuickActionExecuting || _actionBusy)"
-                                   OnClick="() => RunActionAsync(Funcs.OpenGuildRaid)">
+                                   OnClick='() => RunActionAsync(Funcs.OpenGuildRaid, Tr("[GuildRaidReleaseConfirmTitle]"))'>
                             @Tr("[GuildRaidReleaseConfirmTitle]")
                         </MudButton>
                     }
@@ -425,29 +419,23 @@
             </MudTabPanel>
 
             <MudTabPanel Text="@Tr("[BattleTypeGvG]")" Icon="@Icons.Material.Outlined.Shield">
+                @{
+                    var (localGvgStatus, globalGvgStatus) = ResolveGvgDisplayState();
+                }
                 <div class="guild-gvg-grid">
-                    @RenderGvgCard(Tr("[CommonHeaderGvgLabel]"), _baseInfo.LocalGuildGvgInfo)
+                    @RenderGvgCard(Tr("[CommonHeaderGvgLabel]"), _baseInfo.LocalGuildGvgInfo, localGvgStatus)
                     @if (_baseInfo.GlobalGuildGvgInfo != null)
                     {
-                        @RenderGvgCard(Tr("[CommonHeaderGlobalGvgLabel]"), _baseInfo.GlobalGuildGvgInfo)
+                        @RenderGvgCard(Tr("[CommonHeaderGlobalGvgLabel]"), _baseInfo.GlobalGuildGvgInfo, globalGvgStatus)
                     }
                 </div>
                 <div class="guild-action-row mt-3">
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
                                StartIcon="@Icons.Material.Outlined.CardGiftcard"
                                Disabled="@(Funcs.IsQuickActionExecuting || _actionBusy)"
-                               OnClick="() => RunActionAsync(Funcs.ReceiveGvgReward)">
+                               OnClick='() => RunActionAsync(Funcs.ReceiveGvgReward, $"{Tr("[CommonHeaderGvgLabel]")} {Tr("[GuildRewardTitle]")}", ResourceStrings.GuildNoClaimableRewards)'>
                         @($"{Tr("[CommonHeaderGvgLabel]")} {Tr("[GuildRewardTitle]")}")
                     </MudButton>
-                    @if (_baseInfo.LocalGuildGvgInfo?.IsOpen == true)
-                    {
-                        <MudButton Variant="Variant.Outlined" Size="Size.Small"
-                                   StartIcon="@Icons.Material.Outlined.Security"
-                                   Disabled="@(Funcs.IsQuickActionExecuting || _actionBusy)"
-                                   OnClick="() => RunActionAsync(Funcs.SetupLocalGvgDefense)">
-                            @ResourceStrings.Deploy_defense
-                        </MudButton>
-                    }
                 </div>
             </MudTabPanel>
         </MudTabs>
@@ -455,15 +443,15 @@
 </div>
 
 @code {
-    private RenderFragment RenderGvgCard(string title, GuildGvgInfo? gvg) => __builder =>
+    private RenderFragment RenderGvgCard(string title, GuildGvgInfo? gvg, GvgDisplayStatus status) => __builder =>
     {
         <MudCard Class="guild-section-card">
             <MudCardHeader>
                 <CardHeaderContent>
                     <div class="guild-raid-head">
                         <MudText Typo="Typo.h6">@title</MudText>
-                        <span class="guild-role-badge @(gvg?.IsOpen == true ? "is-veteran" : "is-member")">
-                            @(gvg?.IsOpen == true ? ResourceStrings.GuildGvgQualified : ResourceStrings.GuildGvgNotQualified)
+                        <span class="guild-role-badge @(status.IsActive ? "is-veteran" : "is-member")">
+                            @status.Label
                         </span>
                     </div>
                 </CardHeaderContent>

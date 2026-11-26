@@ -6,28 +6,34 @@ namespace MementoMori.Ortega.Share.Master.Table
 	{
 		public WorldGroupMB GetByWorldIdLocalDateTime(long worldId, DateTime localDateTime)
 		{
-			// int num = 0;
-			// bool flag;
-			// bool flag2;
-			// if (!flag || !flag2)
-			// {
-			// 	num++;
-			// }
-			// throw new NullReferenceException();
-			throw new NullReferenceException();
+			foreach (var group in GetArray())
+			{
+				if (group?.WorldIdList == null || !group.WorldIdList.Contains(worldId))
+				{
+					continue;
+				}
+				if (group.IsActiveGroup(localDateTime))
+				{
+					return group;
+				}
+			}
+			return null;
 		}
 
 		public WorldGroupMB GetByWorldIdOpenGrandBattle(long worldId, DateTime localDateTime)
 		{
-			// int num = 0;
-			// bool flag;
-			// bool flag2;
-			// if (!flag || !flag2)
-			// {
-			// 	num++;
-			// }
-			// throw new NullReferenceException();
-			throw new NullReferenceException();
+			foreach (var group in GetArray())
+			{
+				if (group?.WorldIdList == null || !group.WorldIdList.Contains(worldId))
+				{
+					continue;
+				}
+				if (group.IsActiveGroup(localDateTime) && group.IsOpenedGrandBattle(localDateTime))
+				{
+					return group;
+				}
+			}
+			return null;
 		}
 
 		public WorldGroupTable()

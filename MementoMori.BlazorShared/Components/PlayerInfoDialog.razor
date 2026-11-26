@@ -12,6 +12,7 @@
 @inject ISnackbar Snackbar
 @inject IJSRuntime JS
 @inject MementoMori.WebUI.UI.AtlasManager Atlas
+@implements IDisposable
 
 <MudDialog Class="player-profile-dialog" ContentClass="profile-dialog-content">
     <DialogContent>
@@ -106,7 +107,7 @@
                                 }
                                 @if (_info != null)
                                 {
-                                    var isOnline = _info.LastLoginTime < TimeSpan.FromMinutes(2);
+                                    var isOnline = MementoMori.BlazorShared.Pages.Guild.IsMemberOnline(_info.LastLoginTime);
                                     <span class="profile-meta-item profile-login @(isOnline ? "is-online" : "")">
                                         @if (isOnline)
                                         {
@@ -328,6 +329,17 @@
     private bool _useMediumArt;
     private bool _artFailed;
     private string? _error;
+    private CancellationTokenSource? _cts = new();
+    private bool _disposed;
+
+    public void Dispose()
+    {
+        _disposed = true;
+        var cts = Interlocked.Exchange(ref _cts, null);
+        if (cts == null) return;
+        try { cts.Cancel(); }
+        finally { cts.Dispose(); }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -364,6 +376,7 @@
             return;
         }
 
+        var token = _cts?.Token ?? CancellationToken.None;
         _loading = true;
         _error = null;
         try
@@ -376,14 +389,15 @@
                     PlayerIds = [PlayerId],
                     DeckUseContentType = DeckUseContentType.Auto,
                     IsGlobal = IsGlobal
-                });
+                }, token);
                 fetched = resp.PlayerInfos?.FirstOrDefault(p => p.PlayerId == PlayerId) ?? resp.PlayerInfos?.FirstOrDefault();
             }
             catch (ApiErrorException e) when (!IsGlobal && e.ErrorCode is not (ErrorCode.CommonNoSession or ErrorCode.CommonLoggedInAnotherDevice))
             {
-                var fallback = await funcs.GetResponse<SearchFriendRequest, SearchFriendResponse>(new SearchFriendRequest { SearchPlayerId = PlayerId });
+                var fallback = await funcs.GetResponse<SearchFriendRequest, SearchFriendResponse>(new SearchFriendRequest { SearchPlayerId = PlayerId }, token);
                 fetched = fallback.PlayerInfo;
             }
+            if (_disposed || token.IsCancellationRequested) return;
 
             if (fetched != null)
             {
@@ -407,7 +421,8 @@
                 try
                 {
                     var statusResp = await funcs.GetResponse<GetFriendStatusRequest, GetFriendStatusResponse>(
-                        new GetFriendStatusRequest { TargetPlayerIdList = [PlayerId] });
+                        new GetFriendStatusRequest { TargetPlayerIdList = [PlayerId] }, token);
+                    if (_disposed || token.IsCancellationRequested) return;
                     var status = statusResp.FriendStatusInfoList?.FirstOrDefault(s => s.PlayerId == PlayerId);
                     if (status != null) _friendStatus = status.FriendStatusType;
                 }
@@ -418,9 +433,10 @@
 
             SyncLocalBlockFlag();
         }
+        catch (OperationCanceledException) when (_disposed || token.IsCancellationRequested) { }
         catch (Exception e)
         {
-            _error = e.Message;
+            if (!_disposed) _error = e.Message;
         }
         finally
         {
@@ -586,6 +602,8 @@
             await JS.InvokeVoidAsync("navigator.clipboard.writeText", PlayerId.ToString());
             Snackbar.Add(ResourceStrings.PlayerProfileIdCopied, Severity.Success);
         }
+        catch (JSDisconnectedException) { }
+        catch (OperationCanceledException) { }
         catch (JSException)
         {
             Snackbar.Add(PlayerId.ToString(), Severity.Info);

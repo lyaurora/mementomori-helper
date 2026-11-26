@@ -21,6 +21,9 @@ public partial class Guild
 {
     [Inject] public IDialogService DialogService { get; set; } = null!;
     [Inject] public NavigationManager NavigationManager { get; set; } = null!;
+    [Inject] public ISnackbar Snackbar { get; set; } = null!;
+
+    internal readonly record struct GvgDisplayStatus(bool IsActive, string Label);
 
     private static readonly DialogOptions ProfileDialogOptions = new() { FullWidth = true, MaxWidth = MaxWidth.Medium, CloseButton = false, NoHeader = true };
 
@@ -38,7 +41,7 @@ public partial class Guild
     private List<GuildRaidInfo> _raids = [];
     private List<PlayerInfo> _rawMembers = [];
     private List<PlayerInfo> _sortedMembers = [];
-    private CancellationTokenSource _loadCts = new();
+    private CancellationTokenSource? _loadCts;
     private MemberSortMode _sortMode = MemberSortMode.Role;
     private bool _interactive;
     private bool _disposed;
@@ -73,7 +76,7 @@ public partial class Guild
     protected override async Task AccountChanged()
     {
         _revision++;
-        ResetLoadCts();
+        CancelAndDisposeLoadCts();
         _baseInfo = null;
         _raids = [];
         _rawMembers = [];
@@ -111,18 +114,24 @@ public partial class Guild
     public new void Dispose()
     {
         _disposed = true;
-        _loadCts.Cancel();
-        _loadCts.Dispose();
+        CancelAndDisposeLoadCts();
         base.Dispose();
     }
 
-    private void ResetLoadCts()
+    private CancellationToken NextLoadToken()
     {
-        _loadCts.Cancel();
-        _loadCts.Dispose();
-        _loadCts = new CancellationTokenSource();
-        var cts = _loadCts;
-        TrackAccountSubscription(Disposable.Create(() => cts.Cancel()));
+        CancelAndDisposeLoadCts();
+        var cts = new CancellationTokenSource();
+        _loadCts = cts;
+        return cts.Token;
+    }
+
+    private void CancelAndDisposeLoadCts()
+    {
+        var cts = Interlocked.Exchange(ref _loadCts, null);
+        if (cts == null) return;
+        try { cts.Cancel(); }
+        finally { cts.Dispose(); }
     }
 
     private Task ReloadAsync() => LoadAsync(_revision);
@@ -148,8 +157,7 @@ public partial class Guild
     private async Task LoadAsync(int revision)
     {
         if (_disposed || revision != _revision || !Funcs.LoginOk) return;
-        ResetLoadCts();
-        var token = _loadCts.Token;
+        var token = NextLoadToken();
         _loading = true;
         _error = null;
         StateHasChanged();
@@ -206,20 +214,59 @@ public partial class Guild
         }
     }
 
-    private async Task RunActionAsync(Func<Task> action)
+    private async Task RunActionAsync(Func<Task> action, string actionLabel, string? emptyResultMessage = null)
     {
         if (_actionBusy || Funcs.IsQuickActionExecuting) return;
         _actionBusy = true;
         _error = null;
         StateHasChanged();
+
+        MementoMori.Funcs.LogEntry? beforeHead;
+        lock (Funcs.MesssageList)
+        {
+            beforeHead = Funcs.MesssageList.FirstOrDefault();
+        }
+
         try
         {
             await action();
+
+            var newEntries = new List<MementoMori.Funcs.LogEntry>();
+            lock (Funcs.MesssageList)
+            {
+                foreach (var entry in Funcs.MesssageList)
+                {
+                    if (ReferenceEquals(entry, beforeHead) || newEntries.Count >= 20) break;
+                    newEntries.Add(entry);
+                }
+            }
+            newEntries.Reverse();
+
             await LoadAsync(_revision);
+
+            var firstError = newEntries.FirstOrDefault(e => e.IsError);
+            if (firstError != null)
+            {
+                Snackbar.Add(firstError.Message, Severity.Error);
+            }
+            else if (newEntries.Count > 0)
+            {
+                var summary = string.Join(" · ", newEntries.TakeLast(2).Select(e => e.Message.Trim()).Where(s => s.Length > 0));
+                Snackbar.Add(string.IsNullOrEmpty(summary) ? $"{actionLabel} {ResourceStrings.Finished}" : summary, Severity.Success);
+            }
+            else if (!string.IsNullOrEmpty(emptyResultMessage))
+            {
+                Snackbar.Add(emptyResultMessage, Severity.Info);
+            }
+            else
+            {
+                Snackbar.Add($"{actionLabel} {ResourceStrings.Finished}", Severity.Success);
+            }
         }
         catch (Exception e)
         {
             _error = e.Message;
+            Snackbar.Add(e.Message, Severity.Error);
         }
         finally
         {
@@ -228,10 +275,55 @@ public partial class Guild
         }
     }
 
+    private (GvgDisplayStatus Local, GvgDisplayStatus Global) ResolveGvgDisplayState()
+    {
+        var worldId = Funcs.WorldId;
+        var serverNow = Funcs.TimeManager.ServerNow;
+        var activeGroup = worldId > 0 ? Masters.WorldGroupTable.GetByWorldIdLocalDateTime(worldId, serverNow) : null;
+        var hasWorldGroup = activeGroup != null;
+        var isGrandBattleWeek = activeGroup != null && activeGroup.IsOpenedGrandBattle(serverNow);
+        return ResolveGvgDisplayState(
+            hasWorldGroup,
+            isGrandBattleWeek,
+            _baseInfo?.LocalGuildGvgInfo?.IsOpen == true,
+            _baseInfo?.GlobalGuildGvgInfo?.IsOpen == true);
+    }
+
+    internal static (GvgDisplayStatus Local, GvgDisplayStatus Global) ResolveGvgDisplayState(
+        bool hasWorldGroup,
+        bool isGrandBattleWeek,
+        bool localIsOpen,
+        bool globalIsOpen)
+    {
+        if (hasWorldGroup)
+        {
+            if (isGrandBattleWeek)
+            {
+                return (
+                    new GvgDisplayStatus(false, ResourceStrings.GuildGvgIntermission),
+                    new GvgDisplayStatus(globalIsOpen, globalIsOpen ? ResourceStrings.GuildGvgQualified : ResourceStrings.GuildGvgNotQualified));
+            }
+
+            return (
+                new GvgDisplayStatus(localIsOpen, localIsOpen ? ResourceStrings.GuildGvgQualified : ResourceStrings.GuildGvgNotQualified),
+                new GvgDisplayStatus(false, ResourceStrings.GuildGvgNotQualified));
+        }
+
+        return (
+            new GvgDisplayStatus(localIsOpen, localIsOpen ? ResourceStrings.GuildGvgQualified : ResourceStrings.GuildGvgNotQualified),
+            new GvgDisplayStatus(globalIsOpen, globalIsOpen ? ResourceStrings.GuildGvgQualified : ResourceStrings.GuildGvgNotQualified));
+    }
+
+    internal static bool IsMemberOnline(TimeSpan elapsed) => elapsed < TimeSpan.FromMinutes(5);
+
     private void OpenGuildChat()
     {
-        var userId = AccountSelection.CurrentUserId;
-        if (userId > 0) AccountSelection.ChatChannels[userId] = ChatType.Guild;
+        var userId = AccountInfo?.UserId ?? AccountSelection.CurrentUserId;
+        if (userId > 0)
+        {
+            AccountSelection.PendingPrivateChatTargets.Remove(userId);
+            AccountSelection.ChatChannels[userId] = ChatType.Guild;
+        }
         NavigationManager.NavigateTo("Chat");
     }
 

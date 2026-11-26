@@ -3263,5 +3263,7 @@ namespace MementoMori.Common.Localization {
         public static string AndroidKeepAliveStop => ResourceManager.GetString("AndroidKeepAliveStop", resourceCulture);
         public static string AndroidKeepAliveText => ResourceManager.GetString("AndroidKeepAliveText", resourceCulture);
         public static string AndroidKeepAliveTitle => ResourceManager.GetString("AndroidKeepAliveTitle", resourceCulture);
+        public static string GuildGvgIntermission => ResourceManager.GetString("GuildGvgIntermission", resourceCulture);
+        public static string GuildNoClaimableRewards => ResourceManager.GetString("GuildNoClaimableRewards", resourceCulture);
     }
 }

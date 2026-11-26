@@ -879,4 +879,6 @@
   <data name="AndroidKeepAliveStop" xml:space="preserve"><value>Stop</value></data>
   <data name="AndroidKeepAliveText" xml:space="preserve"><value>Scheduled automation keeps running in the background.</value></data>
   <data name="AndroidKeepAliveTitle" xml:space="preserve"><value>MementoMori Helper is running</value></data>
+  <data name="GuildGvgIntermission" xml:space="preserve"><value>Intermission</value></data>
+  <data name="GuildNoClaimableRewards" xml:space="preserve"><value>No claimable rewards right now</value></data>
 </root>

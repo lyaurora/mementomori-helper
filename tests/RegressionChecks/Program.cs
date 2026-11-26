@@ -2460,7 +2460,7 @@ static async Task CheckGuildProfileBookSortAndPathBase()
     Require(calls.Contains("select:1") && !calls.Any(c => c.StartsWith("unlock:")) && calls.Contains("bulk"),
         $"BookSort UseLargeUnlockItems=false should skip multi-cell items, got [{string.Join(", ", calls)}]");
 
-    // 3. Guild helpers, PathBase normalization, and PlatformThemeSync
+    // 3. Guild helpers, WorldGroup GrandBattle schedule, PathBase normalization, and PlatformThemeSync
     Require(MementoMori.BlazorShared.Pages.Guild.PositionOrder(PlayerGuildPositionType.Leader)
             < MementoMori.BlazorShared.Pages.Guild.PositionOrder(PlayerGuildPositionType.SubLeader)
             && MementoMori.BlazorShared.Pages.Guild.PositionOrder(PlayerGuildPositionType.Veteran)
@@ -2472,6 +2472,83 @@ static async Task CheckGuildProfileBookSortAndPathBase()
             && MementoMori.BlazorShared.Pages.Guild.FormatSinceLogin(TimeSpan.FromDays(7)) == "7d+"
             && MementoMori.BlazorShared.Pages.Guild.FormatSinceLogin(TimeSpan.MaxValue) == "7d+",
         "Guild.FormatSinceLogin mismatch");
+    Require(MementoMori.BlazorShared.Pages.Guild.IsMemberOnline(TimeSpan.Zero)
+            && MementoMori.BlazorShared.Pages.Guild.IsMemberOnline(TimeSpan.FromMinutes(4.9))
+            && !MementoMori.BlazorShared.Pages.Guild.IsMemberOnline(TimeSpan.FromMinutes(5))
+            && !MementoMori.BlazorShared.Pages.Guild.IsMemberOnline(TimeSpan.MaxValue),
+        "Guild.IsMemberOnline should match official 5-minute threshold");
+
+    var wgTable = new WorldGroupTable();
+    wgTable.Load(MessagePackSerializer.ConvertFromJson("""
+        [{"Id":1,"StartTime":"2023-08-08 04:00:00","EndTime":"2100-01-01 00:00:00","TimeServerId":3,"WorldIdList":[3001,3002],
+          "GrandBattleDateTimeList":[{"StartTime":"2026-11-23 04:00:00","EndTime":"2026-11-30 03:59:59"}],
+          "StartLegendLeagueDateTime":"2023-09-05 04:00:00","EndLegendLeagueDateTime":"2100-01-01 00:00:00","MonthlyOpenCount":2}]
+        """));
+    Require(wgTable.GetByWorldIdLocalDateTime(3001, new DateTime(2026, 11, 26, 20, 0, 0)) != null
+            && wgTable.GetByWorldIdOpenGrandBattle(3001, new DateTime(2026, 11, 26, 20, 0, 0)) != null
+            && wgTable.GetByWorldIdOpenGrandBattle(3001, new DateTime(2026, 11, 30, 3, 59, 59)) != null
+            && wgTable.GetByWorldIdOpenGrandBattle(3001, new DateTime(2026, 11, 30, 4, 0, 0)) == null
+            && wgTable.GetByWorldIdOpenGrandBattle(9999, new DateTime(2026, 11, 26, 20, 0, 0)) == null,
+        "WorldGroupTable GrandBattle active window check failed");
+
+    var (gbLocal, gbGlobal) = MementoMori.BlazorShared.Pages.Guild.ResolveGvgDisplayState(true, true, true, true);
+    Require(!gbLocal.IsActive && gbLocal.Label == MementoMori.Common.Localization.ResourceStrings.GuildGvgIntermission
+            && gbGlobal.IsActive && gbGlobal.Label == MementoMori.Common.Localization.ResourceStrings.GuildGvgQualified,
+        "During Grand Battle week Local GvG must show intermission even when LocalGuildGvgInfo.IsOpen is true");
+    var (locLocal, locGlobal) = MementoMori.BlazorShared.Pages.Guild.ResolveGvgDisplayState(true, false, true, true);
+    Require(locLocal.IsActive && !locGlobal.IsActive && locGlobal.Label == MementoMori.Common.Localization.ResourceStrings.GuildGvgNotQualified,
+        "During normal week Global GvG must show closed");
+    var (fbLocal, fbGlobal) = MementoMori.BlazorShared.Pages.Guild.ResolveGvgDisplayState(false, false, true, false);
+    Require(fbLocal.IsActive && !fbGlobal.IsActive, "Fallback without WorldGroupMB should follow raw IsOpen flags");
+
+    // Guild component lifecycle: repeated loads + Dispose must never throw ObjectDisposedException (which kills the Blazor circuit on navigation).
+    {
+        var gAuth = new Writable<AuthOption>(new() { AuthUrl = "https://offline.invalid/api/", AppVersion = "5.2.0", Accounts = [new AccountInfo { UserId = 1, Name = "guild-test" }] });
+        var gCfg = new Writable<GameConfig>(new());
+        using var gNet = Construct<MementoNetworkManager>(gAuth, gCfg, NullLogger<MementoNetworkManager>.Instance);
+        Field(gNet, "_apiHost").SetValue(gNet, new Uri("https://offline.invalid/api/"));
+        using var gFuncs = Construct<MementoMoriFuncs>(gAuth, gCfg, NullLogger<MementoMoriFuncs>.Instance);
+        gFuncs.NetworkManager = gNet;
+        var gMgr = Construct<AccountManager>(gAuth, gCfg, NullLogger<AccountManager>.Instance);
+        ((ConcurrentDictionary<long, Account>)Field(gMgr, "_accounts").GetValue(gMgr)!)[1] = new Account { AccountInfo = gAuth.Value.Accounts[0], Funcs = gFuncs, NetworkManager = gNet };
+        var gServices = new ServiceCollection().AddLogging().AddSingleton(gMgr).AddScoped<AccountSelection>()
+            .AddSingleton<IWritableOptions<GameConfig>>(gCfg)
+            .AddSingleton(Construct<MementoMori.WebUI.UI.AtlasManager>(gCfg))
+            .AddSingleton<IJSRuntime, ChatJsStub>().AddSingleton<NavigationManager, ChatNavigation>()
+            .AddMudServices().BuildServiceProvider();
+        await using (gServices)
+        {
+            await using (var renderer = new HtmlRenderer(gServices, NullLoggerFactory.Instance))
+            {
+                await renderer.Dispatcher.InvokeAsync(async () =>
+                {
+                    var html = (await renderer.RenderComponentAsync<MementoMori.BlazorShared.Pages.Guild>()).ToHtmlString();
+                    Require(html.Contains("guild-page"), "Guild page failed to render");
+                });
+            }
+
+            var guildComp = new MementoMori.BlazorShared.Pages.Guild
+            {
+                AccountManager = gMgr,
+                AccountSelection = gServices.GetRequiredService<AccountSelection>(),
+                Logger = NullLogger<AccountComponent>.Instance,
+                DialogService = gServices.GetRequiredService<MudBlazor.IDialogService>(),
+                NavigationManager = gServices.GetRequiredService<NavigationManager>(),
+                Snackbar = gServices.GetRequiredService<MudBlazor.ISnackbar>()
+            };
+            using var checkRenderer = new CheckRenderer(gServices);
+            checkRenderer.Attach(guildComp);
+            await checkRenderer.Dispatcher.InvokeAsync(() =>
+                (Task)typeof(AccountComponent).GetMethod("OnInitializedAsync", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(guildComp, null)!);
+            var nextToken = typeof(MementoMori.BlazorShared.Pages.Guild).GetMethod("NextLoadToken", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            var t1 = (CancellationToken)nextToken.Invoke(guildComp, null)!;
+            var t2 = (CancellationToken)nextToken.Invoke(guildComp, null)!;
+            Require(t1.IsCancellationRequested && !t2.IsCancellationRequested, "NextLoadToken did not cancel prior load CTS cleanly");
+            guildComp.Dispose();
+            Require(t2.IsCancellationRequested, "Guild.Dispose did not cancel active load CTS");
+            guildComp.Dispose(); // idempotent second dispose
+        }
+    }
 
     var normalize = typeof(MementoMori.WebUI.Services.AssetCache).Assembly.GetType("Program")!
         .GetMethod("NormalizePathBase", BindingFlags.Static | BindingFlags.NonPublic)!;

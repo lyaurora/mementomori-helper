@@ -773,4 +773,6 @@
   <data name="AndroidKeepAliveStop" xml:space="preserve"><value>중지</value></data>
   <data name="AndroidKeepAliveText" xml:space="preserve"><value>예약 자동 작업이 백그라운드에서 계속 실행됩니다.</value></data>
   <data name="AndroidKeepAliveTitle" xml:space="preserve"><value>MementoMori Helper 실행 중</value></data>
+  <data name="GuildGvgIntermission" xml:space="preserve"><value>휴전 중</value></data>
+  <data name="GuildNoClaimableRewards" xml:space="preserve"><value>현재 수령할 수 있는 보상이 없습니다</value></data>
 </root>

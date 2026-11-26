@@ -879,4 +879,6 @@
   <data name="AndroidKeepAliveStop" xml:space="preserve"><value>停止</value></data>
   <data name="AndroidKeepAliveText" xml:space="preserve"><value>定时自动化任务正在后台保持运行。</value></data>
   <data name="AndroidKeepAliveTitle" xml:space="preserve"><value>MementoMori 助手运行中</value></data>
+  <data name="GuildGvgIntermission" xml:space="preserve"><value>休战中</value></data>
+  <data name="GuildNoClaimableRewards" xml:space="preserve"><value>当前暂无可领取奖励</value></data>
 </root>
