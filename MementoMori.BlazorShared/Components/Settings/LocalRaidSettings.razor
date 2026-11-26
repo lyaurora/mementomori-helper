@@ -32,10 +32,40 @@
                 </label>
             </InputRadioGroup>
         </fieldset>
-        @if (selfCreateRoom)
+
+        @if (!selfCreateRoom)
         {
-            <MudNumericField InputMode="InputMode.numeric" T="int?" Label="@ResourceStrings.Seconds_of_pre_battle_wait_time" @bind-Value="waitSeconds" @bind-Value:after="Save" Min="0" DebounceInterval="500" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+            <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@ResourceStrings.LocalRaidHostWhenNoRoom" @bind-Value="hostWhenNoRoom" @bind-Value:after="Save" Color="Color.Primary"></MudSwitch>
         }
+
+        <div class="setting-section">
+            <MudText Class="setting-field-label">@ResourceStrings.LocalRaidTimeoutsAndLimits</MudText>
+            <div class="setting-pair-grid">
+                @if (!selfCreateRoom)
+                {
+                    <MudNumericField InputMode="InputMode.numeric" T="int?" Label="@ResourceStrings.LocalRaidJoinWaitMinutes" @bind-Value="joinWaitMinutes" @bind-Value:after="Save" Min="1" DebounceInterval="500" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                    <MudNumericField InputMode="InputMode.numeric" T="int?" Label="@ResourceStrings.LocalRaidRoomWaitMinutes" @bind-Value="roomWaitMinutes" @bind-Value:after="Save" Min="1" DebounceInterval="500" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                }
+
+                @if (selfCreateRoom || hostWhenNoRoom)
+                {
+                    <MudNumericField InputMode="InputMode.numeric" T="int?" Label="@ResourceStrings.LocalRaidWaitSeconds" @bind-Value="waitSeconds" @bind-Value:after="Save" Min="0" DebounceInterval="500" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                    <MudNumericField InputMode="InputMode.numeric" T="int?" Label="@ResourceStrings.LocalRaidMaxSoloLosses" HelperText="@ResourceStrings.LocalRaidMaxSoloLossesHint" @bind-Value="maxSoloLosses" @bind-Value:after="Save" Min="0" DebounceInterval="500" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                }
+
+                <MudNumericField InputMode="InputMode.numeric" T="int?" Label="@ResourceStrings.LocalRaidMaxTaskMinutes" @bind-Value="maxTaskMinutes" @bind-Value:after="Save" Min="1" DebounceInterval="500" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+                <MudNumericField InputMode="InputMode.numeric" T="int?" Label="@ResourceStrings.LocalRaidQuestLevel" HelperText="@ResourceStrings.LocalRaidQuestLevelHint" @bind-Value="questLevel" @bind-Value:after="Save" Min="0" DebounceInterval="500" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+            </div>
+        </div>
+
+        <div class="setting-section">
+            <MudSwitch Class="settings-toggle" LabelPlacement="Placement.Start" Label="@ResourceStrings.LocalRaidDropToLowerQuest" @bind-Value="dropToLowerQuest" @bind-Value:after="Save" Color="Color.Primary"></MudSwitch>
+            @if (dropToLowerQuest && !selfCreateRoom)
+            {
+                <MudNumericField InputMode="InputMode.numeric" T="int?" Label="@ResourceStrings.LocalRaidLowerQuestAfterMinutes" @bind-Value="lowerQuestAfterMinutes" @bind-Value:after="Save" Min="1" DebounceInterval="500" Variant="Variant.Outlined" Margin="Margin.Dense"></MudNumericField>
+            }
+        </div>
+
         <div class="setting-section setting-weight-list">
             <MudText Class="setting-field-label">@ResourceStrings.Select_tasks_based_on_reward_quantity_and_weight</MudText>
             @foreach (var reward in _localRaidRewardItems)
@@ -56,10 +86,19 @@
 
 @code {
     SettingSaved _saved = null!;
-    List<GameConfig.WeightedItem> _localRaidRewardItems;
+    List<GameConfig.WeightedItem> _localRaidRewardItems = [];
 
     bool selfCreateRoom;
-    int? waitSeconds; // null while the field is empty: keep the stored value
+    bool hostWhenNoRoom;
+    bool dropToLowerQuest;
+    // Nullable while an input is emptied mid-typing so the stored value is kept instead of overwritten with 0.
+    int? waitSeconds;
+    int? joinWaitMinutes;
+    int? roomWaitMinutes;
+    int? maxSoloLosses;
+    int? maxTaskMinutes;
+    int? lowerQuestAfterMinutes;
+    int? questLevel;
 
     protected override Task AccountChanged()
     {
@@ -84,6 +123,14 @@
 
         selfCreateRoom = playerOpt.LocalRaid.SelfCreateRoom;
         waitSeconds = playerOpt.LocalRaid.WaitSeconds;
+        hostWhenNoRoom = playerOpt.LocalRaid.HostWhenNoRoom;
+        joinWaitMinutes = playerOpt.LocalRaid.JoinWaitMinutes;
+        roomWaitMinutes = playerOpt.LocalRaid.RoomWaitMinutes;
+        maxSoloLosses = playerOpt.LocalRaid.MaxSoloLosses;
+        maxTaskMinutes = playerOpt.LocalRaid.MaxTaskMinutes;
+        dropToLowerQuest = playerOpt.LocalRaid.DropToLowerQuest;
+        lowerQuestAfterMinutes = playerOpt.LocalRaid.LowerQuestAfterMinutes;
+        questLevel = playerOpt.LocalRaid.QuestLevel;
 
         return Task.CompletedTask;
     }
@@ -102,7 +149,15 @@
         var playerOpt = opt.GetOrAdd(NetworkManager.PlayerId, (id) => new PlayerOption() {PlayerId = id});
         playerOpt.LocalRaid.RewardItems = _localRaidRewardItems;
         playerOpt.LocalRaid.SelfCreateRoom = selfCreateRoom;
-        if (waitSeconds is { } wait) playerOpt.LocalRaid.WaitSeconds = wait;
+        playerOpt.LocalRaid.HostWhenNoRoom = hostWhenNoRoom;
+        playerOpt.LocalRaid.DropToLowerQuest = dropToLowerQuest;
+        if (waitSeconds is { } wait) playerOpt.LocalRaid.WaitSeconds = (waitSeconds = Math.Max(0, wait)).Value;
+        if (joinWaitMinutes is { } joinMin) playerOpt.LocalRaid.JoinWaitMinutes = (joinWaitMinutes = Math.Max(1, joinMin)).Value;
+        if (roomWaitMinutes is { } roomMin) playerOpt.LocalRaid.RoomWaitMinutes = (roomWaitMinutes = Math.Max(1, roomMin)).Value;
+        if (maxSoloLosses is { } losses) playerOpt.LocalRaid.MaxSoloLosses = (maxSoloLosses = Math.Max(0, losses)).Value;
+        if (maxTaskMinutes is { } taskMin) playerOpt.LocalRaid.MaxTaskMinutes = (maxTaskMinutes = Math.Max(1, taskMin)).Value;
+        if (lowerQuestAfterMinutes is { } lowerMin) playerOpt.LocalRaid.LowerQuestAfterMinutes = (lowerQuestAfterMinutes = Math.Max(1, lowerMin)).Value;
+        if (questLevel is { } level) playerOpt.LocalRaid.QuestLevel = (questLevel = Math.Max(0, level)).Value;
     }));
 
 }

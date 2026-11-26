@@ -718,7 +718,7 @@
   <data name="AppearanceTitleFormat" xml:space="preserve"><value>{0}: {1}</value></data>
   <data name="FreeGachaFormat" xml:space="preserve"><value>Free {0}</value></data>
   <data name="DungeonBattleNoProgress" xml:space="preserve"><value>Cave state has not changed for 3 rounds, stopping</value></data>
-  <data name="LocalRaidWaitTimeout" xml:space="preserve"><value>Battle did not start within 5 minutes, stopping</value></data>
+  <data name="LocalRaidWaitTimeout" xml:space="preserve"><value>Wait timed out before battle started, stopping</value></data>
   <data name="PvpNoEligibleTarget" xml:space="preserve"><value>No opponent left after filters for 3 rounds, stopping</value></data>
   <data name="PageRenderError" xml:space="preserve"><value>This page hit a display error. Open another page or reload to continue.</value></data>
   <data name="InvalidCronExpression" xml:space="preserve"><value>Invalid Quartz cron expression; not saved</value></data>
@@ -773,4 +773,18 @@
   <data name="TowerInfiniteSpentDiamonds" xml:space="preserve"><value>Tower of Infinity sweep spent {0} diamonds unexpectedly</value></data>
   <data name="PopularityVoteReward" xml:space="preserve"><value>Popularity vote rewards</value></data>
   <data name="EquipmentSynchroMissionReward" xml:space="preserve"><value>Gear synchro mission rewards</value></data>
+  <data name="LocalRaidDropToLowerQuest" xml:space="preserve"><value>Try a lower quest when stuck</value></data>
+  <data name="LocalRaidHostWhenNoRoom" xml:space="preserve"><value>Host own room when no room is found</value></data>
+  <data name="LocalRaidJoinWaitMinutes" xml:space="preserve"><value>Find room (min)</value></data>
+  <data name="LocalRaidLowerQuest" xml:space="preserve"><value>Dropping to lower quest {0}</value></data>
+  <data name="LocalRaidLowerQuestAfterMinutes" xml:space="preserve"><value>Wait before dropping quest (min)</value></data>
+  <data name="LocalRaidMaxSoloLosses" xml:space="preserve"><value>Max solo losses</value></data>
+  <data name="LocalRaidMaxSoloLossesHint" xml:space="preserve"><value>0 = never stop</value></data>
+  <data name="LocalRaidMaxTaskMinutes" xml:space="preserve"><value>Task limit (min)</value></data>
+  <data name="LocalRaidQuestLevel" xml:space="preserve"><value>Quest level</value></data>
+  <data name="LocalRaidQuestLevelHint" xml:space="preserve"><value>0 = auto by weights</value></data>
+  <data name="LocalRaidRoomStuck" xml:space="preserve"><value>Battle did not start after {0} min in room; leaving to find another</value></data>
+  <data name="LocalRaidRoomWaitMinutes" xml:space="preserve"><value>Stuck room (min)</value></data>
+  <data name="LocalRaidTimeoutsAndLimits" xml:space="preserve"><value>Timeouts &amp; limits</value></data>
+  <data name="LocalRaidWaitSeconds" xml:space="preserve"><value>Pre-battle wait (s)</value></data>
 </root>

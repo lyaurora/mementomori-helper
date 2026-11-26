@@ -612,7 +612,7 @@
   <data name="AppearanceTitleFormat" xml:space="preserve"><value>{0}：{1}</value></data>
   <data name="FreeGachaFormat" xml:space="preserve"><value>無料{0}</value></data>
   <data name="DungeonBattleNoProgress" xml:space="preserve"><value>洞窟の状態が3回連続で変化しないため、停止します</value></data>
-  <data name="LocalRaidWaitTimeout" xml:space="preserve"><value>5分以内にバトルが開始されなかったため、停止します</value></data>
+  <data name="LocalRaidWaitTimeout" xml:space="preserve"><value>待機タイムアウトのため、停止します</value></data>
   <data name="PvpNoEligibleTarget" xml:space="preserve"><value>フィルター後、3回連続で挑戦可能な相手がいないため、停止します</value></data>
   <data name="PageRenderError" xml:space="preserve"><value>ページの表示でエラーが発生しました。別のページに移動するか、再読み込みしてください。</value></data>
   <data name="InvalidCronExpression" xml:space="preserve"><value>Quartz の cron 式が無効なため保存されませんでした</value></data>
@@ -667,4 +667,18 @@
   <data name="TowerInfiniteSpentDiamonds" xml:space="preserve"><value>無窮の塔の掃討で想定外にダイヤを {0} 個消費しました</value></data>
   <data name="PopularityVoteReward" xml:space="preserve"><value>人気投票報酬</value></data>
   <data name="EquipmentSynchroMissionReward" xml:space="preserve"><value>武具シンクロミッション報酬</value></data>
+  <data name="LocalRaidDropToLowerQuest" xml:space="preserve"><value>見つからない・連敗時は下位クエストへ下げる</value></data>
+  <data name="LocalRaidHostWhenNoRoom" xml:space="preserve"><value>部屋が見つからない時は自分で部屋を作成</value></data>
+  <data name="LocalRaidJoinWaitMinutes" xml:space="preserve"><value>部屋検索（分）</value></data>
+  <data name="LocalRaidLowerQuest" xml:space="preserve"><value>下位クエスト {0} に下げて続行します</value></data>
+  <data name="LocalRaidLowerQuestAfterMinutes" xml:space="preserve"><value>降格までの待機時間（分）</value></data>
+  <data name="LocalRaidMaxSoloLosses" xml:space="preserve"><value>連敗停止（回）</value></data>
+  <data name="LocalRaidMaxSoloLossesHint" xml:space="preserve"><value>0 = 停止しない</value></data>
+  <data name="LocalRaidMaxTaskMinutes" xml:space="preserve"><value>タスク上限（分）</value></data>
+  <data name="LocalRaidQuestLevel" xml:space="preserve"><value>指定レベル</value></data>
+  <data name="LocalRaidQuestLevelHint" xml:space="preserve"><value>0 = 重みで自動</value></data>
+  <data name="LocalRaidRoomStuck" xml:space="preserve"><value>入室後 {0} 分経っても戦闘が始まらないため退室して再検索します</value></data>
+  <data name="LocalRaidRoomWaitMinutes" xml:space="preserve"><value>未開始退出（分）</value></data>
+  <data name="LocalRaidTimeoutsAndLimits" xml:space="preserve"><value>待機と上限</value></data>
+  <data name="LocalRaidWaitSeconds" xml:space="preserve"><value>戦闘前待機（秒）</value></data>
 </root>

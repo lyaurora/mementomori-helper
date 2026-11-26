@@ -3157,5 +3157,19 @@ namespace MementoMori.Common.Localization {
         public static string TowerInfiniteSpentDiamonds => ResourceManager.GetString("TowerInfiniteSpentDiamonds", resourceCulture);
         public static string PopularityVoteReward => ResourceManager.GetString("PopularityVoteReward", resourceCulture);
         public static string EquipmentSynchroMissionReward => ResourceManager.GetString("EquipmentSynchroMissionReward", resourceCulture);
+        public static string LocalRaidDropToLowerQuest => ResourceManager.GetString("LocalRaidDropToLowerQuest", resourceCulture);
+        public static string LocalRaidHostWhenNoRoom => ResourceManager.GetString("LocalRaidHostWhenNoRoom", resourceCulture);
+        public static string LocalRaidJoinWaitMinutes => ResourceManager.GetString("LocalRaidJoinWaitMinutes", resourceCulture);
+        public static string LocalRaidLowerQuest => ResourceManager.GetString("LocalRaidLowerQuest", resourceCulture);
+        public static string LocalRaidLowerQuestAfterMinutes => ResourceManager.GetString("LocalRaidLowerQuestAfterMinutes", resourceCulture);
+        public static string LocalRaidMaxSoloLosses => ResourceManager.GetString("LocalRaidMaxSoloLosses", resourceCulture);
+        public static string LocalRaidMaxSoloLossesHint => ResourceManager.GetString("LocalRaidMaxSoloLossesHint", resourceCulture);
+        public static string LocalRaidMaxTaskMinutes => ResourceManager.GetString("LocalRaidMaxTaskMinutes", resourceCulture);
+        public static string LocalRaidQuestLevel => ResourceManager.GetString("LocalRaidQuestLevel", resourceCulture);
+        public static string LocalRaidQuestLevelHint => ResourceManager.GetString("LocalRaidQuestLevelHint", resourceCulture);
+        public static string LocalRaidRoomStuck => ResourceManager.GetString("LocalRaidRoomStuck", resourceCulture);
+        public static string LocalRaidRoomWaitMinutes => ResourceManager.GetString("LocalRaidRoomWaitMinutes", resourceCulture);
+        public static string LocalRaidTimeoutsAndLimits => ResourceManager.GetString("LocalRaidTimeoutsAndLimits", resourceCulture);
+        public static string LocalRaidWaitSeconds => ResourceManager.GetString("LocalRaidWaitSeconds", resourceCulture);
     }
 }

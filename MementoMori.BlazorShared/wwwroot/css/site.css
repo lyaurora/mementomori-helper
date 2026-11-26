@@ -246,6 +246,11 @@ button, input, textarea, select { font-family: inherit; }
 .setting-weight-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .35rem .75rem; }
 .setting-weight-list .mud-input-control { min-width: 0; }
 .setting-weight-list > .setting-field-label { grid-column: 1 / -1; margin-bottom: 0; }
+.setting-pair-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem .75rem; align-items: start; }
+.setting-pair-grid .mud-input-control { min-width: 0; width: 100%; }
+.setting-section > .settings-toggle:first-child { margin-top: -.35rem; }
+.setting-section > .settings-toggle + .mud-input-control { margin-top: .65rem; }
+@media (max-width: 420px) { .setting-pair-grid { grid-template-columns: minmax(0, 1fr); } }
 .cron-fields .cron-field + .cron-field { margin-top: .85rem; }
 .cron-fields input { font-family: var(--app-mono); font-size: .8125rem; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
 .setting-filter-header { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: 0 0 .6rem; }

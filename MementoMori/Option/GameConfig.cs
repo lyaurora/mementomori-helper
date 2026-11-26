@@ -184,6 +184,30 @@ public class GameConfig
         public bool SelfCreateRoom { get; set; }
 
         public int WaitSeconds { get; set; } = 3;
+
+        /// <summary>加入模式等不到房间时，是否转为自己开房单刷（默认关闭，方便小号等待主号房间）。</summary>
+        public bool HostWhenNoRoom { get; set; }
+
+        /// <summary>加入模式找房最长等待分钟数。</summary>
+        public int JoinWaitMinutes { get; set; } = 10;
+
+        /// <summary>进房后房主不开战的最长等待分钟数，超时后退房重找。</summary>
+        public int RoomWaitMinutes { get; set; } = 3;
+
+        /// <summary>自己开房连续失败次数上限，0 表示不停止。</summary>
+        public int MaxSoloLosses { get; set; } = 3;
+
+        /// <summary>整个幻影神殿任务最长执行分钟数。</summary>
+        public int MaxTaskMinutes { get; set; } = 20;
+
+        /// <summary>等不到房间或单刷连败时，是否尝试降一级同类型关卡继续。</summary>
+        public bool DropToLowerQuest { get; set; }
+
+        /// <summary>加入模式同一关卡等待多少分钟后降一级。</summary>
+        public int LowerQuestAfterMinutes { get; set; } = 3;
+
+        /// <summary>手动指定关卡等级（0 = 按奖励权重自动选；&gt;0 = 选不超过该等级的最高级关卡）。</summary>
+        public int QuestLevel { get; set; }
     }
 
     public class DungeonBattleConfig

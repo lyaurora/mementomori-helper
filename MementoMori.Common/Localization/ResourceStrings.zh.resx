@@ -718,7 +718,7 @@
   <data name="AppearanceTitleFormat" xml:space="preserve"><value>{0}：{1}</value></data>
   <data name="FreeGachaFormat" xml:space="preserve"><value>免费{0}</value></data>
   <data name="DungeonBattleNoProgress" xml:space="preserve"><value>洞窟状态连续 3 轮没有变化，停止</value></data>
-  <data name="LocalRaidWaitTimeout" xml:space="preserve"><value>5 分钟内未开始战斗，停止</value></data>
+  <data name="LocalRaidWaitTimeout" xml:space="preserve"><value>等待超时仍未开始战斗，停止</value></data>
   <data name="PvpNoEligibleTarget" xml:space="preserve"><value>过滤后连续 3 轮没有可挑战的对手，停止</value></data>
   <data name="PageRenderError" xml:space="preserve"><value>页面显示出错。请切换到其他页面或刷新后继续。</value></data>
   <data name="InvalidCronExpression" xml:space="preserve"><value>Quartz cron 表达式无效，未保存</value></data>
@@ -773,4 +773,18 @@
   <data name="TowerInfiniteSpentDiamonds" xml:space="preserve"><value>无穷之塔扫荡意外消耗了 {0} 钻石</value></data>
   <data name="PopularityVoteReward" xml:space="preserve"><value>人气投票奖励</value></data>
   <data name="EquipmentSynchroMissionReward" xml:space="preserve"><value>装备同步任务奖励</value></data>
+  <data name="LocalRaidDropToLowerQuest" xml:space="preserve"><value>找不到房间或连败时降一级关卡继续</value></data>
+  <data name="LocalRaidHostWhenNoRoom" xml:space="preserve"><value>找不到房间时自己开房单刷</value></data>
+  <data name="LocalRaidJoinWaitMinutes" xml:space="preserve"><value>等待房间（分）</value></data>
+  <data name="LocalRaidLowerQuest" xml:space="preserve"><value>降低一档关卡，改为尝试 {0}</value></data>
+  <data name="LocalRaidLowerQuestAfterMinutes" xml:space="preserve"><value>同一关卡等待降级（分）</value></data>
+  <data name="LocalRaidMaxSoloLosses" xml:space="preserve"><value>连败停止（次）</value></data>
+  <data name="LocalRaidMaxSoloLossesHint" xml:space="preserve"><value>0 = 不停止</value></data>
+  <data name="LocalRaidMaxTaskMinutes" xml:space="preserve"><value>任务上限（分）</value></data>
+  <data name="LocalRaidQuestLevel" xml:space="preserve"><value>指定关卡等级</value></data>
+  <data name="LocalRaidQuestLevelHint" xml:space="preserve"><value>0 = 按权重自动</value></data>
+  <data name="LocalRaidRoomStuck" xml:space="preserve"><value>进房后 {0} 分钟未开战，退出并重新寻找房间</value></data>
+  <data name="LocalRaidRoomWaitMinutes" xml:space="preserve"><value>死房退出（分）</value></data>
+  <data name="LocalRaidTimeoutsAndLimits" xml:space="preserve"><value>等待与限制</value></data>
+  <data name="LocalRaidWaitSeconds" xml:space="preserve"><value>战前等待（秒）</value></data>
 </root>

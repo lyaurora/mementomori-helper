@@ -612,7 +612,7 @@
   <data name="AppearanceTitleFormat" xml:space="preserve"><value>{0}: {1}</value></data>
   <data name="FreeGachaFormat" xml:space="preserve"><value>무료 {0}</value></data>
   <data name="DungeonBattleNoProgress" xml:space="preserve"><value>동굴 상태가 3회 연속 변하지 않아 중지합니다</value></data>
-  <data name="LocalRaidWaitTimeout" xml:space="preserve"><value>5분 안에 전투가 시작되지 않아 중지합니다</value></data>
+  <data name="LocalRaidWaitTimeout" xml:space="preserve"><value>대기 시간이 초과되어 중지합니다</value></data>
   <data name="PvpNoEligibleTarget" xml:space="preserve"><value>필터 적용 후 3회 연속 도전 가능한 상대가 없어 중지합니다</value></data>
   <data name="PageRenderError" xml:space="preserve"><value>페이지 표시 중 오류가 발생했습니다. 다른 페이지로 이동하거나 새로고침하세요.</value></data>
   <data name="InvalidCronExpression" xml:space="preserve"><value>Quartz cron 표현식이 올바르지 않아 저장되지 않았습니다</value></data>
@@ -667,4 +667,18 @@
   <data name="TowerInfiniteSpentDiamonds" xml:space="preserve"><value>무한의 탑 소탕 중 예상치 않게 다이아 {0}개를 소비했습니다</value></data>
   <data name="PopularityVoteReward" xml:space="preserve"><value>인기 투표 보상</value></data>
   <data name="EquipmentSynchroMissionReward" xml:space="preserve"><value>장비 싱크로 미션 보상</value></data>
+  <data name="LocalRaidDropToLowerQuest" xml:space="preserve"><value>방 없음/연패 시 하위 퀘스트로 낮춰 계속</value></data>
+  <data name="LocalRaidHostWhenNoRoom" xml:space="preserve"><value>방을 찾지 못하면 직접 방 생성</value></data>
+  <data name="LocalRaidJoinWaitMinutes" xml:space="preserve"><value>방 검색(분)</value></data>
+  <data name="LocalRaidLowerQuest" xml:space="preserve"><value>하위 퀘스트 {0}(으)로 낮춰 계속합니다</value></data>
+  <data name="LocalRaidLowerQuestAfterMinutes" xml:space="preserve"><value>하위 전환 대기 시간(분)</value></data>
+  <data name="LocalRaidMaxSoloLosses" xml:space="preserve"><value>연패 중단(회)</value></data>
+  <data name="LocalRaidMaxSoloLossesHint" xml:space="preserve"><value>0 = 중단 안 함</value></data>
+  <data name="LocalRaidMaxTaskMinutes" xml:space="preserve"><value>작업 상한(분)</value></data>
+  <data name="LocalRaidQuestLevel" xml:space="preserve"><value>지정 레벨</value></data>
+  <data name="LocalRaidQuestLevelHint" xml:space="preserve"><value>0 = 가중치 자동</value></data>
+  <data name="LocalRaidRoomStuck" xml:space="preserve"><value>입장 후 {0}분 동안 전투가 시작되지 않아 퇴장 후 다른 방을 찾습니다</value></data>
+  <data name="LocalRaidRoomWaitMinutes" xml:space="preserve"><value>미시작 퇴장(분)</value></data>
+  <data name="LocalRaidTimeoutsAndLimits" xml:space="preserve"><value>대기 및 제한</value></data>
+  <data name="LocalRaidWaitSeconds" xml:space="preserve"><value>전투 전 대기(초)</value></data>
 </root>

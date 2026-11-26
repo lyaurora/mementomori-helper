@@ -36,12 +36,19 @@ public abstract class LocalRaidBaseReceiver : IMagicOnionLocalRaidReceiver, IMag
             // A new search can use the same quest as the previous battle.
             _startSw.Restart();
             IsMaxTimeExceeded = false;
+            OnRoundReset();
         }
     }
     public bool IsNoRemainingChallenges { get => _isNoRemainingChallenges; protected set => _isNoRemainingChallenges = value; }
     public bool IsMaxTimeExceeded { get => _isMaxTimeExceeded; protected set => _isMaxTimeExceeded = value; }
 
     public bool IsBattleStarted { get => _isBattleStarted; set => _isBattleStarted = value; }
+
+    public bool IsSearching => _startSw.IsRunning;
+
+    protected virtual void OnRoundReset()
+    {
+    }
 
     public virtual void OnError(ErrorCode errorCode)
     {
@@ -99,13 +106,36 @@ public abstract class LocalRaidBaseReceiver : IMagicOnionLocalRaidReceiver, IMag
 
 public class LocalRaidJoinRoomReceiver : LocalRaidBaseReceiver
 {
-    public LocalRaidJoinRoomReceiver(OrtegaMagicOnionClient ortegaMagicOnionClient, Action<string> log, CancellationToken cancellationToken) : base(ortegaMagicOnionClient, log, cancellationToken)
+    private readonly TimeSpan _maxWait;
+    private Stopwatch? _inRoomSw;
+
+    /// <summary>进房后计时器；用于检测房主挂机不开战的死房。</summary>
+    public Stopwatch? InRoomSw
     {
+        get => Volatile.Read(ref _inRoomSw);
+        set => Volatile.Write(ref _inRoomSw, value);
     }
 
+    public LocalRaidJoinRoomReceiver(OrtegaMagicOnionClient ortegaMagicOnionClient, Action<string> log, CancellationToken cancellationToken, TimeSpan? maxWait = null)
+        : base(ortegaMagicOnionClient, log, cancellationToken)
+    {
+        _maxWait = maxWait is { TotalSeconds: > 0 } w ? w : TimeSpan.FromMinutes(2);
+    }
+
+    protected override void OnRoundReset()
+    {
+        InRoomSw = null;
+    }
+
+    public override void OnStartBattle()
+    {
+        InRoomSw = null;
+        base.OnStartBattle();
+    }
 
     public override async void OnDisbandRoom()
     {
+        InRoomSw = null;
         _log(TextResourceTable.GetErrorCodeMessage(ClientErrorCode.LocalRaidDismissedRoom));
         _startSw.Restart();
         await RetryJoin();
@@ -113,12 +143,14 @@ public class LocalRaidJoinRoomReceiver : LocalRaidBaseReceiver
 
     public override async void OnLeaveRoom()
     {
+        InRoomSw = null;
         _startSw.Restart();
         await RetryJoin();
     }
 
     public override async void OnRefuse()
     {
+        InRoomSw = null;
         _log(TextResourceTable.Get("[LocalRaidRoomRefuseReceiveDialogMessage]"));
         _startSw.Restart();
         await RetryJoin();
@@ -145,6 +177,7 @@ public class LocalRaidJoinRoomReceiver : LocalRaidBaseReceiver
         if (CancellationToken.IsCancellationRequested) return;
         _startSw.Stop();
         IsMaxTimeExceeded = false;
+        InRoomSw = Stopwatch.StartNew();
         _ortegaMagicOnionClient.SendLocalRaidReady(true);
     }
 
@@ -158,7 +191,7 @@ public class LocalRaidJoinRoomReceiver : LocalRaidBaseReceiver
             {
                 case ErrorCode.MagicOnionLocalRaidJoinRandomRoomNotExistRoom:
                     if (!_startSw.IsRunning) break;
-                    if (_startSw.Elapsed > TimeSpan.FromMinutes(2))
+                    if (_startSw.Elapsed > _maxWait)
                     {
                         IsMaxTimeExceeded = true;
                         _startSw.Stop();
