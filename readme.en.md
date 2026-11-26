@@ -5,9 +5,9 @@
 [![Build](https://img.shields.io/github/actions/workflow/status/lyaurora/mementomori-helper/publish-dev.yml?branch=master)](https://github.com/lyaurora/mementomori-helper/actions/workflows/publish-dev.yml)
 [![Release](https://img.shields.io/github/v/release/lyaurora/mementomori-helper)](https://github.com/lyaurora/mementomori-helper/releases/latest)
 
-A cross-platform assistant for Memento Mori: it claims rewards and runs dailies on a schedule, and lets you view characters and items, buy, invoke and chat from a browser or the Android app.
+A cross-platform assistant for Memento Mori: it claims rewards and runs dailies on a schedule, and lets you view characters, items, guild overview, battle summaries and player profiles, as well as buy, invoke and chat from a browser or the Android app.
 
-This is a maintained fork of [moonheart/mementomori-helper](https://github.com/moonheart/mementomori-helper) that keeps the original Blazor WebUI and MAUI Android app. It runs on .NET 10, its game protocol is synced to client **5.2.0**, and the UI is available in English, 简体中文, 繁體中文, 日本語 and 한국어. Prebuilt packages are published for Windows / Linux / macOS, multi-arch Docker images, and Android APK.
+This is a maintained fork of [moonheart/mementomori-helper](https://github.com/moonheart/mementomori-helper) that keeps the original Blazor WebUI and MAUI Android app. It runs on .NET 10, its game protocol is synced to client **5.2.0**, and the UI is available in English, 简体中文, 繁體中文, 日本語 and 한국어 (with automatic English fallback for missing Master text entries). Prebuilt packages are published for Windows / Linux / macOS, multi-arch Docker images, and Android APK.
 
 ## **Disclaimer**
 
@@ -27,7 +27,7 @@ By downloading, installing, and using this tool, users acknowledge that they hav
 
 ## Previews
 
-The screenshots use the English UI. Player IDs, comments and other players' information are masked.
+The screenshots use the English UI. Player IDs, comments, guild/chat contents and other players' information are masked or anonymized.
 
 <table>
 <tbody>
@@ -60,7 +60,16 @@ The screenshots use the English UI. Player IDs, comments and other players' info
 ![Chat and stickers](images/en/intro6.png)</td></tr>
 <tr><td>
 
-**Battle Report**
+**Guild**
+
+![Guild](images/en/intro9.png)</td><td>
+
+**Player Info Dialog**
+
+![Player Info Dialog](images/en/intro10.png)</td></tr>
+<tr><td>
+
+**Battle Report (native summary)**
 
 ![Battle Report](images/en/intro7.png)</td><td>
 
@@ -75,7 +84,7 @@ The screenshots use the English UI. Player IDs, comments and other players' info
 ### Home
 
 - Character info (including server and world) and main resources at a glance; Fountain of Prayers, mission and game notice panels. **Claim All** on the mission panel also claims medal rewards.
-- **Quick actions**: run the whole daily routine at once or any single step (reward claims, sweeps, leagues, guild, Temple of Illusions, Guild Tree, auto-buy and more).
+- **Quick actions**: run the whole daily routine at once or any single step (reward claims, sweeps, leagues, guild, Temple of Illusions, Guild Tree, Book Sort, auto-buy and more).
 - Bulk-cast S/A/B/C equipment and inherit Matchless and Legend levels onto D equipment.
 - Automatic main quest and Tower of Infinity (including the elemental towers) runs that can stop after a chosen stage; automatic Cave of Space-Time; manual equipment reforging.
 - **Execution output**: every line has a time; failed actions are shown in red with the API that failed, so problems are easy to locate. A running action can be cancelled at any time.
@@ -85,11 +94,13 @@ The screenshots use the English UI. Player IDs, comments and other players' info
 
 - **Characters**: character list, stats and equipment details.
 - **Box**: equipment, consumables, materials, runes and shards; items can be used by hand.
-- **Shop**: browse the shops and buy; the alarm button on an item adds an auto-buy rule.
+- **Shop**: browse the shops and buy (gracefully tolerates unavailable weekly-topics endpoints without blocking regular tabs); the alarm button on an item adds an auto-buy rule.
 - **Invoke**: banner list, details and rates, character selection and manual draws.
-- **Chat**: World, Guild, SvS, cross-world guild battle and private conversations; stickers, reactions, guild announcements, surveys and notes.
-- **Battle Report**: browse saved logs by type (main quest, towers, Battle League, Legend League), download the JSON, open it in the embedded viewer, or clean up by age.
-- **Options**: account management, automatic job switches and schedules, job status, and the automation settings.
+- **Chat**: World, Guild, SvS, cross-world guild battle and private conversations; stickers, reactions, guild announcements, surveys and notes; clicking any player avatar or name opens the **Player Info Dialog**.
+- **Guild**: guild summary with policy tags, member cap, MAX level EXP and quick check-in; sortable and searchable member list with online / `7d+` login indicators; Guild Tree event-window status and quick challenge; Guild Raid bosses with top-5 damage bars and releasable fame progress; plus Local and Global Guild Battle rankings and castle counts.
+- **Player Info Dialog**: opens from any avatar or name in Chat or Guild with an in-game style profile layout (watercolor character artwork, special icons, core stats, Battle/Legend League ranks, 5-character party and comment), supporting ID copy, private-chat handoff, friend request/accept/decline/remove and block/unblock, with dedicated responsive layouts for both desktop and mobile.
+- **Battle Report**: browse saved logs by type (main quest, towers, Battle League, Legend League) with a native per-unit damage, taken, healed and remaining HP summary, on-demand external replay iframe, JSON download and age-based cleanup.
+- **Options**: account management, automatic job switches and schedules, job status, and automation settings (including grouped Temple of Illusions controls and per-account Book Sort settings).
 
 ### Multiple accounts
 
@@ -100,7 +111,7 @@ The screenshots use the English UI. Player IDs, comments and other players' info
 
 ### Interface
 
-The appearance can follow the system or be set to light or dark, and the app bar shows the server time.
+The appearance can follow the system or be set to light or dark, the app bar shows the server time, and the layout adapts cleanly to both desktop and mobile screens.
 
 ## Installation
 
@@ -154,12 +165,15 @@ chmod 600 config/appsettings.user.json
 docker compose up -d --build
 ```
 
+**Reverse-proxy sub-path hosting**: to serve the WebUI under a sub-path (e.g. `https://example.com/mm/`), set the `PathBase=/mm` environment variable (or config key). The server honors `X-Forwarded-For` / `X-Forwarded-Proto`, updates `<base href>` and the `/assets` cache prefix automatically, and keeps `/healthz` reachable at the root for container health checks.
+
 ### Option 3: Android app (APK)
 
 Download and install `MementoMori-android.apk` from [Releases](https://github.com/lyaurora/mementomori-helper/releases/latest).
 
 - This fork uses its own package ID (`io.github.lyaurora.mementomorihelper`) and signing key. It can coexist with the upstream app and cannot directly overwrite an upstream install.
-- Android battery optimization may suspend background scheduled jobs; use Docker or an always-on desktop host for reliable 24/7 automation.
+- Includes Android 15 Edge-to-Edge window-inset handling, status/navigation bar theme synchronization with the WebUI, and a `specialUse` foreground keep-alive notification (the Back button moves the app to the background; tap **Stop** on the notification to exit cleanly).
+- Aggressive OEM battery savers may still suspend background processes; Docker or an always-on desktop host remains the most reliable option for 24/7 automation.
 
 ### Option 4: Run from source (developers)
 
@@ -202,23 +216,24 @@ Times are in the server time of the account's world and can be changed under **O
 - Claim login bonuses (including limited EventPortal bonuses), the VIP daily gift, Monthly Boost, auto-battle rewards and the Presents Box
 - Send and receive Friend Points
 - Reinforce equipment once (switch, on by default): picks the lowest-level equipped item that is below its cap
-- Sweep the boss and the Tower of Infinity 3 times each
+- Sweep the boss 3 times; sweep the Tower of Infinity only for remaining free daily attempts (`3 - TodayBattleCount`), logging an error if diamonds drop unexpectedly
 - High-speed battle: the daily free one, plus Monthly Boost uses if active
-- Guild check-in, Guild Raid, Guild Tree, Guild Battle rewards
-- Friend management, friend campaign rewards, achievement rewards, character Memories
+- Guild check-in, Guild Raid (switch, on by default), Guild Tree, Guild Battle rewards
+- Friend management, friend campaign rewards, achievement rewards, character Memories (switch, on by default)
 - Fountain of Prayers claim and dispatch (detects 2x reward events)
 - Cave of Space-Time (switch, on by default)
-- Mission and medal rewards (including EventPortal missions and completed Union Mission panels/point rewards), rental raid share rewards
+- Mission and medal rewards (including EventPortal missions and completed Union Mission panels/point rewards), rental raid share rewards, Popularity Vote cumulative rewards and Gear Synchro mission rewards
+- Book Sort Auto Clean (switch, off by default): runs automatically during active Book Sort events using each account's settings and claims event missions
 - Use Normal Items (switch, on by default), free invoke (switch, on by default)
 - Character Awaken (switch, on by default): R to R+ and SR to SR+; locked and level-linked characters are never used as material
 
 ### Reward Claim Job
 
 - Login bonuses, Fountain of Prayers (claim and dispatch), the Presents Box, auto-battle rewards
-- Guild Raid, Guild Tree, Guild Battle rewards
+- Guild Raid (follows its switch), Guild Tree, Guild Battle rewards
 - Send and receive Friend Points
-- Mission and medal rewards, rental raid share rewards, character Memories
-- Free invoke and Use Normal Items (each follows its switch)
+- Mission and medal rewards, rental raid share rewards, Popularity Vote cumulative rewards, Gear Synchro mission rewards, character Memories (follows its switch)
+- Book Sort Auto Clean, free invoke and Use Normal Items (each follows its switch)
 
 ## Automation settings
 
@@ -230,13 +245,24 @@ The opponent strategy can be random (default), lowest or highest battle power. Y
 
 ### Temple of Illusions
 
-By default it joins existing rooms and hosts its own after failing to find one for a long time; it can also be set to always host. When hosting you can set the wait before the battle, and it stops after 3 losses in a row.
+Choose between **Join Random** (default) and **Create Team**, with per-account controls:
 
-It picks among the open quests by reward weight; during events only event quests are considered. Each quest scores:
+- **Host own room when no room is found** (Join mode only, off by default so alt accounts can wait for a main account's room).
+- **Timeouts & limits**: configure room-search timeout, stuck-room leave timeout, max solo losses (0 = never stop), pre-battle wait seconds, overall task time limit, and an optional pinned quest level (0 = auto by weights).
+- **Try a lower quest when stuck**: steps down to the next lower quest of the same type after waiting or repeated solo losses (with configurable wait minutes in Join mode).
+
+When quest level is 0, it picks among the open quests by reward weight (during events only event quests are considered). Each quest scores:
 
 $$score=\sum weight\times\frac{count}{count_{max}}$$
 
 $count$ is the quest's reward count (plus the first-clear reward if not cleared yet) and $count_{max}$ is the maximum reward of that item. The highest score wins, then the higher level.
+
+### Book Sort Auto Clean
+
+Configured per account (automatically skipped outside active events):
+
+- **Use multi-cell cleaning items** (on by default): uses multi-cell items that uncover ≥2 tiles (preferring smaller area on ties) before bulk-clearing with standard dusters; turn off to save multi-cell items for manual play.
+- **Bonus floor reward selection**: dynamically lists the rewards unlocked for this account's main-quest progress across the `5–15`, `20–35`, `40–45` and `50+` floor tiers. Each tier can be set to **Auto (first eligible)**, **Pause for manual selection**, or a specific reward combination; floors advance automatically once both the key and featured reward are uncovered.
 
 ### Fountain of Prayers
 
