@@ -787,4 +787,22 @@
   <data name="LocalRaidRoomWaitMinutes" xml:space="preserve"><value>Stuck room (min)</value></data>
   <data name="LocalRaidTimeoutsAndLimits" xml:space="preserve"><value>Timeouts &amp; limits</value></data>
   <data name="LocalRaidWaitSeconds" xml:space="preserve"><value>Pre-battle wait (s)</value></data>
+  <data name="BattleAliveDamage" xml:space="preserve"><value>{0}/{1} alive · {2} total damage</value></data>
+  <data name="BattleCounts" xml:space="preserve"><value>{0} logs · {1}W / {2}L</value></data>
+  <data name="BattleDamageDealt" xml:space="preserve"><value>Damage</value></data>
+  <data name="BattleDead" xml:space="preserve"><value>KO</value></data>
+  <data name="BattleDefeat" xml:space="preserve"><value>Defeat</value></data>
+  <data name="BattleEmpty" xml:space="preserve"><value>No battle logs yet</value></data>
+  <data name="BattleEndedOnTurn" xml:space="preserve"><value>Ended on turn {0}</value></data>
+  <data name="BattleEnemy" xml:space="preserve"><value>Enemy</value></data>
+  <data name="BattleHealed" xml:space="preserve"><value>Healed</value></data>
+  <data name="BattleHpLeft" xml:space="preserve"><value>HP</value></data>
+  <data name="BattleOutOfTurns" xml:space="preserve"><value>turn limit</value></data>
+  <data name="BattlePick" xml:space="preserve"><value>Select a battle to inspect its damage summary</value></data>
+  <data name="BattleRecent" xml:space="preserve"><value>Recent battles</value></data>
+  <data name="BattleReplay" xml:space="preserve"><value>Replay</value></data>
+  <data name="BattleTaken" xml:space="preserve"><value>Taken</value></data>
+  <data name="BattleUnit" xml:space="preserve"><value>Unit</value></data>
+  <data name="BattleVictory" xml:space="preserve"><value>Victory</value></data>
+  <data name="BattleYourTeam" xml:space="preserve"><value>Your team</value></data>
 </root>

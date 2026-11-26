@@ -62,10 +62,21 @@
         }
         window.showBattleLog = (log_content) => {
             const iframe = document.querySelector('#log_viewer');
-            if (!iframe || !iframe.contentWindow) return;
-            iframe.contentWindow.postMessage(new File([log_content], 'battle_log.json', {
-                type: 'application/json'
-            }), new URL(iframe.src).origin);
+            if (!iframe) return;
+            const post = () => {
+                if (!iframe.contentWindow) return;
+                try {
+                    iframe.contentWindow.postMessage(new File([log_content], 'battle_log.json', {
+                        type: 'application/json'
+                    }), new URL(iframe.src).origin);
+                } catch { }
+            };
+            iframe._pendingBattleLog = post;
+            if (!iframe._battleLogHooked) {
+                iframe._battleLogHooked = true;
+                iframe.addEventListener('load', () => iframe._pendingBattleLog?.());
+            }
+            post();
         }
     </script>
 </body>

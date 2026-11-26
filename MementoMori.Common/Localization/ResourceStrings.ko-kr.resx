@@ -681,4 +681,22 @@
   <data name="LocalRaidRoomWaitMinutes" xml:space="preserve"><value>미시작 퇴장(분)</value></data>
   <data name="LocalRaidTimeoutsAndLimits" xml:space="preserve"><value>대기 및 제한</value></data>
   <data name="LocalRaidWaitSeconds" xml:space="preserve"><value>전투 전 대기(초)</value></data>
+  <data name="BattleAliveDamage" xml:space="preserve"><value>{0}/{1} 생존 · 총 피해 {2}</value></data>
+  <data name="BattleCounts" xml:space="preserve"><value>{0}건 · {1}승 / {2}패</value></data>
+  <data name="BattleDamageDealt" xml:space="preserve"><value>가한 피해</value></data>
+  <data name="BattleDead" xml:space="preserve"><value>전투 불능</value></data>
+  <data name="BattleDefeat" xml:space="preserve"><value>패배</value></data>
+  <data name="BattleEmpty" xml:space="preserve"><value>전투 기록이 없습니다</value></data>
+  <data name="BattleEndedOnTurn" xml:space="preserve"><value>{0}턴에 종료</value></data>
+  <data name="BattleEnemy" xml:space="preserve"><value>적군</value></data>
+  <data name="BattleHealed" xml:space="preserve"><value>회복</value></data>
+  <data name="BattleHpLeft" xml:space="preserve"><value>남은 HP</value></data>
+  <data name="BattleOutOfTurns" xml:space="preserve"><value>턴 제한</value></data>
+  <data name="BattlePick" xml:space="preserve"><value>전투를 선택하여 피해 통계를 확인하세요</value></data>
+  <data name="BattleRecent" xml:space="preserve"><value>최근 전투</value></data>
+  <data name="BattleReplay" xml:space="preserve"><value>리플레이</value></data>
+  <data name="BattleTaken" xml:space="preserve"><value>받은 피해</value></data>
+  <data name="BattleUnit" xml:space="preserve"><value>캐릭터</value></data>
+  <data name="BattleVictory" xml:space="preserve"><value>승리</value></data>
+  <data name="BattleYourTeam" xml:space="preserve"><value>아군 팀</value></data>
 </root>

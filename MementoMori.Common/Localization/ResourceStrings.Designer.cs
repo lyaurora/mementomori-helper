@@ -3171,5 +3171,23 @@ namespace MementoMori.Common.Localization {
         public static string LocalRaidRoomWaitMinutes => ResourceManager.GetString("LocalRaidRoomWaitMinutes", resourceCulture);
         public static string LocalRaidTimeoutsAndLimits => ResourceManager.GetString("LocalRaidTimeoutsAndLimits", resourceCulture);
         public static string LocalRaidWaitSeconds => ResourceManager.GetString("LocalRaidWaitSeconds", resourceCulture);
+        public static string BattleAliveDamage => ResourceManager.GetString("BattleAliveDamage", resourceCulture);
+        public static string BattleCounts => ResourceManager.GetString("BattleCounts", resourceCulture);
+        public static string BattleDamageDealt => ResourceManager.GetString("BattleDamageDealt", resourceCulture);
+        public static string BattleDead => ResourceManager.GetString("BattleDead", resourceCulture);
+        public static string BattleDefeat => ResourceManager.GetString("BattleDefeat", resourceCulture);
+        public static string BattleEmpty => ResourceManager.GetString("BattleEmpty", resourceCulture);
+        public static string BattleEndedOnTurn => ResourceManager.GetString("BattleEndedOnTurn", resourceCulture);
+        public static string BattleEnemy => ResourceManager.GetString("BattleEnemy", resourceCulture);
+        public static string BattleHealed => ResourceManager.GetString("BattleHealed", resourceCulture);
+        public static string BattleHpLeft => ResourceManager.GetString("BattleHpLeft", resourceCulture);
+        public static string BattleOutOfTurns => ResourceManager.GetString("BattleOutOfTurns", resourceCulture);
+        public static string BattlePick => ResourceManager.GetString("BattlePick", resourceCulture);
+        public static string BattleRecent => ResourceManager.GetString("BattleRecent", resourceCulture);
+        public static string BattleReplay => ResourceManager.GetString("BattleReplay", resourceCulture);
+        public static string BattleTaken => ResourceManager.GetString("BattleTaken", resourceCulture);
+        public static string BattleUnit => ResourceManager.GetString("BattleUnit", resourceCulture);
+        public static string BattleVictory => ResourceManager.GetString("BattleVictory", resourceCulture);
+        public static string BattleYourTeam => ResourceManager.GetString("BattleYourTeam", resourceCulture);
     }
 }

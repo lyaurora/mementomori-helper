@@ -27,7 +27,7 @@
         <a href="" class="reload">Reload</a>
         <a class="dismiss">🗙</a>
     </div>
-    <div style="">
+    <div style="width:0; height:0; overflow:hidden" aria-hidden="true">
         <svg xmlns="http://www.w3.org/2000/svg">
             <filter id="svgTintUR">
                 <feColorMatrix type="matrix" values="0.2784313725490196 0.2784313725490196 0.2784313725490196  0 0 0.00784313725490196 0.00784313725490196 0.00784313725490196  0 0 0 0 0  0 0  0 0 0 1 0" />
@@ -71,10 +71,21 @@
         }
         window.showBattleLog = (log_content) => {
             const iframe = document.querySelector('#log_viewer');
-            if (!iframe || !iframe.contentWindow) return;
-            iframe.contentWindow.postMessage(new File([log_content], 'battle_log.json', {
-                type: 'application/json'
-            }), new URL(iframe.src).origin);
+            if (!iframe) return;
+            const post = () => {
+                if (!iframe.contentWindow) return;
+                try {
+                    iframe.contentWindow.postMessage(new File([log_content], 'battle_log.json', {
+                        type: 'application/json'
+                    }), new URL(iframe.src).origin);
+                } catch { }
+            };
+            iframe._pendingBattleLog = post;
+            if (!iframe._battleLogHooked) {
+                iframe._battleLogHooked = true;
+                iframe.addEventListener('load', () => iframe._pendingBattleLog?.());
+            }
+            post();
         }
     </script>
 

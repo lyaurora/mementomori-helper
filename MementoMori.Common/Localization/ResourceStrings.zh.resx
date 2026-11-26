@@ -787,4 +787,22 @@
   <data name="LocalRaidRoomWaitMinutes" xml:space="preserve"><value>死房退出（分）</value></data>
   <data name="LocalRaidTimeoutsAndLimits" xml:space="preserve"><value>等待与限制</value></data>
   <data name="LocalRaidWaitSeconds" xml:space="preserve"><value>战前等待（秒）</value></data>
+  <data name="BattleAliveDamage" xml:space="preserve"><value>{0}/{1} 存活 · 总伤害 {2}</value></data>
+  <data name="BattleCounts" xml:space="preserve"><value>共 {0} 条 · {1} 胜 / {2} 负</value></data>
+  <data name="BattleDamageDealt" xml:space="preserve"><value>输出</value></data>
+  <data name="BattleDead" xml:space="preserve"><value>阵亡</value></data>
+  <data name="BattleDefeat" xml:space="preserve"><value>失败</value></data>
+  <data name="BattleEmpty" xml:space="preserve"><value>暂无战斗记录</value></data>
+  <data name="BattleEndedOnTurn" xml:space="preserve"><value>第 {0} 回合结束</value></data>
+  <data name="BattleEnemy" xml:space="preserve"><value>敌方</value></data>
+  <data name="BattleHealed" xml:space="preserve"><value>治疗</value></data>
+  <data name="BattleHpLeft" xml:space="preserve"><value>剩余生命</value></data>
+  <data name="BattleOutOfTurns" xml:space="preserve"><value>回合耗尽</value></data>
+  <data name="BattlePick" xml:space="preserve"><value>选择一场战斗以查看伤害统计</value></data>
+  <data name="BattleRecent" xml:space="preserve"><value>近期战斗</value></data>
+  <data name="BattleReplay" xml:space="preserve"><value>回放</value></data>
+  <data name="BattleTaken" xml:space="preserve"><value>承伤</value></data>
+  <data name="BattleUnit" xml:space="preserve"><value>角色</value></data>
+  <data name="BattleVictory" xml:space="preserve"><value>胜利</value></data>
+  <data name="BattleYourTeam" xml:space="preserve"><value>我方队伍</value></data>
 </root>

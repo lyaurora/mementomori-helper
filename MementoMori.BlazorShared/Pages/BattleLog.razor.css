@@ -2,132 +2,165 @@
     min-width: 0;
 }
 
-.battle-log-page ::deep .battle-log-intro .mud-link {
-    display: inline-block;
-    padding-block: 6px;
-}
-
-.battle-log-page ::deep .battle-log-intro {
-    max-width: 65rem;
-    margin-bottom: 1rem;
-    line-height: 1.8;
-    overflow-wrap: anywhere;
-}
-
-.battle-log-controls {
-    padding: 22px;
-    margin-bottom: 24px;
+.battle-log-page ::deep .battle-log-card {
     border: 1px solid var(--app-card-line);
     border-radius: 20px;
     background: var(--mud-palette-surface);
     box-shadow: var(--app-card-shadow);
 }
 
-.battle-log-cleanup {
-    display: grid;
-    grid-template-columns: minmax(0, 15rem) 2.5rem;
-    align-items: end;
-    gap: .65rem;
-    padding-bottom: 18px;
-    margin-bottom: 18px;
-    border-bottom: 1px solid var(--mud-palette-lines-default);
-}
-
-.battle-log-page ::deep .battle-log-clean-range,
-.battle-log-page ::deep .battle-log-cleanup > .mud-select {
-    min-width: 0;
-}
-
-.battle-log-toolbar {
-    display: grid;
-    /* type → file → view/download: the buttons sit next to the file they act on */
-    grid-template-columns: minmax(9rem, .4fr) minmax(15rem, 1fr) 2.5rem 2.5rem;
-    align-items: end;
-    gap: .65rem;
-}
-
-.battle-log-page ::deep .battle-log-cleanup > .mud-icon-button,
-.battle-log-page ::deep .battle-log-toolbar > .mud-icon-button {
-    align-self: end;
-}
-
-.battle-log-page ::deep .battle-log-type,
-.battle-log-page ::deep .battle-log-file {
-    min-width: 0;
-}
-
-.battle-log-page ::deep .mud-input-control {
-    margin-top: 0;
-    margin-bottom: 0;
-}
-
-.battle-log-page ::deep .mud-input-control-input-container > .mud-popover-cascading-value {
-    display: none;
-}
-
-.battle-log-page ::deep .mud-input {
-    min-height: 2.5rem;
-}
-
-.battle-log-page ::deep .mud-input > .mud-input-root-outlined {
-    padding-top: .5rem;
-    padding-bottom: .5rem;
-    font-size: .875rem;
-    line-height: 1.5;
-}
-
-.battle-log-page ::deep .mud-input {
-    font-variant-numeric: tabular-nums;
-}
-
-.battle-log-page ::deep .battle-log-file .mud-input-root {
-    height: auto;
-    white-space: normal;
-    overflow-wrap: anywhere;
-    line-height: 1.55;
-}
-
-/* Closed file select: lay out name, result and timestamp on one row (wrapping cleanly on narrow screens) so the time is never clipped. */
-.battle-log-page ::deep .battle-log-file .mud-input-slot .battle-log-option {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: .15rem .65rem;
-    padding: 0;
-}
-
-.battle-log-page ::deep .battle-log-file .mud-input-slot .battle-log-option-heading {
-    flex: 1 1 auto;
-    justify-content: flex-start;
-    gap: .5rem;
-}
-
-.battle-log-page ::deep .battle-log-file .mud-input-slot .battle-log-option-time {
-    flex-shrink: 0;
-}
-
-.battle-log-option { display: flex; flex-direction: column; gap: .2rem; min-width: 0; width: 100%; padding: .15rem 0; }
-.battle-log-option-heading { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; min-width: 0; line-height: 1.5; }
-.battle-log-option-name { min-width: 0; font-size: .875rem; font-weight: 500; overflow-wrap: anywhere; }
-.battle-log-option-result { flex-shrink: 0; font-size: .75rem; color: var(--mud-palette-text-secondary); }
-.battle-log-option-time { color: var(--mud-palette-text-secondary); font-size: .75rem; font-variant-numeric: tabular-nums; line-height: 1.5; }
-.battle-log-option-filename { font-size: .8125rem; line-height: 1.55; overflow-wrap: anywhere; }
-
-.battle-log-page ::deep .mud-icon-button.mud-icon-button {
-    width: 2.5rem;
-    height: 2.5rem;
-    flex-shrink: 0;
-    border: 0;
-    border-radius: 10px;
-    background: var(--mud-palette-background-gray);
+.battle-log-page ::deep .battle-log-muted {
     color: var(--mud-palette-text-secondary);
 }
 
-.battle-log-page ::deep .mud-icon-button:hover { background: var(--mud-palette-action-default-hover); color: var(--mud-palette-text-primary); }
-/* Delete stays recognisable by its red icon only, not a red box. */
-.battle-log-page ::deep .battle-log-cleanup > .mud-icon-button.mud-icon-button { color: var(--mud-palette-error); }
+.battle-log-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+    margin-bottom: .75rem;
+}
 
-/* The viewer is a third-party page: only its frame can follow the theme. */
+.battle-log-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 68vh;
+    overflow-y: auto;
+    margin: 0 -6px;
+    padding: 0 2px;
+}
+
+.battle-log-row {
+    all: unset;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color .14s ease;
+}
+
+.battle-log-row:hover {
+    background: var(--mud-palette-action-default-hover);
+}
+
+.battle-log-row:focus-visible {
+    outline: 2px solid var(--mud-palette-primary);
+    outline-offset: -2px;
+}
+
+.battle-log-row.is-selected {
+    background: color-mix(in srgb, var(--mud-palette-primary) 14%, transparent);
+}
+
+.battle-log-row-main {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.battle-log-row-title {
+    font-weight: 600;
+    font-size: .875rem;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.battle-log-row-time {
+    font-size: .75rem;
+    color: var(--mud-palette-text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.battle-log-empty {
+    padding: 2rem 1rem;
+    color: var(--mud-palette-text-secondary);
+}
+
+.battle-log-placeholder {
+    min-height: 14rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.battle-log-detail-heading {
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.battle-log-detail-heading .is-win {
+    color: var(--mud-palette-success);
+}
+
+.battle-log-detail-heading .is-lose {
+    color: var(--mud-palette-error);
+}
+
+.battle-log-detail-meta {
+    font-variant-numeric: tabular-nums;
+}
+
+.battle-log-detail-actions {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+}
+
+.battle-log-page ::deep .battle-log-side-title {
+    margin-top: .75rem;
+    margin-bottom: .4rem;
+}
+
+.battle-log-page ::deep .battle-log-side-title:first-child {
+    margin-top: .25rem;
+}
+
+.battle-log-page ::deep .battle-log-table {
+    margin-bottom: 1rem;
+    background: transparent;
+}
+
+.battle-log-page ::deep .battle-log-table:last-child {
+    margin-bottom: 0;
+}
+
+.battle-log-num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.battle-log-dmg-cell {
+    min-width: 140px;
+}
+
+.battle-log-dmg-cell .battle-log-num {
+    margin-bottom: 4px;
+}
+
+.battle-log-unit-name {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.battle-log-unit-sub {
+    font-size: .75rem;
+    color: var(--mud-palette-text-secondary);
+    white-space: nowrap;
+}
+
+.battle-log-page ::deep .battle-log-table tr.is-dead {
+    opacity: .52;
+}
+
+/* Third-party viewer frame: follows our card surface and border. */
 .battle-log-frame {
     overflow: hidden;
     border: 1px solid var(--app-card-line);
@@ -136,37 +169,37 @@
     box-shadow: var(--app-card-shadow);
 }
 
+.battle-log-replay-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+}
+
 .battle-log-viewer {
     display: block;
     width: 100%;
-    /* Fit the viewport so the viewer scrolls inside itself, not page + frame. */
-    height: max(300px, calc(100dvh - 88px));
+    height: max(360px, calc(100dvh - 140px));
     border: 0;
 }
 
-@media (max-width: 799.98px) {
-    /* Type on its own row; the file select shares the next row with the view/download buttons that act on it. */
-    .battle-log-toolbar {
-        grid-template-columns: minmax(0, 1fr) 2.5rem 2.5rem;
-    }
-
-    .battle-log-page ::deep .battle-log-toolbar > .mud-select:has(.battle-log-type) {
-        grid-column: 1 / -1;
-        order: -1;
-    }
-
-    .battle-log-page ::deep .battle-log-toolbar > .mud-select:has(.battle-log-file) { grid-column: 1; grid-row: 2; min-width: 0; }
-}
-
 @media (max-width: 599.98px) {
-    .battle-log-controls {
-        padding: 16px;
-        margin-bottom: 14px;
-        border-radius: 16px;
-    }
-
+    .battle-log-page ::deep .battle-log-card,
     .battle-log-frame {
         border-radius: 16px;
     }
 
+    /* On phones keep Unit / Damage / HP so rows don't overflow horizontally. */
+    .battle-log-page ::deep .battle-log-table th:nth-child(3),
+    .battle-log-page ::deep .battle-log-table td:nth-child(3),
+    .battle-log-page ::deep .battle-log-table th:nth-child(4),
+    .battle-log-page ::deep .battle-log-table td:nth-child(4) {
+        display: none;
+    }
+
+    .battle-log-dmg-cell {
+        min-width: 96px;
+    }
 }
